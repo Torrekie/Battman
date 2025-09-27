@@ -179,7 +179,7 @@ static BOOL _coolDebugVCPresented = 0;
 @end
 
 @implementation SettingsViewController
-
+static NSMutableArray *hided_ip = nil;
 static NSMutableArray *sns_avail = nil;
 
 - (NSString *)title {
@@ -208,6 +208,14 @@ static NSMutableArray *sns_avail = nil;
 			[sns_avail addObject:sns_list[(i * 3) + 2]];
 		}
 	}
+	hided_ip = [NSMutableArray new];
+
+#if (LICENSE == LICENSE_NONFREE) && (NONFREE_TYPE == NONFREE_TYPE_HAVOC)
+	[hided_ip addObject:[NSIndexPath indexPathForRow:4 inSection:SS_SECT_ABOUT]];
+#else
+	[self hideRowForBadStatus:@"https://havoc.app/package/battman" indexPath:[NSIndexPath indexPathForRow:4 inSection:SS_SECT_ABOUT]];
+#endif
+
 	if (@available(iOS 13.0, *))
 		return [super initWithStyle:UITableViewStyleInsetGrouped];
 	else
@@ -216,18 +224,53 @@ static NSMutableArray *sns_avail = nil;
 
 - (void)viewDidLoad {
 	// [self.tableView registerClass:[SerialQRCodeTableViewCell class] forCellReuseIdentifier:@"QR"];
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self.tableView beginUpdates];
+		[self.tableView reloadRowsAtIndexPaths:hided_ip withRowAnimation:UITableViewRowAnimationAutomatic];
+		[self.tableView endUpdates];
+	});
+}
+
+- (void)hideRowForBadStatus:(NSString *)urlString indexPath:(NSIndexPath *)indexPath {
+	NSURL *url = [NSURL URLWithString:urlString];
+	if (!url) return;
+
+	NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
+	req.HTTPMethod = @"HEAD";
+
+	__weak typeof(self) weakSelf = self;
+	NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+		__strong typeof(weakSelf) strongSelf = weakSelf;
+		if (!strongSelf) return;
+
+		if (error) {
+			// NSLog(@"URL check error: %@", error);
+			// Optionally treat network error as "bad":
+			// [strongSelf updateHideFlag:YES];
+			return;
+		}
+		
+		NSInteger statusCode = 0;
+		if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+			statusCode = ((NSHTTPURLResponse *)response).statusCode;
+		}
+
+		BOOL shouldHide = (statusCode >= 400);
+		if (shouldHide) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if ([hided_ip indexOfObject:indexPath] == NSNotFound)
+					[hided_ip addObject:indexPath];
+			});
+		}
+	}];
+	[task resume];
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
 	if (section == SS_SECT_VERSION)
 		return 2;
-	if (section == SS_SECT_ABOUT) {
-#ifdef NONFREE_TYPE
-		return 4 + (NONFREE_TYPE != NONFREE_TYPE_HAVOC);
-#else
-		return 5;
-#endif
-	}
+	if (section == SS_SECT_ABOUT)
+		return 6;
 	if (section == SS_SECT_SNS)
 		return sns_avail.count / 3;
 #ifdef DEBUG
@@ -300,6 +343,8 @@ static NSMutableArray *sns_avail = nil;
 			show_donation(true);
 		} else if (indexPath.row == 4) {
 			open_url("https://havoc.app/package/battman");
+		} else if (indexPath.row == 5) {
+			open_url("https://discord.gg/PZYAXw9V9C");
 		}
     }
 	if (indexPath.section == SS_SECT_SNS) {
@@ -480,6 +525,11 @@ static NSMutableArray *sns_avail = nil;
 			if (artwork_avail) {
 				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Havoc")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
 			}
+		} else if (indexPath.row == 5) {
+			cell.textLabel.text = _("Join Battman Discord");
+			if (artwork_avail) {
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Discord")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+			}
 		}
 		// Color
 		if (linkColor) {
@@ -556,6 +606,12 @@ static NSMutableArray *sns_avail = nil;
 		cell = [UITableViewCell new];
 		cell.textLabel.text = @"YOU CAN'T SEE ME";
 	}
+	for (NSIndexPath *ip in hided_ip) {
+		if (ip.section == indexPath.section && ip.row == indexPath.row) {
+			cell.alpha = 0.0;
+			cell.selectionStyle = UITableViewCellSelectionStyleNone;
+		}
+	}
 
     return cell;
 }
@@ -573,6 +629,15 @@ static NSMutableArray *sns_avail = nil;
 			[cell.imageView.layer setContinuousCorners:YES];
 	}
 	cell.imageView.clipsToBounds = YES;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+	for (NSIndexPath *ip in hided_ip) {
+		if (ip.section == indexPath.section && ip.row == indexPath.row) {
+			return 0.0f;
+		}
+	}
+	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
 }
 
 @end
