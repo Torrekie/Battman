@@ -62,7 +62,7 @@ What other battery utils made for iOS hasn’t done
 
 ### Download
 
-Check latest [Release](releases/latest) for a prebuilt package.
+Check latest [Release](https://github.com/Torrekie/Battman/releases/latest) for a prebuilt package.
 
 Or, if you wish to build it by yourself:
 
