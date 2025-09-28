@@ -62,7 +62,9 @@ What other battery utils made for iOS hasn’t done
 
 ### Download
 
-I don't provide prebuilts at current stage, Battman is still not as completed as how I thought. If you really desired to use Battman, build by yourself or contact me for a prebuilt package.
+Check latest [Release](releases/latest) for a prebuilt package.
+
+Or, if you wish to build it by yourself:
 
 ```bash
 # On macOS, install Xcode and directly build in it
