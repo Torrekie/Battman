@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-27 17:11+0800\n"
+"POT-Creation-Date: 2025-09-28 16:17+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -551,7 +551,7 @@ msgid "Will be introduced in future updates."
 msgstr "将于未来的更新中推出"
 
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:243
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:107
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:161
 msgid "Charging Limit"
 msgstr "充电限制"
 
@@ -864,34 +864,34 @@ msgstr ""
 msgid "Battman CLI not implemented yet."
 msgstr "Battman 命令行工具尚未实现。"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:125
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:179
 msgid "Discharge, Keep A/C"
 msgstr "电池放电，保留外部电源"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:126
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:180
 msgid "Block A/C"
 msgstr "阻止外部电源"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:150
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:204
 msgid "Failed to open daemon settings file"
 msgstr "无法打开值守进程配置文件"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:168
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:222
 msgid "File mapping failed"
 msgstr "文件分配失败"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:189
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:320
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:335
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:347
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:245
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:397
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:412
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:424
 msgid "7-Day Battery Level"
 msgstr "7天电池电量"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:191
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:247
 msgid "Charging Limit (Experimental)"
 msgstr "充电限制（实验性功能）"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:197
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:258
 msgid ""
 "The system logs battery charge–level changes for the past 7 days. If this "
 "graph is empty, the power-log service may not be running correctly."
@@ -899,78 +899,79 @@ msgstr ""
 "系统会记录过去 7 天的电池电量变化。若此图无数据显示，可能是电源日志服务未正常"
 "运行。"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:199
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:260
 msgid ""
 "Charging Limit uses a background service to monitor your battery's charge "
 "level and automatically adjust charging behavior."
 msgstr "“充电限制”需要在后台运行服务，以监控电池电量并自动调整充电行为。"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:230
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:298
 msgid "Invalid Setup"
 msgstr "无效设置"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:230
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:298
 msgid "Limit Value should be bigger than Resume Value"
 msgstr "“充电上限”需大于“耗电下限”"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:236
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:304
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:329
 msgid "Unable to connect to the daemon."
 msgstr "无法连接到值守进程。"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:259
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:333
 msgid "Couldn't start the daemon — it isn’t responding."
 msgstr "无法启动值守进程——服务无响应"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:321
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:398
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:629
 msgid "Unavailable"
 msgstr "不可用"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:366
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:445
 msgid "When limit is reached"
 msgstr "当达到限制时"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:397
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:477
 msgid "Limit charging at (%)"
 msgstr "充电上限（%）"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:420
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:502
 msgid "Resume charging at (%)"
 msgstr "耗电下限（%）"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:447
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:531
 msgid "Drain Mode"
 msgstr "耗电模式"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:455
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:540
 msgid "Override OBC On Cycle"
 msgstr "循环时覆盖“优化电池充电”"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:458
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:543
 msgid "OBC will turn off"
 msgstr "“优化电池充电”将被禁用"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:458
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:543
 msgid "OBC will not be affected"
 msgstr "“优化电池充电”将不受影响"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:465
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:551
 msgid "Daemon is active"
 msgstr "值守进程正在运行"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:465
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:551
 msgid "PID"
 msgstr "进程ID"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:467
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:553
 msgid "Daemon is inactive"
 msgstr "值守进程未启动"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:473
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:560
 msgid "Stop Daemon (Disable Charging Limit)"
 msgstr "停止值守进程（关闭充电限制）"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:475
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:562
 msgid "Start Daemon (Enforce Charging Limit)"
 msgstr "启动值守进程（强制充电限制）"
 

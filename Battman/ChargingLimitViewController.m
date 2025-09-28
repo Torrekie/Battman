@@ -13,36 +13,90 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-enum {
+typedef enum {
 	CL_SECTION_GRAPH,
 	CL_SECTION_MAIN,
 	CL_SECTION_COUNT
-};
+} CLSect;
+
+typedef enum {
+	CL_GRAPH_ROW,
+	CL_GRAPH_COUNT,
+} CLRowGraph;
+
+typedef enum {
+	CL_MAIN_CYCLEMODE,
+	CL_MAIN_LIMITLABEL,
+	CL_MAIN_LIMIT,
+	CL_MAIN_RESUMELABEL,
+	CL_MAIN_RESUME,
+	CL_MAIN_DISCHGMODE,
+	CL_MAIN_OBCSWITCH,
+	CL_MAIN_PIDLABEL,
+	CL_MAIN_DAEMONSWITCH,
+	CL_MAIN_COUNT,
+} CLRowMain;
 
 int connect_to_daemon(void) {
 	struct sockaddr_un sockaddr;
+	memset(&sockaddr, 0, sizeof(sockaddr));
 	sockaddr.sun_family = AF_UNIX;
-	const char *end     = stpcpy(sockaddr.sun_path, "./Library/dsck");
-	sockaddr.sun_len    = (unsigned char)(end - sockaddr.sun_path + 1);
-	int sock            = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (connect(sock, (struct sockaddr *)&sockaddr, sizeof(struct sockaddr_un)) == -1) {
-		// char errstr[1024];
-		////memset(errstr, 0, sizeof(errstr));
-		//// ^ no initialization needed for sprintf
-		// sprintf(errstr, "%s\n%s: %s", _C("Failed to connect to daemon"), L_ERR, strerror(errno));
-		// show_alert(L_ERR, errstr, L_OK);
+
+	NSString *home = NSHomeDirectory();
+	if (!home) {
+		// HOW
+		return 0;
+	}
+
+	const char *home_fs = [home fileSystemRepresentation];
+	char socket_path[sizeof(sockaddr.sun_path)];
+	int needed = snprintf(socket_path, sizeof(socket_path), "%s/Library/dsck", home_fs);
+	if (needed < 0 || needed >= (int)sizeof(socket_path)) {
+		char errstr[1024];
+		snprintf(errstr, sizeof(errstr), "%s\n%s\n%s", L_ERR, "Socket path is too long for sockaddr_un.sun_path.", L_OK);
+		show_alert(L_ERR, errstr, L_OK);
+		return 0;
+	}
+	
+	strncpy(sockaddr.sun_path, socket_path, sizeof(sockaddr.sun_path));
+	size_t addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(sockaddr.sun_path) + 1;
+	sockaddr.sun_len = (unsigned char)addrlen;
+
+	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (sock == -1) {
+		/*
+		char errstr[1024];
+		snprintf(errstr, sizeof(errstr), "%s\n%s: %s", _C("Failed to create socket"), L_ERR, strerror(errno));
+		show_alert(L_ERR, errstr, L_OK);
+		 */
+		return 0;
+	}
+	
+	if (connect(sock, (struct sockaddr *)&sockaddr, (socklen_t)addrlen) == -1) {
+		/*
+		char errstr[1024];
+		snprintf(errstr, sizeof(errstr), "%s\n%s\n%s: %s", _C("Failed to connect to daemon at"), sockaddr.sun_path, L_ERR, strerror(errno));
+		show_alert(L_ERR, errstr, L_OK);
 		close(sock);
+		 */
 		// No alert bc we need to retry
 		return 0;
 	}
+	
 	char cmd = 2;
-	write(sock, &cmd, 1);
+	if (write(sock, &cmd, 1) != 1) {
+		NSLog(@"Failed to write ping to daemon: %s", strerror(errno));
+		show_alert(L_FAILED, "Failed to write to daemon.", L_OK);
+		close(sock);
+		return 0;
+	}
 	if (read(sock, &cmd, 1) != 1 || cmd != 2) {
 		NSLog(@"Failed to ping daemon: %s", strerror(errno));
 		show_alert(L_FAILED, "The daemon may not be working properly.", L_OK);
 		close(sock);
 		return 0;
 	}
+
 	NSLog(@"Connected to daemon and received ping!");
 	return sock;
 }
@@ -184,19 +238,29 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	daemon_fd = connect_to_daemon();
 }
 
-- (NSString *)tableView:(UITableView *)tv titleForHeaderInSection:(NSInteger)section {
-	if (section == CL_SECTION_GRAPH)
-		return load_graph ? _("7-Day Battery Level") : nil;
-	if (section == CL_SECTION_MAIN)
-		return _("Charging Limit (Experimental)");
+- (NSString *)tableView:(UITableView *)tv titleForHeaderInSection:(NSInteger)sect {
+	CLSect section = (CLSect)sect;
+	switch (section) {
+		case CL_SECTION_GRAPH:
+			return load_graph ? _("7-Day Battery Level") : nil;
+		case CL_SECTION_MAIN:
+			return _("Charging Limit (Experimental)");
+		default:
+			break;
+	}
 	return nil;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-	if (section == CL_SECTION_GRAPH)
-		return load_graph ? _("The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly.") : nil;
-	if (section == CL_SECTION_MAIN)
-		return _("Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior.");
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)sect {
+	CLSect section = (CLSect)sect;
+	switch (section) {
+		case CL_SECTION_GRAPH:
+			return load_graph ? _("The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly.") : nil;
+		case CL_SECTION_MAIN:
+			return _("Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior.");
+		default:
+			break;
+	}
 	return nil;
 }
 
@@ -212,11 +276,15 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)sect {
-	if (sect == CL_SECTION_GRAPH)
-		return 1;
-
-	if (sect == CL_SECTION_MAIN)
-		return 9;
+	CLSect section = (CLSect)sect;
+	switch (section) {
+		case CL_SECTION_GRAPH:
+			return CL_GRAPH_COUNT;
+		case CL_SECTION_MAIN:
+			return CL_MAIN_COUNT;
+		default:
+			break;
+	}
 	return 0;
 }
 
@@ -225,7 +293,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 - (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-	if (indexPath.section == CL_SECTION_MAIN && indexPath.row == 6) {
+	if (indexPath.section == CL_SECTION_MAIN && indexPath.row == CL_MAIN_DAEMONSWITCH) {
 		if (vals[1] < vals[0]) {
 			show_alert(_C("Invalid Setup"), _C("Limit Value should be bigger than Resume Value"), L_OK);
 			return;
@@ -245,7 +313,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 				close(daemon_fd);
 				daemon_fd = 0;
 			}
-			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:indexPath.row - 1 inSection:indexPath.section], indexPath] withRowAnimation:UITableViewRowAnimationFade];
+			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
 		} else {
 			extern int battman_run_daemon(void);
 			daemon_pid = battman_run_daemon();
@@ -256,10 +324,17 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 					DBGLOG(@"%@: Got Daemon fd: %d", indexPath, daemon_fd);
 					break;
 				} else if (i == 29) {
-					show_alert(L_FAILED, _C("Couldn't start the daemon — it isn’t responding."), L_OK);
+					if (errno != 0) {
+						char *errmsg = calloc(256, sizeof(char));
+						sprintf(errmsg, "%s\n%s: %s", _C("Unable to connect to the daemon."), L_ERR, strerror(errno));
+						show_alert(L_FAILED, errmsg, L_OK);
+						free(errmsg);
+					} else {
+						show_alert(L_FAILED, _C("Couldn't start the daemon — it isn’t responding."), L_OK);
+					}
 				}
 			}
-			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:indexPath.row - 1 inSection:indexPath.section], indexPath] withRowAnimation:UITableViewRowAnimationFade];
+			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
 		}
 	}
 	[tv deselectRowAtIndexPath:indexPath animated:YES];
@@ -269,8 +344,8 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	vals[0] = segCon.selectedSegmentIndex ? 0 : -1;
 	[self daemonRedecide];
 	/* Refreshing the whole tableview causes animation lost */
-	NSIndexPath *resumeIndexLabel  = [NSIndexPath indexPathForRow:3 inSection:CL_SECTION_MAIN];
-	NSIndexPath *resumeIndexSlider = [NSIndexPath indexPathForRow:4 inSection:CL_SECTION_MAIN];
+	NSIndexPath *resumeIndexLabel  = [NSIndexPath indexPathForRow:CL_MAIN_RESUMELABEL inSection:CL_SECTION_MAIN];
+	NSIndexPath *resumeIndexSlider = [NSIndexPath indexPathForRow:CL_MAIN_RESUME inSection:CL_SECTION_MAIN];
 	[self.tableView reloadRowsAtIndexPaths:@[resumeIndexLabel, resumeIndexSlider] withRowAnimation:UITableViewRowAnimationFade];
 }
 
@@ -290,7 +365,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
 	if (load_graph) {
-		NSIndexPath *ip = [NSIndexPath indexPathForRow:0 inSection:CL_SECTION_GRAPH];
+		NSIndexPath *ip = [NSIndexPath indexPathForRow:CL_GRAPH_ROW inSection:CL_SECTION_GRAPH];
 		UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:ip];
 		if ([cell isKindOfClass:[PSGraphViewTableCell class]]) {
 			UIView *graph = [(id)cell graphView];
@@ -313,174 +388,195 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell;
+	CLSect section = (CLSect)indexPath.section;
 	cell.selectionStyle = UITableViewCellSelectionStyleNone;
-	if (indexPath.section == CL_SECTION_GRAPH) {
-		if (!load_graph) {
-			cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-			cell.textLabel.text       = _("7-Day Battery Level");
-			cell.detailTextLabel.text = _("Unavailable");
-			return cell;
-		}
-		const char *pl_container_path = load_graph;
-		char        sqlpath[PATH_MAX];
-		sprintf(sqlpath, "%s/Library/BatteryLife/CurrentPowerlog.PLSQL", pl_container_path);
-		sqlite3 *p_db;
-		int      err = sqlite3_open_v2(sqlpath, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
-		if (err != SQLITE_OK) {
-			// macOS/Simulator
-			err = sqlite3_open_v2("/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL", &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
-		}
-		if (err != SQLITE_OK) {
-			cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-			cell.textLabel.text       = _("7-Day Battery Level");
-			cell.detailTextLabel.text = [NSString stringWithUTF8String:sqlite3_errmsg(p_db)];
+	switch (section) {
+		case CL_SECTION_GRAPH: {
+			if (!load_graph) {
+				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				cell.textLabel.text       = _("7-Day Battery Level");
+				cell.detailTextLabel.text = _("Unavailable");
+				return cell;
+			}
+			const char *pl_container_path = load_graph;
+			char        sqlpath[PATH_MAX];
+			sprintf(sqlpath, "%s/Library/BatteryLife/CurrentPowerlog.PLSQL", pl_container_path);
+			sqlite3 *p_db;
+			int      err = sqlite3_open_v2(sqlpath, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
+			if (err != SQLITE_OK) {
+				// macOS/Simulator
+				err = sqlite3_open_v2("/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL", &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
+			}
+			if (err != SQLITE_OK) {
+				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				cell.textLabel.text       = _("7-Day Battery Level");
+				cell.detailTextLabel.text = [NSString stringWithUTF8String:sqlite3_errmsg(p_db)];
+				sqlite3_close_v2(p_db);
+				return cell;
+			}
+			time_t cur_time = time(NULL);
+			sprintf(sqlpath, "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %ld AND %ld ORDER BY timestamp", cur_time - 3600 * 24 * 7, cur_time);
+			char           *errmsg;
+			NSMutableArray *arr = [NSMutableArray array];
+			err                 = sqlite3_exec(p_db, sqlpath, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
+			if (err != SQLITE_OK) {
+				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				cell.textLabel.text       = _("7-Day Battery Level");
+				cell.detailTextLabel.text = [NSString stringWithUTF8String:errmsg];
+				sqlite3_free(errmsg);
+				sqlite3_close_v2(p_db);
+				return cell;
+			}
 			sqlite3_close_v2(p_db);
-			return cell;
+			id            graphCell     = [PSGraphViewTableCell new];
+			NSArray      *modelGraphArr = arr;
+			UIScrollView *view          = [(id)graphCell scrollView];
+			view.autoresizingMask       = UIViewAutoresizingFlexibleWidth;
+			
+			[(id)graphCell setGraphArray:modelGraphArr];
+			
+			return graphCell;
 		}
-		time_t cur_time = time(NULL);
-		sprintf(sqlpath, "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %ld AND %ld ORDER BY timestamp", cur_time - 3600 * 24 * 7, cur_time);
-		char           *errmsg;
-		NSMutableArray *arr = [NSMutableArray array];
-		err                 = sqlite3_exec(p_db, sqlpath, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
-		if (err != SQLITE_OK) {
-			cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-			cell.textLabel.text       = _("7-Day Battery Level");
-			cell.detailTextLabel.text = [NSString stringWithUTF8String:errmsg];
-			sqlite3_free(errmsg);
-			sqlite3_close_v2(p_db);
-			return cell;
-		}
-		sqlite3_close_v2(p_db);
-		id            graphCell     = [PSGraphViewTableCell new];
-		NSArray      *modelGraphArr = arr;
-		UIScrollView *view          = [(id)graphCell scrollView];
-		view.autoresizingMask       = UIViewAutoresizingFlexibleWidth;
-
-		[(id)graphCell setGraphArray:modelGraphArr];
-
-		return graphCell;
-	}
-	if (indexPath.section == CL_SECTION_MAIN) {
-		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
-		if (indexPath.row == 0) {
-			cell.textLabel.text = _("When limit is reached");
-			NSArray *items;
-			if (@available(iOS 13.0, *)) {
-				// XXX: Consider use dynamic check
-				if (@available(iOS 14.0, *)) {
-					items = @[[UIImage systemImageNamed:@"pause.rectangle"], [UIImage systemImageNamed:@"arrow.rectanglepath"]];
-				} else {
-					// Sadly arrow.rectanglepath is iOS 14+
-					items = @[[UIImage systemImageNamed:@"pause.circle"], [UIImage systemImageNamed:@"arrow.triangle.2.circlepath"]];
+		case CL_SECTION_MAIN: {
+			CLRowMain row = (CLRowMain)indexPath.row;
+			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+			switch (row) {
+				case CL_MAIN_CYCLEMODE: {
+					cell.textLabel.text = _("When limit is reached");
+					NSArray *items;
+					if (@available(iOS 13.0, *)) {
+						// XXX: Consider use dynamic check
+						if (@available(iOS 14.0, *)) {
+							items = @[[UIImage systemImageNamed:@"pause.rectangle"], [UIImage systemImageNamed:@"arrow.rectanglepath"]];
+						} else {
+							// Sadly arrow.rectanglepath is iOS 14+
+							items = @[[UIImage systemImageNamed:@"pause.circle"], [UIImage systemImageNamed:@"arrow.triangle.2.circlepath"]];
+						}
+					} else {
+						// pause.rectangle U+10029B
+						// arrow.rectanglepath U+1008C1
+						items = @[@"􀊛", @"􀣁"];
+					}
+					UISegmentedControl *segCon = [[UISegmentedControl alloc] initWithItems:items];
+					if (@available(iOS 13.0, *)) {
+						// Handle something?
+					} else {
+						[segCon setTitleTextAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[UIFont fontWithName:@SFPRO size:12.0], NSFontAttributeName, nil] forState:UIControlStateNormal];
+					}
+					
+					if (vals[0] == -1) {
+						segCon.selectedSegmentIndex = 0;
+					} else {
+						segCon.selectedSegmentIndex = 1;
+					}
+					[segCon addTarget:self action:@selector(cltypechanged:) forControlEvents:UIControlEventValueChanged];
+					cell.accessoryView = segCon;
+					break;
 				}
-			} else {
-				// pause.rectangle U+10029B
-				// arrow.rectanglepath U+1008C1
-				items = @[@"􀊛", @"􀣁"];
-			}
-			UISegmentedControl *segCon = [[UISegmentedControl alloc] initWithItems:items];
-			if (@available(iOS 13.0, *)) {
-				// Handle something?
-			} else {
-				[segCon setTitleTextAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[UIFont fontWithName:@SFPRO size:12.0], NSFontAttributeName, nil] forState:UIControlStateNormal];
-			}
-
-			if (vals[0] == -1) {
-				segCon.selectedSegmentIndex = 0;
-			} else {
-				segCon.selectedSegmentIndex = 1;
-			}
-			[segCon addTarget:self action:@selector(cltypechanged:) forControlEvents:UIControlEventValueChanged];
-			cell.accessoryView = segCon;
-			return cell;
-		} else if (indexPath.row == 1) {
-			cell.textLabel.text = _("Limit charging at (%)");
-			return cell;
-		} else if (indexPath.row == 2) {
-			SliderTableViewCell *scell = [tv dequeueReusableCellWithIdentifier:@"clhighthr" forIndexPath:indexPath];
-			if (!scell) {
-				scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"clhighthr"];
-			}
-			scell.slider.minimumValue = 1;
-			scell.slider.maximumValue = 100;
-			scell.slider.enabled      = 1;
-			scell.textField.enabled   = 1;
-			scell.delegate            = (id)self;
-			if (vals[1] == -1) {
-				scell.slider.value   = 100;
-				scell.textField.text = @"100";
-			} else {
-				scell.slider.value   = (float)vals[1];
-				scell.textField.text = [NSString stringWithFormat:@"%d", (int)vals[1]];
-			}
-			return scell;
-		} else if (indexPath.row == 3) {
-			if (vals[0] == -1)
-				cell.textLabel.enabled = NO;
-			cell.textLabel.text = _("Resume charging at (%)");
-			return cell;
-		} else if (indexPath.row == 4) {
-			SliderTableViewCell *scell = [tv dequeueReusableCellWithIdentifier:@"cllowthr" forIndexPath:indexPath];
-			if (!scell) {
-				scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cllowthr"];
-			}
-			scell.slider.minimumValue = 0;
-			scell.slider.maximumValue = 100;
-			scell.delegate            = (id)self;
-			if (vals[0] == -1) {
-				scell.slider.enabled                   = NO;
-				scell.slider.userInteractionEnabled    = NO;
-				scell.slider.value                     = 0;
-				scell.textField.enabled                = 0;
-				scell.textField.userInteractionEnabled = 0;
-				scell.textField.text                   = @"0";
-			} else {
-				scell.slider.enabled                   = 1;
-				scell.slider.userInteractionEnabled    = 1;
-				scell.slider.value                     = (float)vals[0];
-				scell.textField.enabled                = 1;
-				scell.textField.userInteractionEnabled = 1;
-				scell.textField.text                   = [NSString stringWithFormat:@"%d", (int)vals[0]];
-			}
-			return scell;
-		} else if (indexPath.row == 5) {
-			cell.textLabel.text = _("Drain Mode");
-			PickerAccessoryView *picker = [[PickerAccessoryView alloc] initWithFrame:CGRectZero font:nil options:self.drainModes];
-			[picker addTarget:self action:@selector(drainModeChanged:)];
-			[picker selectAutomaticRow:BIT_GET(vals[2], 0) animated:YES];
-			cell.accessoryView = picker;
-			cell.clipsToBounds = YES;
-			return cell;
-		} else if (indexPath.row == 6) {
-			cell.textLabel.text = _("Override OBC On Cycle");
-			UISwitch *cswitch = [UISwitch new];
-			cswitch.on = BIT_GET(vals[2], 1);
-			cell.detailTextLabel.text = cswitch.on ? _("OBC will turn off") : _("OBC will not be affected");
-			[cswitch addTarget:self action:@selector(overrideOBCChanged:) forControlEvents:UIControlEventValueChanged];
-			cell.accessoryView = cswitch;
-			return cell;
-		} else if (indexPath.row == 7) {
-			if (daemon_pid) {
-				DBGLOG(@"%@: Got Daemon PID: %d", indexPath, daemon_pid);
-				cell.textLabel.text = [NSString stringWithFormat:@"%@ (%@: %d)", _("Daemon is active"), _("PID"), daemon_pid];
-			} else {
-				cell.textLabel.text = _("Daemon is inactive");
-			}
-			return cell;
-		} else if (indexPath.row == 8) {
-			cell.selectionStyle = UITableViewCellSelectionStyleDefault;
-			if (daemon_pid) {
-				cell.textLabel.text = _("Stop Daemon (Disable Charging Limit)");
-			} else {
-				cell.textLabel.text = _("Start Daemon (Enforce Charging Limit)");
-			}
-			if (@available(iOS 13.0, *)) {
-				cell.textLabel.textColor = [UIColor linkColor];
-			} else {
-				cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
+				case CL_MAIN_LIMITLABEL: {
+					cell.textLabel.text = _("Limit charging at (%)");
+					break;
+				}
+				case CL_MAIN_LIMIT: {
+					SliderTableViewCell *scell = [tv dequeueReusableCellWithIdentifier:@"clhighthr" forIndexPath:indexPath];
+					if (!scell) {
+						scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"clhighthr"];
+					}
+					scell.slider.minimumValue = 1;
+					scell.slider.maximumValue = 100;
+					scell.slider.enabled      = 1;
+					scell.textField.enabled   = 1;
+					scell.delegate            = (id)self;
+					if (vals[1] == -1) {
+						scell.slider.value   = 100;
+						scell.textField.text = @"100";
+					} else {
+						scell.slider.value   = (float)vals[1];
+						scell.textField.text = [NSString stringWithFormat:@"%d", (int)vals[1]];
+					}
+					return scell;
+				}
+				case CL_MAIN_RESUMELABEL: {
+					if (vals[0] == -1)
+						cell.textLabel.enabled = NO;
+					cell.textLabel.text = _("Resume charging at (%)");
+					break;
+				}
+				case CL_MAIN_RESUME: {
+					SliderTableViewCell *scell = [tv dequeueReusableCellWithIdentifier:@"cllowthr" forIndexPath:indexPath];
+					if (!scell) {
+						scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cllowthr"];
+					}
+					scell.slider.minimumValue = 0;
+					scell.slider.maximumValue = 100;
+					scell.delegate            = (id)self;
+					if (vals[0] == -1) {
+						scell.slider.enabled                   = NO;
+						scell.slider.userInteractionEnabled    = NO;
+						scell.slider.value                     = 0;
+						scell.textField.enabled                = 0;
+						scell.textField.userInteractionEnabled = 0;
+						scell.textField.text                   = @"0";
+					} else {
+						scell.slider.enabled                   = 1;
+						scell.slider.userInteractionEnabled    = 1;
+						scell.slider.value                     = (float)vals[0];
+						scell.textField.enabled                = 1;
+						scell.textField.userInteractionEnabled = 1;
+						scell.textField.text                   = [NSString stringWithFormat:@"%d", (int)vals[0]];
+					}
+					return scell;
+				}
+				case CL_MAIN_DISCHGMODE: {
+					cell.textLabel.text = _("Drain Mode");
+					PickerAccessoryView *picker = [[PickerAccessoryView alloc] initWithFrame:CGRectZero font:nil options:self.drainModes];
+					[picker addTarget:self action:@selector(drainModeChanged:)];
+					[picker selectAutomaticRow:BIT_GET(vals[2], 0) animated:YES];
+					cell.accessoryView = picker;
+					cell.clipsToBounds = YES;
+					break;
+				}
+				case CL_MAIN_OBCSWITCH: {
+					cell.textLabel.text = _("Override OBC On Cycle");
+					UISwitch *cswitch = [UISwitch new];
+					cswitch.on = BIT_GET(vals[2], 1);
+					cell.detailTextLabel.text = cswitch.on ? _("OBC will turn off") : _("OBC will not be affected");
+					[cswitch addTarget:self action:@selector(overrideOBCChanged:) forControlEvents:UIControlEventValueChanged];
+					cell.accessoryView = cswitch;
+					break;
+				}
+				case CL_MAIN_PIDLABEL: {
+					if (daemon_pid) {
+						DBGLOG(@"%@: Got Daemon PID: %d", indexPath, daemon_pid);
+						cell.textLabel.text = [NSString stringWithFormat:@"%@ (%@: %d)", _("Daemon is active"), _("PID"), daemon_pid];
+					} else {
+						cell.textLabel.text = _("Daemon is inactive");
+					}
+					break;
+				}
+				case CL_MAIN_DAEMONSWITCH: {
+					cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+					if (daemon_pid) {
+						cell.textLabel.text = _("Stop Daemon (Disable Charging Limit)");
+					} else {
+						cell.textLabel.text = _("Start Daemon (Enforce Charging Limit)");
+					}
+					if (@available(iOS 13.0, *)) {
+						cell.textLabel.textColor = [UIColor linkColor];
+					} else {
+						cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
+					}
+					break;
+				}
+				case CL_MAIN_COUNT: {
+					break;
+				}
 			}
 		}
+		default:
+			break;
 	}
+
 	return cell;
 }
 
@@ -489,43 +585,57 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 - (void)sliderTableViewCellDidBeginChanging:(SliderTableViewCell *)cell {
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
-	NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
-	if (vals[0] != -1) {
-		SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
-		oppocell.userInteractionEnabled = NO;
+	if (curr.section == CL_SECTION_MAIN) {
+		NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
+		if (vals[0] != -1) {
+			SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
+			oppocell.userInteractionEnabled = NO;
+		}
 	}
+
+	os_log_error(gLog, "sliderTableViewCellDidBeginChanging: unexpected call at indexPath %ld:%ld", curr.section, curr.row);
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didChangeValue:(float)value {
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	int8_t rounded = (int8_t)lroundf(value);
-	
-	if ((isHighThr && value < vals[0]) || (!isHighThr && value > vals[1])) {
-		vals[!isHighThr] = rounded + (isHighThr ? -1 : 1);
-		vals[!isHighThr] = MIN(MAX(vals[!isHighThr], 0), 100);
+	NSIndexPath *ip = [self.tableView indexPathForCell:cell];
+	if (ip.section == CL_SECTION_MAIN) {
+		if ((isHighThr && value < vals[0]) || (!isHighThr && value > vals[1])) {
+			vals[!isHighThr] = rounded + (isHighThr ? -1 : 1);
+			vals[!isHighThr] = MIN(MAX(vals[!isHighThr], 0), 100);
+
+			// XXX: Improve readability
+			NSIndexPath *oppo = [NSIndexPath indexPathForRow:[self.tableView indexPathForCell:cell].row - (isHighThr ? -2 : 2) inSection:[self.tableView indexPathForCell:cell].section];
+			SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
+			oppocell.slider.value = vals[!isHighThr];
+			oppocell.textField.text = [NSString stringWithFormat:@"%d", vals[!isHighThr]];
+		}
 		
-		NSIndexPath *oppo = [NSIndexPath indexPathForRow:[self.tableView indexPathForCell:cell].row - (isHighThr ? -2 : 2) inSection:[self.tableView indexPathForCell:cell].section];
-		SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
-		oppocell.slider.value = vals[!isHighThr];
-		oppocell.textField.text = [NSString stringWithFormat:@"%d", vals[!isHighThr]];
+		vals[isHighThr] = rounded;
+		cell.slider.value = rounded;
+		cell.textField.text = [NSString stringWithFormat:@"%d", rounded];
+		return;
 	}
 
-	vals[isHighThr] = rounded;
-	cell.slider.value = rounded;
-	cell.textField.text = [NSString stringWithFormat:@"%d", rounded];
+	os_log_error(gLog, "sliderTableViewCell:didChangeValue: unexpected call at indexPath %ld:%ld", ip.section, ip.row);
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didEndChangingValue:(float)value {
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
-	NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
+	if (curr.section == CL_SECTION_MAIN) {
+		NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
 
-	if (vals[0] != -1) {
-		SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
-		oppocell.userInteractionEnabled = YES;
+		if (vals[0] != -1) {
+			SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
+			oppocell.userInteractionEnabled = YES;
+		}
+
+		[self daemonRedecide];
 	}
-	
-	[self daemonRedecide];
+
+	os_log_error(gLog, "sliderTableViewCell:didEndChangingValue: unexpected call at indexPath %ld:%ld", curr.section, curr.row);
 }
 
 
@@ -552,7 +662,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	BIT_SET(vals[2], 1, sender.on);
 	[self daemonRedecide];
 	/* Im lazy, so hardcode here */
-	NSIndexPath *ip = [NSIndexPath indexPathForRow:6 inSection:CL_SECTION_MAIN];
+	NSIndexPath *ip = [NSIndexPath indexPathForRow:CL_MAIN_OBCSWITCH inSection:CL_SECTION_MAIN];
 	[self.tableView reloadRowsAtIndexPaths:@[ip] withRowAnimation:UITableViewRowAnimationAutomatic];
 }
 
