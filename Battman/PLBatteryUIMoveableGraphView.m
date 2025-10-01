@@ -387,10 +387,7 @@
 	// Use explicit lastX/lastY so we don't accidentally reuse other locals
 	double lastX = baseX;
 	double lastY = baseY;
-	
-	// Precomputed per-view intervals (decompiled referenced xInterval/yInterval)
-	double xInterval = self->xInterval; // pixels per second (or precomputed)
-	double yInterval = self->yInterval; // pixels per value unit
+
 	
 	CGContextBeginPath(ctx);
 	CGContextMoveToPoint(ctx, baseX, baseY);
@@ -405,8 +402,8 @@
 
 		// compute coords
 		NSTimeInterval secondsFromStart = [date timeIntervalSinceDate:[self startDate]];
-		double x = secondsFromStart * xInterval + self->horizontal_label_offset;
-		double y = self->rectHeight - (value - self->minPower) * yInterval;
+		double x = secondsFromStart * self->xInterval + self->horizontal_label_offset;
+		double y = self->rectHeight - (value - self->minPower) * self->yInterval;
 
 		if (graphType == 2) {
 			// horizontal-first

@@ -26,8 +26,20 @@
         _textField.keyboardType = UIKeyboardTypeDecimalPad;  // Decimal number input
         _textField.returnKeyType = UIReturnKeyDone;
         _textField.placeholder = @"0";
-        _textField.delegate = self;  // Set the delegate to self to handle textFieldDidEndEditing
+        _textField.delegate = self;
+        
+        // Add toolbar with Done button for decimal pad keyboard
+        UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 0, 44)];
+        toolbar.barStyle = UIBarStyleDefault;
+        UIBarButtonItem *flexSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+        UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(dismissKeyboard)];
+        toolbar.items = @[flexSpace, doneButton];
+        _textField.inputAccessoryView = toolbar;
+        
         [self.contentView addSubview:_textField];
+        
+        // Add notification observer for when keyboard should be dismissed
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
         
         // Layout constraints for slider and text field
         UILayoutGuide *m = self.contentView.layoutMarginsGuide;
@@ -42,6 +54,10 @@
         ]];
     }
     return self;
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)sliderValueChanged:(UISlider *)sender {
@@ -67,6 +83,14 @@
 	}
 }
 
+- (void)dismissKeyboard {
+    [self.textField resignFirstResponder];
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification {
+    // do something here?
+}
+
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
@@ -74,9 +98,20 @@
     return YES;
 }
 
-- (void)textFieldDidEndEditing:(UITextField *)sender {
+- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
+    if ([self.delegate respondsToSelector:@selector(sliderTableViewCellDidBeginEditing:)]) {
+        [self.delegate sliderTableViewCellDidBeginEditing:self];
+    }
+    return YES;
+}
+
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+    if ([self.delegate respondsToSelector:@selector(sliderTableViewCellDidEndEditing:)]) {
+        [self.delegate sliderTableViewCellDidEndEditing:self];
+    }
+    
     // Validate the input: Ensure it's a valid number within the slider's min and max range
-    NSString *inputText = sender.text;
+    NSString *inputText = textField.text;
     NSCharacterSet *nonNumberCharacterSet = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
     inputText = [inputText stringByTrimmingCharactersInSet:nonNumberCharacterSet];
     
@@ -89,7 +124,7 @@
     // Ensure the value is within the slider's min and max range
     newValue = fminf(fmaxf(newValue, self.slider.minimumValue), self.slider.maximumValue);
     self.slider.value = newValue;
-    sender.text = [NSString stringWithFormat:@"%.4g", newValue];
+    textField.text = [NSString stringWithFormat:@"%.4g", newValue];
         
     if ([self.delegate respondsToSelector:@selector(sliderTableViewCell:didChangeValue:)]) {
         [self.delegate sliderTableViewCell:self didChangeValue:newValue];

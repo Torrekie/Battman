@@ -104,6 +104,8 @@ int connect_to_daemon(void) {
 	return sock;
 }
 
+#if 0
+// We are using our own impl now, no need to do such manual fixes now
 static void changeLabelColorsInternal(UIView *view, UIColor *color) {
 	if (!view)
 		return;
@@ -130,6 +132,7 @@ static void changeLabelColors(UIView *inputView, UIColor *color) {
 		});
 	}
 }
+#endif
 
 static int _cl_sql_pt_cb(void *arr_ref, int cnt, char **texts, char **names) {
 	NSMutableArray    *arr = (__bridge NSMutableArray *)arr_ref;
