@@ -248,6 +248,12 @@
 		68B7513E2E2A425D003C94BC /* wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B7513D2E2A425D003C94BC /* wrapper.c */; };
 		68B751422E2A468C003C94BC /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68B751412E2A468C003C94BC /* SystemConfiguration.framework */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
+		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
+		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
+		68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
+		68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
+		68ECFFBF2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
+		68ECFFC02E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
 		68FBDCE82DE1A1D40057870A /* protect.S in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCE72DE1A1D40057870A /* protect.S */; };
 		68FBDCF02DE30A5E0057870A /* worker.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCEF2DE30A5E0057870A /* worker.c */; };
 		68FBDD182DE30A8E0057870A /* CreditViewController.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD162DE30A8E0057870A /* CreditViewController.c */; };
@@ -1752,6 +1758,10 @@
 		68DCA5BE2D40FDE3004D0104 /* zh_CN.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = zh_CN.po; sourceTree = "<group>"; };
 		68E938992D58980B00223285 /* iokit_connection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iokit_connection.h; sourceTree = "<group>"; };
 		68E9389A2D58980B00223285 /* iokit_connection.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = iokit_connection.c; sourceTree = "<group>"; };
+		68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLBatteryUIMoveableGraphView.m; sourceTree = "<group>"; };
+		68ECFFB82E8D21E500BEAB59 /* PLGraphViewTableCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLGraphViewTableCell.h; sourceTree = "<group>"; };
+		68ECFFB92E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLBatteryUIMoveableGraphView.h; sourceTree = "<group>"; };
+		68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLGraphViewTableCell.m; sourceTree = "<group>"; };
 		68FBDCE22DE1A1D40057870A /* protect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = protect.h; sourceTree = "<group>"; };
 		68FBDCE72DE1A1D40057870A /* protect.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = protect.S; sourceTree = "<group>"; };
 		68FBDCEF2DE30A5E0057870A /* worker.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = worker.c; sourceTree = "<group>"; };
@@ -13786,6 +13796,10 @@
 		68AE40A42D8EB7710023D7B0 /* CustomUIElements */ = {
 			isa = PBXGroup;
 			children = (
+				68ECFFB92E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.h */,
+				68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */,
+				68ECFFB82E8D21E500BEAB59 /* PLGraphViewTableCell.h */,
+				68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */,
 				68AE40A92D8EB84D0023D7B0 /* UberSegmentedControl */,
 				68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */,
 				68D6DEBF2D745DCB00E129A0 /* SegmentedViewCell.h */,
@@ -14415,6 +14429,7 @@
 				6841149C2E5323E2001B76B6 /* main.m in Sources */,
 				6841149D2E5323E2001B76B6 /* StackViewGestureHandler.m in Sources */,
 				6841149E2E5323E2001B76B6 /* protect.S in Sources */,
+				68ECFFBF2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
 				6841149F2E5323E2001B76B6 /* TemperatureInfoTableViewCell.m in Sources */,
 				684114A02E5323E2001B76B6 /* CreditViewController.c in Sources */,
 				684114A12E5323E2001B76B6 /* worker.c in Sources */,
@@ -14440,6 +14455,7 @@
 				684114B42E5323E2001B76B6 /* DonationViewController.m in Sources */,
 				684114B52E5323E2001B76B6 /* SettingsViewController.m in Sources */,
 				684114B62E5323E2001B76B6 /* ChargingLimitViewController.m in Sources */,
+				68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				684114B72E5323E2001B76B6 /* libsmc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14477,6 +14493,7 @@
 				684114F12E57BDE7001B76B6 /* WarnAccessoryView.m in Sources */,
 				684114F22E57BDE7001B76B6 /* main.m in Sources */,
 				684114F32E57BDE7001B76B6 /* StackViewGestureHandler.m in Sources */,
+				68ECFFC02E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
 				684114F42E57BDE7001B76B6 /* protect.S in Sources */,
 				684114F52E57BDE7001B76B6 /* TemperatureInfoTableViewCell.m in Sources */,
 				684114F62E57BDE7001B76B6 /* CreditViewController.c in Sources */,
@@ -14502,6 +14519,7 @@
 				6841150A2E57BDE7001B76B6 /* DonationViewController.m in Sources */,
 				6841150B2E57BDE7001B76B6 /* SettingsViewController.m in Sources */,
 				6841150C2E57BDE7001B76B6 /* ChargingLimitViewController.m in Sources */,
+				68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				6841150D2E57BDE7001B76B6 /* libsmc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14566,11 +14584,13 @@
 				6838BF6B2DB8D06B007EB66C /* licensing.S in Sources */,
 				684575AD2E3E038800618DFD /* ThermalTunesViewContoller.m in Sources */,
 				6838BFAC2DC3984C007EB66C /* SliderTableViewCell.m in Sources */,
+				68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */,
 				68B291372DD1E6960089BA1F /* CompatibilityHelper.c in Sources */,
 				68FBDD192DE30A8E0057870A /* common.c in Sources */,
 				684114052E4A35E0001B76B6 /* DonationViewController.m in Sources */,
 				687743362D4E08AD00375A2C /* SettingsViewController.m in Sources */,
+				68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
 				683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */,
 				68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */,
 				68171A302D5221C400DD4224 /* libsmc.c in Sources */,

@@ -8,6 +8,8 @@
 	char *vals;
 	
 	const char *load_graph;
+#if 0
 	Class PSGraphViewTableCell;
+#endif
 }
 @end

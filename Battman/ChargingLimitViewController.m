@@ -1,6 +1,9 @@
 #import "ChargingLimitViewController.h"
 #import "SliderTableViewCell.h"
 #import "PickerAccessoryView.h"
+#if __has_include("PLGraphViewTableCell.h")
+#import "PLGraphViewTableCell.h"
+#endif
 #include "common.h"
 #include "intlextern.h"
 #include <errno.h>
@@ -167,6 +170,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	} else {
 		self = [super initWithStyle:UITableViewStyleGrouped];
 	}
+#if 0
 	NSBundle *PLBundle = [NSBundle bundleWithPath:@"/System/Library/PreferenceBundles/BatteryUsageUI.bundle"];
 	if (PLBundle) {
 		// TODO: Implement our own GraphView
@@ -174,6 +178,11 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 		if (PSGraphViewTableCell)
 			load_graph = container_system_group_path_for_identifier(0, "systemgroup.com.apple.powerlog", NULL);
 	}
+#elif __has_include("PLGraphViewTableCell.h")
+	// We have implemented a clone of Apple's legacy PSGraphViewTableCell without 'PS'
+	// Also fixed some bugs where iOS 16 users met ig
+	load_graph = container_system_group_path_for_identifier(0, "systemgroup.com.apple.powerlog", NULL);
+#endif
 
 	self.drainModes = @[
 		_("Discharge, Keep A/C"),
@@ -362,6 +371,8 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	[self viewDidAppear:YES];
 }
 
+#if 0
+// Only do this when we are using Apple provided legacy Graph
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
 	if (load_graph) {
@@ -385,6 +396,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 		}
 	}
 }
+#endif
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell;
@@ -428,13 +440,20 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 				return cell;
 			}
 			sqlite3_close_v2(p_db);
+#if 0
 			id            graphCell     = [PSGraphViewTableCell new];
 			NSArray      *modelGraphArr = arr;
 			UIScrollView *view          = [(id)graphCell scrollView];
 			view.autoresizingMask       = UIViewAutoresizingFlexibleWidth;
-			
+#else
+			PLGraphViewTableCell *graphCell = [PLGraphViewTableCell new];
+#endif
+
+#if 0
 			[(id)graphCell setGraphArray:modelGraphArr];
-			
+#else
+			graphCell.graphArray = arr;
+#endif
 			return graphCell;
 		}
 		case CL_SECTION_MAIN: {
