@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-28 16:17+0800\n"
+"POT-Creation-Date: 2025-10-01 17:07+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -555,7 +555,7 @@ msgid "Will be introduced in future updates."
 msgstr "Will be introduced in future updates."
 
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:243
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:164
 msgid "Charging Limit"
 msgstr "Charging Limit"
 
@@ -877,34 +877,34 @@ msgstr ""
 msgid "Battman CLI not implemented yet."
 msgstr "Battman CLI not implemented yet."
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:179
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:188
 msgid "Discharge, Keep A/C"
 msgstr "Discharge, Keep A/C"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:180
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:189
 msgid "Block A/C"
 msgstr "Block A/C"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:204
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:213
 msgid "Failed to open daemon settings file"
 msgstr "Failed to open daemon settings file"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:222
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:231
 msgid "File mapping failed"
 msgstr "File mapping failed"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:245
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:397
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:412
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:254
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:409
 #: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:424
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:436
 msgid "7-Day Battery Level"
 msgstr "7-Day Battery Level"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:247
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:256
 msgid "Charging Limit (Experimental)"
 msgstr "Charging Limit (Experimental)"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:258
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:267
 msgid ""
 "The system logs battery charge–level changes for the past 7 days. If this "
 "graph is empty, the power-log service may not be running correctly."
@@ -912,7 +912,7 @@ msgstr ""
 "The system logs battery charge–level changes for the past 7 days. If this "
 "graph is empty, the power-log service may not be running correctly."
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:260
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:269
 msgid ""
 "Charging Limit uses a background service to monitor your battery's charge "
 "level and automatically adjust charging behavior."
@@ -920,73 +920,73 @@ msgstr ""
 "Charging Limit uses a background service to monitor your battery's charge "
 "level and automatically adjust charging behavior."
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:298
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:307
 msgid "Invalid Setup"
 msgstr "Invalid Setup"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:298
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:307
 msgid "Limit Value should be bigger than Resume Value"
 msgstr "Limit Value should be bigger than Resume Value"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:304
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:329
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:313
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:338
 msgid "Unable to connect to the daemon."
 msgstr "Unable to connect to the daemon."
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:333
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:342
 msgid "Couldn't start the daemon — it isn’t responding."
 msgstr "Couldn't start the daemon — it isn’t responding."
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:398
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:410
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:629
 msgid "Unavailable"
 msgstr "Unavailable"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:445
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:464
 msgid "When limit is reached"
 msgstr "When limit is reached"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:477
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:496
 msgid "Limit charging at (%)"
 msgstr "Limit charging at (%)"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:502
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:521
 msgid "Resume charging at (%)"
 msgstr "Resume charging at (%)"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:531
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:550
 msgid "Drain Mode"
 msgstr "Drain Mode"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:540
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:559
 msgid "Override OBC On Cycle"
 msgstr "Override OBC On Cycle"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:543
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:562
 msgid "OBC will turn off"
 msgstr "OBC will turn off"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:543
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:562
 msgid "OBC will not be affected"
 msgstr "OBC will not be affected"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:551
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:570
 msgid "Daemon is active"
 msgstr "Daemon is active"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:551
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:570
 msgid "PID"
 msgstr "PID"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:553
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:572
 msgid "Daemon is inactive"
 msgstr "Daemon is inactive"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:560
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:579
 msgid "Stop Daemon (Disable Charging Limit)"
 msgstr "Stop Daemon (Disable Charging Limit)"
 
-#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:562
+#: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:581
 msgid "Start Daemon (Enforce Charging Limit)"
 msgstr "Start Daemon (Enforce Charging Limit)"
 
@@ -2603,3 +2603,11 @@ msgstr "Max"
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/accessory.c:170
 msgid "Undefined"
 msgstr "Undefined"
+
+#: /Users/torrekie/proj/Battman/Battman/PLBatteryUIMoveableGraphView.m:188
+msgid "Negative Power Value"
+msgstr "Negative Power Value"
+
+#: /Users/torrekie/proj/Battman/Battman/PLBatteryUIMoveableGraphView.m:190
+msgid "Not Enough Data Points"
+msgstr "Not Enough Data Points"

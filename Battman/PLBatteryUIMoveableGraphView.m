@@ -1,5 +1,7 @@
 #import "PLBatteryUIMoveableGraphView.h"
 
+#include "common.h"
+
 @implementation PLBatteryUIMoveableGraphView
 
 + (CGFloat)graphHeight {
@@ -183,9 +185,9 @@
 - (void)drawErrorText:(CGContextRef)ctx andRect:(CGRect)rect {
 	NSString *errString = nil;
 	if (self->_errValue == 1)
-		errString = @"Negative Power Value";
+		errString = _("Negative Power Value");
 	if (self->_errValue == 2)
-		errString = @"Not Enough Data Points";
+		errString = _("Not Enough Data Points");
 	
 	CGSize textSize = [errString sizeWithAttributes:self->defaultTextAttributes];
 	[errString drawInRect:CGRectMake((rect.size.width - textSize.width) * 0.5, (rect.size.height - textSize.height) * 0.5, textSize.width, textSize.height) withAttributes:self->defaultTextAttributes];
@@ -193,6 +195,7 @@
 
 - (void)drawGrid:(CGContextRef)ctx andRect:(CGRect)rect {
 	NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+	// XXX: Region based datefmt
 	formatter.dateFormat = @"MM/dd";
 	NSString *startDateStr = [formatter stringFromDate:self.startDate];
 	CGSize dateSize = [startDateStr sizeWithAttributes:self->defaultTextAttributes];
