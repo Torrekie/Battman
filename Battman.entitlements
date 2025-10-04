@@ -4,10 +4,11 @@
 <dict>
 	<key>application-identifier</key>
 	<string>com.torrekie.Battman</string>
+	<!-- Do we really need this?
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>com.torrekie.Battman</string>
-	</array>
+	</array>-->
 	<key>com.apple.CommCenter.fine-grained</key>
 	<array>
 		<string>internal</string>

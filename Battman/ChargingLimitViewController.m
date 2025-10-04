@@ -45,18 +45,12 @@ int connect_to_daemon(void) {
 	memset(&sockaddr, 0, sizeof(sockaddr));
 	sockaddr.sun_family = AF_UNIX;
 
-	NSString *home = NSHomeDirectory();
-	if (!home) {
-		// HOW
-		return 0;
-	}
-
-	const char *home_fs = [home fileSystemRepresentation];
+	// FIXME: Consider use XPC instead of socket, the sun_path only have length 104
 	char socket_path[sizeof(sockaddr.sun_path)];
-	int needed = snprintf(socket_path, sizeof(socket_path), "%s/Library/dsck", home_fs);
+	int needed = snprintf(socket_path, sizeof(socket_path), "%s/dsck", battman_config_dir());
 	if (needed < 0 || needed >= (int)sizeof(socket_path)) {
 		char errstr[1024];
-		snprintf(errstr, sizeof(errstr), "%s\n%s\n%s", L_ERR, "Socket path is too long for sockaddr_un.sun_path.", L_OK);
+		snprintf(errstr, sizeof(errstr), "Socket path %s is too long for sockaddr_un.sun_path[%ld].", socket_path, sizeof(sockaddr.sun_path));
 		show_alert(L_ERR, errstr, L_OK);
 		return 0;
 	}
@@ -196,7 +190,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"cllowthr"];
 
 	char  buf[1024];
-	char *end = stpcpy(stpcpy(buf, getenv("HOME")), "/Library/daemon");
+	char *end = stpcpy(stpcpy(buf, battman_config_dir()), "/daemon");
 	strcpy(end, ".run");
 	int drfd = open(buf, O_RDONLY);
 	if (drfd != -1) {
@@ -219,7 +213,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	}
 	// See daemon.c for vals struct, we are doing bad practice here
 	char _vals[3];
-	if (read(fd, _vals, 3) != 2) {
+	if (read(fd, _vals, 3) != 3) {
 		NSLog(@"Writing initial values to daemon_settings");
 		_vals[0] = -1;
 		_vals[1] = -1;

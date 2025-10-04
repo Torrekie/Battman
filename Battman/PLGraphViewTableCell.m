@@ -99,6 +99,9 @@
 - (UIActivityIndicatorView *)activityIndicator {
 	if (!self->_activityIndicator) {
 		UIActivityIndicatorViewStyle style;
+#if 0
+		// For some reason, this available check was not quite linted with our GitHub CI
+		// using #else block as workaround
 		if (@available(iOS 13.0, macOS 10.15, macCatalyst 13.0, *)) {
 			style = UIActivityIndicatorViewStyleMedium;
 		} else {
@@ -108,6 +111,24 @@
 			style = UIActivityIndicatorViewStyleGray;
 #pragma clang diagnostic pop
 		}
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+		_Static_assert(UIActivityIndicatorViewStyleMedium == 100, "UIActivityIndicatorViewStyleMedium value changed by Apple! Please patch it before continue");
+		_Static_assert(UIActivityIndicatorViewStyleGray == 2, "UIActivityIndicatorViewStyleGray value changed by Apple! Please patch it before continue");
+		NSOperatingSystemVersion ios13 = {
+			.majorVersion = 13,
+			.minorVersion = 0,
+			.patchVersion = 0,
+		};
+		if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:ios13]) {
+			style = 100;
+		} else {
+			style = 2;
+		}
+#pragma clang diagnostic pop
+#endif
 		self->_activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:style];
 		[self->_activityIndicator setSize:CGSizeMake(50, 50)];
 		self->_activityIndicator.center = self.center;

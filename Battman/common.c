@@ -3,6 +3,9 @@
 
 #include <regex.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 
@@ -639,28 +642,103 @@ int is_rosetta(void) {
 	return ret;
 }
 
+int mkdir_p(const char *path, mode_t mode) {
+	char *copypath = strdup(path);
+	if (copypath == NULL)
+		return -1;
+
+	char *p = copypath;
+	int status = 0;
+	if (*p == '/')
+		p++;
+	for (; *p; p++) {
+		if (*p == '/') {
+			*p = '\0';
+
+			if (mkdir(copypath, mode) != 0) {
+				if (errno != EEXIST) {
+					status = -1;
+					break;
+				}
+			}
+
+			*p = '/';
+		}
+	}
+
+	if (status == 0 && mkdir(copypath, mode) != 0) {
+		if (errno != EEXIST)
+			status = -1;
+	}
+
+	free(copypath);
+	return status;
+}
+
+const char *battman_config_dir(void) {
+	static char *confdir = NULL;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		char tmp[PATH_MAX];
+
+		const char *env_home = getenv("HOME");
+		if (env_home == NULL) {
+			env_home = ""; /* treat as empty; we'll decide fallback below */
+		}
+		if (snprintf(tmp, sizeof(tmp), "%s", env_home) >= (int)sizeof(tmp)) {
+			tmp[0] = '\0';
+		}
+
+		if (tmp[0] != '\0' && (match_regex(tmp, IOS_CONTAINER_FMT) || match_regex(tmp, MAC_CONTAINER_FMT) || match_regex(tmp, SIM_CONTAINER_FMT))) {
+			/* Sandboxed paths: use ./Library */
+			snprintf(tmp, sizeof(tmp), "/Library");
+		} else if (tmp[0] == '\0') {
+			/* Unknown / no HOME; use ~/.config/Battman under current directory */
+			snprintf(tmp, sizeof(tmp), "/.config/Battman");
+		} else {
+			/* non-sandboxed HOME -> place under HOME/.config/Battman */
+			snprintf(tmp, sizeof(tmp), "%s/.config/Battman", env_home);
+		}
+		
+		/* allocate and copy the chosen path into the static buffer */
+		confdir = calloc(1, PATH_MAX);
+		if (confdir == NULL) {
+			/* allocation failed; fall back to root-like safe string in static storage */
+			/* use a static literal so we don't return a freed pointer */
+			static char fallback[] = "/";
+			confdir = fallback;
+			return;
+		}
+		strncpy(confdir, tmp, PATH_MAX - 1);
+		confdir[PATH_MAX - 1] = '\0';
+
+		if (mkdir_p(confdir, 0755) != 0) {
+			os_log_error(gLog, "Cannot create Battman config dir %s: %s", confdir, strerror(errno));
+		}
+
+		struct passwd *pw = getpwnam("mobile");
+		struct group  *gr = getgrnam("mobile");
+		if (pw != NULL && gr != NULL) {
+			if (chown(confdir, pw->pw_uid, gr->gr_gid) != 0) {
+				os_log_error(gLog, "Cannot set config dir with owner mobile: %s", strerror(errno));
+			}
+		} else if (!getenv("SIMULATOR_DEVICE_NAME")) {
+			os_log_fault(gLog, "How can your mobile uid/gid gone?");
+		}
+		DBGLOG(CFSTR("Config dir: %s"), confdir);
+	});
+	return confdir;
+}
+
 /* Consider use NSDefaults instead of file */
 const char *lang_cfg_file(void) {
-	char *home = getenv("HOME");
-	if (match_regex(home, IOS_CONTAINER_FMT) || match_regex(home, MAC_CONTAINER_FMT)) {
-		/* iOS/macOS sandboxed */
-	} else if (match_regex(home, SIM_CONTAINER_FMT)) {
-		/* Simulator sandboxed */
-	} else {
-		/* Unknown/Unsandboxed */
-		return "/.config/Battman_LANG";
-	}
-	return "/Library/_LANG";
+	static char langfile[PATH_MAX];
+	sprintf(langfile, "%s/%s", battman_config_dir(), "LANG");
+	return langfile;
 }
 
 int open_lang_override(int flags, int mode) {
-	const char *homedir = getenv("HOME");
-	if (!homedir)
-		return 0;
-	char *langoverride_fn = malloc(strlen(homedir) + 20);
-	stpcpy(stpcpy(langoverride_fn, homedir), lang_cfg_file());
-	int fd = open(langoverride_fn, flags, mode);
-	free(langoverride_fn);
+	int fd = open(lang_cfg_file(), flags, mode);
 	return fd;
 }
 

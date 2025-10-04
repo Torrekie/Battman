@@ -15,18 +15,7 @@
 __OSX_AVAILABLE_STARTING(__MAC_10_10, __IPHONE_7_0)
 extern const char *const kOSThermalNotificationPressureLevelName;
 
-#define GET_STRING_SYMBOL(x)                     \
-	({                                           \
-		static const char *_cached = NULL;       \
-		if (!_cached) {                          \
-			void *sym = dlsym(RTLD_DEFAULT, #x); \
-			if (sym)                             \
-				_cached = *(const char **)sym;   \
-		}                                        \
-		(const char *)_cached;                   \
-	})
-
-#define kOSThermalNotificationName GET_STRING_SYMBOL(kOSThermalNotificationName)
+#define kOSThermalNotificationName GET_SECT_SYMBOL(const char *, kOSThermalNotificationName)
 
 #define _OSThermalNotificationLevelForBehavior(x) DL_CALL(_OSThermalNotificationLevelForBehavior, int, (int), (x))
 #define _OSThermalNotificationSetLevelForBehavior(x) DL_CALL(_OSThermalNotificationSetLevelForBehavior, void, (int), (x));

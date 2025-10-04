@@ -117,8 +117,8 @@ static void daemon_control_thread(int fd) {
 static void daemon_control() {
 	struct sockaddr_un sockaddr;
 	sockaddr.sun_family = AF_UNIX;
-	chdir(getenv("HOME"));
-	strcpy(sockaddr.sun_path, "./Library/dsck");
+	chdir(battman_config_dir());
+	strcpy(sockaddr.sun_path, "./dsck");
 	remove(sockaddr.sun_path);
 	umask(0);
 	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -126,7 +126,7 @@ static void daemon_control() {
 		abort();
 	int trueVal = 1;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &trueVal, 4);
-	if (listen(sock, 2) != 0)
+	if (listen(sock, 3) != 0)
 		abort();
 	while (1) {
 		int conn = accept(sock, NULL, NULL);
@@ -277,7 +277,7 @@ static void powerevent_listener(int a, io_registry_entry_t b, int32_t c) {
 
 void daemon_main(void) {
 	signal(SIGPIPE, SIG_IGN);
-	char *end = stpcpy(stpcpy(daemon_settings_path, getenv("HOME")), "/Library/daemon");
+	char *end = stpcpy(stpcpy(daemon_settings_path, battman_config_dir()), "/daemon");
 	strcpy(end, ".run");
 	int runfd = open(daemon_settings_path, O_RDWR | O_CREAT, 0666);
 	pid_t pid = getpid();

@@ -107,10 +107,22 @@
 		_fp call_args;                     \
 	})
 
+#define GET_SECT_SYMBOL(proto, x)                \
+	({                                           \
+		static proto _cached = NULL;             \
+		if (!_cached) {                          \
+			void *sym = dlsym(RTLD_DEFAULT, #x); \
+			if (sym)                             \
+				_cached = *(proto *)sym;         \
+		}                                        \
+		(proto)_cached;                          \
+	})
+
 #define IOS_CONTAINER_FMT "^/private/var/mobile/Containers/Data/Application/[0-9A-Fa-f\\-]{36}$"
 #define MAC_CONTAINER_FMT "^/Users/[^/]+/Library/Containers/[^/]+/Data$"
 #define SIM_CONTAINER_FMT "^/Users/[^/]+/Library/Developer/CoreSimulator/Devices/[0-9A-Fa-f\\-]{36}/data/Containers/Data/Application/[0-9A-Fa-f\\-]{36}$"
 #define SIM_UNSANDBOX_FMT "^/Users/[^/]+/Library/Developer/CoreSimulator/Devices/[0-9A-Fa-f\\-]{36}/data$"
+#define IOS_ROOTHIDEN_FMT "^/var/containers/Bundle/Application/\\.jbroot-[[:xdigit:]]{16}/var/mobile$"
 
 #define SFPRO "SFProDisplay-Regular"
 
@@ -169,6 +181,7 @@ const char *second_to_datefmt(uint64_t second);
 
 int         is_rosetta(void);
 
+const char *battman_config_dir(void);
 const char *lang_cfg_file(void);
 int         open_lang_override(int flags, int mode);
 int         preferred_language_code(void);

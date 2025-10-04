@@ -125,6 +125,8 @@ enum sections_batteryinfo {
         copyright.text = [copyright.text stringByAppendingFormat:@"\n%@", _("Simulator Sandboxed")];
     } else if (match_regex(home, SIM_UNSANDBOX_FMT)){
         copyright.text = [copyright.text stringByAppendingFormat:@"\n%@", _("Simulator Unsandboxed")];
+	} else if (match_regex(home, IOS_ROOTHIDEN_FMT)) {
+		copyright.text = [copyright.text stringByAppendingFormat:@"\n%@", _("Roothide Unsandboxed")];
     } else {
         DBGLOG(@"HOME: %s", home);
         copyright.text = [copyright.text stringByAppendingFormat:@"\n%@", _("Unsandboxed")];

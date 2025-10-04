@@ -832,18 +832,10 @@ show_license:
 	;sub x2,x0,sp
 	mov x2,sp
 	bl _CC_SHA256
-	mov x0,#0x4f48
-	movk x0,#0x454d,LSL #16
-	str x0,[sp,#32]
-	add x0,sp,#32
-	bl _getenv
+	bl _battman_config_dir
 	mov x20,x0
 	bl _strlen
-	cmp x0,#512
-	b.gt show_license.1
-	mov x0,#512
-show_license.1:
-	add x0,x0,#16
+	add x0,x0,#8
 	bl _malloc
 	str x0,[sp,#32]
 	mov x1,x20
@@ -1165,9 +1157,8 @@ sceneConfSign:
 .asciz "@@:@@"
 noParamSign:
 .asciz "v@:"
-; FIXME: Dynamic token provider
 tokenFile:
-.asciz "/Library/token"
+.asciz "/token"
 UIWindowType:
 .asciz "@\"UIWindow\""
 TStr:

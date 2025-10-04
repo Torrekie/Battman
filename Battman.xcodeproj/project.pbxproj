@@ -254,6 +254,7 @@
 		68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
 		68ECFFBF2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
 		68ECFFC02E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
+		68ECFFC12E8D2E9200BEAB59 /* SF-Pro-Display-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */; };
 		68FBDCE82DE1A1D40057870A /* protect.S in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCE72DE1A1D40057870A /* protect.S */; };
 		68FBDCF02DE30A5E0057870A /* worker.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCEF2DE30A5E0057870A /* worker.c */; };
 		68FBDD182DE30A8E0057870A /* CreditViewController.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD162DE30A8E0057870A /* CreditViewController.c */; };
@@ -14167,6 +14168,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68ECFFC12E8D2E9200BEAB59 /* SF-Pro-Display-Regular.otf in Resources */,
 				684114BE2E5323E2001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684114BF2E5323E2001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684114C02E5323E2001B76B6 /* license.html in Resources */,

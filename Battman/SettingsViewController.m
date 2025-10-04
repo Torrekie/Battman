@@ -757,13 +757,7 @@ extern void preferred_language_code_clear(void);
 
 - (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row == 0) {
-        const char *homedir = getenv("HOME");
-        if (!homedir)
-            return;
-        char *langoverride_fn = malloc(strlen(homedir) + 20);
-        stpcpy(stpcpy(langoverride_fn, homedir), lang_cfg_file());
-        remove(langoverride_fn);
-        free(langoverride_fn);
+        remove(lang_cfg_file());
         preferred_language_code_clear();
         [tv reloadData];
         return;
