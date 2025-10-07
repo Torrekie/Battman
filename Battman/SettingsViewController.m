@@ -275,7 +275,7 @@ static NSMutableArray *sns_avail = nil;
 		return sns_avail.count / 3;
 #ifdef DEBUG
 	if (section == SS_SECT_DEBUG)
-        return 9;
+        return 10;
 #endif
     return 0;
 }
@@ -414,6 +414,9 @@ static NSMutableArray *sns_avail = nil;
 		}else if (indexPath.row == 8) {
 			extern void jitter_text(void);
 			jitter_text();
+		} else if (indexPath.row == 9) {
+			remove([NSString stringWithFormat:@"%s/token", battman_config_dir()].UTF8String);
+			app_exit();
 		}
     }
 #endif
@@ -598,6 +601,8 @@ static NSMutableArray *sns_avail = nil;
 			cell.textLabel.text = _("Trigger fatal notify");
 		} else if (indexPath.row == 8) {
 			cell.textLabel.text = _("Trigger UTF jitter");
+		} else if (indexPath.row == 9) {
+			cell.textLabel.text = _("Remove token and exit");
 		}
     }
 #endif

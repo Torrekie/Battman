@@ -112,6 +112,9 @@ inline void push_fatal_notif(void) {
 }*/
 extern void push_fatal_notif(void);
 
+// Get the ASLR slide for the main executable
+extern intptr_t get_main_executable_aslr_slide(void);
+
 __attribute__((always_inline))
 inline void pull_fatal_notif(void) {
 	int token = 0;

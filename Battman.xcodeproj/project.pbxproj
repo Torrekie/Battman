@@ -247,6 +247,15 @@
 		68B68F6C2E21026600431E14 /* thermal.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B68F6B2E21026600431E14 /* thermal.c */; };
 		68B7513E2E2A425D003C94BC /* wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B7513D2E2A425D003C94BC /* wrapper.c */; };
 		68B751422E2A468C003C94BC /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68B751412E2A468C003C94BC /* SystemConfiguration.framework */; };
+		68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
+		68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
+		68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
+		68C0C73F2E93B93E006F73EA /* UIImage+SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */; };
+		68C0C7402E93B93E006F73EA /* UIImage+SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */; };
+		68C0C7412E93B93E006F73EA /* UIImage+SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */; };
+		68C0C7442E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
+		68C0C7452E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
+		68C0C7462E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
@@ -1744,6 +1753,12 @@
 		68B7513F2E2A426F003C94BC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		68B751402E2A4529003C94BC /* wrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = wrapper.h; sourceTree = "<group>"; };
 		68B751412E2A468C003C94BC /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsViewController.h; path = Battman/AnalyticsViewController.h; sourceTree = SOURCE_ROOT; };
+		68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsViewController.m; path = Battman/AnalyticsViewController.m; sourceTree = SOURCE_ROOT; };
+		68C0C73D2E93B92F006F73EA /* UIImage+SVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+SVG.h"; sourceTree = "<group>"; };
+		68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+SVG.m"; sourceTree = "<group>"; };
+		68C0C7422E93BA3C006F73EA /* SVG.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVG.m; sourceTree = "<group>"; };
+		68C0C7432E93BA3C006F73EA /* SVG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVG.h; sourceTree = "<group>"; };
 		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../../../wifi/20/SFSymbols.pkg/Library/Fonts/SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
 		68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SegmentedViewCell.m; sourceTree = "<group>"; };
 		68D6DEBF2D745DCB00E129A0 /* SegmentedViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SegmentedViewCell.h; sourceTree = "<group>"; };
@@ -13682,50 +13697,11 @@
 		686AECC12D3B93CB0059ECD0 /* Battman */ = {
 			isa = PBXGroup;
 			children = (
-				684114D42E57BCAC001B76B6 /* Havoc */,
-				6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */,
-				6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */,
-				684114022E4A34DA001B76B6 /* DonationPrompter.h */,
-				684114032E4A34DA001B76B6 /* DonationPrompter.m */,
-				684113FD2E4A3492001B76B6 /* DonationViewController.h */,
-				684113FE2E4A3492001B76B6 /* DonationViewController.m */,
-				68B751382E2A423B003C94BC /* scprefs */,
-				68B16F0C2E1BBC4B009B63AC /* ObjCExt */,
-				6846114A2E0D5211006B651D /* hw */,
-				68FBDCF12DE30A740057870A /* cobjc */,
-				68B2913E2DD86ABF0089BA1F /* EXTERNAL_HEADERS */,
-				68B291332DD1E6960089BA1F /* CompatibilityHelper.c */,
-				68B291312DD1E6960089BA1F /* CompatibilityHelper.h */,
-				68FBDD162DE30A8E0057870A /* CreditViewController.c */,
-				68B291342DD1E6960089BA1F /* FullSMCViewController.h */,
-				68B291352DD1E6960089BA1F /* FullSMCViewController.m */,
-				68B291302DD1E6960089BA1F /* SimpleTemperatureViewController.h */,
-				68B291322DD1E6960089BA1F /* SimpleTemperatureViewController.m */,
-				68B2912A2DC799A40089BA1F /* BatterySubscriberViewControllerBase.h */,
-				689FE0B42DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c */,
-				68B291262DC7547B0089BA1F /* ChargingLimitViewController.h */,
-				68B291252DC7547B0089BA1F /* ChargingLimitViewController.m */,
-				6838BF7E2DC27F1E007EB66C /* ChargingManagementViewController.h */,
-				6838BF822DC27F1E007EB66C /* ChargingManagementViewController.m */,
-				684575AB2E3E032700618DFD /* ThermalTunesViewContoller.h */,
-				684575AC2E3E032700618DFD /* ThermalTunesViewContoller.m */,
+				68C0C7392E93B4FF006F73EA /* Helpers */,
+				68C0C72B2E9271D7006F73EA /* Tabs */,
 				6838BF632DB8D06B007EB66C /* license */,
 				68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */,
 				68AE40A42D8EB7710023D7B0 /* CustomUIElements */,
-				68171A362D534E6B00DD4224 /* BatteryDetailsViewController.h */,
-				68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */,
-				68B291472DDC76720089BA1F /* security */,
-				68A3EAF42D5204D2003381DF /* battery_utils */,
-				687743432D4F6C7800375A2C /* BatteryCellView.h */,
-				687743412D4F6C7800375A2C /* BatteryCellView.m */,
-				687743402D4F6C7800375A2C /* BatteryInfoTableViewCell.h */,
-				687743442D4F6C7800375A2C /* BatteryInfoTableViewCell.m */,
-				68B5FF312D85619B00919BC2 /* TemperatureInfoTableViewCell.h */,
-				68B5FF2F2D85617400919BC2 /* TemperatureInfoTableViewCell.m */,
-				687743332D4E08AD00375A2C /* BatteryInfoViewController.h */,
-				687743352D4E08AD00375A2C /* BatteryInfoViewController.m */,
-				6877432F2D4E08AD00375A2C /* SettingsViewController.h */,
-				687743342D4E08AD00375A2C /* SettingsViewController.m */,
 				687742B52D43837B00375A2C /* locales */,
 				68DCA5B42D40EDE8004D0104 /* Localizations */,
 				686AECD32D3B93CD0059ECD0 /* Info.plist */,
@@ -13733,13 +13709,6 @@
 				68DCA5602D3D0AC5004D0104 /* main.h */,
 				68FBDD172DE30A8E0057870A /* common.c */,
 				68DCA5AA2D3F935E004D0104 /* common.h */,
-				68DCA5AB2D3F9A10004D0104 /* gtkextern.h */,
-				68DCA5AD2D3F9BFD004D0104 /* glibextern.h */,
-				68DCA5AE2D3FA4DA004D0104 /* intlextern.h */,
-				68B291432DDC60510089BA1F /* iokitextern.h */,
-				689FE0B72DEEEDC600550EBE /* UPSMonitor.h */,
-				689FE0B82DEEEDC600550EBE /* UPSMonitor.m */,
-				683B2D052E6C344E00FECDF5 /* UPSMonitor-new.m */,
 			);
 			path = Battman;
 			sourceTree = "<group>";
@@ -13797,6 +13766,12 @@
 		68AE40A42D8EB7710023D7B0 /* CustomUIElements */ = {
 			isa = PBXGroup;
 			children = (
+				68B5FF312D85619B00919BC2 /* TemperatureInfoTableViewCell.h */,
+				68B5FF2F2D85617400919BC2 /* TemperatureInfoTableViewCell.m */,
+				687743402D4F6C7800375A2C /* BatteryInfoTableViewCell.h */,
+				687743442D4F6C7800375A2C /* BatteryInfoTableViewCell.m */,
+				687743432D4F6C7800375A2C /* BatteryCellView.h */,
+				687743412D4F6C7800375A2C /* BatteryCellView.m */,
 				68ECFFB92E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.h */,
 				68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */,
 				68ECFFB82E8D21E500BEAB59 /* PLGraphViewTableCell.h */,
@@ -13855,6 +13830,8 @@
 			children = (
 				68B16F102E1BBC71009B63AC /* NSData+HexString.h */,
 				68B16F112E1BBCC6009B63AC /* NSData+HexString.m */,
+				68C0C73D2E93B92F006F73EA /* UIImage+SVG.h */,
+				68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */,
 			);
 			path = ObjCExt;
 			sourceTree = "<group>";
@@ -13912,6 +13889,114 @@
 				68B7513F2E2A426F003C94BC /* README.md */,
 			);
 			path = scprefs;
+			sourceTree = "<group>";
+		};
+		68C0C72B2E9271D7006F73EA /* Tabs */ = {
+			isa = PBXGroup;
+			children = (
+				68C0C7322E9272BC006F73EA /* BatteryInfoViewController */,
+				68C68B132E9503BE00389852 /* AnalyticsViewController */,
+				68C0C7302E927246006F73EA /* SettingsViewController */,
+			);
+			name = Tabs;
+			sourceTree = "<group>";
+		};
+		68C0C7302E927246006F73EA /* SettingsViewController */ = {
+			isa = PBXGroup;
+			children = (
+				6877432F2D4E08AD00375A2C /* SettingsViewController.h */,
+				687743342D4E08AD00375A2C /* SettingsViewController.m */,
+				68FBDD162DE30A8E0057870A /* CreditViewController.c */,
+				684113FD2E4A3492001B76B6 /* DonationViewController.h */,
+				684113FE2E4A3492001B76B6 /* DonationViewController.m */,
+			);
+			name = SettingsViewController;
+			sourceTree = "<group>";
+		};
+		68C0C7322E9272BC006F73EA /* BatteryInfoViewController */ = {
+			isa = PBXGroup;
+			children = (
+				687743332D4E08AD00375A2C /* BatteryInfoViewController.h */,
+				687743352D4E08AD00375A2C /* BatteryInfoViewController.m */,
+				68C0C73A2E93B527006F73EA /* BatteryDetailsViewController */,
+				68C0C73B2E93B726006F73EA /* SimpleTemperatureViewController */,
+				68C0C73C2E93B770006F73EA /* SubSections */,
+			);
+			name = BatteryInfoViewController;
+			sourceTree = "<group>";
+		};
+		68C0C7392E93B4FF006F73EA /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				684114D42E57BCAC001B76B6 /* Havoc */,
+				68B751382E2A423B003C94BC /* scprefs */,
+				68B16F0C2E1BBC4B009B63AC /* ObjCExt */,
+				6846114A2E0D5211006B651D /* hw */,
+				68FBDCF12DE30A740057870A /* cobjc */,
+				68A3EAF42D5204D2003381DF /* battery_utils */,
+				6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */,
+				6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */,
+				68C0C7432E93BA3C006F73EA /* SVG.h */,
+				68C0C7422E93BA3C006F73EA /* SVG.m */,
+				684114022E4A34DA001B76B6 /* DonationPrompter.h */,
+				684114032E4A34DA001B76B6 /* DonationPrompter.m */,
+				68B291332DD1E6960089BA1F /* CompatibilityHelper.c */,
+				68B291312DD1E6960089BA1F /* CompatibilityHelper.h */,
+				68B2912A2DC799A40089BA1F /* BatterySubscriberViewControllerBase.h */,
+				689FE0B42DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c */,
+				68DCA5AB2D3F9A10004D0104 /* gtkextern.h */,
+				68DCA5AD2D3F9BFD004D0104 /* glibextern.h */,
+				68DCA5AE2D3FA4DA004D0104 /* intlextern.h */,
+				68B291432DDC60510089BA1F /* iokitextern.h */,
+				689FE0B72DEEEDC600550EBE /* UPSMonitor.h */,
+				689FE0B82DEEEDC600550EBE /* UPSMonitor.m */,
+				683B2D052E6C344E00FECDF5 /* UPSMonitor-new.m */,
+				68B2913E2DD86ABF0089BA1F /* EXTERNAL_HEADERS */,
+				68B291472DDC76720089BA1F /* security */,
+			);
+			name = Helpers;
+			sourceTree = "<group>";
+		};
+		68C0C73A2E93B527006F73EA /* BatteryDetailsViewController */ = {
+			isa = PBXGroup;
+			children = (
+				68171A362D534E6B00DD4224 /* BatteryDetailsViewController.h */,
+				68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */,
+				68B291342DD1E6960089BA1F /* FullSMCViewController.h */,
+				68B291352DD1E6960089BA1F /* FullSMCViewController.m */,
+			);
+			name = BatteryDetailsViewController;
+			sourceTree = "<group>";
+		};
+		68C0C73B2E93B726006F73EA /* SimpleTemperatureViewController */ = {
+			isa = PBXGroup;
+			children = (
+				68B291302DD1E6960089BA1F /* SimpleTemperatureViewController.h */,
+				68B291322DD1E6960089BA1F /* SimpleTemperatureViewController.m */,
+			);
+			name = SimpleTemperatureViewController;
+			sourceTree = "<group>";
+		};
+		68C0C73C2E93B770006F73EA /* SubSections */ = {
+			isa = PBXGroup;
+			children = (
+				68B291262DC7547B0089BA1F /* ChargingLimitViewController.h */,
+				68B291252DC7547B0089BA1F /* ChargingLimitViewController.m */,
+				6838BF7E2DC27F1E007EB66C /* ChargingManagementViewController.h */,
+				6838BF822DC27F1E007EB66C /* ChargingManagementViewController.m */,
+				684575AB2E3E032700618DFD /* ThermalTunesViewContoller.h */,
+				684575AC2E3E032700618DFD /* ThermalTunesViewContoller.m */,
+			);
+			name = SubSections;
+			sourceTree = "<group>";
+		};
+		68C68B132E9503BE00389852 /* AnalyticsViewController */ = {
+			isa = PBXGroup;
+			children = (
+				68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */,
+				68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */,
+			);
+			name = AnalyticsViewController;
 			sourceTree = "<group>";
 		};
 		68DCA5B42D40EDE8004D0104 /* Localizations */ = {
@@ -14420,9 +14505,11 @@
 				683B2D3D2E6C8F6300FECDF5 /* SerialQRCodeTableViewCell.m in Sources */,
 				684114932E5323E2001B76B6 /* DonationPrompter.m in Sources */,
 				684114942E5323E2001B76B6 /* hid.m in Sources */,
+				68C0C7402E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				684114952E5323E2001B76B6 /* wrapper.c in Sources */,
 				684114962E5323E2001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D082E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
+				68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				684114972E5323E2001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114982E5323E2001B76B6 /* localized.c in Sources */,
 				684114992E5323E2001B76B6 /* BatteryInfoViewController.m in Sources */,
@@ -14448,6 +14535,7 @@
 				684114AC2E5323E2001B76B6 /* GradientArcView.m in Sources */,
 				684114AD2E5323E2001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				684114AE2E5323E2001B76B6 /* licensing.S in Sources */,
+				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
 				684114AF2E5323E2001B76B6 /* ThermalTunesViewContoller.m in Sources */,
 				684114B02E5323E2001B76B6 /* SliderTableViewCell.m in Sources */,
 				684114B12E5323E2001B76B6 /* BatteryDetailsViewController.m in Sources */,
@@ -14484,9 +14572,11 @@
 				683B2D3C2E6C8F6200FECDF5 /* SerialQRCodeTableViewCell.m in Sources */,
 				684114E92E57BDE7001B76B6 /* DonationPrompter.m in Sources */,
 				684114EA2E57BDE7001B76B6 /* hid.m in Sources */,
+				68C0C7412E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				684114EB2E57BDE7001B76B6 /* wrapper.c in Sources */,
 				684114EC2E57BDE7001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D072E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
+				68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				684114ED2E57BDE7001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114EE2E57BDE7001B76B6 /* localized.c in Sources */,
 				684114EF2E57BDE7001B76B6 /* BatteryInfoViewController.m in Sources */,
@@ -14512,6 +14602,7 @@
 				683B2C9F2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
 				684115022E57BDE7001B76B6 /* GradientArcView.m in Sources */,
 				684115032E57BDE7001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
+				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
 				684115052E57BDE7001B76B6 /* ThermalTunesViewContoller.m in Sources */,
 				684115062E57BDE7001B76B6 /* SliderTableViewCell.m in Sources */,
 				684115072E57BDE7001B76B6 /* BatteryDetailsViewController.m in Sources */,
@@ -14562,6 +14653,7 @@
 				68B16F122E1BBCC7009B63AC /* NSData+HexString.m in Sources */,
 				68B291362DD1E6960089BA1F /* SimpleTemperatureViewController.m in Sources */,
 				6838BF762DBF810D007EB66C /* localized.c in Sources */,
+				68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				687743372D4E08AD00375A2C /* BatteryInfoViewController.m in Sources */,
 				687743472D4F6C7800375A2C /* SPWaterProgressIndicatorView.m in Sources */,
 				6833A8C92DA3C6E500B71299 /* WarnAccessoryView.m in Sources */,
@@ -14584,7 +14676,9 @@
 				68B5FF2E2D85606000919BC2 /* GradientArcView.m in Sources */,
 				689FE0B52DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c in Sources */,
 				6838BF6B2DB8D06B007EB66C /* licensing.S in Sources */,
+				68C0C7442E93BA3C006F73EA /* SVG.m in Sources */,
 				684575AD2E3E038800618DFD /* ThermalTunesViewContoller.m in Sources */,
+				68C0C73F2E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				6838BFAC2DC3984C007EB66C /* SliderTableViewCell.m in Sources */,
 				68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */,

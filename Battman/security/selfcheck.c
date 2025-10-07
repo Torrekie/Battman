@@ -10,6 +10,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <limits.h>
 #include <mach-o/dyld.h>
+#include <mach-o/loader.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -206,6 +207,47 @@ CFArrayRef collectAllSubviewsBottomUp(UIView *view) {
 void push_fatal_notif(void)
 {
 	notify_post(kBattmanFatalNotifyKey);
+}
+
+// Get the ASLR slide for the main executable
+// This function iterates through all loaded images to find the one with MH_EXECUTE filetype
+// In case of multiple MH_EXECUTE images, it prioritizes the first one found (typically the main executable)
+// and validates it against the main bundle path for additional security
+intptr_t get_main_executable_aslr_slide(void)
+{
+	uint32_t image_count = _dyld_image_count();
+	char *main_exec_path = get_main_executable_path();
+	intptr_t first_executable_slide = 0;
+	bool found_first_executable = false;
+	
+	for (uint32_t i = 0; i < image_count; i++) {
+		const struct mach_header *header = _dyld_get_image_header(i);
+		if (header && header->filetype == MH_EXECUTE) {
+			intptr_t slide = _dyld_get_image_vmaddr_slide(i);
+			
+			// If we have the main executable path, try to match it
+			if (main_exec_path) {
+				const char *image_name = _dyld_get_image_name(i);
+				if (image_name && strcmp(image_name, main_exec_path) == 0) {
+					free(main_exec_path);
+					return slide; // Found exact match with main executable
+				}
+			}
+			
+			// Store the first MH_EXECUTE image as fallback
+			if (!found_first_executable) {
+				first_executable_slide = slide;
+				found_first_executable = true;
+			}
+		}
+	}
+	
+	if (main_exec_path) {
+		free(main_exec_path);
+	}
+	
+	// Return the first MH_EXECUTE image slide if no exact match found
+	return found_first_executable ? first_executable_slide : 0;
 }
 
 int susp_id(void)

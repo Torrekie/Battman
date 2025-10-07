@@ -615,7 +615,7 @@ id imageForSFProGlyph(CFStringRef glyph, CFStringRef fontName, CGFloat fontSize,
 	    NSForegroundColorAttributeName: tintColor
 	};*/
 
-	CGSize          sz    = ((CGSize(*)(id, SEL, CFDictionaryRef))objc_msgSend)((id)glyph, oselector(sizeWithAttributes), attrs);
+	CGSize          sz    = ((CGSize(*)(id, SEL, CFDictionaryRef))objc_msgSend)((id)glyph, oselector(sizeWithAttributes:), attrs);
 	UIGraphicsBeginImageContextWithOptions(sz, NO, 0);
 	((void (*)(id, SEL, CGPoint, CFDictionaryRef))objc_msgSend)((id)glyph, oselector(drawAtPoint:withAttributes:), CGPointZero, attrs);
 	CFRelease(attrs);

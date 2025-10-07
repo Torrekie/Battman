@@ -59,9 +59,13 @@ L.battman.bootstrap.checkdone.2:
 	add x0,x0,_OBJC_CLASS_$_BatteryInfoViewController@PAGEOFF
 	mov x1,sp
 	bl .createNC
+	adrp x0,_OBJC_CLASS_$_AnalyticsViewController@PAGE
+	add x0,x0,_OBJC_CLASS_$_AnalyticsViewController@PAGEOFF
+	add x1,sp,#8
+	bl .createNC
 	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
-	add x1,sp,#8
+	add x1,sp,#16
 	bl .createNC
 	;adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	;ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
@@ -71,7 +75,7 @@ L.battman.bootstrap.checkdone.2:
 	cbz x0,.createNC
 	mov x0,x19
 	mov x2,sp
-	mov x3,#2
+	mov x3,#3
 	bl _objc_msgSend
 	adrp x1,.sel.setRootVCs@PAGE
 	ldr x1,[x1,.sel.setRootVCs@PAGEOFF]
@@ -949,7 +953,7 @@ show_license.3:
 	ldr x1,[x1,.sel.arrwobjs@PAGEOFF]
 	adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
-	mov x3,#2
+	mov x3,#3
 	bl _objc_msgSend
 	mov x2,x0
 	adrp x1,.sel.setRootVCs@PAGE

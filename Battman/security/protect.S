@@ -37,8 +37,7 @@ Linit_antiactivation:
 	sub sp,sp,#32
 	stp x29,x30,[sp,#16]
 	stp x19,x20,[sp]
-	mov x0,xzr
-	bl __dyld_get_image_vmaddr_slide
+	bl _get_main_executable_aslr_slide
 	mov x20,x0
 	adrp x0,seg_text@PAGE
 	add x0,x0,seg_text@PAGEOFF
