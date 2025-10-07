@@ -6,7 +6,7 @@
 //
 
 #import "UIImage+SVG.h"
-#import "SVG.h"
+#import "../SVG.h"
 
 #include <dlfcn.h>
 

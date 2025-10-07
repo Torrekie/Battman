@@ -92,8 +92,8 @@ L.battman.bootstrap.checkdone.2:
 	ldr x1,[x1,sel.makeKeyAndVisible@PAGEOFF]
 	mov x0,x19
 	bl _objc_msgSend
-	ldp x29,x30,[sp,#32]
-	ldp x19,x20,[sp,#64]
+	ldp x29,x30,[sp,#64]
+	ldp x19,x20,[sp,#32]
 	add sp,sp,#80
 	ret
 L.battman.bootstrap.e:
@@ -839,7 +839,11 @@ show_license:
 	bl _battman_config_dir
 	mov x20,x0
 	bl _strlen
-	add x0,x0,#8
+	cmp x0,#512
+	b.gt show_license.1
+	mov x0,#512
+show_license.1:
+	add x0,x0,#7
 	bl _malloc
 	str x0,[sp,#32]
 	mov x1,x20

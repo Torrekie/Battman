@@ -682,50 +682,57 @@ const char *battman_config_dir(void) {
 		char tmp[PATH_MAX];
 
 		const char *env_home = getenv("HOME");
-		if (env_home == NULL) {
-			env_home = ""; /* treat as empty; we'll decide fallback below */
+		char cwd[PATH_MAX];
+
+		if (env_home == NULL || env_home[0] == '\0') {
+			if (getcwd(cwd, sizeof(cwd)) != NULL) {
+				env_home = cwd; /* use cwd as fallback */
+			} else {
+				/* as a last resort use "." so we get "./.config/Battman" */
+				env_home = ".";
+			}
 		}
-		if (snprintf(tmp, sizeof(tmp), "%s", env_home) >= (int)sizeof(tmp)) {
+
+		int n = snprintf(tmp, sizeof(tmp), "%s", env_home);
+		if (n < 0) {
 			tmp[0] = '\0';
 		}
 
 		if (tmp[0] != '\0' && (match_regex(tmp, IOS_CONTAINER_FMT) || match_regex(tmp, MAC_CONTAINER_FMT) || match_regex(tmp, SIM_CONTAINER_FMT))) {
 			/* Sandboxed paths: use ./Library */
-			snprintf(tmp, sizeof(tmp), "/Library");
-		} else if (tmp[0] == '\0') {
-			/* Unknown / no HOME; use ~/.config/Battman under current directory */
-			snprintf(tmp, sizeof(tmp), "/.config/Battman");
+			(void)snprintf(tmp, sizeof(tmp), "%s/Library", env_home);
 		} else {
-			/* non-sandboxed HOME -> place under HOME/.config/Battman */
-			snprintf(tmp, sizeof(tmp), "%s/.config/Battman", env_home);
+			/* For example, IOS_ROOTHIDED_FMT */
+			/* Unknown / no HOME: place config under HOME/.config/Battman (or ./ when env_home == ".") */
+			(void)snprintf(tmp, sizeof(tmp), "%s/.config/Battman", env_home);
 		}
-		
-		/* allocate and copy the chosen path into the static buffer */
-		confdir = calloc(1, PATH_MAX);
-		if (confdir == NULL) {
-			/* allocation failed; fall back to root-like safe string in static storage */
-			/* use a static literal so we don't return a freed pointer */
-			static char fallback[] = "/";
+
+		size_t len = strnlen(tmp, sizeof(tmp));
+		char *buf = calloc(1, len + 1);
+		if (buf == NULL) {
+			// The first thing you should care is not where we put configs now, consider abort()
+			static char fallback[] = "/private/var/mobile/.config/Battman";
 			confdir = fallback;
 			return;
 		}
-		strncpy(confdir, tmp, PATH_MAX - 1);
-		confdir[PATH_MAX - 1] = '\0';
+		memcpy(buf, tmp, len);
+		buf[len] = '\0';
+		confdir = buf;
 
 		if (mkdir_p(confdir, 0755) != 0) {
-			os_log_error(gLog, "Cannot create Battman config dir %s: %s", confdir, strerror(errno));
+			os_log_error(gLog, "battman_config_dir: Cannot create Battman config dir %s: %s", confdir, strerror(errno));
 		}
 
 		struct passwd *pw = getpwnam("mobile");
 		struct group  *gr = getgrnam("mobile");
 		if (pw != NULL && gr != NULL) {
 			if (chown(confdir, pw->pw_uid, gr->gr_gid) != 0) {
-				os_log_error(gLog, "Cannot set config dir with owner mobile: %s", strerror(errno));
+				os_log_error(gLog, "battman_config_dir: Cannot set config dir ownership to mobile: %s", strerror(errno));
 			}
 		} else if (!getenv("SIMULATOR_DEVICE_NAME")) {
-			os_log_fault(gLog, "How can your mobile uid/gid gone?");
+			os_log_fault(gLog, "battman_config_dir: How can your mobile uid/gid gone?");
 		}
-		DBGLOG(CFSTR("Config dir: %s"), confdir);
+		DBGLOG(CFSTR("battman_config_dir: %s"), confdir);
 	});
 	return confdir;
 }
