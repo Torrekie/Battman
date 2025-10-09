@@ -1,3 +1,4 @@
+#import "../ObjCExt/UIScreen+Auto.h"
 #import "../common.h"
 #import "TemperatureInfoTableViewCell.h"
 #import "../GradientArcView.h"
@@ -22,7 +23,7 @@
 - (void)updateColors {
     if (@available(iOS 12.0, *)) {
         // We already have a non published darkmode in iOS 12, some tweaks may be able to enforce it
-        if ([(id)UIScreen.mainScreen.traitCollection userInterfaceStyle] == UIUserInterfaceStyleDark) {
+        if ([(id)UIScreen.autoScreen.traitCollection userInterfaceStyle] == UIUserInterfaceStyleDark) {
             self.borderGradient.colors = @[
                 (id)[UIColor darkGrayColor].CGColor,
                 (id)[UIColor blackColor].CGColor,

@@ -57,6 +57,9 @@
 /* Begin PBXBuildFile section */
 		68171A302D5221C400DD4224 /* libsmc.c in Sources */ = {isa = PBXBuildFile; fileRef = 68171A2F2D5221C400DD4224 /* libsmc.c */; };
 		68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */; };
+		68336DE22E9662B700E9F180 /* UIScreen+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336DE12E9662B700E9F180 /* UIScreen+Auto.m */; };
+		68336DE32E9662B700E9F180 /* UIScreen+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336DE12E9662B700E9F180 /* UIScreen+Auto.m */; };
+		68336DE42E9662B700E9F180 /* UIScreen+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336DE12E9662B700E9F180 /* UIScreen+Auto.m */; };
 		6833A8C92DA3C6E500B71299 /* WarnAccessoryView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6833A8C82DA3C6E500B71299 /* WarnAccessoryView.m */; };
 		6834254B2D7C4F560070CE6F /* iokit_connection.c in Sources */ = {isa = PBXBuildFile; fileRef = 68E9389A2D58980B00223285 /* iokit_connection.c */; };
 		683425502D7D6A240070CE6F /* MultilineViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 6834254F2D7D6A240070CE6F /* MultilineViewCell.m */; };
@@ -352,6 +355,8 @@
 		68171A2F2D5221C400DD4224 /* libsmc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = libsmc.c; sourceTree = "<group>"; };
 		68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BatteryDetailsViewController.m; sourceTree = "<group>"; };
 		68171A362D534E6B00DD4224 /* BatteryDetailsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BatteryDetailsViewController.h; sourceTree = "<group>"; };
+		68336DE02E9662B700E9F180 /* UIScreen+Auto.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIScreen+Auto.h"; sourceTree = "<group>"; };
+		68336DE12E9662B700E9F180 /* UIScreen+Auto.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIScreen+Auto.m"; sourceTree = "<group>"; };
 		6833A8C82DA3C6E500B71299 /* WarnAccessoryView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WarnAccessoryView.m; sourceTree = "<group>"; };
 		6833A8CA2DA3C6FE00B71299 /* WarnAccessoryView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WarnAccessoryView.h; sourceTree = "<group>"; };
 		6834254F2D7D6A240070CE6F /* MultilineViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MultilineViewCell.m; sourceTree = "<group>"; };
@@ -13832,6 +13837,8 @@
 				68B16F112E1BBCC6009B63AC /* NSData+HexString.m */,
 				68C0C73D2E93B92F006F73EA /* UIImage+SVG.h */,
 				68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */,
+				68336DE02E9662B700E9F180 /* UIScreen+Auto.h */,
+				68336DE12E9662B700E9F180 /* UIScreen+Auto.m */,
 			);
 			path = ObjCExt;
 			sourceTree = "<group>";
@@ -14533,6 +14540,7 @@
 				684114AB2E5323E2001B76B6 /* pmnotification.c in Sources */,
 				683B2C9E2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
 				684114AC2E5323E2001B76B6 /* GradientArcView.m in Sources */,
+				68336DE32E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
 				684114AD2E5323E2001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				684114AE2E5323E2001B76B6 /* licensing.S in Sources */,
 				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
@@ -14600,6 +14608,7 @@
 				684115002E57BDE7001B76B6 /* IOMFB_interaction.c in Sources */,
 				684115012E57BDE7001B76B6 /* pmnotification.c in Sources */,
 				683B2C9F2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
+				68336DE42E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
 				684115022E57BDE7001B76B6 /* GradientArcView.m in Sources */,
 				684115032E57BDE7001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
@@ -14675,6 +14684,7 @@
 				68B291282DC75F610089BA1F /* pmnotification.c in Sources */,
 				68B5FF2E2D85606000919BC2 /* GradientArcView.m in Sources */,
 				689FE0B52DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c in Sources */,
+				68336DE22E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
 				6838BF6B2DB8D06B007EB66C /* licensing.S in Sources */,
 				68C0C7442E93BA3C006F73EA /* SVG.m in Sources */,
 				684575AD2E3E038800618DFD /* ThermalTunesViewContoller.m in Sources */,

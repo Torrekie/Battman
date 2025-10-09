@@ -1,3 +1,4 @@
+#import "ObjCExt/UIScreen+Auto.h"
 #import "FullSMCViewController.h"
 #include "battery_utils/libsmc.h"
 #include "common.h"
@@ -560,7 +561,7 @@ static int smctype_to_length(int type) {
 
     if (@available(iOS 12.0, *)) {
         // We already have a non published darkmode in iOS 12, some tweaks may be able to enforce it
-        if ([(id)UIScreen.mainScreen.traitCollection userInterfaceStyle] == UIUserInterfaceStyleDark) {
+        if ([(id)UIScreen.autoScreen.traitCollection userInterfaceStyle] == UIUserInterfaceStyleDark) {
             self.view.backgroundColor = [UIColor blackColor];
             [self setSystemRedColor:[UIColor colorWithRed:1 green:(69.0f / 255) blue:(58.0f / 255) alpha:1]];
             return;

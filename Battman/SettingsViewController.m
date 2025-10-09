@@ -1,3 +1,4 @@
+#import "ObjCExt/UIScreen+Auto.h"
 #import "SettingsViewController.h"
 #import "DonationPrompter.h"
 #import "BattmanVectorIcon.h"
@@ -452,8 +453,8 @@ static NSMutableArray *sns_avail = nil;
 			static UIImage *battmanIcon = nil;
 			static dispatch_once_t onceToken;
 			dispatch_once(&onceToken, ^{
-				CGFloat width = ([UIScreen mainScreen].scale == 2.0f) ? 58.0f : 87.0f;
-				CGFloat scale = [UIScreen mainScreen].scale;
+				CGFloat width = ([UIScreen autoScreen].scale == 2.0f) ? 58.0f : 87.0f;
+				CGFloat scale = [UIScreen autoScreen].scale;
 				CGImageRef src = [BattmanVectorIcon BattmanCGImage];
 				CGColorSpaceRef colorSpace = CGImageGetColorSpace(src);
 				if (!colorSpace) colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -494,7 +495,7 @@ static NSMutableArray *sns_avail = nil;
 			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 			cell.textLabel.text = _("Report Bug");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Report")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Report")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		}
 	}
@@ -505,33 +506,33 @@ static NSMutableArray *sns_avail = nil;
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             cell.textLabel.text = _("Credit");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Sponsor")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Sponsor")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 			linkColor = NO;
         } else if (indexPath.row == 1) {
             cell.textLabel.text = _("Source Code");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("GitHub")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("GitHub")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		} else if (indexPath.row == 2) {
 			cell.textLabel.text = _("Battman Wiki & User Manual");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Hint")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Hint")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		} else if (indexPath.row == 3) {
 			cell.textLabel.text = _("Support Us");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Donate")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Donate")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		} else if (indexPath.row == 4) {
 			cell.textLabel.text = _("View Battman On Havoc");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Havoc")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Havoc")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		} else if (indexPath.row == 5) {
 			cell.textLabel.text = _("Join Battman Discord");
 			if (artwork_avail) {
-				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Discord")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Discord")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 			}
 		}
 		// Color
@@ -549,9 +550,9 @@ static NSMutableArray *sns_avail = nil;
 		NSString *bundleID = sns_avail[(indexPath.row * 3) + 1];
 		NSString *label = sns_avail[(indexPath.row) * 3 + 2];
 		if (artwork_avail && [bundleID length] == 0) {
-			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("TorrekieWebLogo")) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("TorrekieWebLogo")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 		} else if ([UIImage respondsToSelector:@selector(_applicationIconImageForBundleIdentifier:format:scale:)])
-			cell.imageView.image = [UIImage _applicationIconImageForBundleIdentifier:bundleID format:0 scale:[UIScreen mainScreen].scale];
+			cell.imageView.image = [UIImage _applicationIconImageForBundleIdentifier:bundleID format:0 scale:[UIScreen autoScreen].scale];
 		cell.textLabel.text = label;
 	}
 #ifdef DEBUG
@@ -624,7 +625,7 @@ static NSMutableArray *sns_avail = nil;
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
 	// Smooth corners for icons
 	// U think im goin to use the bundle icon huh? No, we are just lookin for default size
-	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen mainScreen].scale];
+	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen autoScreen].scale];
 	if (cell.imageView.image != nil) {
 		[cell.imageView.layer setCornerRadius:tmp.size.width * 0.225f];
 		if (@available(iOS 13.0, *)) {

@@ -1,3 +1,5 @@
+#import "ObjCExt/UIScreen+Auto.h"
+
 #import "BatteryInfoViewController.h"
 #import "BatteryCellView/BatteryInfoTableViewCell.h"
 #import "BatteryCellView/TemperatureInfoTableViewCell.h"
@@ -44,7 +46,7 @@ static void _loadAppSupportBundle(void) {
 	}
 
 	CFErrorRef  err    = NULL;
-	NSString   *size   = [NSString stringWithFormat:@"BattmanIcons@%dx", [UIScreen mainScreen].scale < 3.0 ? 2 : 3];
+	NSString   *size   = [NSString stringWithFormat:@"BattmanIcons@%dx", [UIScreen autoScreen].scale < 3.0 ? 2 : 3];
 	CFStringRef cfPath = (__bridge CFStringRef)[[NSBundle mainBundle] pathForResource:size ofType:@"artwork"];
 	CFPropertyListRef names = NULL;
 	CFArrayRef images = CPBitmapCreateImagesFromPath(cfPath, &names, 0, &err);
@@ -245,7 +247,7 @@ enum sections_batteryinfo {
 		NSArray *rows = @[_("Charging Management"), _("Charging Limit"), _("Thermal Tunes")];
 		if (artwork_avail) {
 			NSArray *icns = @[@"LowPowerUsage", @"ChargeLimit", @"Thermometer"];
-			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf((__bridge CFStringRef)icns[indexPath.row]) scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf((__bridge CFStringRef)icns[indexPath.row]) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
 		}
 		cell.textLabel.text = rows[indexPath.row];
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
@@ -258,7 +260,7 @@ enum sections_batteryinfo {
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
 	// Smooth corners for icons
 	// U think im goin to use the bundle icon huh? No, we are just lookin for default size
-	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen mainScreen].scale];
+	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen autoScreen].scale];
 	if (cell.imageView.image != nil) {
 		[cell.imageView.layer setCornerRadius:tmp.size.width * 0.225f];
 		if (@available(iOS 13.0, *)) {

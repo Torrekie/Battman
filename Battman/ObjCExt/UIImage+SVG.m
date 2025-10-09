@@ -6,6 +6,7 @@
 //
 
 #import "UIImage+SVG.h"
+#import "UIScreen+Auto.h"
 #import "../SVG.h"
 
 #include <dlfcn.h>
@@ -25,7 +26,7 @@
 	CGSize size = svg.size;
 	if (CGSizeEqualToSize(size, CGSizeZero)) return nil;
 
-	if (scale <= 0.0) scale = UIScreen.mainScreen.scale;
+	if (scale <= 0.0) scale = UIScreen.autoScreen.scale;
 
 	UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
 	format.scale = scale;
@@ -53,7 +54,7 @@
 		sCache.countLimit = 16; // tune as needed
 	});
 
-	CGFloat scale = UIScreen.mainScreen.scale;
+	CGFloat scale = UIScreen.autoScreen.scale;
 	NSString *cacheKey = [NSString stringWithFormat:@"%@@%.2f", name, scale];
 	UIImage *cached = [sCache objectForKey:cacheKey];
 	if (cached) return cached;
