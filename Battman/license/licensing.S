@@ -617,28 +617,103 @@ show_license.pcb:
 	 mov x0,x21
 	 bl _objc_msgSend*/
 #else
-	; Create WebView with proper frame
+	; Create WebView with proper frame and configuration
 	mov x0,x20
 	adrp x1,sel.bounds@PAGE
 	ldr x1,[x1,sel.bounds@PAGEOFF]
 	bl _objc_msgSend
 	; x0-x3 now contain CGRect (origin.x, origin.y, size.width, size.height)
-	sub sp,sp,#32
+	sub sp,sp,#64
 	stp d0,d1,[sp]      ; Store frame
 	stp d2,d3,[sp,#16]
 
+	; Create WKWebViewConfiguration first
+	adrp x0,WKWebViewConfiguration_str@PAGE
+	add x0,x0,WKWebViewConfiguration_str@PAGEOFF
+	bl _objc_getRequiredClass
+	cbz x0,fallback_to_simple_webview  ; If class not found, fallback
+	adrp x1,sel.1new@PAGE
+	ldr x1,[x1,sel.1new@PAGEOFF]
+	bl _objc_msgSend
+	cbz x0,fallback_to_simple_webview  ; If allocation failed, fallback
+	str x0,[sp,#32]     ; Store configuration
+
+	; Create WKUserScript
+	adrp x0,WKUserScript_str@PAGE
+	add x0,x0,WKUserScript_str@PAGEOFF
+	bl _objc_getRequiredClass
+	adrp x1,allocSel@PAGE
+	ldr x1,[x1,allocSel@PAGEOFF]
+	bl _objc_msgSend
+	str x0,[sp,#40]     ; Store allocated WKUserScript
+
+	; Create JavaScript string
+	adrp x0,js_disable_sharedworker@PAGE
+	add x0,x0,js_disable_sharedworker@PAGEOFF
+	bl ___CFStringMakeConstantString
+	str x0,[sp,#48]     ; Store JS string
+
+	; Initialize WKUserScript with initWithSource:injectionTime:forMainFrameOnly:
+	ldr x0,[sp,#40]     ; WKUserScript instance
+	adrp x1,sel.initWithSourceInjectionTime@PAGE
+	ldr x1,[x1,sel.initWithSourceInjectionTime@PAGEOFF]
+	ldr x2,[sp,#48]     ; JavaScript source
+	mov x3,#0           ; WKUserScriptInjectionTimeAtDocumentStart = 0
+	mov x4,#0           ; forMainFrameOnly = NO
+	bl _objc_msgSend
+	str x0,[sp,#40]     ; Store initialized WKUserScript
+
+	; Get userContentController from configuration
+	ldr x0,[sp,#32]     ; WKWebViewConfiguration
+	adrp x1,sel.userContentController@PAGE
+	ldr x1,[x1,sel.userContentController@PAGEOFF]
+	bl _objc_msgSend
+	str x0,[sp,#56]     ; Store userContentController
+
+	; Add user script to userContentController
+	ldr x0,[sp,#56]     ; userContentController
+	adrp x1,sel.addUserScript@PAGE
+	ldr x1,[x1,sel.addUserScript@PAGEOFF]
+	ldr x2,[sp,#40]     ; WKUserScript
+	bl _objc_msgSend
+
+	; Create WKWebView with frame and configuration
 	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	ldp d0,d1,[sp]      ; Restore frame
-	ldp d2,d3,[sp,#16]
-	add sp,sp,#32
+	cbz x0,fallback_to_simple_webview  ; If allocation failed, fallback
+	; Now call initWithFrame:configuration: with proper parameters
+	adrp x1,sel.initWithFrameConfiguration@PAGE
+	ldr x1,[x1,sel.initWithFrameConfiguration@PAGEOFF]
+	ldp d0,d1,[sp]      ; Frame origin (x, y)
+	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
+	ldr x2,[sp,#32]     ; WKWebViewConfiguration
+	bl _objc_msgSend
+	cbz x0,fallback_to_simple_webview  ; If initialization failed, fallback
+	add sp,sp,#64
+	mov x21,x0
+	b webview_creation_done
+
+fallback_to_simple_webview:
+	; Fallback to simple WKWebView without configuration
+	; Save frame data before cleaning stack
+	ldp d0,d1,[sp]      ; Frame origin (x, y)
+	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
+	add sp,sp,#64  ; Clean up stack
+	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
+	adrp x1,allocSel@PAGE
+	ldr x1,[x1,allocSel@PAGEOFF]
+	bl _objc_msgSend
+	; Frame data is already in d0-d3
 	adrp x1,sel.initWithFrame@PAGE
 	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
 	bl _objc_msgSend
 	mov x21,x0
+
+webview_creation_done:
 #endif
 	mov x0,x20
 	mov x2,x21
@@ -1147,6 +1222,10 @@ UIWindow_str:
 .asciz "UIWindow"
 UISceneDelegate_str:
 .asciz "UISceneDelegate"
+WKWebViewConfiguration_str:
+.asciz "WKWebViewConfiguration"
+WKUserScript_str:
+.asciz "WKUserScript"
 uiresponderclass:
 .asciz "SceneDelegateBase"
 curDevStr:
@@ -1195,6 +1274,8 @@ emptystr:
 .space 1
 mime_html:
 .asciz "text/html"
+js_disable_sharedworker:
+.asciz "delete window.SharedWorker;"
 
 .section __DATA,__cfstring
 .p2align 3
@@ -1319,6 +1400,10 @@ m.dataWithContentsOfURL: .asciz "dataWithContentsOfURL:"
 m.initWithData_encoding: .asciz "initWithData:encoding:"
 m.loadRequest: .asciz "loadRequest:"
 m.requestWithURL: .asciz "requestWithURL:"
+m.initWithFrameConfiguration: .asciz "initWithFrame:configuration:"
+m.userContentController: .asciz "userContentController"
+m.addUserScript: .asciz "addUserScript:"
+m.initWithSourceInjectionTime: .asciz "initWithSource:injectionTime:forMainFrameOnly:"
 
 
 .section __DATA,__objc_selrefs,literal_pointers,no_dead_strip
@@ -1411,6 +1496,10 @@ sel.initWithData_encoding: .quad m.initWithData_encoding
 sel.dataWithContentsOfURL: .quad m.dataWithContentsOfURL
 sel.requestWithURL: .quad m.requestWithURL
 sel.loadRequest: .quad m.loadRequest
+sel.initWithFrameConfiguration: .quad m.initWithFrameConfiguration
+sel.userContentController: .quad m.userContentController
+sel.addUserScript: .quad m.addUserScript
+sel.initWithSourceInjectionTime: .quad m.initWithSourceInjectionTime
 
 .section __TEXT,__objc_methname,cstring_literals
 m.setItems:
