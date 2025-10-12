@@ -1,7 +1,7 @@
 #import "ObjCExt/UIScreen+Auto.h"
 #import "SettingsViewController.h"
 #import "DonationPrompter.h"
-#import "BattmanVectorIcon.h"
+#import "CGIconSet/BattmanVectorIcon.h"
 #include "common.h"
 #include <math.h>
 #include <sys/utsname.h>
@@ -345,7 +345,17 @@ static NSMutableArray *sns_avail = nil;
 		} else if (indexPath.row == 4) {
 			open_url("https://havoc.app/package/battman");
 		} else if (indexPath.row == 5) {
-			open_url("https://discord.gg/PZYAXw9V9C");
+			uint8_t a[] = { 104, 12, 0, -4, 3, -57, -11, 0, 53, 5, 10, -16, 12, 3, -14, -54, 57, 0, -56, 33, 10, -1, -24, 23, 31, -62, 29, -29, 10 };
+			char *o = malloc('O' - '1');
+			if (o) {
+				int p = (int)a[0];
+				o[0] = (char)p;
+				for (size_t i = 1; i < ('N' - '1'); i++)
+					o[i] = (char)(p += (int8_t)a[i]);
+				o[''] = 0;
+			}
+			open_url(o);
+			free(o);
 		}
     }
 	if (indexPath.section == SS_SECT_SNS) {

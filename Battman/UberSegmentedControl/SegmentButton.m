@@ -1,6 +1,11 @@
 #import "SegmentButton.h"
 #import "Constants.h"
 
+// Privates
+@interface CALayer ()
+@property (atomic, assign) BOOL continuousCorners;
+@end
+
 @implementation SegmentButton
 
 #pragma mark - Initializers
@@ -89,6 +94,11 @@
     self.adjustsImageWhenHighlighted = NO;
 
     self.layer.cornerRadius = [ConstantsMeasure segmentCornerRadius];
+	if (@available(iOS 13.0, *)) {
+		[self.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([self.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[self.layer setContinuousCorners:YES];
     self.layer.shadowRadius = [ConstantsMeasure segmentShadowRadius];
     self.layer.shadowColor = [ConstantsColor segmentShadow].CGColor;
     self.layer.shadowOffset = [ConstantsMeasure segmentShadowOffset];

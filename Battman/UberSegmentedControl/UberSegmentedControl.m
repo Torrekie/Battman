@@ -6,6 +6,11 @@
 #import "UIView+Fill.h"
 #import "../CompatibilityHelper.h"
 
+// Privates
+@interface CALayer ()
+@property (atomic, assign) BOOL continuousCorners;
+@end
+
 @interface UberSegmentedControl () <UIGestureRecognizerDelegate>
 
 @property (nonatomic, strong) UIStackView *dividersStackView;
@@ -438,6 +443,11 @@
     self.translatesAutoresizingMaskIntoConstraints = NO;
     self.backgroundColor = [ConstantsColor background];
     self.layer.cornerRadius = [ConstantsMeasure cornerRadius];
+	if (@available(iOS 13.0, *)) {
+		[self.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([self.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[self.layer setContinuousCorners:YES];
     
     // Initialize stack views
     _dividersStackView = [[UIStackView alloc] init];

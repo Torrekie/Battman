@@ -1,6 +1,11 @@
 #import "BatteryCellView.h"
 #import "../CompatibilityHelper.h"
 
+// Privates
+@interface CALayer ()
+@property (atomic, assign) BOOL continuousCorners;
+@end
+
 extern bool show_alert(char *, char*,char*);
 @implementation BatteryCellView
 
@@ -18,10 +23,14 @@ extern bool show_alert(char *, char*,char*);
 	batteryView.layer.cornerRadius = 30;
 	batteryView.layer.masksToBounds = YES;
     if (@available(iOS 13.0, *)) {
+		[batteryView.layer setCornerCurve:kCACornerCurveContinuous];
         batteryView.backgroundColor = [UIColor secondarySystemFillColor];
     } else {
         batteryView.backgroundColor = [UIColor colorWithRed:(120.0f / 255) green:(120.0f / 255) blue:(128.0f / 255) alpha:0.16];
     }
+	if ([batteryView.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[batteryView.layer setContinuousCorners:YES];
+
     // TODO: Handle the scene if battery not present
 	// Battery Animation -- Start
     {

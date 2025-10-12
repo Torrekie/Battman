@@ -7,6 +7,10 @@
 #include "../battery_utils/libsmc.h"
 // Temporary ^
 
+@interface CALayer ()
+@property (atomic, assign, readwrite) BOOL continuousCorners;
+@end
+
 @interface TemperatureCellView ()
 @property (nonatomic, strong) CAGradientLayer *borderGradient;
 @property (nonatomic, strong) CAGradientLayer *gradient;
@@ -57,6 +61,11 @@
     self = [super initWithFrame:frame];
     UIView *temperatureView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
     temperatureView.layer.cornerRadius = 30;
+	if (@available(iOS 13.0, *)) {
+		[temperatureView.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([temperatureView.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[temperatureView.layer setContinuousCorners:YES];
     temperatureView.layer.masksToBounds = YES;
 
     self.borderGradient = [CAGradientLayer layer];
@@ -133,7 +142,7 @@
 	tempbit got_temp = 0;
 	float *btemps = get_temperature_per_cell();
 	float batttemp = -1;
-	if (*btemps) {
+	if (btemps != NULL && *btemps) {
 		got_temp |= TEMP_BATT;
 		float total = 0;
 		int num = batt_cell_num();

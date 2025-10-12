@@ -7,7 +7,7 @@
 
 #import "DonationViewController.h"
 #import "DonationPrompter.h"
-#import "BattmanVectorIcon.h"
+#import "CGIconSet/BattmanVectorIcon.h"
 #include "common.h"
 #include "intlextern.h"
 #import <MessageUI/MessageUI.h>
@@ -127,6 +127,11 @@
 	UIButton *report = [UIButton buttonWithType:UIButtonTypeSystem];
 	report.translatesAutoresizingMaskIntoConstraints = NO;
 	report.layer.cornerRadius = 12;
+	if (@available(iOS 13.0, *)) {
+		[report.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([report.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[report.layer setContinuousCorners:YES];
 	report.clipsToBounds = YES;
 	report.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	report.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
@@ -145,6 +150,11 @@
 	UIButton *email = [UIButton buttonWithType:UIButtonTypeSystem];
 	email.translatesAutoresizingMaskIntoConstraints = NO;
 	email.layer.cornerRadius = 12;
+	if (@available(iOS 13.0, *)) {
+		[email.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([email.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[email.layer setContinuousCorners:YES];
 	email.clipsToBounds = YES;
 	email.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	email.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
@@ -171,12 +181,15 @@
 		b.layer.cornerRadius = 10;
 		b.layer.borderWidth = 1.0;
 		if (@available(iOS 13.0, *)) {
+			[b.layer setCornerCurve:kCACornerCurveContinuous];
 			b.layer.borderColor = [UIColor systemGray4Color].CGColor;
 			[b setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
 		} else {
 			b.layer.borderColor = [UIColor lightGrayColor].CGColor;
 			[b setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
 		}
+		if ([b.layer respondsToSelector:@selector(setContinuousCorners:)])
+			[b.layer setContinuousCorners:YES];
 		
 		b.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
 		[b setTitle:_donates[i * 2] forState:UIControlStateNormal];
@@ -191,6 +204,11 @@
 	UIButton *donate = [UIButton buttonWithType:UIButtonTypeSystem];
 	donate.translatesAutoresizingMaskIntoConstraints = NO;
 	donate.layer.cornerRadius = 12;
+	if (@available(iOS 13.0, *)) {
+		[donate.layer setCornerCurve:kCACornerCurveContinuous];
+	}
+	if ([donate.layer respondsToSelector:@selector(setContinuousCorners:)])
+		[donate.layer setContinuousCorners:YES];
 	donate.clipsToBounds = YES;
 	donate.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	donate.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
