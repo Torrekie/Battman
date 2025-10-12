@@ -5,6 +5,16 @@
 ; current version only works for arm64 iOS :(
 ; Licensing code and some utilities
 
+#define USE_UIWEBVIEW 0
+
+#ifdef DEBUG
+#if USE_UIWEBVIEW
+#warning Using UIWebView
+#else
+#warning Using WKWebView
+#endif
+#endif
+
 ; x0: license_hash
 ; TODO: hardcode license_hash
 _battman_bootstrap:
@@ -59,6 +69,8 @@ L.battman.bootstrap.checkdone.2:
 	add x0,x0,_OBJC_CLASS_$_BatteryInfoViewController@PAGEOFF
 	mov x1,sp
 	bl .createNC
+#ifdef DEBUG
+#warning remember to finalize this block when releasing AnalyticsViewController
 	adrp x0,_OBJC_CLASS_$_AnalyticsViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_AnalyticsViewController@PAGEOFF
 	add x1,sp,#8
@@ -67,6 +79,12 @@ L.battman.bootstrap.checkdone.2:
 	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
 	add x1,sp,#16
 	bl .createNC
+#else
+	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
+	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
+	add x1,sp,#8
+	bl .createNC
+#endif
 	;adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	;ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
 	;adrp x1,.sel.arrwobjs@PAGE
@@ -75,7 +93,12 @@ L.battman.bootstrap.checkdone.2:
 	cbz x0,.createNC
 	mov x0,x19
 	mov x2,sp
+#ifdef DEBUG
+#warning remember to finalize this block when releasing AnalyticsViewController
 	mov x3,#3
+#else
+	mov x3,#2
+#endif
 	bl _objc_msgSend
 	adrp x1,.sel.setRootVCs@PAGE
 	ldr x1,[x1,.sel.setRootVCs@PAGEOFF]
@@ -623,82 +646,117 @@ show_license.pcb:
 	ldr x1,[x1,sel.bounds@PAGEOFF]
 	bl _objc_msgSend
 	; x0-x3 now contain CGRect (origin.x, origin.y, size.width, size.height)
-	sub sp,sp,#64
-	stp d0,d1,[sp]      ; Store frame
-	stp d2,d3,[sp,#16]
 
-	; Create WKWebViewConfiguration first
+#ifdef USE_UIWEBVIEW
+	adrp x0,UIWebView_str@PAGE
+	add x0,x0,UIWebView_str@PAGEOFF
+	bl _objc_getRequiredClass
+	cbz x0,wv_simple
+	adrp x1,allocSel@PAGE
+	ldr x1,[x1,allocSel@PAGEOFF]
+	bl _objc_msgSend
+	cbz x0,wv_simple
+	; Frame data is already in d0-d3
+	adrp x1,sel.initWithFrame@PAGE
+	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
+	bl _objc_msgSend
+	mov x21,x0
+	mov x0,x21
+	adrp x1,sel.setOpaque@PAGE
+	ldr x1,[x1,sel.setOpaque@PAGEOFF]
+	mov x2,#1
+	bl _objc_msgSend
+	adrp x0,_OBJC_CLASS_$_UIColor@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_UIColor@GOTPAGEOFF]
+	adrp x1,sel.respondsToSelector@PAGE
+	ldr x1,[x1,sel.respondsToSelector@PAGEOFF]
+	adrp x2,sel.systemBackgroundColor@PAGE
+	ldr x2,[x2,sel.systemBackgroundColor@PAGEOFF]
+	bl _objc_msgSend
+	cbz x0,wv_b_w
+	adrp x0,_OBJC_CLASS_$_UIColor@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_UIColor@GOTPAGEOFF]
+	adrp x1,sel.systemBackgroundColor@PAGE
+	ldr x1,[x1,sel.systemBackgroundColor@PAGEOFF]
+	bl _objc_msgSend
+	cbz x0,wv_b_w
+	b wv_b
+wv_b_w:
+	adrp x0,_OBJC_CLASS_$_UIColor@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_UIColor@GOTPAGEOFF]
+	adrp x1,sel.whiteColor@PAGE
+	ldr x1,[x1,sel.whiteColor@PAGEOFF]
+	bl _objc_msgSend
+	cbz x0,wv_done
+wv_b:
+	mov x2,x0
+	mov x0,x21
+	adrp x1,sel.setBackgroundColor@PAGE
+	ldr x1,[x1,sel.setBackgroundColor@PAGEOFF]
+	bl _objc_msgSend
+#else
+	sub sp,sp,#64
+	stp d0,d1,[sp]
+	stp d2,d3,[sp,#16]
 	adrp x0,WKWebViewConfiguration_str@PAGE
 	add x0,x0,WKWebViewConfiguration_str@PAGEOFF
 	bl _objc_getRequiredClass
-	cbz x0,fallback_to_simple_webview  ; If class not found, fallback
+	cbz x0,wv_simple
 	adrp x1,sel.1new@PAGE
 	ldr x1,[x1,sel.1new@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,fallback_to_simple_webview  ; If allocation failed, fallback
-	str x0,[sp,#32]     ; Store configuration
-
-	; Create WKUserScript
+	cbz x0,wv_simple
+	str x0,[sp,#32]
 	adrp x0,WKUserScript_str@PAGE
 	add x0,x0,WKUserScript_str@PAGEOFF
 	bl _objc_getRequiredClass
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#40]     ; Store allocated WKUserScript
-
-	; Create JavaScript string
+	str x0,[sp,#40]
 	adrp x0,js_disable_sharedworker@PAGE
 	add x0,x0,js_disable_sharedworker@PAGEOFF
 	bl ___CFStringMakeConstantString
-	str x0,[sp,#48]     ; Store JS string
-
-	; Initialize WKUserScript with initWithSource:injectionTime:forMainFrameOnly:
+	str x0,[sp,#48]
 	ldr x0,[sp,#40]     ; WKUserScript instance
 	adrp x1,sel.initWithSourceInjectionTime@PAGE
 	ldr x1,[x1,sel.initWithSourceInjectionTime@PAGEOFF]
-	ldr x2,[sp,#48]     ; JavaScript source
-	mov x3,#0           ; WKUserScriptInjectionTimeAtDocumentStart = 0
-	mov x4,#0           ; forMainFrameOnly = NO
+	ldr x2,[sp,#48]
+	mov x3,#0
+	mov x4,#0
 	bl _objc_msgSend
-	str x0,[sp,#40]     ; Store initialized WKUserScript
-
+	str x0,[sp,#40]
 	; Get userContentController from configuration
 	ldr x0,[sp,#32]     ; WKWebViewConfiguration
 	adrp x1,sel.userContentController@PAGE
 	ldr x1,[x1,sel.userContentController@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#56]     ; Store userContentController
-
-	; Add user script to userContentController
-	ldr x0,[sp,#56]     ; userContentController
+	str x0,[sp,#56]
+	ldr x0,[sp,#56]
 	adrp x1,sel.addUserScript@PAGE
 	ldr x1,[x1,sel.addUserScript@PAGEOFF]
-	ldr x2,[sp,#40]     ; WKUserScript
+	ldr x2,[sp,#40]
 	bl _objc_msgSend
-
-	; Create WKWebView with frame and configuration
 	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,fallback_to_simple_webview  ; If allocation failed, fallback
-	; Now call initWithFrame:configuration: with proper parameters
+	cbz x0,wv_simple
 	adrp x1,sel.initWithFrameConfiguration@PAGE
 	ldr x1,[x1,sel.initWithFrameConfiguration@PAGEOFF]
 	ldp d0,d1,[sp]      ; Frame origin (x, y)
 	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
 	ldr x2,[sp,#32]     ; WKWebViewConfiguration
 	bl _objc_msgSend
-	cbz x0,fallback_to_simple_webview  ; If initialization failed, fallback
+	cbz x0,wv_simple
 	add sp,sp,#64
 	mov x21,x0
-	b webview_creation_done
+	b wv_done
+#endif
 
-fallback_to_simple_webview:
-	; Fallback to simple WKWebView without configuration
-	; Save frame data before cleaning stack
+wv_simple:
+#ifndef USE_UIWEBVIEW
 	ldp d0,d1,[sp]      ; Frame origin (x, y)
 	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
 	add sp,sp,#64  ; Clean up stack
@@ -712,8 +770,9 @@ fallback_to_simple_webview:
 	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
 	bl _objc_msgSend
 	mov x21,x0
+#endif
 
-webview_creation_done:
+wv_done:
 #endif
 	mov x0,x20
 	mov x2,x21
@@ -853,8 +912,15 @@ load_local_html:
 	mov x3,x0
 	ldr x2,[sp,#8]
 	mov x0,x20
+#ifdef USE_UIWEBVIEW
+	; UIWebView uses loadHTMLString:baseURL: method
+	adrp x1,sel.loadHTMLStringBaseURL@PAGE
+	ldr x1,[x1,sel.loadHTMLStringBaseURL@PAGEOFF]
+#else
+	; WKWebView uses loadHTMLString:baseURL: method
 	adrp x1,sel.loadHTMLString@PAGE
 	ldr x1,[x1,sel.loadHTMLString@PAGEOFF]
+#endif
 	bl _objc_msgSend
 continue_setup:
 	mov x0,x19
@@ -1032,7 +1098,12 @@ show_license.3:
 	ldr x1,[x1,.sel.arrwobjs@PAGEOFF]
 	adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
+#ifdef DEBUG
+#warning remember to finalize this block when releasing AnalyticsViewController
 	mov x3,#3
+#else
+	mov x3,#2
+#endif
 	bl _objc_msgSend
 	mov x2,x0
 	adrp x1,.sel.setRootVCs@PAGE
@@ -1226,6 +1297,8 @@ WKWebViewConfiguration_str:
 .asciz "WKWebViewConfiguration"
 WKUserScript_str:
 .asciz "WKUserScript"
+UIWebView_str:
+.asciz "UIWebView"
 uiresponderclass:
 .asciz "SceneDelegateBase"
 curDevStr:
@@ -1404,6 +1477,12 @@ m.initWithFrameConfiguration: .asciz "initWithFrame:configuration:"
 m.userContentController: .asciz "userContentController"
 m.addUserScript: .asciz "addUserScript:"
 m.initWithSourceInjectionTime: .asciz "initWithSource:injectionTime:forMainFrameOnly:"
+m.loadHTMLStringBaseURL: .asciz "loadHTMLString:baseURL:"
+m.systemBackgroundColor: .asciz "systemBackgroundColor"
+m.setBackgroundColor: .asciz "setBackgroundColor:"
+m.respondsToSelector: .asciz "respondsToSelector:"
+m.setOpaque: .asciz "setOpaque:"
+m.whiteColor: .asciz "whiteColor"
 
 
 .section __DATA,__objc_selrefs,literal_pointers,no_dead_strip
@@ -1500,6 +1579,12 @@ sel.initWithFrameConfiguration: .quad m.initWithFrameConfiguration
 sel.userContentController: .quad m.userContentController
 sel.addUserScript: .quad m.addUserScript
 sel.initWithSourceInjectionTime: .quad m.initWithSourceInjectionTime
+sel.loadHTMLStringBaseURL: .quad m.loadHTMLStringBaseURL
+sel.systemBackgroundColor: .quad m.systemBackgroundColor
+sel.setBackgroundColor: .quad m.setBackgroundColor
+sel.respondsToSelector: .quad m.respondsToSelector
+sel.setOpaque: .quad m.setOpaque
+sel.whiteColor: .quad m.whiteColor
 
 .section __TEXT,__objc_methname,cstring_literals
 m.setItems:
