@@ -1872,6 +1872,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		68336DE82E979C4400E9F180 /* CGIconSet */ = {
+			isa = PBXGroup;
+			children = (
+				6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */,
+				6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */,
+			);
+			path = CGIconSet;
+			sourceTree = "<group>";
+		};
 		6838BF632DB8D06B007EB66C /* license */ = {
 			isa = PBXGroup;
 			children = (
@@ -13702,6 +13711,7 @@
 		686AECC12D3B93CB0059ECD0 /* Battman */ = {
 			isa = PBXGroup;
 			children = (
+				68336DE82E979C4400E9F180 /* CGIconSet */,
 				68C0C7392E93B4FF006F73EA /* Helpers */,
 				68C0C72B2E9271D7006F73EA /* Tabs */,
 				6838BF632DB8D06B007EB66C /* license */,
@@ -13941,8 +13951,6 @@
 				6846114A2E0D5211006B651D /* hw */,
 				68FBDCF12DE30A740057870A /* cobjc */,
 				68A3EAF42D5204D2003381DF /* battery_utils */,
-				6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */,
-				6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */,
 				68C0C7432E93BA3C006F73EA /* SVG.h */,
 				68C0C7422E93BA3C006F73EA /* SVG.m */,
 				684114022E4A34DA001B76B6 /* DonationPrompter.h */,
@@ -14370,7 +14378,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n# deb\nrm -rf ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/control\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree .\n# deb rootless\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm64/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/control\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree-rootless .\n# TrollStore ipa\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../intl.framework ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/intl.framework/Headers ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/ && zip -r ../deb-nonfree/Battman.tipa Payload/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa\nfi\n";
+			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\nif [ ${CONFIGURATION} == \"Debug\" ]; then\n\trsync -Kah \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\" \"${CODESIGNING_FOLDER_PATH}/\"\nfi\n\n#rm -rf ${CODESIGNING_FOLDER_PATH}/Frameworks/intl.framework/Headers\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n# deb\nrm -rf ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/control\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree .\n# deb rootless\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm64/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/control\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/Applications/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree-rootless .\n# TrollStore ipa\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../intl.framework ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/intl.framework/Headers ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/ && zip -r ../deb-nonfree/Battman.tipa Payload/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa\nfi\n";
 		};
 		684114D92E57BDE7001B76B6 /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14765,6 +14773,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -14772,6 +14781,7 @@
 					"DEBUG=1",
 					"USE_GETTEXT=1",
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-nonfree.plist";
 				INSTALL_GROUP = "$(GROUP)";
@@ -14797,6 +14807,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRIP_INSTALLED_PRODUCT = NO;
+				STRIP_SWIFT_SYMBOLS = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSION_INFO_FILE = "";
 				WARNING_CFLAGS = "$(NO_WARN_CFLAGS)";
@@ -14821,6 +14833,7 @@
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"USE_GETTEXT=1",
 				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-nonfree.plist";
 				INSTALL_GROUP = "$(GROUP)";
@@ -14846,6 +14859,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRIP_INSTALLED_PRODUCT = YES;
+				STRIP_SWIFT_SYMBOLS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSION_INFO_FILE = "";
 				WARNING_CFLAGS = "$(NO_WARN_CFLAGS)";
