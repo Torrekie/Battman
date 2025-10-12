@@ -38,7 +38,7 @@ COMMIT_HASH :=
 endif
 
 ifneq (${RELEASE},1)
-CFLAGS += -DDEBUG
+CFLAGS += -DDEBUG -Wno-error=#warnings
 else
 ICON_IF_RELEASE := build/Payload/Battman.app/1024.png
 endif
