@@ -130,17 +130,30 @@ static void changeLabelColors(UIView *inputView, UIColor *color) {
 
 static int _cl_sql_pt_cb(void *arr_ref, int cnt, char **texts, char **names) {
 	NSMutableArray    *arr = (__bridge NSMutableArray *)arr_ref;
-	NSDate            *dt;
-	NSNumber          *val;
+	NSDate            *date = nil;
+	NSNumber          *percent = nil;
 	NSNumberFormatter *formatter = [NSNumberFormatter new];
+	
 	for (int i = 0; i < cnt; i++) {
+		if (!names[i] || !texts[i])
+			continue;
+		
 		if (!strcmp(names[i], "timestamp")) {
-			dt = [NSDate dateWithTimeIntervalSince1970:[[formatter numberFromString:[NSString stringWithUTF8String:texts[i]]] doubleValue]];
+			NSString *timestampStr = [NSString stringWithUTF8String:texts[i]];
+			NSNumber *timestampNum = [formatter numberFromString:timestampStr];
+			if (timestampNum) {
+				date = [NSDate dateWithTimeIntervalSince1970:[timestampNum doubleValue]];
+			}
 		} else if (!strcmp(names[i], "Level")) {
-			val = [formatter numberFromString:[NSString stringWithUTF8String:texts[i]]];
+			NSString *levelStr = [NSString stringWithUTF8String:texts[i]];
+			percent = [formatter numberFromString:levelStr];
 		}
 	}
-	[arr addObject:[NSArray arrayWithObjects:dt, val, NULL]];
+	// Only add the unit if both timestamp and level are valid
+	if (date && percent) {
+		[arr addObject:[NSArray arrayWithObjects:date, percent, nil]];
+	}
+	
 	return 0;
 }
 
@@ -683,3 +696,4 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 @end
+
