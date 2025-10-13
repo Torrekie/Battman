@@ -18,10 +18,6 @@
 
 	<key>platform-application</key>
 	<true/>
-	<!-- containerize -->
-	<!--<key>com.apple.private.security.container-required</key>
-	<true/>-->
-	<!-- ^ Required when making system app -->
 
 	<key>com.apple.private.tcc.allow</key>
 	<array>
@@ -157,6 +153,17 @@
 	<!-- SpringBoard -->
 	<key>com.apple.springboard.setIdleText</key>
 	<true/>
+
+	<!-- MobileGestalt -->
+	<key>com.apple.private.MobileGestalt.AllowedProtectedKeys</key>
+	<array>
+		<string>SerialNumber</string>
+		<string>SysCfg</string>
+		<string>SysCfgDict</string>
+		<string>UniqueChipID</string>
+		<string>UniqueDeviceID</string>
+		<string>UniqueDeviceIDData</string>
+	</array>
 
 	<!-- UserNotifications -->
 	<key>com.apple.private.usernotifications.notification-simulator</key>
