@@ -132,21 +132,23 @@ static int _cl_sql_pt_cb(void *arr_ref, int cnt, char **texts, char **names) {
 	NSMutableArray    *arr = (__bridge NSMutableArray *)arr_ref;
 	NSDate            *date = nil;
 	NSNumber          *percent = nil;
-	NSNumberFormatter *formatter = [NSNumberFormatter new];
 	
 	for (int i = 0; i < cnt; i++) {
 		if (!names[i] || !texts[i])
 			continue;
 		
 		if (!strcmp(names[i], "timestamp")) {
-			NSString *timestampStr = [NSString stringWithUTF8String:texts[i]];
-			NSNumber *timestampNum = [formatter numberFromString:timestampStr];
-			if (timestampNum) {
-				date = [NSDate dateWithTimeIntervalSince1970:[timestampNum doubleValue]];
-			}
+            char *endptr;
+            double timestamp = strtod(texts[i], &endptr);
+            if (*endptr == '\0' && timestamp > 0 && timestamp < 4102444800.0) { // Before year 2100
+                date = [NSDate dateWithTimeIntervalSince1970:timestamp];
+            }
 		} else if (!strcmp(names[i], "Level")) {
-			NSString *levelStr = [NSString stringWithUTF8String:texts[i]];
-			percent = [formatter numberFromString:levelStr];
+			char *endptr;
+            double level = strtod(texts[i], &endptr);
+            if (*endptr == '\0' && level >= 0.0 && level <= 100.0) {
+                percent = [NSNumber numberWithDouble:level];
+            }
 		}
 	}
 	// Only add the unit if both timestamp and level are valid
@@ -423,11 +425,23 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 			const char *pl_container_path = load_graph;
 			char        sqlpath[PATH_MAX];
 			sprintf(sqlpath, "%s/Library/BatteryLife/CurrentPowerlog.PLSQL", pl_container_path);
-			sqlite3 *p_db;
-			int      err = sqlite3_open_v2(sqlpath, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
-			if (err != SQLITE_OK) {
-				// macOS/Simulator
-				err = sqlite3_open_v2("/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL", &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
+			sqlite3 *p_db = NULL;
+			int      err = SQLITE_CANTOPEN;
+			
+			if (access(sqlpath, R_OK) == 0) {
+				// Use FULLMUTEX for thread safety and allow concurrent reads
+				err = sqlite3_open_v2(sqlpath, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
+			} else {
+				// Try macOS/Simulator path if primary path doesn't exist
+				const char *fallback_path = "/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL";
+				if (access(fallback_path, R_OK) == 0) {
+					err = sqlite3_open_v2(fallback_path, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
+				}
+			}
+			
+			if (err == SQLITE_OK) {
+				// Set a 5-second timeout for busy database (when locked by other processes)
+				sqlite3_busy_timeout(p_db, 5000);
 			}
 			if (err != SQLITE_OK) {
 				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
@@ -436,11 +450,35 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 				sqlite3_close_v2(p_db);
 				return cell;
 			}
-			time_t cur_time = time(NULL);
-			sprintf(sqlpath, "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %ld AND %ld ORDER BY timestamp", cur_time - 3600 * 24 * 7, cur_time);
-			char           *errmsg;
+			struct timespec ts;
+			time_t cur_time;
+			if (clock_gettime(CLOCK_REALTIME, &ts) == 0) {
+				cur_time = ts.tv_sec;
+			} else {
+				cur_time = time(NULL);
+			}
+			double start_time = (double)(cur_time - 3600 * 24 * 7);
+			double end_time = (double)cur_time;
+			snprintf(sqlpath, sizeof(sqlpath), "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %lld AND %lld ORDER BY timestamp", (long long)start_time, (long long)end_time);
+			char           *errmsg = NULL;
 			NSMutableArray *arr = [NSMutableArray array];
-			err                 = sqlite3_exec(p_db, sqlpath, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
+
+			int retry_count = 0;
+			const int max_retries = 3;
+			do {
+				err = sqlite3_exec(p_db, sqlpath, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
+				if (err == SQLITE_OK || err != SQLITE_BUSY) {
+					break;
+				}
+				if (retry_count < max_retries) {
+					usleep((100 * 1000) << retry_count);
+					retry_count++;
+					if (errmsg) {
+						sqlite3_free(errmsg);
+						errmsg = NULL;
+					}
+				}
+			} while (retry_count < max_retries);
 			if (err != SQLITE_OK) {
 				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
 				cell.textLabel.text       = _("7-Day Battery Level");

@@ -75,22 +75,7 @@
     self->_endDate = nil;
 	// unit: [date, number]
 	for (NSArray *unit in array) {
-		// Safety checks to prevent crashes
-		if (!unit || ![unit isKindOfClass:[NSArray class]] || unit.count < 1) {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid data unit in setRangesFromArray - skipping: %@ (class: %@, count: %lu)",
-				  unit, 
-				  [unit class], 
-				  [unit isKindOfClass:[NSArray class]] ? (unsigned long)[(NSArray *)unit count] : 0UL);
-			continue;
-		}
-		
 		NSDate *date = unit[0];
-		if (!date || ![date isKindOfClass:[NSDate class]]) {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid date object in setRangesFromArray - skipping: unit[0] = %@ (class: %@)",
-				  date, [date class]);
-			continue;
-		}
-		
 		if (self->_startDate == nil) self->_startDate = date;
 		if (self->_endDate == nil) self->_endDate = date;
 		
@@ -149,35 +134,6 @@
 	self->_inputData = [inputData mutableCopy];
 
 	if (!self->_inputData || self->_inputData.count <= 1) {
-		self->_errValue = 2;
-		return;
-	}
-	
-	// Validate data format and remove invalid entries
-	NSMutableArray *validData = [NSMutableArray array];
-	for (id unit in self->_inputData) {
-		if ([unit isKindOfClass:[NSArray class]] && 
-			[(NSArray *)unit count] >= 2 &&
-			[[(NSArray *)unit objectAtIndex:0] isKindOfClass:[NSDate class]] &&
-			[[(NSArray *)unit objectAtIndex:1] isKindOfClass:[NSNumber class]]) {
-			[validData addObject:unit];
-		} else {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Removing invalid data unit during setInputData: %@ (class: %@, count: %lu)",
-				  unit, 
-				  [unit class], 
-				  [unit isKindOfClass:[NSArray class]] ? (unsigned long)[(NSArray *)unit count] : 0UL);
-			if ([unit isKindOfClass:[NSArray class]] && [(NSArray *)unit count] >= 1) {
-				DBGLOG(@"  - unit[0]: %@ (class: %@)", [(NSArray *)unit objectAtIndex:0], [[(NSArray *)unit objectAtIndex:0] class]);
-				if ([(NSArray *)unit count] >= 2) {
-					DBGLOG(@"  - unit[1]: %@ (class: %@)", [(NSArray *)unit objectAtIndex:1], [[(NSArray *)unit objectAtIndex:1] class]);
-				}
-			}
-		}
-	}
-	
-	self->_inputData = validData;
-	
-	if (self->_inputData.count <= 1) {
 		self->_errValue = 2;
 		return;
 	}
@@ -382,31 +338,8 @@
     double prevCoord = -1.0;  // This tracks different coordinates based on graph type
     
     for (NSArray *unit in self.inputData) {
-        // Safety checks to prevent crashes
-        if (!unit || ![unit isKindOfClass:[NSArray class]] || unit.count < 2) {
-            DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid data unit in drawLine - skipping: %@ (class: %@, count: %lu)",
-                  unit, 
-                  [unit class], 
-                  [unit isKindOfClass:[NSArray class]] ? (unsigned long)[(NSArray *)unit count] : 0UL);
-            continue;
-        }
-        
         NSDate *date = unit[0];
         NSNumber *percent = unit[1];
-        
-        // Additional safety checks for the extracted objects
-        if (!date || ![date isKindOfClass:[NSDate class]]) {
-            DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid date object in drawLine - skipping: unit[0] = %@ (class: %@)",
-                  date, [date class]);
-            continue;
-        }
-        
-        if (!percent || ![percent isKindOfClass:[NSNumber class]]) {
-            DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid percent object in drawLine - skipping: unit[1] = %@ (class: %@)",
-                  percent, [percent class]);
-            continue;
-        }
-        
 		NSInteger graphType = self.graphType;
         
         double value = [percent floatValue];
@@ -462,30 +395,8 @@
 	NSInteger graphType = self.graphType;
 
 	for (NSArray *unit in self.inputData) {
-		// Safety checks to prevent crashes
-		if (!unit || ![unit isKindOfClass:[NSArray class]] || unit.count < 2) {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid data unit in drawFill - skipping: %@ (class: %@, count: %lu)",
-				  unit, 
-				  [unit class], 
-				  [unit isKindOfClass:[NSArray class]] ? (unsigned long)[(NSArray *)unit count] : 0UL);
-			continue;
-		}
-		
 		NSDate   *date    = unit[0];
 		NSNumber *percent = unit[1];
-		
-		// Additional safety checks for the extracted objects
-		if (!date || ![date isKindOfClass:[NSDate class]]) {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid date object in drawFill - skipping: unit[0] = %@ (class: %@)",
-				  date, [date class]);
-			continue;
-		}
-		
-		if (!percent || ![percent isKindOfClass:[NSNumber class]]) {
-			DBGLOG(@"PLBatteryUIMoveableGraphView: Invalid percent object in drawFill - skipping: unit[1] = %@ (class: %@)",
-				  percent, [percent class]);
-			continue;
-		}
 
 		double value = [percent floatValue];
 

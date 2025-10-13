@@ -151,7 +151,12 @@ enum sections_batteryinfo {
     UITabBarItem *tabbarItem = [UITabBarItem new];
     tabbarItem.title = _("Battery");
     if (@available(iOS 13.0, *)) {
+		// This is really an odd bug, why systemImageNamed: cares about numeric localizations?
+		char *old = setlocale(LC_NUMERIC, NULL);
+		setlocale(LC_NUMERIC, "C");
         tabbarItem.image = [UIImage systemImageNamed:@"battery.100"];
+		if (old)
+			setlocale(LC_NUMERIC, old);
     } else {
         // U+1006E8
         tabbarItem.image = imageForSFProGlyph(@"􀛨", @SFPRO, 22, [UIColor grayColor]);

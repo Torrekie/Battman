@@ -33,6 +33,10 @@ extern int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
 
 #import <UserNotifications/UserNotifications.h>
 
+@interface NSLocale ()
++ (void)setLanguageAndRegion:(NSString *)locale;
+@end
+
 struct localization_entry {
 	CFStringRef *cfstr;
 	const char **pstr;
@@ -126,6 +130,49 @@ const char *cond_localize_c(const char *str) {
 bool use_libintl = false;
 bool has_locale = true;
 
+static void gettext_setlocale(char *locale) {
+	char mainBundle[PATH_MAX];
+	uint32_t size = sizeof(mainBundle);
+	char binddir[PATH_MAX];
+
+	if (_NSGetExecutablePath(mainBundle, &size) == KERN_SUCCESS) {
+		char *bundledir = dirname(mainBundle);
+		/* Either /Applications/Battman.app/locales or ./locales */
+		sprintf(binddir, "%s/%s", bundledir ? bundledir : ".", "locales");
+
+		// Check if locale directory for the target language exists
+		char localeDir[PATH_MAX];
+		snprintf(localeDir, sizeof(localeDir), "%s/%s/LC_MESSAGES", binddir, locale ? locale : "en");
+		struct stat st;
+		if (stat(localeDir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+			locale = "en";
+		}
+		/* For some reason, libintl's locale guess was not quite working,
+		 this is a workaround to force it read correct language */
+		setlocale(LC_ALL, locale);
+		setenv("LANGUAGE", locale, 1);
+		//setenv("LANG", lang, 1);
+		//if ([NSLocale.currentLocale respondsToSelector:@selector(setLanguageAndRegion:)])
+		//	[NSLocale.currentLocale setLanguageAndRegion:[NSString stringWithCString:locale encoding:NSUTF8StringEncoding]];
+		DBGLOG(@"NSLocale.currentLocale: language=%@ numbering=%@", [NSLocale.currentLocale valueForKey:@"languageIdentifier"], [NSLocale.currentLocale valueForKey:@"numberingSystem"]);
+		DBGLOG(@"NSLocale.currentLocale: availableNumberingSystems=%@", [NSLocale.currentLocale valueForKey:@"availableNumberingSystems"]);
+
+		char *bindbase = bindtextdomain_ptr(BATTMAN_TEXTDOMAIN, binddir);
+		if (bindbase) {
+			DBGLOG(@"i18n base dir: %s", bindbase);
+			char __unused *dom = textdomain_ptr(BATTMAN_TEXTDOMAIN);
+			DBGLOG(@"textdomain: %s", dom);
+			char __unused *enc = bind_textdomain_codeset_ptr(BATTMAN_TEXTDOMAIN, "UTF-8");
+			DBGLOG(@"codeset: %s", enc);
+			use_libintl = true;
+		} else {
+			show_alert("Error", "Failed to get i18n base", "Cancel");
+		}
+	} else {
+		show_alert("Error", "Unable to get executable path", "Cancel");
+	}
+}
+
 static void gettext_init(void) {
     static dispatch_once_t onceToken;
 
@@ -136,32 +183,7 @@ static void gettext_init(void) {
             assert(textdomain_ptr != NULL);
             assert(gettext_ptr != NULL);
 #endif
-            /* For some reason, libintl's locale guess was not quite working,
-               this is a workaround to force it read correct language */
-            setlocale(LC_ALL, preferred_language());
-            //setenv("LANG", lang, 1);
-
-            char mainBundle[PATH_MAX];
-            uint32_t size = sizeof(mainBundle);
-            char binddir[PATH_MAX];
-            if (_NSGetExecutablePath(mainBundle, &size) == KERN_SUCCESS) {
-                char *bundledir = dirname(mainBundle);
-                /* Either /Applications/Battman.app/locales or ./locales */
-                sprintf(binddir, "%s/%s", bundledir ? bundledir : ".", "locales");
-                char *bindbase = bindtextdomain_ptr(BATTMAN_TEXTDOMAIN, binddir);
-                if (bindbase) {
-                    DBGLOG(@"i18n base dir: %s", bindbase);
-                    char __unused *dom = textdomain_ptr(BATTMAN_TEXTDOMAIN);
-                    DBGLOG(@"textdomain: %s", dom);
-                    char __unused *enc = bind_textdomain_codeset_ptr(BATTMAN_TEXTDOMAIN, "UTF-8");
-                    DBGLOG(@"codeset: %s", enc);
-                    use_libintl = true;
-                } else {
-                    show_alert("Error", "Failed to get i18n base", "Cancel");
-                }
-            } else {
-                show_alert("Error", "Unable to get executable path", "Cancel");
-            }
+			gettext_setlocale(preferred_language());
 #ifdef _
 #undef _
 #endif
