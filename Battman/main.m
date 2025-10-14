@@ -33,10 +33,6 @@ extern int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
 
 #import <UserNotifications/UserNotifications.h>
 
-@interface NSLocale ()
-+ (void)setLanguageAndRegion:(NSString *)locale;
-@end
-
 struct localization_entry {
 	CFStringRef *cfstr;
 	const char **pstr;
@@ -152,8 +148,7 @@ static void gettext_setlocale(char *locale) {
 		setlocale(LC_ALL, locale);
 		setenv("LANGUAGE", locale, 1);
 		//setenv("LANG", lang, 1);
-		//if ([NSLocale.currentLocale respondsToSelector:@selector(setLanguageAndRegion:)])
-		//	[NSLocale.currentLocale setLanguageAndRegion:[NSString stringWithCString:locale encoding:NSUTF8StringEncoding]];
+
 		DBGLOG(@"NSLocale.currentLocale: language=%@ numbering=%@", [NSLocale.currentLocale valueForKey:@"languageIdentifier"], [NSLocale.currentLocale valueForKey:@"numberingSystem"]);
 		DBGLOG(@"NSLocale.currentLocale: availableNumberingSystems=%@", [NSLocale.currentLocale valueForKey:@"availableNumberingSystems"]);
 
