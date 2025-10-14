@@ -1,7 +1,7 @@
 .PHONY: all publish_mounted_site publish_local_site publish_none clean
 
 # Please make sure this is synced with xcodeproj
-BATTMAN_VERSION := 1.0
+BATTMAN_VERSION := 1.0.1
 
 SED = sed
 
