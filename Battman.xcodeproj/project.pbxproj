@@ -81,9 +81,6 @@
 		683B2D092E6C361100FECDF5 /* UPSMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B82DEEEDC600550EBE /* UPSMonitor.m */; };
 		683B2D0A2E6C361100FECDF5 /* UPSMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B82DEEEDC600550EBE /* UPSMonitor.m */; };
 		683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B82DEEEDC600550EBE /* UPSMonitor.m */; };
-		683B2D0E2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2D0D2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m */; };
-		683B2D3C2E6C8F6200FECDF5 /* SerialQRCodeTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2D0D2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m */; };
-		683B2D3D2E6C8F6300FECDF5 /* SerialQRCodeTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2D0D2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m */; };
 		683B2D432E7173CD00FECDF5 /* intl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; };
 		683B2D722E8143D100FECDF5 /* licensing.S in Sources */ = {isa = PBXBuildFile; fileRef = 6838BF652DB8D06B007EB66C /* licensing.S */; };
 		684114042E4A35D2001B76B6 /* DonationPrompter.m in Sources */ = {isa = PBXBuildFile; fileRef = 684114032E4A34DA001B76B6 /* DonationPrompter.m */; };
@@ -14517,7 +14514,6 @@
 				684114902E5323E2001B76B6 /* DividerView.m in Sources */,
 				684114912E5323E2001B76B6 /* DatePickerTableViewCell.m in Sources */,
 				684114922E5323E2001B76B6 /* BattmanVectorIcon.m in Sources */,
-				683B2D3D2E6C8F6300FECDF5 /* SerialQRCodeTableViewCell.m in Sources */,
 				684114932E5323E2001B76B6 /* DonationPrompter.m in Sources */,
 				684114942E5323E2001B76B6 /* hid.m in Sources */,
 				68C0C7402E93B93E006F73EA /* UIImage+SVG.m in Sources */,
@@ -14585,7 +14581,6 @@
 				684114E62E57BDE7001B76B6 /* DividerView.m in Sources */,
 				684114E72E57BDE7001B76B6 /* DatePickerTableViewCell.m in Sources */,
 				684114E82E57BDE7001B76B6 /* BattmanVectorIcon.m in Sources */,
-				683B2D3C2E6C8F6200FECDF5 /* SerialQRCodeTableViewCell.m in Sources */,
 				684114E92E57BDE7001B76B6 /* DonationPrompter.m in Sources */,
 				684114EA2E57BDE7001B76B6 /* hid.m in Sources */,
 				68C0C7412E93B93E006F73EA /* UIImage+SVG.m in Sources */,
@@ -14661,7 +14656,6 @@
 				68AE40B92D8EB8870023D7B0 /* MultiSelectSegmentedControl.m in Sources */,
 				68AE40BA2D8EB8870023D7B0 /* DividerView.m in Sources */,
 				68B16F072E167CE6009B63AC /* DatePickerTableViewCell.m in Sources */,
-				683B2D0E2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m in Sources */,
 				6841147F2E512AB1001B76B6 /* BattmanVectorIcon.m in Sources */,
 				684114042E4A35D2001B76B6 /* DonationPrompter.m in Sources */,
 				68B2913A2DD1FEDA0089BA1F /* hid.m in Sources */,
