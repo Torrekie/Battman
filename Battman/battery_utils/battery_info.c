@@ -728,14 +728,21 @@ void battery_info_update_smc(struct battery_info_section *section) {
 	if (!section->data[0].name)
 		return; // no data need to be freed
 	struct battery_info_node *head = section->data;
-	uint16_t                  remain_cap, full_cap, design_cap;
+	uint16_t                  remain_cap = 0, full_cap = 0, design_cap = 0;
 	get_capacity(&remain_cap, &full_cap, &design_cap);
 
 	struct battery_info_node *head_arr[2] = { head, head };
 	/* Health = 100.0f * FullChargeCapacity (mAh) / DesignCapacity (mAh) */
 	BI_SET_ITEM(_C("Health"), 100.0f * (float)full_cap / (float)design_cap);
 	/* SoC = 100.0f * RemainCapacity (mAh) / FullChargeCapacity (mAh) */
-	BI_SET_ITEM(_C("SoC"), 100.0f * (float)remain_cap / (float)full_cap);
+	if (remain_cap && full_cap)
+		BI_SET_ITEM(_C("SoC"), 100.0f * (float)remain_cap / (float)full_cap);
+	else {
+		uint8_t uisoc = 0;
+		smc_read_n('BUIC', &uisoc, 1);
+		DBGLOG(CFSTR("remain_cap=0, Use UISoC (%d) as SoC instead"), (int)uisoc);
+		BI_SET_ITEM(_C("SoC"), uisoc);
+	}
 	// No Imperial units here
 	BI_SET_ITEM(_C("Avg. Temperature"), get_temperature());
 	// // TODO: Charging Type Display {"Battery Power", "AC Power", "UPS Power"}

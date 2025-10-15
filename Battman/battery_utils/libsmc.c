@@ -479,25 +479,35 @@ bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design) {
     B0RM = B0FC = B0DC = 0;
 
     /* B0RM(ui16) RemainingCapacity (mAh) */
-    IOReturn result = smc_read_n('B0RM', &B0RM,2);
+    IOReturn result = smc_read_n('B0RM', &B0RM, 2);
     if (result != kIOReturnSuccess)
         return false;
 
     /* B0FC(ui16) FullChargeCapacity (mAh) */
-    result = smc_read_n('B0FC', &B0FC,2);
+    result = smc_read_n('B0FC', &B0FC, 2);
     if (result != kIOReturnSuccess)
         return false;
 
     /* B0DC(ui16) DesignCapacity (mAh) */
-    result = smc_read_n('B0DC', &B0DC,2);
+    result = smc_read_n('B0DC', &B0DC, 2);
     if (result != kIOReturnSuccess)
         return false;
 
-    /* B0RM should be read reversed that scene (e.g. 0x760D -> 0x0D76) */
-    /* TODO: I believe there is a better detection for this */
-    if (B0RM > (1.1f * B0DC) && (((B0RM & 0xFF) << 8) | (B0RM >> 8)) > 0) {
-        B0RM = ((B0RM & 0xFF) << 8) | (B0RM >> 8);
-    }
+	SMCParamStruct input= {0};
+	result = smc_get_keyinfo('B0RM', &input.param.keyInfo);
+	if (result == kIOReturnSuccess) {
+		uint8_t atrib = input.param.keyInfo.dataAttributes;
+		if (atrib & 0x10) {
+			/* The known scene where the B0RM endian reversed is when it has attribute 'Function' */
+			B0RM = ((B0RM & 0xFF) << 8) | (B0RM >> 8);
+		}
+	} else {
+		// Fallback
+		/* B0RM should be read reversed that scene (e.g. 0x760D -> 0x0D76) */
+		if (B0RM > (1.1f * B0DC) && (((B0RM & 0xFF) << 8) | (B0RM >> 8)) > 0) {
+			B0RM = ((B0RM & 0xFF) << 8) | (B0RM >> 8);
+		}
+	}
 
     if (remaining)
         *remaining = B0RM * num;
