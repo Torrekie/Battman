@@ -80,7 +80,7 @@ struct battery_info_node main_battery_template[] = {
 	{ _C("Current Rating"), _C("Current rating of connected power source, this does not indicates the real-time passing current."), BIN_IN_DETAILS | BIN_UNIT_MAMP },
 	{ _C("Voltage Rating"), _C("Voltage rating of connected power source, this does not indicates the real-time passing voltage."), BIN_IN_DETAILS | BIN_UNIT_MVOLT },
 	{ _C("Input Current"), _C("Real-time input current (IBUS) from the connected power source."), BIN_IN_DETAILS | BIN_UNIT_MAMP },
-	{ _C("Input Voltage"), _C("Real-time input voltage (VBUS) from the connected power source."), BIN_IN_DETAILS | BIN_UNIT_MAMP },
+	{ _C("Input Voltage"), _C("Real-time input voltage (VBUS) from the connected power source."), BIN_IN_DETAILS | BIN_UNIT_MVOLT },
 	{ _C("Charging Current"), _C("The real-time passing current to internal battery."), BIN_IN_DETAILS | BIN_UNIT_MAMP },
 	{ _C("Charging Voltage"), _C("The real-time passing voltage to internal battery."), BIN_IN_DETAILS | BIN_UNIT_MVOLT },
 	{ _C("Charger IC ID"), NULL, 0 },
