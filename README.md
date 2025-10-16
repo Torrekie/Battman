@@ -27,8 +27,7 @@ $${\color{grey}True \space elegance \space in \space software \space lies \space
 - [x] Purely constructed with Objective-C & C
 - [x] UI purely written with brilliant Objective-C codes
 - [x] NO StoryBoards, NO additional binaries, NO Xcode Assets
-- [x] NO nasty Swift and SwiftUI involved
-- [x] NEITHER Swift NOR SwiftUI involved, they are disgusting
+- [x] NO Swift and SwiftUI involved
 - [x] NO CocoaPods, NO Swift Packages, NO external code requirements, NO 3rd-party frameworks
 - [x] Compile WITH/WITHOUT Xcode
 - [x] Builds on Linux (Yes, "you need Mac to make iOS apps" is Apple propaganda)

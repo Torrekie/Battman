@@ -24,8 +24,7 @@ $${\color{grey}真正优雅的软件讲究代码的艺术，而非外表的点�
 - [x] 纯粹地由Objective-C与C打造
 - [x] 明朗的UI，编写自明朗的Objective-C
 - [x] 不含**StoryBoards**，不含**额外的二进制文件**，不含**Xcode 资源库**
-- [x] 不含**肮脏的Swift和SwiftUI**
-- [x] **没有**任何的 **Swift** 或者 **SwiftUI** 被添加，它们令人不适
+- [x] 不含**Swift和SwiftUI**
 - [x] 不含**CocoaPods**，不含**Swift 扩展包**，不含**外部代码包依赖**，不含**第三方框架**
 - [x] Xcode 编译？不用 Xcode 编译也可以
 - [x] 编译在 Linux（没错，“你需要 Mac 来做 iOS App”是 Apple 的鼓动宣传）
