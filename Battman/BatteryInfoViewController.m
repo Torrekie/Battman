@@ -9,7 +9,9 @@
 #import "ThermalTunesViewContoller.h"
 #include "battery_utils/battery_utils.h"
 #import "SimpleTemperatureViewController.h"
+#import "BrightnessInfoTableViewCell.h"
 #import "UPSMonitor.h"
+#import "BattmanPrefs.h"
 
 #include "common.h"
 #include "intlextern.h"
@@ -88,6 +90,9 @@ CGImageRef getArtworkImageOf(CFStringRef name) {
 enum sections_batteryinfo {
 	BI_SECT_BATTERY_INFO,
 	BI_SECT_HW_TEMP,
+#if ENABLE_BRIGHTNESS
+	BI_SECT_BRIGHTNESS,
+#endif
 	BI_SECT_MANAGE,
 	BI_SECT_COUNT
 };
@@ -189,6 +194,10 @@ enum sections_batteryinfo {
             return _("Battery Info");
         case BI_SECT_HW_TEMP:
             return _("Hardware Temperature");
+#if ENABLE_BRIGHTNESS
+		case BI_SECT_BRIGHTNESS:
+			return _("Brightness");
+#endif
         case BI_SECT_MANAGE:
             return _("Manage");
         default:
@@ -205,6 +214,11 @@ enum sections_batteryinfo {
         [self.navigationController pushViewController:[[BatteryDetailsViewController alloc] initWithBatteryInfo:&batteryInfo] animated:YES];
 	else if (indexPath.section == BI_SECT_HW_TEMP)
 		[self.navigationController pushViewController:[SimpleTemperatureViewController new] animated:YES];
+#if ENABLE_BRIGHTNESS
+	else if (indexPath.section == BI_SECT_BRIGHTNESS)
+		show_alert(_C("Unimplemented Yet"), _C("Will be introduced in future updates."), L_OK);
+		//[self.navigationController pushViewController:[BrightnessDetailsViewController new] animated:YES];
+#endif
 	else if (indexPath.section == BI_SECT_MANAGE) {
 		UIViewController *vc = nil;
 		switch (indexPath.row) {
@@ -245,6 +259,14 @@ enum sections_batteryinfo {
         	cell = [TemperatureInfoTableViewCell new];
 		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         return cell;
+#if ENABLE_BRIGHTNESS
+	} else if (indexPath.section == BI_SECT_BRIGHTNESS) {
+		BrightnessInfoTableViewCell *cell = [tv dequeueReusableCellWithIdentifier:@"BITVC-ri"];
+		if (!cell)
+			cell = [BrightnessInfoTableViewCell new];
+		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+		return cell;
+#endif
     } else if (indexPath.section == BI_SECT_MANAGE) {
 		// XXX: Try make this section "InsetGrouped"
         UITableViewCell *cell = [UITableViewCell new];
@@ -278,10 +300,15 @@ enum sections_batteryinfo {
 }
 
 - (CGFloat)tableView:(id)tv heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+	// TODO: reduce redundant
     if (indexPath.section == BI_SECT_BATTERY_INFO && indexPath.row == 0) {
-        return 130;
+        return 120;
     } else if (indexPath.section == BI_SECT_HW_TEMP && indexPath.row == 0) {
-        return 130;
+        return 120;
+#if ENABLE_BRIGHTNESS
+	} else if (indexPath.section == BI_SECT_BRIGHTNESS && indexPath.row == 0) {
+		return 120;
+#endif
     } else {
         return [super tableView:tv heightForRowAtIndexPath:indexPath];
         // return 30;
