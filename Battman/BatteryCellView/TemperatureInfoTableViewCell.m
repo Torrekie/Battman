@@ -7,6 +7,8 @@
 #include "../battery_utils/libsmc.h"
 // Temporary ^
 
+#import "../BattmanPrefs.h"
+
 @interface CALayer ()
 @property (atomic, assign, readwrite) BOOL continuousCorners;
 @end
@@ -151,7 +153,7 @@
 		}
 		finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Battery Avg."), total / num];
 		// Embedded designed operating temp: 0º to 35º C
-		batttemp = ((total / num) > 45) ? 1.0 : ((total / num) / 45);
+		batttemp = total / num;
 		free(btemps);
 	}
 
@@ -169,14 +171,21 @@
 		got_temp |= TEMP_SCRN;
 		finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Main Screen"), scrntemp];
 	}
-	
+
+	float minVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MIN];
+	float maxVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MAX];
+	if (minVal <= 0.0f) minVal = 0.0f;
+	if (maxVal <= 0.0f) maxVal = 45.0f;
+
+#define TEMP_TO_PERCENTAGE(x) (x > maxVal) ? 1.0 : (x < minVal ? 0.0 : (x - minVal) / (maxVal - minVal))
 	// Temp meter anim
+	DBGLOG(@"TEMP_TO_PERCENTAGE(batttemp: %f): %f", batttemp, TEMP_TO_PERCENTAGE(batttemp));
 	if (got_temp & TEMP_BATT) {
-		[[temperatureCell arcView] rotatePointerToPercentage:batttemp];
+		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(batttemp)];
 	} else if (got_temp & TEMP_SNSR) {
-		[[temperatureCell arcView] rotatePointerToPercentage:snsrtemp];
+		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(snsrtemp)];
 	} else if (got_temp & TEMP_SCRN) {
-		[[temperatureCell arcView] rotatePointerToPercentage:scrntemp];
+		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(scrntemp)];
 	} else {
 		finalText = _("Who moved my temperature sensors?");
 		dispatch_queue_t queue = dispatch_get_main_queue();

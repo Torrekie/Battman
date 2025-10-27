@@ -3,6 +3,7 @@
 #import "MultilineViewCell.h"
 #import "SegmentedViewCell.h"
 #import "WarnAccessoryView.h"
+#import "BattmanPrefs.h"
 #include "battery_utils/iokit_connection.h"
 #include "battery_utils/libsmc.h"
 #include "common.h"
@@ -204,12 +205,33 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
-	[self updateTableView];
+	// Update refresh mode based on current preferences
+	BSVCRefreshModeDidUpdate(self);
+	// Defer battery update to avoid blocking main thread during view transition
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self updateTableView];
+	});
+}
+
+- (void)refreshModeDidUpdate {
+	// Called when preferences change
+	BSVCRefreshModeDidUpdate(self);
 }
 
 - (void)batteryStatusDidUpdate:(NSDictionary *)info {
-	// TODO: reimplement IOKit method to update battery info
-	[self updateTableView];
+	// Check refresh preferences - only update if in auto mode (0) or manual refresh
+	float interval = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_BI_INTERVAL];
+	if (interval == -1.0f) {
+		// Never mode - don't update automatically
+		return;
+	}
+	
+	// Only update in auto mode - in timer mode, the timer handles updates directly
+	if (interval == 0.0f) {
+		// TODO: reimplement IOKit method to update battery info
+		DBGLOG(@"BDVC: batteryStatusDidUpdate");
+		[self updateTableView];
+	}
 #if 0
 	BOOL charging = [info[@"AppleRawExternalConnected"] boolValue];
 	if(charging != last_charging) {
@@ -291,10 +313,19 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 }
 
 - (void)updateTableView {
+	DBGLOG(@"BDVC: updateTableView");
 	[self.refreshControl beginRefreshing];
-	battery_info_update(batteryInfo);
-	[self.tableView reloadData];
-	[self.refreshControl endRefreshing];
+	
+	// Move heavy SMC operations to background queue to avoid blocking main thread
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+		battery_info_update(self->batteryInfo);
+
+		// Update UI on main thread
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self.tableView reloadData];
+			[self.refreshControl endRefreshing];
+		});
+	});
 }
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath {
@@ -402,12 +433,18 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		cell_class = [MultilineViewCell class];
 	}
 	UITableViewCell *cell = [tv dequeueReusableCellWithIdentifier:ident];
-	if(cell) {
-		cell.accessoryType=0;
-		cell.accessoryView=nil;
-		cell.detailTextLabel.font=[UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-	}else{
+	if (cell) {
+		cell.accessoryType = UITableViewCellAccessoryNone;
+		cell.accessoryView = nil;
+		cell.detailTextLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+	} else {
 		cell = [[cell_class alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:ident];
+	}
+	
+	if (ip.section == 0 && !strcmp("de", preferred_language())) {
+		// Workaround for too-long texts
+		cell.detailTextLabel.numberOfLines = 0;
+		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
 	}
 
 	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, ip.section);

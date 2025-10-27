@@ -686,7 +686,7 @@ void adapter_info_update_smc(struct battery_info_section *section) {
     // BI_SET_HIDDEN(_C("Adapter Details"), 0);
     BI_SET_ITEM(_C("Port"), adapter_info.port);
     /* FIXME: no direct use of cond_localize_c(), do locales like names */
-    BI_FORMAT_ITEM(_C("Compatibility"), "%s: %s\n%s: %s", cond_localize_c("External Connected"), adapter_data.ChargerExist ? L_TRUE : L_FALSE, cond_localize_c("Charger Capable"), adapter_data.ChargerCapable ? L_TRUE : L_FALSE);
+    BI_FORMAT_ITEM(_C("Compatibility"), "%s: %s\n%s: %s", cond_localize_c("External Connected"), (adapter_data.ChargerExist != 0) ? L_TRUE : L_FALSE, cond_localize_c("Charger Capable"), (adapter_data.ChargerCapable != 0) ? L_TRUE : L_FALSE);
     BI_FORMAT_ITEM(_C("Type"), "%s (%.8X)", cond_localize_c(get_adapter_family_desc(adapter_family)), adapter_family);
     BI_FORMAT_ITEM(_C("Status"), "%s", (charging_stat == kIsPausing || adapter_data.NotChargingReason != 0) ? cond_localize_c("Not Charging") : cond_localize_c("Charging"));
 

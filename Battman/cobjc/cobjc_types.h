@@ -40,3 +40,4 @@ typedef double NSTimeInterval;
 #include "./UIColor.h"
 #include "./UILabel.h"
 #include "./UITableView.h"
+#include "./NSTimer.h"

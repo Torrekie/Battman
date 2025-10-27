@@ -56,6 +56,22 @@ extern void battman_worker_oneshot(char cmd, char arg);
     if (!springboard)
         springboard = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.springboard"];
 	//self.tableView.allowsSelection=NO;
+
+	char  buf[1024];
+	daemon_pid = 0;
+	char *end = stpcpy(stpcpy(buf, battman_config_dir()), "/daemon");
+	strcpy(end, ".run");
+	int drfd = open(buf, O_RDONLY);
+	if (drfd != -1) {
+		int pid;
+		if (read(drfd, &pid, 4) == 4) {
+			if (kill(pid, 0) == 0 || errno != ESRCH) {
+				daemon_pid = pid;
+			}
+		}
+		close(drfd);
+	}
+
 	return self;
 }
 
@@ -83,7 +99,13 @@ extern void battman_worker_oneshot(char cmd, char arg);
 
 - (NSString *)tableView:(UITableView *)tv titleForFooterInSection:(NSInteger)sect {
     if (sect == CM_SECT_GENERAL) {
-        return _("Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation.");
+		if (daemon_pid)
+			return _("These values can’t be overridden when the Charging Limit daemon is running.");
+		BOOL obc = NO;
+		smc_read_n('CH0C', &obc, 1);
+		if (!obc)
+			smc_read_n('CH0I', &obc, 1);
+		return [NSString stringWithFormat:_("Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation. %@"), obc ? _("Certain values may not be overridable when Optimized Battery Charging is enabled.") : @""];
     } else if (sect == CM_SECT_SMART_CHARGING) {
 		return _("Smart Charging will start 900 seconds (15 minutes) after power is plugged-in, or the date you scheduled, whichever one comes first.");
     } else if (sect == CM_SECT_LOW_POWER_MODE) {

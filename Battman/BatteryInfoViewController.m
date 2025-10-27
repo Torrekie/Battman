@@ -104,13 +104,29 @@ enum sections_batteryinfo {
 }
 
 - (void)batteryStatusDidUpdate:(NSDictionary *)info {
-	battery_info_update(&batteryInfo);
-	//battery_info_update_iokit_with_data(batteryInfo,(__bridge CFDictionaryRef)info,0);
-	[super batteryStatusDidUpdate];
+	// Check refresh preferences - only update if in auto mode (0) or manual refresh
+	float interval = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_BI_INTERVAL];
+	if (interval == -1.0f) {
+		// Never mode - don't update automatically
+		return;
+	}
+	
+	// Only call super (which calls updateTableView) in auto mode
+	// In timer mode, the timer handles calling updateTableView directly
+	if (interval == 0.0f) {
+		//battery_info_update(&batteryInfo);
+		//battery_info_update_iokit_with_data(batteryInfo,(__bridge CFDictionaryRef)info,0);
+		DBGLOG(@"BIVC: batteryStatusDidUpdate");
+		[super batteryStatusDidUpdate];
+	}
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+
+    UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
+    [refreshControl addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
+    self.refreshControl = refreshControl;
 
     // Copyright text
     UILabel *copyright;
@@ -176,6 +192,17 @@ enum sections_batteryinfo {
 		return [super initWithStyle:UITableViewStyleInsetGrouped];
 	else
 		return [super initWithStyle:UITableViewStyleGrouped];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+	// Update refresh mode based on current preferences
+	BSVCRefreshModeDidUpdate(self);
+}
+
+- (void)refreshModeDidUpdate {
+	// Called when preferences change
+	BSVCRefreshModeDidUpdate(self);
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
@@ -313,6 +340,20 @@ enum sections_batteryinfo {
         return [super tableView:tv heightForRowAtIndexPath:indexPath];
         // return 30;
     }
+}
+
+- (void)updateTableView {
+	DBGLOG(@"BIVC: updateTableView");
+	[self.refreshControl beginRefreshing];
+
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+		battery_info_update(&self->batteryInfo);
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self.tableView reloadData];
+			[self.refreshControl endRefreshing];
+		});
+	});
 }
 
 - (void)dealloc {
