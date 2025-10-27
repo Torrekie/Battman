@@ -42,8 +42,6 @@ jobs:
         #mv $GITHUB_WORKSPACE/theos ~/theos
         mkdir -p ~/theos/sdks
         export THEOS=~/theos
-        ARCH=$(uname -m)
-        curl -sL https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-$ARCH.tar.xz | tar -xJvf - -C $THEOS/toolchain/
         curl -LO https://github.com/theos/sdks/archive/master.zip
         TMP=$(mktemp -d)
         unzip -q master.zip -d $TMP
@@ -51,6 +49,10 @@ jobs:
         # Apple lied to us, we are going to expose the lie
         sed -i 's/) CG_UNAVAILABLE_EMBEDDED/, 2.0)/g' $THEOS/sdks/iPhoneOS*.sdk/System/Library/Frameworks/CoreGraphics.framework/Headers/CGColor.h
         rm -rf master.zip $TMP
+        ARCH=$(uname -m)
+        curl -LO https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-$ARCH.tar.xz
+        tar -xJvf iOSToolchain-$ARCH.tar.xz -C $THEOS/toolchain/
+        rm -f iOSToolchain-$ARCH.tar.xz
     - name: Build
       run: |
         export THEOS=~/theos
