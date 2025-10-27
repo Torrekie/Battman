@@ -42,12 +42,8 @@ jobs:
         #mv $GITHUB_WORKSPACE/theos ~/theos
         mkdir -p ~/theos/sdks
         export THEOS=~/theos
-        curl -LO https://github.com/sbingner/llvm-project/releases/latest/download/linux-ios-arm64e-clang-toolchain.tar.lzma
-        TMP=$(mktemp -d)
-        tar -xf  linux-ios-arm64e-clang-toolchain.tar.lzma -C $TMP
-        mkdir -p $THEOS/toolchain/linux/iphone
-        mv $TMP/ios-arm64e-clang-toolchain/* $THEOS/toolchain/linux/iphone/
-        rm -rf linux-ios-arm64e-clang-toolchain.tar.lzma $TMP
+        ARCH=$(uname -m)
+        curl -sL https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-$ARCH.tar.xz | tar -xJvf - -C $THEOS/toolchain/
         curl -LO https://github.com/theos/sdks/archive/master.zip
         TMP=$(mktemp -d)
         unzip -q master.zip -d $TMP
