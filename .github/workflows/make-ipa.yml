@@ -51,6 +51,7 @@ jobs:
         rm -rf master.zip $TMP
         ARCH=$(uname -m)
         curl -LO https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-$ARCH.tar.xz
+        mkdir -p $THEOS/toolchain/
         tar -xJvf iOSToolchain-$ARCH.tar.xz -C $THEOS/toolchain/
         rm -f iOSToolchain-$ARCH.tar.xz
     - name: Build
