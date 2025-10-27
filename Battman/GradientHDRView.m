@@ -74,19 +74,22 @@
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 120400
 		extern const CFStringRef kCGColorSpaceITUR_2020_PQ_EOTF __attribute__((weak_import));
 #endif
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 140000
+		extern const CFStringRef kCGColorSpaceITUR_2100_PQ __attribute__((weak_import));
+#endif
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		CGColorSpaceRef cs = NULL;
-		if (@available(iOS 14.0, macOS 11.0, macCatalyst 14.0, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2100_PQ);
-		} else if (@available(iOS 13.4, macOS 10.15.4, macCatalyst 13.4, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ);
-		} else if (@available(iOS 13.0, macOS 10.15, macCatalyst 13.0, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ_EOTF);
-		} else if (@available(iOS 12.6, macOS 10.14.6, macCatalyst 12.6, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ_EOTF);
-		} else if (@available(iOS 12.0, macOS 10.14, macCatalyst 12.0, *)) {
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
+		CGColorSpaceRef cs = NULL;
+		if (@available(iOS 14.0, macOS 11.0, *)) {
+			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2100_PQ);
+		} else if (@available(iOS 13.4, macOS 10.15.4, *)) {
+			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ);
+		} else if (@available(iOS 13.0, macOS 10.15, *)) {
+			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ_EOTF);
+		} else if (@available(iOS 12.6, macOS 10.14.6, *)) {
+			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ_EOTF);
+		} else if (@available(iOS 12.0, macOS 10.14, *)) {
 			if (kCGColorSpaceITUR_2020_PQ_EOTF != NULL)
 				cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ_EOTF);
 		}
