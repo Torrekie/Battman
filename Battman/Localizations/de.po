@@ -1367,7 +1367,6 @@ msgstr "Vbatt-Fehler"
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/libsmc.c:757
 msgid "Ibatt MinFault"
 msgstr "Ibatt-Minimalfehler"
-msgstr "Ibatt MinFault"
 
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/libsmc.c:758
 msgid "Charger Communication Failure"
