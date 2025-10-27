@@ -22,7 +22,8 @@ FRAMEWORKS := -framework UIKit \
               -framework WebKit \
 	      -framework SystemConfiguration \
 	      -framework MessageUI \
-	      -framework UserNotifications
+	      -framework UserNotifications \
+	      -framework Metal
 
 CFLAGS = -Wno-deprecated-declarations -Wno-nullability-completeness -Werror -target arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET} -target arm64-apple-darwin -fobjc-arc -fconstant-cfstrings -I./EXTERNAL_HEADERS -DUSE_MOBILEGESTALT -DBATTMAN_VERSION_STRING=\"$(BATTMAN_VERSION)\"
 LDFLAGS = -target arm64-apple-ios$(IPHONEOS_DEPLOYMENT_TARGET) -target arm64-apple-darwin $(LIBS) $(FRAMEWORKS) -Wl,-dead_strip_dylibs

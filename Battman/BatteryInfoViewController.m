@@ -9,7 +9,7 @@
 #import "ThermalTunesViewContoller.h"
 #include "battery_utils/battery_utils.h"
 #import "SimpleTemperatureViewController.h"
-#import "BrightnessInfoTableViewCell.h"
+#import "BatteryCellView/BrightnessInfoTableViewCell.h"
 #import "UPSMonitor.h"
 #import "BattmanPrefs.h"
 
