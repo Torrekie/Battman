@@ -105,7 +105,6 @@ static char *get_CFLocale() {
 char *preferred_language(void) {
 	static char name[256];
 #ifdef USE_GETTEXT
-	extern bool has_locale;
 	if (!has_locale) {
 		// Unify UI languages to keep consistency (we are forcing locales on date formatters)
 		return "en";

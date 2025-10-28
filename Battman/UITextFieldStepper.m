@@ -5,6 +5,7 @@
 //  Created by Torrekie on 2025/10/22.
 //
 
+#import "common.h"
 #import "UITextFieldStepper.h"
 #import <objc/message.h>
 #import <objc/runtime.h>
@@ -172,7 +173,7 @@ static void UITextFieldStepperHorizontalVisualElement_commonStepperInit(id self,
 		UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 0, 44)];
 		toolbar.barStyle = UIBarStyleDefault;
 		UIBarButtonItem *flexSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-		UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(dismissKeyboard)];
+		UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:_("Done") style:UIBarButtonItemStyleDone target:self action:@selector(dismissKeyboard)];
 		toolbar.items = @[flexSpace, doneButton];
 		_textField.inputAccessoryView = toolbar;
 		

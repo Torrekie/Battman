@@ -94,6 +94,9 @@ __END_DECLS
 
 #pragma mark - PreferencesViewController
 
+#define BattmanPrefsVersion 1
+#define kBattmanPrefs_Version "Battman_Conf_Version"
+
 typedef enum {
 	P_SECT_LANGUAGE,
 	P_SECT_BI_INTERVAL,

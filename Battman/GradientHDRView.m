@@ -5,12 +5,25 @@
 //  Created by Torrekie on 2025/10/4.
 //
 
+#import "main.h"
 #import "common.h"
 #import "ObjCExt/UIScreen+Auto.h"
 #import "GradientHDRView.h"
 #import "BattmanPrefs.h"
 #import <QuartzCore/QuartzCore.h>
 #import <CoreGraphics/CoreGraphics.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2100_PQ);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ_EOTF);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2020_PQ_EOTF);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
+
+#pragma clang diagnostic pop
 
 @interface CALayer ()
 @property (atomic, assign) BOOL wantsExtendedDynamicRangeContent;
@@ -63,52 +76,17 @@
     // Setup CAMetalLayer
     _metalLayer = [CAMetalLayer layer];
     _metalLayer.device = _device;
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     
     // Set pixel format based on HDR support
     if (_supportsHDR) {
         _metalLayer.pixelFormat = MTLPixelFormatBGR10A2Unorm;  // 10-bit + 2-bit alpha for HDR
         _metalLayer.wantsExtendedDynamicRangeContent = YES;
         
-        // Try to set HDR colorspace
-		// Apple always lie to us when things related with graphics.
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 120400
-		extern const CFStringRef kCGColorSpaceITUR_2020_PQ_EOTF __attribute__((weak_import));
-#endif
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 140000
-		extern const CFStringRef kCGColorSpaceITUR_2100_PQ __attribute__((weak_import));
-#endif
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-		CGColorSpaceRef cs = NULL;
-		if (@available(iOS 14.0, macOS 11.0, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2100_PQ);
-		} else if (@available(iOS 13.4, macOS 10.15.4, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ);
-		} else if (@available(iOS 13.0, macOS 10.15, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ_EOTF);
-		} else if (@available(iOS 12.6, macOS 10.14.6, *)) {
-			cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ_EOTF);
-		} else if (@available(iOS 12.0, macOS 10.14, *)) {
-			if (kCGColorSpaceITUR_2020_PQ_EOTF != NULL)
-				cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020_PQ_EOTF);
-		}
-#pragma clang diagnostic pop
-
-        if (cs) {
-            _metalLayer.colorspace = cs;
-            CGColorSpaceRelease(cs);
-            DBGLOG(@"HDR colorspace enabled");
-        } else {
-            DBGLOG(@"Could not create ITUR_2020_PQ color space, using default");
-            // Try fallback HDR colorspace
-            cs = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
-            if (cs) {
-                _metalLayer.colorspace = cs;
-                CGColorSpaceRelease(cs);
-                DBGLOG(@"Extended sRGB colorspace enabled as fallback");
-            }
-        }
+        // Try to set HDR colorspace with proper fallback chain
+        [self tryHDRColorspaceWithFallbacks];
     } else {
         // Fallback to standard 8-bit format
         _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
@@ -134,6 +112,56 @@
     _gradientBrightness = _supportsHDR ? 2.0f : 2.2f;   // HDR: 2.0, Non-HDR: 2.2 (brighter)
 }
 
+- (void)tryHDRColorspaceWithFallbacks {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    BOOL (^tryColorspace)(CFStringRef, const char *) = ^BOOL(CFStringRef colorspaceRef, const char *name) {
+        if (colorspaceRef == NULL) return NO;
+        
+        CGColorSpaceRef cs = CGColorSpaceCreateWithName(colorspaceRef);
+        if (!cs) {
+            DBGLOG(@"Could not create %s colorspace", name);
+            return NO;
+        }
+        
+        if ([self safelySetColorspace:cs forMetalLayer:self->_metalLayer]) {
+            DBGLOG(@"HDR colorspace enabled: %s", name);
+            CGColorSpaceRelease(cs);
+            return YES;
+        } else {
+            DBGLOG(@"HDR colorspace %s incompatible, trying next fallback", name);
+            CGColorSpaceRelease(cs);
+            return NO;
+        }
+    };
+
+    if (tryColorspace(kCGColorSpaceITUR_2100_PQ, "ITU-R 2100 PQ") || tryColorspace(kCGColorSpaceDisplayP3_PQ, "Display P3 PQ") || tryColorspace(kCGColorSpaceDisplayP3_PQ_EOTF, "Display P3 PQ EOTF") || tryColorspace(kCGColorSpaceITUR_2020_PQ_EOTF, "ITU-R 2020 PQ EOTF") || tryColorspace(kCGColorSpaceExtendedSRGB, "Extended sRGB")) {
+        return;
+    }
+
+    DBGLOG(@"All HDR colorspaces failed, disabling HDR");
+    _supportsHDR = NO;
+    _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    _metalLayer.wantsExtendedDynamicRangeContent = NO;
+#pragma clang diagnostic pop
+}
+
+- (BOOL)safelySetColorspace:(CGColorSpaceRef)colorspace forMetalLayer:(CAMetalLayer *)metalLayer {
+    if (!colorspace || !metalLayer) {
+        return NO;
+    }
+    @try {
+        metalLayer.colorspace = colorspace;
+        DBGLOG(@"Successfully set colorspace");
+        return YES;
+    }
+    @catch (NSException *exception) {
+        DBGLOG(@"Failed to set colorspace: %@", exception.reason);
+        return NO;
+    }
+}
+
 - (void)checkHDRSupport {
     _supportsHDR = NO;
 
@@ -141,7 +169,7 @@
 		if (![BattmanPrefs.sharedPrefs boolForKey:@kBattmanPrefs_BRIGHT_UI_HDR])
 			goto skip_hdr_check;
 	}
-		
+
     // Check if device supports HDR pixel formats
     if ([_device supportsTextureSampleCount:1] &&
 #if TARGET_OS_MACCATALYST
@@ -151,7 +179,8 @@
 #endif
         // Check if the display supports extended dynamic range
         UIScreen *screen = [UIScreen autoScreen];
-        if (@available(iOS 10.0, *)) {
+        NSOperatingSystemVersion iOS10 = {.majorVersion = 10, .minorVersion = 0, .patchVersion = 0};
+        if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:iOS10]) {
             if (screen.traitCollection.displayGamut == UIDisplayGamutP3) {
                 _supportsHDR = YES;
                 DBGLOG(@"HDR supported (P3 display)");
@@ -396,6 +425,49 @@ skip_hdr_check:
 
 - (BOOL)supportsHDR {
     return _supportsHDR;
+}
+
+#pragma mark - App Lifecycle
+
+- (void)appDidEnterBackground:(NSNotification *)notification {
+    // Pause any ongoing animations to save resources
+    if (_animationDisplayLink) {
+        [_animationDisplayLink invalidate];
+        _animationDisplayLink = nil;
+    }
+    
+    // Clear the gradient texture to free GPU memory
+    _gradientTexture = nil;
+    
+    DBGLOG(@"GradientHDRView: App entered background - resources paused");
+}
+
+- (void)appWillEnterForeground:(NSNotification *)notification {
+    // Recreate gradient texture when returning from background
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self createGradientTexture];
+        [self render];
+    });
+    
+    DBGLOG(@"GradientHDRView: App entering foreground - resources restored");
+}
+
+- (void)dealloc {
+    // Clean up notification observers
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
+    // Clean up animation display link
+    if (_animationDisplayLink) {
+        [_animationDisplayLink invalidate];
+        _animationDisplayLink = nil;
+    }
+    
+    // Clean up Metal resources
+    _gradientTexture = nil;
+    _cmdQueue = nil;
+    _device = nil;
+    
+    DBGLOG(@"GradientHDRView: Dealloc completed");
 }
 
 @end

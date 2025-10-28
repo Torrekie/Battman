@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-26 18:27+0800\n"
+"POT-Creation-Date: 2025-10-28 19:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,58 +17,64 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:357
+#: /Users/torrekie/proj/Battman/Battman/common.c:359
 #: /Users/torrekie/proj/Battman/Battman/main.m:229
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:550
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:556
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:553
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:559
 msgid "OK"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:358
+#: /Users/torrekie/proj/Battman/Battman/common.c:360
 msgid "Failed"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:359
+#: /Users/torrekie/proj/Battman/Battman/common.c:361
 #: /Users/torrekie/proj/Battman/Battman/ChargingManagementViewController.m:293
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:252
 msgid "Error"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:360
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:673
+#: /Users/torrekie/proj/Battman/Battman/common.c:362
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:679
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/accessory.c:77
 msgid "None"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:361
+#: /Users/torrekie/proj/Battman/Battman/common.c:363
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mA"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:362
+#: /Users/torrekie/proj/Battman/Battman/common.c:364
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mAh"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:363
+#: /Users/torrekie/proj/Battman/Battman/common.c:365
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mV"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:364
+#: /Users/torrekie/proj/Battman/Battman/common.c:366
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:35
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:86
 msgid "True"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:365
+#: /Users/torrekie/proj/Battman/Battman/common.c:367
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:35
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:88
 msgid "False"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:406
+#: /Users/torrekie/proj/Battman/Battman/common.c:408
 msgid "Swipe up to exit"
+msgstr ""
+
+#: /Users/torrekie/proj/Battman/Battman/UITextFieldStepper.m:176
+#: /Users/torrekie/proj/Battman/Battman/SliderTableViewCell.m:36
+#: /Users/torrekie/proj/Battman/Battman/SegmentedTextField.m:125
+msgid "Done"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:104
@@ -130,7 +136,7 @@ msgstr ""
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:347
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:356
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:551
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:509
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:512
 msgid "Cancel"
 msgstr ""
 
@@ -556,7 +562,7 @@ msgstr ""
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:246
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:267
 #: /Users/torrekie/proj/Battman/Battman/AnalyticsViewController.m:45
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:344
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:347
 msgid "Unimplemented Yet"
 msgstr ""
 
@@ -596,16 +602,17 @@ msgstr ""
 msgid "Exit"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:288
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:245
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:137
 msgid "Preferred Language"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:307
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:264
 msgid "Clear"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:317
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:213
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:274
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:216
 msgid "Default"
 msgstr ""
 
@@ -947,7 +954,7 @@ msgid "Couldn't start the daemon — it isn’t responding."
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:422
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:660
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:666
 msgid "Unavailable"
 msgstr ""
 
@@ -1001,134 +1008,135 @@ msgstr ""
 msgid "Start Daemon %@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:137
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:140
 msgid "Battery Info Refresh Rate"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:140
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:143
 msgid "Appearance"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:143
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:146
 msgid "Data Management"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:158
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
 msgid ""
 "Battery information updates automatically depending on system conditions."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:164
 #, objc-format
 msgid ""
 "Battery information updates at the selected interval.\n"
 "%@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:164
 msgid "Using a shorter interval may affect performance."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:165
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
 msgid ""
 "Battery information doesn’t update automatically. Pull down to refresh "
 "manually."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:170
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:173
 msgid "Configure how often battery information is refreshed.\n"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:185
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:188
 msgid "Language changes will take effect after restarting the app."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:190
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:193
 msgid ""
 "This will permanently delete all Battman data, preferences, and cached "
 "files. This action cannot be undone."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:209
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:212
 msgid "Language"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:239
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:241
 msgid "Interval (s)"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:246
+#. TRANSLATORS: Please ensure this string won't be longer as "Custom"
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:249
 msgid "Custom"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:248
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:250
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:251
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
 msgid "Auto"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:248
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:250
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:251
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
 msgid "Never"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:281
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:284
 msgid "Thermometer min (℃)"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:295
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:298
 msgid "Thermometer max (℃)"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:309
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:312
 msgid "Use EDR on 'Brightness'"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:327
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:517
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:330
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:510
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:520
 msgid "Wipe All Battman Data"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:510
 #, objc-format
 msgid "This will wipe all data under %@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:512
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:515
 msgid "Dry Run"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:539
 msgid "Dry Run Analysis..."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:539
 msgid "Wiping Data..."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:537
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:540
 msgid "Please wait while analyzing what would be deleted."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:537
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:540
 msgid "Please wait while all data is being deleted."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:549
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:552
 msgid "Dry Run Complete"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:549
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:552
 msgid ""
 "Analysis complete. Check the console/logs to see what would be deleted. No "
 "data was actually removed."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:555
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:558
 msgid "Data Wiped"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:555
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:558
 msgid "All Battman data has been successfully deleted. The app will now exit."
 msgstr ""
 
@@ -1265,27 +1273,27 @@ msgid ""
 "chargers are handled differently by the hardware."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:472
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:478
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:41
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:218
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:758
 msgid "Remaining Capacity"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:481
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:487
 msgid ""
 "Unusual Remaining Capacity, a non-genuine battery component may be in use."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:481
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:487
 msgid "Estimated Remaining"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:485
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:491
 msgid "Remaining Capacity not detected."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:489
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:495
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:53
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:120
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:164
@@ -1295,39 +1303,39 @@ msgstr ""
 msgid "Cycle Count"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:542
 msgid ""
 "Cycle Count exceeded designed cycle count, consider replacing with a genuine "
 "battery."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:540
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:546
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:52
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:771
 msgid "Time to Empty"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:558
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:564
 msgid "Unusual Time to Empty, a non-genuine battery component may be in use."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:562
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:568
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:45
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:221
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:763
 msgid "Depth of Discharge"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:569
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:575
 msgid ""
 "Unusual Depth of Discharge, a non-genuine battery component may be in use."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:650
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:656
 msgid "Not HVC"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:654
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:660
 msgid "Software Controlled"
 msgstr ""
 

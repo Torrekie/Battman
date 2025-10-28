@@ -5,7 +5,7 @@
 //  Created by Torrekie on 2025/10/15.
 //
 
-#import "GradientHDRView.h"
+#import "../GradientHDRView.h"
 #import "BrightnessInfoTableViewCell.h"
 
 @interface CALayer ()

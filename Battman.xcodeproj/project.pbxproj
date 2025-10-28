@@ -14716,7 +14716,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" --no-translator && msgmerge -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
 		};
 		68DCA5B32D40EC61004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14735,7 +14735,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nPOT_FILE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/base.pot\"\nrm -f \"${POT_FILE}\"\nexec xgettext -v --keyword=_ --keyword=cond_localize_c --keyword=_C --copyright-holder=\"Torrekie <me@torrekie.dev>\" --package-name=\"${PROJECT_NAME}\" --package-version=\"${CURRENT_PROJECT_VERSION}\" --output=$POT_FILE --from-code=UTF-8 $(find ${PROJECT_DIR}/${PROJECT_NAME} -name \"*.m\" -or -name \"*.c\" -or -name \"*.h\")\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nPOT_FILE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/base.pot\"\nrm -f \"${POT_FILE}\"\nexec xgettext -v --keyword=_ --keyword=cond_localize_c --keyword=_C --add-comments=TRANSLATORS --copyright-holder=\"Torrekie <me@torrekie.dev>\" --package-name=\"${PROJECT_NAME}\" --package-version=\"${CURRENT_PROJECT_VERSION}\" --output=$POT_FILE --from-code=UTF-8 $(find ${PROJECT_DIR}/${PROJECT_NAME} -name \"*.m\" -or -name \"*.c\" -or -name \"*.h\")\n";
 		};
 		68DCA5BC2D40FAB1004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;

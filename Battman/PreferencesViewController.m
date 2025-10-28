@@ -245,6 +245,7 @@ UITableViewCell *find_cell(UIView *view) {
 						intervalTextField.textAlignment = NSTextAlignmentCenter;
 						intervalTextField.keyboardType = UIKeyboardTypeDecimalPad;
 						intervalTextField.returnKeyType = UIReturnKeyDone;
+						/* TRANSLATORS: Please ensure this string won't be longer as "Custom" */
 						intervalTextField.placeholder = _("Custom");
 						intervalTextField.delegate = self;
 						items = @[_("Auto"), intervalTextField, _("Never")];
