@@ -859,7 +859,7 @@ msgstr ""
 "Der Überhitzungsschutz in der Tasche reduziert automatisch die CPU- und GPU-"
 "Leistung, wenn das Display ausgeschaltet ist und keine Medien wiedergegeben "
 "werden, um Überhitzung zu verhindern, während sich das Gerät in einer Tasche "
-"befindet.device is stored in a pocket."
+"befindet."
 
 #: /Users/torrekie/proj/Battman/Battman/ThermalTunesViewContoller.m:234
 msgid "State Updates"
