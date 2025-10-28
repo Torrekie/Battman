@@ -11,6 +11,7 @@
 
 #include "battery_utils/battery_info.h"
 #include "common.h"
+#include "BattmanPrefs.h"
 #include "cobjc/UNNotificationRequest.h"
 #include "gtkextern.h"
 #include "intlextern.h"
@@ -110,6 +111,12 @@ char *preferred_language(void) {
 		return "en";
 	}
 #endif
+	// BattmanPrefs
+	const char *config_lang = NULL;
+	config_lang = BattmanPrefsGetCString(kBattmanPrefs_LANGUAGE);
+	if (config_lang != NULL)
+		return (char *)config_lang;
+
 	/* Convert new-style locale names with language tags (ISO 639 and ISO 15924)
 	   to Unix (ISO 639 and ISO 3166) names.  */
 	typedef struct {
@@ -181,6 +188,9 @@ char *preferred_language(void) {
 	sprintf(name, "%s", get_CFLocale());
 	if (strncmp(name, "en-", 3) == 0)
 		return "en";
+	/* XXX: before we actually provide Deutsch variants, redirect them to unified 'de' */
+	if (strncmp(name, "de-", 3) == 0)
+		return "de";
 
 	/* Step 2: Convert using langtag_table and script_table.  */
 	if ((strlen(name) == 7 || strlen(name) == 10) && name[2] == '-') {

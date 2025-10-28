@@ -17,6 +17,8 @@
 	bool lpm_supported;
 	bool lpm_on;
 	float lpm_thr;
+
+	int daemon_pid;
 }
 @end
 

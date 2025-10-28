@@ -131,6 +131,11 @@ typedef enum {
 	BATTMAN_SUBPROCESS,
 } battman_type_t;
 
+#ifdef DEBUG
+#warning Remember to finalize ENABLE_BRIGHTNESS when releasing
+#define ENABLE_BRIGHTNESS 1
+#endif
+
 __BEGIN_DECLS
 
 #ifndef __OBJC__

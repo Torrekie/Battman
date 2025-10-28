@@ -111,6 +111,12 @@ static NSMutableDictionary *thermalBasics;
 	return _("Hardware Temperature");
 }
 
+- (void)viewDidLoad {
+	UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
+	[refreshControl addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
+	self.refreshControl = refreshControl;
+}
+
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tv {
 	// IOHID is not available in Simulators, try find other ways later
 	return getenv("SIMULATOR_DEVICE_NAME") ? 2 : 5;
@@ -152,6 +158,16 @@ static NSMutableDictionary *thermalBasics;
 		return _("Some sensors may not provide real‑time temperature data.");
 	}
 	return nil;
+}
+
+- (void)updateTableView {
+	DBGLOG(@"STVC: updateTableView");
+	[self.refreshControl beginRefreshing];
+
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self.tableView reloadData];
+		[self.refreshControl endRefreshing];
+	});
 }
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath {

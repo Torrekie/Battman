@@ -622,12 +622,10 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 					break;
 				}
 				case CL_MAIN_DAEMONSWITCH: {
+					BOOL enforced = BIT_GET(vals[2], 1);
+					NSString *labelText = [NSString stringWithFormat:@"%@", daemon_pid ? _("Stop Daemon %@") : _("Start Daemon %@")];
+					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? @"(Enforce Mode)" : @"(Soft Mode)"];
 					cell.selectionStyle = UITableViewCellSelectionStyleDefault;
-					if (daemon_pid) {
-						cell.textLabel.text = _("Stop Daemon (Disable Charging Limit)");
-					} else {
-						cell.textLabel.text = _("Start Daemon (Enforce Charging Limit)");
-					}
 					if (@available(iOS 13.0, *)) {
 						cell.textLabel.textColor = [UIColor linkColor];
 					} else {
@@ -730,7 +728,8 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	[self daemonRedecide];
 	/* Im lazy, so hardcode here */
 	NSIndexPath *ip = [NSIndexPath indexPathForRow:CL_MAIN_OBCSWITCH inSection:CL_SECTION_MAIN];
-	[self.tableView reloadRowsAtIndexPaths:@[ip] withRowAnimation:UITableViewRowAnimationAutomatic];
+	NSIndexPath *button = [NSIndexPath indexPathForRow:CL_MAIN_DAEMONSWITCH inSection:CL_SECTION_MAIN];
+	[self.tableView reloadRowsAtIndexPaths:@[ip, button] withRowAnimation:UITableViewRowAnimationAutomatic];
 }
 
 @end

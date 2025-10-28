@@ -1,5 +1,7 @@
 #import "ObjCExt/UIScreen+Auto.h"
 #import "SettingsViewController.h"
+#import "PreferencesViewController.h"
+#import "LanguageSelectionViewController.h"
 #import "DonationPrompter.h"
 #import "CGIconSet/BattmanVectorIcon.h"
 #include "common.h"
@@ -72,9 +74,6 @@ static UIImage *loadSerialNumberQRCodeImage(void) {
 	return QRCodeImage;
 }
 #endif
-
-@interface LanguageSelectionVC : UITableViewController
-@end
 
 enum sections_settings {
 	SS_SECT_VERSION,
@@ -196,7 +195,7 @@ static NSMutableArray *sns_avail = nil;
 	// SNS
 	NSArray *sns_list = @[
 		@"https://torrekie.com", @"", _("Torrekie's website (zh_CN)"),
-		@"twitter://user?screen_name=Torrekie", @"com.atebits.Tweetie2", _("Follow @Torrekie"),
+		@"twitter://user?screen_name=Torrekie_G", @"com.atebits.Tweetie2", _("Follow @Torrekie_G"),
 		@"bilibili://space/169414691", @"tv.danmaku.bilianime", _("Subscribe me on Bilibili"),
 		@"reddit:///u/Torrekie", @"com.reddit.Reddit", _("Follow u/Torrekie on Reddit"),
 	];
@@ -269,7 +268,7 @@ static NSMutableArray *sns_avail = nil;
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
 	if (section == SS_SECT_VERSION)
-		return 2;
+		return 3;
 	if (section == SS_SECT_ABOUT)
 		return 6;
 	if (section == SS_SECT_SNS)
@@ -298,6 +297,8 @@ static NSMutableArray *sns_avail = nil;
 - (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	if (indexPath.section == SS_SECT_VERSION) {
 		if (indexPath.row == 1) {
+			[self.navigationController pushViewController:[PreferencesViewController new] animated:YES];
+		} else if (indexPath.row == 2) {
 			NSString *title = _("Gonna tell us something?");
 			NSString *message = _("Found a bug or have an idea? Please choose one way to contact us:\nopen a GitHub Issue (public — great for steps/logs)\nor Send Email (for private info or attachments). We really appreciate your help!");
 			UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
@@ -372,11 +373,7 @@ static NSMutableArray *sns_avail = nil;
             }
             [self.navigationController pushViewController:[DebugViewController new] animated:YES];
         } else if (indexPath.row == 1) {
-#ifndef USE_GETTEXT
-            [self.navigationController pushViewController:[LanguageSelectionVC new] animated:YES];
-#else
-            show_alert("USE_GETTEXT", "UNIMPLEMENTED YET", "OK");
-#endif
+            [self.navigationController pushViewController:[LanguageSelectionViewController new] animated:YES];
         } else if (indexPath.row == 2) {
             app_exit();
         } else if (indexPath.row == 3) {
@@ -501,6 +498,13 @@ static NSMutableArray *sns_avail = nil;
 #endif
 														   encoding:NSUTF8StringEncoding];
 		} else if (indexPath.row == 1) {
+			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			cell.textLabel.text = _("Preferences");
+			if (artwork_avail) {
+				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Settings")) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
+			}
+		} else if (indexPath.row == 2) {
 			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
 			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 			cell.textLabel.text = _("Report Bug");
@@ -727,65 +731,6 @@ static NSString *_contrib[] = {
 + (NSDictionary *)debugGetTemperatureHIDData {
 	extern NSDictionary *getTemperatureHIDData(void);
 	return getTemperatureHIDData();
-}
-
-@end
-
-// Language
-#ifdef USE_GETTEXT
-static int __unused cond_localize_cnt = 0;
-static int cond_localize_language_cnt = 0;
-#else
-extern int cond_localize_cnt;
-extern int cond_localize_language_cnt;
-extern CFStringRef **cond_localize_find(const char *str);
-#endif
-extern void preferred_language_code_clear(void);
-
-@implementation LanguageSelectionVC
-
-- (NSString *)title {
-    return _("Language Override");
-}
-
-- (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
-    return cond_localize_language_cnt + 1;
-}
-
-- (NSInteger)numberOfSectionsInTableView:(id)tv {
-    return 1;
-}
-
-- (UITableViewCell *)tableView:(id)tv cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [UITableViewCell new];
-    if (indexPath.row == 0) {
-        cell.textLabel.text = _("Clear");
-        return cell;
-    }
-#if !defined(USE_GETTEXT)
-    cell.textLabel.text = (__bridge NSString *)(*cond_localize_find("English"))[indexPath.row - 1];
-    if (preferred_language_code() + 1 == indexPath.row) {
-        cell.accessoryType = UITableViewCellAccessoryCheckmark;
-    }
-#endif
-    return cell;
-}
-
-- (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row == 0) {
-        remove(lang_cfg_file());
-        preferred_language_code_clear();
-        [tv reloadData];
-        return;
-    } else {
-        int fd = open_lang_override(O_RDWR | O_CREAT, 0600);
-        int n = (int)indexPath.row - 1;
-        write(fd, &n, 4);
-        close(fd);
-        preferred_language_code_clear();
-        [tv reloadData];
-    }
-    [tv deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 @end

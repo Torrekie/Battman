@@ -27,7 +27,8 @@
 	<true/>
 	<key>com.apple.private.security.storage.AppDataContainers</key>
 	<true/>
-
+	<key>com.apple.private.MobileContainerManager.allowed</key>
+	<true/>
 	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
 	<true/>
 	<key>com.apple.security.cs.disable-library-validation</key>

@@ -42,7 +42,7 @@ UIImage *imageForSFProGlyph(NSString *glyph, NSString *fontName, CGFloat fontSiz
 
 - (void)setupEmptyStateView {
 	UILabel *emptyLabel = [[UILabel alloc] init];
-	emptyLabel.text = _("Not yet implemented");
+	emptyLabel.text = _("Unimplemented Yet");
 	emptyLabel.textAlignment = NSTextAlignmentCenter;
 	emptyLabel.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightMedium];
 	if (@available(iOS 13.0, *)) {

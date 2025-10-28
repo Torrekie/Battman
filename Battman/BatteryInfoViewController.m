@@ -9,7 +9,9 @@
 #import "ThermalTunesViewContoller.h"
 #include "battery_utils/battery_utils.h"
 #import "SimpleTemperatureViewController.h"
+#import "BatteryCellView/BrightnessInfoTableViewCell.h"
 #import "UPSMonitor.h"
+#import "BattmanPrefs.h"
 
 #include "common.h"
 #include "intlextern.h"
@@ -88,6 +90,9 @@ CGImageRef getArtworkImageOf(CFStringRef name) {
 enum sections_batteryinfo {
 	BI_SECT_BATTERY_INFO,
 	BI_SECT_HW_TEMP,
+#if ENABLE_BRIGHTNESS
+	BI_SECT_BRIGHTNESS,
+#endif
 	BI_SECT_MANAGE,
 	BI_SECT_COUNT
 };
@@ -99,13 +104,29 @@ enum sections_batteryinfo {
 }
 
 - (void)batteryStatusDidUpdate:(NSDictionary *)info {
-	battery_info_update(&batteryInfo);
-	//battery_info_update_iokit_with_data(batteryInfo,(__bridge CFDictionaryRef)info,0);
-	[super batteryStatusDidUpdate];
+	// Check refresh preferences - only update if in auto mode (0) or manual refresh
+	float interval = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_BI_INTERVAL];
+	if (interval == -1.0f) {
+		// Never mode - don't update automatically
+		return;
+	}
+	
+	// Only call super (which calls updateTableView) in auto mode
+	// In timer mode, the timer handles calling updateTableView directly
+	if (interval == 0.0f) {
+		//battery_info_update(&batteryInfo);
+		//battery_info_update_iokit_with_data(batteryInfo,(__bridge CFDictionaryRef)info,0);
+		DBGLOG(@"BIVC: batteryStatusDidUpdate");
+		[super batteryStatusDidUpdate];
+	}
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+
+    UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
+    [refreshControl addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
+    self.refreshControl = refreshControl;
 
     // Copyright text
     UILabel *copyright;
@@ -173,6 +194,17 @@ enum sections_batteryinfo {
 		return [super initWithStyle:UITableViewStyleGrouped];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+	// Update refresh mode based on current preferences
+	BSVCRefreshModeDidUpdate(self);
+}
+
+- (void)refreshModeDidUpdate {
+	// Called when preferences change
+	BSVCRefreshModeDidUpdate(self);
+}
+
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
 	if (section == BI_SECT_MANAGE)
 		return 3;
@@ -189,6 +221,10 @@ enum sections_batteryinfo {
             return _("Battery Info");
         case BI_SECT_HW_TEMP:
             return _("Hardware Temperature");
+#if ENABLE_BRIGHTNESS
+		case BI_SECT_BRIGHTNESS:
+			return _("Brightness");
+#endif
         case BI_SECT_MANAGE:
             return _("Manage");
         default:
@@ -205,6 +241,11 @@ enum sections_batteryinfo {
         [self.navigationController pushViewController:[[BatteryDetailsViewController alloc] initWithBatteryInfo:&batteryInfo] animated:YES];
 	else if (indexPath.section == BI_SECT_HW_TEMP)
 		[self.navigationController pushViewController:[SimpleTemperatureViewController new] animated:YES];
+#if ENABLE_BRIGHTNESS
+	else if (indexPath.section == BI_SECT_BRIGHTNESS)
+		show_alert(_C("Unimplemented Yet"), _C("Will be introduced in future updates."), L_OK);
+		//[self.navigationController pushViewController:[BrightnessDetailsViewController new] animated:YES];
+#endif
 	else if (indexPath.section == BI_SECT_MANAGE) {
 		UIViewController *vc = nil;
 		switch (indexPath.row) {
@@ -245,6 +286,14 @@ enum sections_batteryinfo {
         	cell = [TemperatureInfoTableViewCell new];
 		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         return cell;
+#if ENABLE_BRIGHTNESS
+	} else if (indexPath.section == BI_SECT_BRIGHTNESS) {
+		BrightnessInfoTableViewCell *cell = [tv dequeueReusableCellWithIdentifier:@"BITVC-ri"];
+		if (!cell)
+			cell = [BrightnessInfoTableViewCell new];
+		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+		return cell;
+#endif
     } else if (indexPath.section == BI_SECT_MANAGE) {
 		// XXX: Try make this section "InsetGrouped"
         UITableViewCell *cell = [UITableViewCell new];
@@ -278,14 +327,33 @@ enum sections_batteryinfo {
 }
 
 - (CGFloat)tableView:(id)tv heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+	// TODO: reduce redundant
     if (indexPath.section == BI_SECT_BATTERY_INFO && indexPath.row == 0) {
-        return 130;
+        return 120;
     } else if (indexPath.section == BI_SECT_HW_TEMP && indexPath.row == 0) {
-        return 130;
+        return 120;
+#if ENABLE_BRIGHTNESS
+	} else if (indexPath.section == BI_SECT_BRIGHTNESS && indexPath.row == 0) {
+		return 120;
+#endif
     } else {
         return [super tableView:tv heightForRowAtIndexPath:indexPath];
         // return 30;
     }
+}
+
+- (void)updateTableView {
+	DBGLOG(@"BIVC: updateTableView");
+	[self.refreshControl beginRefreshing];
+
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+		battery_info_update(&self->batteryInfo);
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self.tableView reloadData];
+			[self.refreshControl endRefreshing];
+		});
+	});
 }
 
 - (void)dealloc {
