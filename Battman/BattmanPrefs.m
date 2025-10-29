@@ -72,7 +72,7 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 			@kBattmanPrefs_THERM_UI_MIN: @(0.0),
 			@kBattmanPrefs_THERM_UI_MAX: @(45.0),
 #if ENABLE_BRIGHTNESS
-			@kBattmanPrefs_BRIGHT_UI_HDR: @(NO),
+			@kBattmanPrefs_BRIGHT_UI_HDR: @(1),
 #endif
 		};
 

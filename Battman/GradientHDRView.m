@@ -82,14 +82,19 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
     
     // Set pixel format based on HDR support
     if (_supportsHDR) {
-        _metalLayer.pixelFormat = MTLPixelFormatBGR10A2Unorm;  // 10-bit + 2-bit alpha for HDR
-        _metalLayer.wantsExtendedDynamicRangeContent = YES;
-        
-        // Try to set HDR colorspace with proper fallback chain
-        [self tryHDRColorspaceWithFallbacks];
+        if ([self safelySetPixelFormat:MTLPixelFormatBGR10A2Unorm forMetalLayer:_metalLayer]) {
+            _metalLayer.wantsExtendedDynamicRangeContent = YES;
+
+            [self tryHDRColorspaceWithFallbacks];
+        } else {
+            DBGLOG(@"Failed to set HDR pixel format, falling back to standard format");
+            _supportsHDR = NO;
+            [self safelySetPixelFormat:MTLPixelFormatBGRA8Unorm forMetalLayer:_metalLayer];
+            _metalLayer.wantsExtendedDynamicRangeContent = NO;
+        }
     } else {
         // Fallback to standard 8-bit format
-        _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+        [self safelySetPixelFormat:MTLPixelFormatBGRA8Unorm forMetalLayer:_metalLayer];
         _metalLayer.wantsExtendedDynamicRangeContent = NO;
         DBGLOG(@"HDR not supported, using standard 8-bit format");
     }
@@ -142,7 +147,7 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
 
     DBGLOG(@"All HDR colorspaces failed, disabling HDR");
     _supportsHDR = NO;
-    _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    [self safelySetPixelFormat:MTLPixelFormatBGRA8Unorm forMetalLayer:_metalLayer];
     _metalLayer.wantsExtendedDynamicRangeContent = NO;
 #pragma clang diagnostic pop
 }
@@ -162,6 +167,56 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
     }
 }
 
+- (BOOL)safelySetPixelFormat:(MTLPixelFormat)pixelFormat forMetalLayer:(CAMetalLayer *)metalLayer {
+    if (!metalLayer)
+        return NO;
+
+    @try {
+        metalLayer.pixelFormat = pixelFormat;
+        DBGLOG(@"Successfully set pixel format %lu", (unsigned long)pixelFormat);
+        return YES;
+    }
+    @catch (NSException *exception) {
+        DBGLOG(@"Failed to set pixel format %lu: %@", (unsigned long)pixelFormat, exception.reason);
+        return NO;
+    }
+}
+
+BOOL metal_hdr_available(id<MTLDevice> device) {
+	// Check if device supports HDR pixel formats
+	BOOL support_hdr = NO;
+	if ([device supportsTextureSampleCount:1] &&
+#if TARGET_OS_MACCATALYST
+		[device supportsFamily:MTLGPUFamilyApple3])
+#else
+		[device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
+#endif
+	{
+		// Check if the display supports extended dynamic range
+		UIScreen *screen = [UIScreen autoScreen];
+		NSOperatingSystemVersion iOS10 = {.majorVersion = 10, .minorVersion = 0, .patchVersion = 0};
+		if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:iOS10]) {
+			if (screen.traitCollection.displayGamut == UIDisplayGamutP3) {
+				support_hdr = YES;
+				DBGLOG(@"HDR supported (P3 display)");
+			}
+		}
+			
+		// Check if we can create the HDR pixel format texture
+		if (support_hdr) {
+			MTLTextureDescriptor *testDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGR10A2Unorm width:1 height:1 mipmapped:NO];
+			id<MTLTexture> testTexture = [device newTextureWithDescriptor:testDesc];
+			if (!testTexture) {
+				support_hdr = NO;
+				DBGLOG(@"Device doesn't support BGR10A2Unorm format for textures - HDR disabled");
+			}
+		}
+	} else {
+		DBGLOG(@"Device doesn't support required Metal features for HDR");
+	}
+
+	return support_hdr;
+}
 - (void)checkHDRSupport {
     _supportsHDR = NO;
 
@@ -170,36 +225,8 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
 			goto skip_hdr_check;
 	}
 
-    // Check if device supports HDR pixel formats
-    if ([_device supportsTextureSampleCount:1] &&
-#if TARGET_OS_MACCATALYST
-		[_device supportsFamily:MTLGPUFamilyApple3]) {
-#else
-        [_device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1]) {
-#endif
-        // Check if the display supports extended dynamic range
-        UIScreen *screen = [UIScreen autoScreen];
-        NSOperatingSystemVersion iOS10 = {.majorVersion = 10, .minorVersion = 0, .patchVersion = 0};
-        if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:iOS10]) {
-            if (screen.traitCollection.displayGamut == UIDisplayGamutP3) {
-                _supportsHDR = YES;
-                DBGLOG(@"HDR supported (P3 display)");
-            }
-        }
-
-        // Check if we can create the HDR pixel format texture
-        if (_supportsHDR) {
-            MTLTextureDescriptor *testDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGR10A2Unorm width:1 height:1 mipmapped:NO];
-            id<MTLTexture> testTexture = [_device newTextureWithDescriptor:testDesc];
-            if (!testTexture) {
-                _supportsHDR = NO;
-                DBGLOG(@"Device doesn't support BGR10A2Unorm format - HDR disabled");
-            }
-        }
-    } else {
-        DBGLOG(@"Device doesn't support required Metal features for HDR");
-    }
-
+	_supportsHDR = metal_hdr_available(_device);
+	
 skip_hdr_check:
     if (!_supportsHDR) {
         DBGLOG(@"Falling back to standard dynamic range");

@@ -267,6 +267,7 @@ CFTypeRef (*MGCopyAnswerPtr)(CFStringRef) = NULL;
 SInt32 (*MGGetSInt32AnswerPtr)(CFStringRef, SInt32) = NULL;
 CFPropertyListRef (*MGCopyMultipleAnswersPtr)(CFArrayRef, CFDictionaryRef) = NULL;
 CFStringRef (*MGGetStringAnswerPtr)(CFStringRef) = NULL;
+bool (*MGGetBoolAnswerPtr)(CFStringRef property) = NULL;
 
 __attribute__((constructor))
 void load_mg(void) {
@@ -277,6 +278,7 @@ void load_mg(void) {
 		MGGetSInt32AnswerPtr = dlsym(mobileGestalt, "MGGetSInt32Answer");
 		MGCopyMultipleAnswersPtr = dlsym(mobileGestalt, "MGCopyMultipleAnswers");
 		MGGetStringAnswerPtr = dlsym(mobileGestalt, "MGGetStringAnswer");
+		MGGetBoolAnswerPtr = dlsym(mobileGestalt, "MGGetBoolAnswer");
 	}
 #else
 #error Before we find another way to get those info, MobileGestalt cannot be avoided

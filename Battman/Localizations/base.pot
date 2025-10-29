@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-28 19:25+0800\n"
+"POT-Creation-Date: 2025-10-29 20:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,8 +19,8 @@ msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/common.c:359
 #: /Users/torrekie/proj/Battman/Battman/main.m:229
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:553
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:559
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:584
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:590
 msgid "OK"
 msgstr ""
 
@@ -72,7 +72,7 @@ msgid "Swipe up to exit"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/UITextFieldStepper.m:176
-#: /Users/torrekie/proj/Battman/Battman/SliderTableViewCell.m:36
+#: /Users/torrekie/proj/Battman/Battman/SliderTableViewCell.m:37
 #: /Users/torrekie/proj/Battman/Battman/SegmentedTextField.m:125
 msgid "Done"
 msgstr ""
@@ -136,7 +136,7 @@ msgstr ""
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:347
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:356
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:551
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:512
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:543
 msgid "Cancel"
 msgstr ""
 
@@ -145,6 +145,7 @@ msgid "Version"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:503
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:48
 msgid "Preferences"
 msgstr ""
 
@@ -216,7 +217,7 @@ msgid "Remove token and exit"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:696
-#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:26
+#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:30
 msgid "Battman Credit"
 msgstr ""
 
@@ -562,7 +563,7 @@ msgstr ""
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:246
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:267
 #: /Users/torrekie/proj/Battman/Battman/AnalyticsViewController.m:45
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:347
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:364
 msgid "Unimplemented Yet"
 msgstr ""
 
@@ -603,7 +604,7 @@ msgid "Exit"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:245
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:137
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:141
 msgid "Preferred Language"
 msgstr ""
 
@@ -612,7 +613,7 @@ msgid "Clear"
 msgstr ""
 
 #: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:274
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:216
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:220
 msgid "Default"
 msgstr ""
 
@@ -887,13 +888,13 @@ msgid ""
 "the translations may inaccurate."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/main.m:368
+#: /Users/torrekie/proj/Battman/Battman/main.m:370
 msgid ""
 "stdio logs not redirected in Simulator build, please check stdio in Xcode "
 "console output instead."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/main.m:392
+#: /Users/torrekie/proj/Battman/Battman/main.m:394
 msgid "Battman CLI not implemented yet."
 msgstr ""
 
@@ -1008,135 +1009,151 @@ msgstr ""
 msgid "Start Daemon %@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:140
+#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:31
+msgid "Localizations"
+msgstr ""
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:144
 msgid "Battery Info Refresh Rate"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:143
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:147
 msgid "Appearance"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:146
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:150
 msgid "Data Management"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:165
 msgid ""
 "Battery information updates automatically depending on system conditions."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:164
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
 #, objc-format
 msgid ""
 "Battery information updates at the selected interval.\n"
 "%@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:164
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
 msgid "Using a shorter interval may affect performance."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:172
 msgid ""
 "Battery information doesn’t update automatically. Pull down to refresh "
 "manually."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:173
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:177
 msgid "Configure how often battery information is refreshed.\n"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:188
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:192
 msgid "Language changes will take effect after restarting the app."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:193
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:197
 msgid ""
 "This will permanently delete all Battman data, preferences, and cached "
 "files. This action cannot be undone."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:212
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:216
 msgid "Language"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:241
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:245
 msgid "Interval (s)"
 msgstr ""
 
 #. TRANSLATORS: Please ensure this string won't be longer as "Custom"
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:249
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
 msgid "Custom"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:251
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:255
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:257
 msgid "Auto"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:251
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:255
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:257
 msgid "Never"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:284
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:288
 msgid "Thermometer min (℃)"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:298
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:302
 msgid "Thermometer max (℃)"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:312
-msgid "Use EDR on 'Brightness'"
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:316
+msgid "Brightness Icon"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:330
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:510
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:520
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "EDR"
+msgstr ""
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "SDR"
+msgstr ""
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "Quartz"
+msgstr ""
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:347
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:541
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:551
 msgid "Wipe All Battman Data"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:510
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:541
 #, objc-format
 msgid "This will wipe all data under %@"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:515
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:546
 msgid "Dry Run"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:539
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:570
 msgid "Dry Run Analysis..."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:539
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:570
 msgid "Wiping Data..."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:540
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:571
 msgid "Please wait while analyzing what would be deleted."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:540
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:571
 msgid "Please wait while all data is being deleted."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:552
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:583
 msgid "Dry Run Complete"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:552
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:583
 msgid ""
 "Analysis complete. Check the console/logs to see what would be deleted. No "
 "data was actually removed."
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:558
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:589
 msgid "Data Wiped"
 msgstr ""
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:558
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:589
 msgid "All Battman data has been successfully deleted. The app will now exit."
 msgstr ""
 

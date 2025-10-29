@@ -146,6 +146,7 @@ extern CFTypeRef (*MGCopyAnswerPtr)(CFStringRef);
 extern SInt32 (*MGGetSInt32AnswerPtr)(CFStringRef, SInt32);
 extern CFPropertyListRef (*MGCopyMultipleAnswersPtr)(CFArrayRef, CFDictionaryRef);
 extern CFStringRef (*MGGetStringAnswerPtr)(CFStringRef);
+extern bool (*MGGetBoolAnswerPtr)(CFStringRef);
 
 extern const char    *L_OK;
 extern const char    *L_FAILED;
@@ -204,6 +205,11 @@ pid_t       get_pid_for_procname(const char *name);
 
 int         add_notification(const char *bundleid, const char *title, const char *subtitle, const char *body);
 int         add_notification_with_content(UNUserNotificationCenter *uc, UNMutableNotificationContent *content);
+
+bool        metal_available(bool ignore_config);
+
+id          perform_selector(SEL selector, id target, id arg1);
+id          perform_selector2(SEL selector, id target, id arg1, id arg2);
 
 __END_DECLS
 
