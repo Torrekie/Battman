@@ -36,6 +36,7 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 		_backing = [NSMutableDictionary dictionaryWithDictionary:std ?: @{}];
 
 		BattmanGlobalKeys = @[
+			@kBattmanPrefs_Version,
 		];
 		PreferencesViewControllerKeys = @{
 			@(P_SECT_LANGUAGE) : @{
@@ -66,17 +67,25 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 		
 		// Set default values for preferences that don't exist
 		NSDictionary<NSString *, id> *defaultValues = @{
+			@kBattmanPrefs_Version: @(BattmanPrefsVersion),
 			@kBattmanPrefs_BI_INTERVAL: @(0.0), /* 0:Auto, -1:Never */
 			@kBattmanPrefs_THERM_UI_MIN: @(0.0),
 			@kBattmanPrefs_THERM_UI_MAX: @(45.0),
 #if ENABLE_BRIGHTNESS
-			@kBattmanPrefs_BRIGHT_UI_HDR: @(YES),
+			@kBattmanPrefs_BRIGHT_UI_HDR: @(1),
 #endif
 		};
 
 		BOOL need_sync = NO;
 		for (NSString *key in allPrefsKeys) {
 			if ([userDefaults objectForKey:key] == nil && defaultValues[key] != nil) {
+				if ([key isEqualToString:@kBattmanPrefs_Version]) {
+					/* Version 1 Changes:
+					 * - HDR is now disabled by default
+					 */
+					[userDefaults removeObjectForKey:@kBattmanPrefs_BRIGHT_UI_HDR];
+					[userDefaults synchronize];
+				}
 				NSLog(@"BattmanPrefs: Setting default value %@ for key %@", defaultValues[key], key);
 				[userDefaults setObject:defaultValues[key] forKey:key];
 				_backing[key] = defaultValues[key];
@@ -189,19 +198,19 @@ id BattmanPrefsGetObject(const char *defaultName) {
 	if (!key) return NO;
 	
 	// Validate specific preference keys
-	if ([key isEqualToString:@"BI_REFRESH_INTERVAL"]) {
+	if ([key isEqualToString:@kBattmanPrefs_BI_INTERVAL]) {
 		if (![value isKindOfClass:[NSNumber class]]) return NO;
 		double interval = [(NSNumber *)value doubleValue];
 		return (interval >= -1.0); // -1 = Never, 0 = Auto, >0 = Custom interval
 	}
 	
-	if ([key isEqualToString:@"THERMOMETER_UI_MINVAL"] || [key isEqualToString:@"THERMOMETER_UI_MAXVAL"]) {
+	if ([key isEqualToString:@kBattmanPrefs_THERM_UI_MIN] || [key isEqualToString:@kBattmanPrefs_THERM_UI_MAX]) {
 		if (![value isKindOfClass:[NSNumber class]]) return NO;
 		double temp = [(NSNumber *)value doubleValue];
 		return (temp >= -50.0 && temp <= 150.0); // Reasonable temperature range
 	}
 	
-	if ([key isEqualToString:@"ENABLE_BRIGHTNESS_UI_HDR"]) {
+	if ([key isEqualToString:@kBattmanPrefs_BRIGHT_UI_HDR]) {
 		return [value isKindOfClass:[NSNumber class]]; // Should be boolean NSNumber
 	}
 	

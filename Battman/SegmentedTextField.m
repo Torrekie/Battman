@@ -5,6 +5,7 @@
 //  Created by Torrekie on 2025/10/16.
 //
 
+#import "common.h"
 #import "SegmentedTextField.h"
 
 @interface SegmentedTextField () {
@@ -121,7 +122,7 @@ static void replaceView(UIView *oldView, UIView *newView) {
 					UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 0, 44)];
 					toolbar.barStyle = UIBarStyleDefault;
 					UIBarButtonItem *flexSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-					UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(_dismissKeyboard)];
+					UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:_("Done") style:UIBarButtonItemStyleDone target:self action:@selector(_dismissKeyboard)];
 					toolbar.items = @[flexSpace, doneButton];
 					textField.inputAccessoryView = toolbar;
 				}

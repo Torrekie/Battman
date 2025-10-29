@@ -1,6 +1,7 @@
 #pragma once
 #include "./cobjc.h"
 
+// FIXME: Should migrate to UITableViewCell.h
 typedef enum {
     UITableViewStylePlain,          // regular table view
     UITableViewStyleGrouped,        // sections are grouped together

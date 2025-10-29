@@ -44,6 +44,10 @@ UITableViewCell *find_cell(UIView *view) {
 	return nil;
 }
 
+- (NSString *)title {
+	return _("Preferences");
+}
+
 - (instancetype)init {
 	UITableViewStyle style = UITableViewStyleGrouped;
 	if (@available(iOS 13.0, *))
@@ -245,6 +249,7 @@ UITableViewCell *find_cell(UIView *view) {
 						intervalTextField.textAlignment = NSTextAlignmentCenter;
 						intervalTextField.keyboardType = UIKeyboardTypeDecimalPad;
 						intervalTextField.returnKeyType = UIReturnKeyDone;
+						/* TRANSLATORS: Please ensure this string won't be longer as "Custom" */
 						intervalTextField.placeholder = _("Custom");
 						intervalTextField.delegate = self;
 						items = @[_("Auto"), intervalTextField, _("Never")];
@@ -308,12 +313,25 @@ UITableViewCell *find_cell(UIView *view) {
 				case P_ROW_APPEARANCE_BRIGHTNESS_HDR: {
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
-					[(UITableViewCell *)cell textLabel].text = _("Use EDR on 'Brightness'");
-					UISwitch *cs = [UISwitch new];
-					cs.on = [config_value boolValue];
-					cs.tag = P_ROW_APPEARANCE_BRIGHTNESS_HDR;
-					[cs addTarget:self action:@selector(brightnessHDRSwitchValueChanged:) forControlEvents:UIControlEventValueChanged];
-					[(UITableViewCell *)cell setAccessoryView:cs];
+					[(UITableViewCell *)cell textLabel].text = _("Brightness Icon");
+					UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[_("EDR"), _("SDR"), _("Quartz")]];
+					unsigned int selected = [config_value unsignedIntValue];
+					if (!metal_available(YES)) {
+						selected = 2;
+						[seg setEnabled:NO forSegmentAtIndex:0];
+						[seg setEnabled:NO forSegmentAtIndex:1];
+					} else {
+						extern BOOL metal_hdr_available(id device);
+						extern id MTLCreateSystemDefaultDevice(void);
+						if (!metal_hdr_available(MTLCreateSystemDefaultDevice()))
+							[seg setEnabled:NO forSegmentAtIndex:0];
+						if (selected < 2)
+							selected = 1;
+					}
+					[seg setSelectedSegmentIndex:selected];
+					seg.tag = P_ROW_APPEARANCE_BRIGHTNESS_HDR;
+					[seg addTarget:self action:@selector(brightnessHDRSwitchValueChanged:) forControlEvents:UIControlEventValueChanged];
+					[(UITableViewCell *)cell setAccessoryView:seg];
 					break;
 				}
 				default: break;
@@ -401,6 +419,8 @@ UITableViewCell *find_cell(UIView *view) {
 				textField.text = @"";
 				if (seg.selectedSegmentIndex == 1)
 					seg.selectedSegmentIndex = 0;
+				[BattmanPrefs.sharedPrefs setValue:@(seg.selectedSegmentIndex) forTableView:self.tableView indexPath:indexPath];
+				[BattmanPrefs.sharedPrefs synchronize];
 			} else {
 				if ([textField.text intValue] < 5)
 					textField.text = @"5";
@@ -415,9 +435,21 @@ UITableViewCell *find_cell(UIView *view) {
 #pragma mark - SegmentedTextField Action
 
 - (void)segmentedControlValueChanged:(SegmentedTextField *)sender {
+	UITableViewCell *cell = find_cell(sender);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for SegmentedTextField %@", sender);
+		return;
+	}
+
 	if (sender == self.intervalSegmentedTextField) {
-		if (sender.selectedSegmentIndex != 1)
+		if (sender.selectedSegmentIndex != 1) {
 			[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationAutomatic];
+			[BattmanPrefs.sharedPrefs setValue:@((sender.selectedSegmentIndex == 2) ? -1 : 0) forTableView:self.tableView indexPath:indexPath];
+			[BattmanPrefs.sharedPrefs synchronize];
+		}
 	}
 }
 
@@ -472,9 +504,9 @@ UITableViewCell *find_cell(UIView *view) {
 	self.isUpdatingThermometerValues = NO;
 }
 
-#pragma mark - Brightness HDR Switch Action
+#pragma mark - Brightness HDR Segment Action
 
-- (void)brightnessHDRSwitchValueChanged:(UISwitch *)sender {
+- (void)brightnessHDRSwitchValueChanged:(UISegmentedControl *)sender {
 	UITableViewCell *cell = find_cell(sender);
 	NSIndexPath *indexPath = nil;
 	if (cell) {
@@ -489,7 +521,7 @@ UITableViewCell *find_cell(UIView *view) {
 	}
 	
 	// Save the switch state to preferences
-	[BattmanPrefs.sharedPrefs setValue:@(sender.isOn) forTableView:self.tableView indexPath:indexPath];
+	[BattmanPrefs.sharedPrefs setValue:@(sender.selectedSegmentIndex) forTableView:self.tableView indexPath:indexPath];
 	[BattmanPrefs.sharedPrefs synchronize];
 }
 

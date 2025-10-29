@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "684114802E5323E2001B76B6"
+               BlueprintIdentifier = "684972662EACB71B00C9C58A"
                BuildableName = "Battman.app"
-               BlueprintName = "Battman-nonfree"
+               BlueprintName = "Battman-havoc-tipa"
                ReferencedContainer = "container:Battman.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -31,7 +31,7 @@
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -44,9 +44,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "684114802E5323E2001B76B6"
+            BlueprintIdentifier = "684972662EACB71B00C9C58A"
             BuildableName = "Battman.app"
-            BlueprintName = "Battman-nonfree"
+            BlueprintName = "Battman-havoc-tipa"
             ReferencedContainer = "container:Battman.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "684114802E5323E2001B76B6"
+            BlueprintIdentifier = "684972662EACB71B00C9C58A"
             BuildableName = "Battman.app"
-            BlueprintName = "Battman-nonfree"
+            BlueprintName = "Battman-havoc-tipa"
             ReferencedContainer = "container:Battman.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

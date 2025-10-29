@@ -105,7 +105,6 @@ static char *get_CFLocale() {
 char *preferred_language(void) {
 	static char name[256];
 #ifdef USE_GETTEXT
-	extern bool has_locale;
 	if (!has_locale) {
 		// Unify UI languages to keep consistency (we are forcing locales on date formatters)
 		return "en";
@@ -1019,4 +1018,79 @@ int add_notification_with_content(UNUserNotificationCenter *uc, UNMutableNotific
 		CFRunLoopRun();
 
 	return ret;
+}
+
+bool metal_available(bool ignore_config) {
+	bool ret = true;
+
+	// 0: If BattmanPrefs suggests avoid Metal
+	if (!ignore_config)
+		ret = (BattmanPrefsGetInt(kBattmanPrefs_BRIGHT_UI_HDR) != 2);
+	if (!ret) return ret;
+
+	// 1: If user manually disabled Metal
+	ret = !CFPreferencesGetAppBooleanValue(CFSTR("DisableMetal"), CFSTR("com.apple.coreanimation"), NULL);
+	if (!ret) return ret;
+
+	// 2: If MobileGestalt suggests no Metal
+	if (!getenv("SIMULATOR_DEVICE_NAME"))
+		ret = MGGetBoolAnswerPtr(CFSTR("MetalCapability"));
+	if (!ret) return ret;
+
+	// 3: Try get Metal device
+	extern id MTLCreateSystemDefaultDevice(void);
+	ret = (MTLCreateSystemDefaultDevice() == nil);
+	if (!ret) return ret;
+
+	return ret;
+}
+
+id perform_selector(SEL selector, id target, id arg1) {
+	return perform_selector2(selector, target, arg1, nil);
+}
+
+id perform_selector2(SEL selector, id target, id arg1, id arg2) {
+	if (!target) return nil;
+	
+	static SEL sel_methodForSelector = NULL;
+	static SEL sel_methodSignatureForSelector = NULL;
+	static SEL sel_methodReturnLength = NULL;
+	
+	if (!sel_methodForSelector) sel_methodForSelector = oselector(methodForSelector:);
+	if (!sel_methodSignatureForSelector) sel_methodSignatureForSelector = oselector(methodSignatureForSelector:);
+	if (!sel_methodReturnLength) sel_methodReturnLength = oselector(methodReturnLength);
+	
+	void *imp = ((void *(*)(id, SEL, SEL))objc_msgSend)(target, sel_methodForSelector, selector);
+	id methodSig = ((id (*)(id, SEL, SEL))objc_msgSend)(target, sel_methodSignatureForSelector, selector);
+	
+	long retLen = 0;
+	if (methodSig) {
+		retLen = ((long (*)(id, SEL))objc_msgSend)(methodSig, sel_methodReturnLength);
+	}
+	
+	id result_value = nil;
+	
+	if (imp) {
+		if (arg2) {
+			typedef id (*fn2_t)(id, SEL, id, id);
+			fn2_t fn2 = (fn2_t)imp;
+			result_value = fn2(target, selector, arg1, arg2);
+		} else if (arg1) {
+			typedef id (*fn1_t)(id, SEL, id);
+			fn1_t fn1 = (fn1_t)imp;
+			result_value = fn1(target, selector, arg1);
+		} else {
+			typedef id (*fn0_t)(id, SEL);
+			fn0_t fn0 = (fn0_t)imp;
+			result_value = fn0(target, selector);
+		}
+	} else {
+		result_value = nil;
+	}
+	
+	if (retLen == 0) {
+		return nil;
+	} else {
+		return (id)(intptr_t)result_value;
+	}
 }

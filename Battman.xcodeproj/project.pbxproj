@@ -311,6 +311,10 @@
 		684972EE2EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
 		684972EF2EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
 		684972F02EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
+		684972FC2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
+		684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
+		684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
+		684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684A9EF22D65F0AF006265DC /* intl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		686AECD52D3B93CD0059ECD0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 686AECD42D3B93CD0059ECD0 /* main.m */; };
 		687742B62D43838500375A2C /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
@@ -1800,6 +1804,8 @@
 		684972E72EAE1B5F00C9C58A /* LanguageSelectionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LanguageSelectionViewController.h; sourceTree = "<group>"; };
 		684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LanguageSelectionViewController.m; sourceTree = "<group>"; };
 		684972EC2EAF482500C9C58A /* de.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = de.po; sourceTree = "<group>"; };
+		684972FA2EB2050D00C9C58A /* GradientSDRView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GradientSDRView.m; sourceTree = "<group>"; };
+		684972FB2EB2050E00C9C58A /* GradientSDRView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GradientSDRView.h; sourceTree = "<group>"; };
 		686AECBF2D3B93CB0059ECD0 /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		686AECD32D3B93CD0059ECD0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		686AECD42D3B93CD0059ECD0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -13957,6 +13963,8 @@
 				6849725E2EACA13300C9C58A /* UITextFieldStepper.m */,
 				68336E422E9F8A7F00E9F180 /* GradientHDRView.h */,
 				68336E432E9F8A7F00E9F180 /* GradientHDRView.m */,
+				684972FB2EB2050E00C9C58A /* GradientSDRView.h */,
+				684972FA2EB2050D00C9C58A /* GradientSDRView.m */,
 				68336E412E9F8A4700E9F180 /* BatteryCellView */,
 				68ECFFB92E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.h */,
 				68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */,
@@ -14716,7 +14724,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" --no-translator && msgmerge -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
 		};
 		68DCA5B32D40EC61004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14735,7 +14743,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nPOT_FILE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/base.pot\"\nrm -f \"${POT_FILE}\"\nexec xgettext -v --keyword=_ --keyword=cond_localize_c --keyword=_C --copyright-holder=\"Torrekie <me@torrekie.dev>\" --package-name=\"${PROJECT_NAME}\" --package-version=\"${CURRENT_PROJECT_VERSION}\" --output=$POT_FILE --from-code=UTF-8 $(find ${PROJECT_DIR}/${PROJECT_NAME} -name \"*.m\" -or -name \"*.c\" -or -name \"*.h\")\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nPOT_FILE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/base.pot\"\nrm -f \"${POT_FILE}\"\nexec xgettext -v --keyword=_ --keyword=cond_localize_c --keyword=_C --add-comments=TRANSLATORS --copyright-holder=\"Torrekie <me@torrekie.dev>\" --package-name=\"${PROJECT_NAME}\" --package-version=\"${CURRENT_PROJECT_VERSION}\" --output=$POT_FILE --from-code=UTF-8 $(find ${PROJECT_DIR}/${PROJECT_NAME} -name \"*.m\" -or -name \"*.c\" -or -name \"*.h\")\n";
 		};
 		68DCA5BC2D40FAB1004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14822,6 +14830,7 @@
 				68336E842EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
 				684114B12E5323E2001B76B6 /* BatteryDetailsViewController.m in Sources */,
 				684114B22E5323E2001B76B6 /* CompatibilityHelper.c in Sources */,
+				684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684114B32E5323E2001B76B6 /* common.c in Sources */,
 				683B2C5E2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
 				684114B42E5323E2001B76B6 /* DonationViewController.m in Sources */,
@@ -14897,6 +14906,7 @@
 				68336E852EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
 				684115072E57BDE7001B76B6 /* BatteryDetailsViewController.m in Sources */,
 				684115082E57BDE7001B76B6 /* CompatibilityHelper.c in Sources */,
+				684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684115092E57BDE7001B76B6 /* common.c in Sources */,
 				683B2C5F2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
 				6841150A2E57BDE7001B76B6 /* DonationViewController.m in Sources */,
@@ -14969,6 +14979,7 @@
 				6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */,
 				6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */,
 				6849729C2EACB71B00C9C58A /* PickerAccessoryView.m in Sources */,
+				684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				6849729D2EACB71B00C9C58A /* UIScreen+Auto.m in Sources */,
 				6849729E2EACB71B00C9C58A /* GradientArcView.m in Sources */,
 				6849729F2EACB71B00C9C58A /* BatterySubscriberViewControllerBase.c in Sources */,
@@ -15045,6 +15056,7 @@
 				689FE0B52DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c in Sources */,
 				684972632EACA13300C9C58A /* UITextFieldStepper.m in Sources */,
 				68336DE22E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
+				684972FC2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				6838BF6B2DB8D06B007EB66C /* licensing.S in Sources */,
 				68C0C7442E93BA3C006F73EA /* SVG.m in Sources */,
 				68336E882EA4E03F00E9F180 /* BattmanPrefs.m in Sources */,

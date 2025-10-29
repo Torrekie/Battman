@@ -5,7 +5,8 @@
 //  Created by Torrekie on 2025/10/15.
 //
 
-#import "GradientHDRView.h"
+#import "../GradientHDRView.h"
+#import "../GradientSDRView.h"
 #import "BrightnessInfoTableViewCell.h"
 
 @interface CALayer ()
@@ -13,7 +14,7 @@
 @end
 
 @interface BrightnessCellView ()
-@property (nonatomic, strong) GradientHDRView *hdrView;
+@property (nonatomic, strong) UIView *gradientView;
 @end
 
 @implementation BrightnessCellView
@@ -30,11 +31,12 @@
 	brightnessView.layer.masksToBounds = YES;
 
 	{
-		self.hdrView = [[GradientHDRView alloc] initWithFrame:brightnessView.bounds];
-		self.hdrView.center = brightnessView.center;
-		[brightnessView addSubview:self.hdrView];
-		
-		[self.hdrView setBrightness:percentage animated:YES];
+		// Check if Metal is disabled by user config
+		BOOL metalDisabled = [[[NSUserDefaults alloc] initWithSuiteName:@"com.apple.coreanimation"] boolForKey:@"DisableMetal"];
+		self.gradientView = [[(metalDisabled ? [GradientSDRView class] : [GradientHDRView class]) alloc] initWithFrame:brightnessView.bounds];
+		self.gradientView.center = brightnessView.center;
+		[brightnessView addSubview:self.gradientView];
+		[(GradientHDRView *)self.gradientView setBrightness:percentage animated:YES];
 	}
 	[self addSubview:brightnessView];
 	return self;

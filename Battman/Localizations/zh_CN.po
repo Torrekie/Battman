@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-26 18:27+0800\n"
+"POT-Creation-Date: 2025-10-29 20:31+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Torrekie <me@torrekie.dev>\n"
 "Language-Team: none\n"
@@ -17,59 +17,65 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:357
+#: /Users/torrekie/proj/Battman/Battman/common.c:359
 #: /Users/torrekie/proj/Battman/Battman/main.m:229
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:550
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:556
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:584
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:590
 msgid "OK"
 msgstr "好"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:358
+#: /Users/torrekie/proj/Battman/Battman/common.c:360
 msgid "Failed"
 msgstr "失败"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:359
+#: /Users/torrekie/proj/Battman/Battman/common.c:361
 #: /Users/torrekie/proj/Battman/Battman/ChargingManagementViewController.m:293
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:252
 msgid "Error"
 msgstr "错误"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:360
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:673
+#: /Users/torrekie/proj/Battman/Battman/common.c:362
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:679
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/accessory.c:77
 msgid "None"
 msgstr "无"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:361
+#: /Users/torrekie/proj/Battman/Battman/common.c:363
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mA"
 msgstr "mA"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:362
+#: /Users/torrekie/proj/Battman/Battman/common.c:364
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mAh"
 msgstr "mAh"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:363
+#: /Users/torrekie/proj/Battman/Battman/common.c:365
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:27
 msgid "mV"
 msgstr "mV"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:364
+#: /Users/torrekie/proj/Battman/Battman/common.c:366
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:35
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:86
 msgid "True"
 msgstr "是"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:365
+#: /Users/torrekie/proj/Battman/Battman/common.c:367
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:35
 #: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:88
 msgid "False"
 msgstr "否"
 
-#: /Users/torrekie/proj/Battman/Battman/common.c:406
+#: /Users/torrekie/proj/Battman/Battman/common.c:408
 msgid "Swipe up to exit"
 msgstr "向上轻扫以退出"
+
+#: /Users/torrekie/proj/Battman/Battman/UITextFieldStepper.m:176
+#: /Users/torrekie/proj/Battman/Battman/SliderTableViewCell.m:37
+#: /Users/torrekie/proj/Battman/Battman/SegmentedTextField.m:125
+msgid "Done"
+msgstr "完成"
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:104
 msgid "Logs"
@@ -134,7 +140,7 @@ msgstr "发送邮件"
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:347
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:356
 #: /Users/torrekie/proj/Battman/Battman/FullSMCViewController.m:551
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:509
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:543
 msgid "Cancel"
 msgstr "取消"
 
@@ -143,6 +149,7 @@ msgid "Version"
 msgstr "版本"
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:503
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:48
 msgid "Preferences"
 msgstr "设置"
 
@@ -214,7 +221,7 @@ msgid "Remove token and exit"
 msgstr "移除 token 并退出"
 
 #: /Users/torrekie/proj/Battman/Battman/SettingsViewController.m:696
-#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:26
+#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:30
 msgid "Battman Credit"
 msgstr "Battman 贡献者名单"
 
@@ -568,7 +575,7 @@ msgstr "管理"
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:246
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:267
 #: /Users/torrekie/proj/Battman/Battman/AnalyticsViewController.m:45
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:344
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:364
 msgid "Unimplemented Yet"
 msgstr "尚未实装"
 
@@ -608,16 +615,17 @@ msgstr "打开 URL"
 msgid "Exit"
 msgstr "退出"
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:288
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:245
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:141
 msgid "Preferred Language"
 msgstr "首选语言"
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:307
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:264
 msgid "Clear"
 msgstr "清除"
 
-#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:317
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:213
+#: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:274
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:220
 msgid "Default"
 msgstr "默认"
 
@@ -898,14 +906,14 @@ msgid ""
 "the translations may inaccurate."
 msgstr "您正在使用的本地化文件并非由 Battman 官方所提供，译文可能存在偏差。"
 
-#: /Users/torrekie/proj/Battman/Battman/main.m:368
+#: /Users/torrekie/proj/Battman/Battman/main.m:370
 msgid ""
 "stdio logs not redirected in Simulator build, please check stdio in Xcode "
 "console output instead."
 msgstr ""
 "标准输出日志在Simulator构建中不被重定向，请直接在Xcode Console中查看输出。"
 
-#: /Users/torrekie/proj/Battman/Battman/main.m:392
+#: /Users/torrekie/proj/Battman/Battman/main.m:394
 msgid "Battman CLI not implemented yet."
 msgstr "Battman 命令行工具尚未实现。"
 
@@ -968,7 +976,7 @@ msgid "Couldn't start the daemon — it isn’t responding."
 msgstr "无法启动值守进程——服务无响应"
 
 #: /Users/torrekie/proj/Battman/Battman/ChargingLimitViewController.m:422
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:660
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:666
 msgid "Unavailable"
 msgstr "不可用"
 
@@ -1022,136 +1030,153 @@ msgstr "停止值守进程%@"
 msgid "Start Daemon %@"
 msgstr "开启值守进程%@"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:137
+#: /Users/torrekie/proj/Battman/Battman/CreditViewController.c:31
+msgid "Localizations"
+msgstr "本地化"
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:144
 msgid "Battery Info Refresh Rate"
 msgstr "“电池信息”刷新频率"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:140
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:147
 msgid "Appearance"
 msgstr "外观"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:143
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:150
 msgid "Data Management"
 msgstr "数据管理"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:158
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:165
 msgid ""
 "Battery information updates automatically depending on system conditions."
 msgstr "“电池信息”会根据系统状况自动更新。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
 #, objc-format
 msgid ""
 "Battery information updates at the selected interval.\n"
 "%@"
 msgstr "“电池信息”会按所选间隔更新。%@"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:161
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:168
 msgid "Using a shorter interval may affect performance."
 msgstr "间隔过短可能会影响性能。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:165
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:172
 msgid ""
 "Battery information doesn’t update automatically. Pull down to refresh "
 "manually."
 msgstr "“电池信息”不会自动更新。下拉以手动刷新。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:170
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:177
 msgid "Configure how often battery information is refreshed.\n"
 msgstr "设置“电池信息”的刷新频率\n"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:185
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:192
 msgid "Language changes will take effect after restarting the app."
 msgstr "语言更改将在重启应用后生效。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:190
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:197
 msgid ""
 "This will permanently delete all Battman data, preferences, and cached "
 "files. This action cannot be undone."
 msgstr ""
 "这将永久删除 Battman 的全部数据，设置项以及缓存文件。这项操作无法撤销。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:209
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:216
 msgid "Language"
 msgstr "语言"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:239
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:245
 msgid "Interval (s)"
 msgstr "间隔（秒）"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:246
+#. TRANSLATORS: Please ensure this string won't be longer as "Custom"
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:253
 msgid "Custom"
 msgstr "自定义"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:248
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:250
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:255
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:257
 msgid "Auto"
 msgstr "自动"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:248
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:250
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:255
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:257
 msgid "Never"
 msgstr "永不"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:281
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:288
 msgid "Thermometer min (℃)"
 msgstr "温度计最低（℃）"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:295
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:302
 msgid "Thermometer max (℃)"
 msgstr "温度计最高（℃）"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:309
-msgid "Use EDR on 'Brightness'"
-msgstr "在“亮度”使用 EDR"
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:316
+msgid "Brightness Icon"
+msgstr "亮度图标"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:327
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:517
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "EDR"
+msgstr "EDR"
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "SDR"
+msgstr "SDR"
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:317
+msgid "Quartz"
+msgstr "Quartz"
+
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:347
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:541
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:551
 msgid "Wipe All Battman Data"
 msgstr "抹除全部 Battman 数据"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:541
 #, objc-format
 msgid "This will wipe all data under %@"
 msgstr "这将移除位于 %@ 的全部数据"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:512
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:546
 msgid "Dry Run"
 msgstr "试运行"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:570
 msgid "Dry Run Analysis..."
 msgstr "试运行统计…"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:570
 msgid "Wiping Data..."
 msgstr "抹掉数据中…"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:537
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:571
 msgid "Please wait while analyzing what would be deleted."
 msgstr "请等待直至统计出可被删除的数据。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:537
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:571
 msgid "Please wait while all data is being deleted."
 msgstr "请等待直至删除全部数据。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:549
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:583
 msgid "Dry Run Complete"
 msgstr "试运行完成"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:549
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:583
 msgid ""
 "Analysis complete. Check the console/logs to see what would be deleted. No "
 "data was actually removed."
 msgstr ""
 "统计完成，检查控制台或日志以查看可被删除的数据。这个过程没有数据被删除。"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:555
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:589
 msgid "Data Wiped"
 msgstr "数据已抹除"
 
-#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:555
+#: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:589
 msgid "All Battman data has been successfully deleted. The app will now exit."
 msgstr "所有 Battman 数据已成功抹除，本应用程序将退出。"
 
@@ -1294,27 +1319,27 @@ msgstr ""
 "“外部电源”可能表示所连接的适配器为无线充电器。大部分信息可能未显示，因为无线"
 "充电器由硬件以不同方式处理。"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:472
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:478
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:41
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:218
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:758
 msgid "Remaining Capacity"
 msgstr "剩余容量"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:481
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:487
 msgid ""
 "Unusual Remaining Capacity, a non-genuine battery component may be in use."
 msgstr "电池剩余容量数据异常，使用的可能是未经认证的电池部件。"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:481
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:487
 msgid "Estimated Remaining"
 msgstr "预估剩余"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:485
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:491
 msgid "Remaining Capacity not detected."
 msgstr "未获取到剩余容量。"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:489
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:495
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:53
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:120
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:164
@@ -1324,39 +1349,39 @@ msgstr "未获取到剩余容量。"
 msgid "Cycle Count"
 msgstr "循环计数"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:536
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:542
 msgid ""
 "Cycle Count exceeded designed cycle count, consider replacing with a genuine "
 "battery."
 msgstr "已循环超过设计标准的周期次数，建议更换原厂电池组件。"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:540
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:546
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:52
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:771
 msgid "Time to Empty"
 msgstr "耗尽时间"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:558
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:564
 msgid "Unusual Time to Empty, a non-genuine battery component may be in use."
 msgstr "电池耗尽时间异常，使用的可能是未经认证的电池部件"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:562
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:568
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:45
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:221
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:763
 msgid "Depth of Discharge"
 msgstr "放电深度"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:569
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:575
 msgid ""
 "Unusual Depth of Discharge, a non-genuine battery component may be in use."
 msgstr "电池化学放电深度异常，使用的可能是未经认证的电池部件"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:650
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:656
 msgid "Not HVC"
 msgstr "非高压充电"
 
-#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:654
+#: /Users/torrekie/proj/Battman/Battman/BatteryDetailsViewController.m:660
 msgid "Software Controlled"
 msgstr "软件控制"
 
@@ -2740,9 +2765,3 @@ msgstr "负数的电量数据"
 #: /Users/torrekie/proj/Battman/Battman/PLBatteryUIMoveableGraphView.m:190
 msgid "Not Enough Data Points"
 msgstr "数据点不足"
-
-#~ msgid "Language Override"
-#~ msgstr "更改语言"
-
-#~ msgid "Configure how often battery information is refreshed."
-#~ msgstr "设置“电池信息”的刷新频率"
