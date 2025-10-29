@@ -386,7 +386,7 @@ msgstr "Nutzungsbedingungen"
 
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:45
 msgid "Device Avg."
-msgstr "Durchschn. Gerätetemp."
+msgstr "Ø Gerät"
 
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:47
 msgid "Battery Cell 1"
@@ -429,7 +429,7 @@ msgstr "Sonneneinstrahlung"
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:111
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:223
 msgid "Hardware Temperature"
-msgstr "Hardware-Temperatur"
+msgstr "Temperatur"
 
 #: /Users/torrekie/proj/Battman/Battman/SimpleTemperatureViewController.m:141
 msgid "System Thermal Monitor State"
@@ -565,7 +565,7 @@ msgstr "Batterie"
 
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:221
 msgid "Battery Info"
-msgstr "Batterieinformationen"
+msgstr "Batterie"
 
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:226
 msgid "Brightness"
@@ -595,7 +595,7 @@ msgstr "Ladelimit"
 #: /Users/torrekie/proj/Battman/Battman/BatteryInfoViewController.m:301
 #: /Users/torrekie/proj/Battman/Battman/ThermalTunesViewContoller.m:140
 msgid "Thermal Tunes"
-msgstr "Temperatureinstellungen"
+msgstr "Temperaturmanagement"
 
 #: /Users/torrekie/proj/Battman/Battman/AnalyticsViewController.m:14
 #: /Users/torrekie/proj/Battman/Battman/AnalyticsViewController.m:19
@@ -620,7 +620,7 @@ msgstr "Beenden"
 
 #: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:288
 msgid "Preferred Language"
-msgstr "Bevorzugte Sprachen"
+msgstr "Sprache & Region"
 
 #: /Users/torrekie/proj/Battman/Battman/LanguageSelectionViewController.m:307
 msgid "Clear"
@@ -847,7 +847,7 @@ msgid ""
 "Changing the default thermal behavior may increase wear on your battery and "
 "reduce its lifespan."
 msgstr ""
-"Änderungen am Standard-Wärmeverhalten können die Abnutzung Ihrer Batterie "
+"Änderungen am Überhitzungsschutz können die Abnutzung Ihrer Batterie "
 "erhöhen und deren Lebensdauer verkürzen."
 
 #: /Users/torrekie/proj/Battman/Battman/ThermalTunesViewContoller.m:191
@@ -871,7 +871,7 @@ msgstr "Ob Apps Wärmestatus-Updates erhalten"
 
 #: /Users/torrekie/proj/Battman/Battman/ThermalTunesViewContoller.m:250
 msgid "Thermal Mitigations"
-msgstr "Wärme-Maßnahmen"
+msgstr "Überhitzungsschutz"
 
 #: /Users/torrekie/proj/Battman/Battman/ThermalTunesViewContoller.m:255
 msgid "Reduce power budget when heating"
@@ -1129,11 +1129,11 @@ msgstr "Nie"
 
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:281
 msgid "Thermometer min (℃)"
-msgstr "Thermometer min (℃)"
+msgstr "Icon min (℃)"
 
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:295
 msgid "Thermometer max (℃)"
-msgstr "Thermometer max (℃)"
+msgstr "Icon max (℃)"
 
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:309
 msgid "Use EDR on 'Brightness'"
@@ -1143,7 +1143,7 @@ msgstr "EDR für 'Helligkeit' verwenden"
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:517
 msgid "Wipe All Battman Data"
-msgstr "Alle Battman-Daten löschen"
+msgstr "Alle Inhalte & Einstellungen löschen"
 
 #: /Users/torrekie/proj/Battman/Battman/PreferencesViewController.m:507
 #, objc-format
@@ -1879,7 +1879,7 @@ msgstr "Gesundheit"
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:739
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:744
 msgid "SoC"
-msgstr "Batterieladung"
+msgstr "Ladezustand"
 
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:36
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:214
@@ -2009,7 +2009,7 @@ msgstr "Widerstandsskala"
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:777
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:778
 msgid "Battery Serial No."
-msgstr "Batterie-Seriennummer"
+msgstr "Seriennummer"
 
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:59
 #: /Users/torrekie/proj/Battman/Battman/battery_utils/battery_info.c:579
