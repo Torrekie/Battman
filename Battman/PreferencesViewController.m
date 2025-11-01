@@ -10,11 +10,17 @@
 #import "SegmentedTextField.h"
 #import "PreferencesViewController.h"
 #import "LanguageSelectionViewController.h"
+#import "ThermAniTestViewController.h"
 #import "UITextFieldStepper.h"
+#import "FooterHyperlinkView.h"
 
 static BOOL languageHasChanged = NO;
 
 @interface PreferencesViewController () <UITextFieldDelegate>
+@property (nonatomic, strong) FooterHyperlinkViewConfiguration *localeWarnConf;
+@property (nonatomic, strong) FooterHyperlinkView *localeWarn;
+@property (nonatomic, strong) FooterHyperlinkViewConfiguration *biIntervalFooterConf;
+@property (nonatomic, strong) FooterHyperlinkView *biIntervalFooter;
 @property (nonatomic, strong) SegmentedTextField *intervalSegmentedTextField;
 @property (nonatomic, weak) UITextFieldStepper *thermMinStepper;
 @property (nonatomic, weak) UITextFieldStepper *thermMaxStepper;
@@ -31,18 +37,9 @@ static BOOL languageHasChanged = NO;
 - (NSURL *)url;
 @end
 
-@implementation PreferencesViewController
+extern UITableViewCell *find_cell(UIView *view);
 
-UITableViewCell *find_cell(UIView *view) {
-	UIView *superview = view.superview;
-    while (superview && ![superview isKindOfClass:[UITableViewCell class]]) {
-        superview = superview.superview;
-    }
-    if (superview && [superview isKindOfClass:[UITableViewCell class]]) {
-		return (UITableViewCell *)superview;
-	}
-	return nil;
-}
+@implementation PreferencesViewController
 
 - (NSString *)title {
 	return _("Preferences");
@@ -54,17 +51,141 @@ UITableViewCell *find_cell(UIView *view) {
 		style = UITableViewStyleInsetGrouped;
 	self = [super initWithStyle:style];
 	if (self) {
-		// Anything else?
+		// Initialize locale warning configuration - will be updated in updateLocaleWarning
+		self.localeWarnConf = [[FooterHyperlinkViewConfiguration alloc] init];
 	}
 
 	return self;
 }
 
+- (void)openIssueURL {
+	open_url("https://github.com/Torrekie/Battman/issues/new");
+}
+
+- (void)updateLocaleWarning {
+	// Determine what type of warning to show
+	BOOL shouldShowLocaleWarning = (use_libintl && !has_locale);
+	BOOL shouldShowLanguageChangeWarning = languageHasChanged;
+	
+	// If neither condition is met, clear the warning
+	if (!shouldShowLocaleWarning && !shouldShowLanguageChangeWarning) {
+		self.localeWarn = nil;
+		return;
+	}
+	
+	NSString *message;
+	NSString *linkText = nil;
+	NSRange linkRange = NSMakeRange(NSNotFound, 0);
+	
+	if (shouldShowLanguageChangeWarning) {
+		// Language has changed - show restart warning (plain text, no link)
+#ifdef USE_GETTEXT
+		// Get the message in the newly selected language
+		const char *currentLang = BattmanPrefsGetCString(kBattmanPrefs_LANGUAGE);
+		if (currentLang != NULL) {
+			NSString *localeCode = [NSString stringWithUTF8String:currentLang];
+			message = getLocalizedMessageForLanguage(localeCode, "Language changes will take effect after restarting the app.");
+		} else {
+			message = _("Language changes will take effect after restarting the app.");
+		}
+#else
+		message = _("Language changes will take effect after restarting the app.");
+#endif
+		self.localeWarnConf.URL = nil;
+		self.localeWarnConf.target = nil;
+		self.localeWarnConf.action = nil;
+		self.localeWarnConf.linkRange = nil;
+	} else if (shouldShowLocaleWarning) {
+		// Locale not available, show GitHub issue link for now
+		linkText = _("Create a new GitHub issue");
+		message = [NSString stringWithFormat:_("Battman hasn't added your language yet. %@"), linkText];
+		linkRange = [message rangeOfString:linkText];
+		
+		self.localeWarnConf.URL = nil;
+		self.localeWarnConf.target = self;
+		self.localeWarnConf.action = @selector(openIssueURL);
+		self.localeWarnConf.linkRange = NSStringFromRange(linkRange);
+	}
+	
+	self.localeWarnConf.text = message;
+	
+	if (!self.localeWarn) {
+		self.localeWarn = [[FooterHyperlinkView alloc] initWithTableView:self.tableView configuration:self.localeWarnConf];
+	} else {
+		perform_selector(@selector(setText:), self.localeWarn, message);
+		// Update link range if needed
+		if (linkRange.location != NSNotFound) {
+			self.localeWarn.linkRange = linkRange;
+			self.localeWarn.target = self.localeWarnConf.target;
+			self.localeWarn.action = self.localeWarnConf.action;
+		} else {
+			self.localeWarn.linkRange = NSMakeRange(NSNotFound, 0);
+			self.localeWarn.target = nil;
+			self.localeWarn.action = nil;
+		}
+	}
+}
+
+- (void)updateBIIntervalFooter {
+	NSString *message = nil;
+	
+	if (self.intervalSegmentedTextField) {
+		NSInteger selectedIndex = self.intervalSegmentedTextField.selectedSegmentIndex;
+		switch (selectedIndex) {
+			case 0: // Auto
+				message = _("Battery information updates automatically depending on system conditions.");
+				break;
+			case 1: {// Custom
+				int interval = [self.intervalSegmentedTextField textFieldAtIndex:1].text.intValue;
+				NSString *finalStr = [NSString stringWithFormat:_("Battery information updates at the selected interval. %@"), (interval < 10) ? _("Using a shorter interval may affect performance.") : @""];
+				message = finalStr;
+				break;
+			}
+			case 2: // Never
+				message = _("Battery information doesn’t update automatically. Pull down to refresh manually.");
+				break;
+			default:
+				break;
+		}
+	}
+	
+	if (!message) {
+		message = _("Configure how often battery information is refreshed.");
+	}
+	
+	// Initialize configuration if needed
+	if (!self.biIntervalFooterConf) {
+		self.biIntervalFooterConf = [[FooterHyperlinkViewConfiguration alloc] init];
+	}
+	
+	self.biIntervalFooterConf.text = message;
+	self.biIntervalFooterConf.URL = nil;
+	self.biIntervalFooterConf.target = nil;
+	self.biIntervalFooterConf.action = nil;
+	self.biIntervalFooterConf.linkRange = nil;
+	
+	if (!self.biIntervalFooter) {
+		self.biIntervalFooter = [[FooterHyperlinkView alloc] initWithTableView:self.tableView configuration:self.biIntervalFooterConf];
+	} else {
+		perform_selector(@selector(setText:), self.biIntervalFooter, message);
+		// Clear any link properties since this footer doesn't have links
+		self.biIntervalFooter.linkRange = NSMakeRange(NSNotFound, 0);
+		self.biIntervalFooter.target = nil;
+		self.biIntervalFooter.action = nil;
+	}
+}
+
 - (void)viewDidLoad {
 	[super viewDidLoad];
-	[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationAutomatic];
+	[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationNone];
 
 	self.initialLanguagePreference = [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_LANGUAGE];
+	
+	// Initialize locale warning
+	[self updateLocaleWarning];
+	
+	// Initialize BI interval footer
+	[self updateBIIntervalFooter];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -86,10 +207,12 @@ UITableViewCell *find_cell(UIView *view) {
 	
 	if (hasChanged) {
 		languageHasChanged = hasChanged;
+		// Update the locale warning configuration
+		[self updateLocaleWarning];
 		// Refresh both the language row and the footer
 		NSIndexPath *languageIndexPath = [NSIndexPath indexPathForRow:P_ROW_LANGUAGE inSection:P_SECT_LANGUAGE];
 		[self.tableView reloadRowsAtIndexPaths:@[languageIndexPath] withRowAnimation:UITableViewRowAnimationNone];
-		[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_LANGUAGE] withRowAnimation:UITableViewRowAnimationAutomatic];
+		[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_LANGUAGE] withRowAnimation:UITableViewRowAnimationNone];
 	} else {
 		// Just refresh the language row
 		NSIndexPath *languageIndexPath = [NSIndexPath indexPathForRow:P_ROW_LANGUAGE inSection:P_SECT_LANGUAGE];
@@ -123,6 +246,9 @@ UITableViewCell *find_cell(UIView *view) {
 	if (indexPath.section == P_SECT_LANGUAGE && indexPath.row == P_ROW_LANGUAGE) {
 		[self.navigationController pushViewController:[LanguageSelectionViewController new] animated:YES];
 	}
+	if (indexPath.section == P_SECT_APPEARANCE && indexPath.row == P_ROW_APPEARANCE_THERMOMETER) {
+		[self.navigationController pushViewController:[ThermAniTestViewController new] animated:YES];
+	}
 	// Handle wipe all data action
 	if (indexPath.section == P_SECT_WIPEALL && indexPath.row == P_ROW_WIPEALL) {
 		[self showWipeAllConfirmation];
@@ -154,43 +280,40 @@ UITableViewCell *find_cell(UIView *view) {
 	}
 }
 
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+	PrefsSect sect = (PrefsSect)section;
+	switch (sect) {
+		case P_SECT_BI_INTERVAL:
+			// Return FooterHyperlinkView for BI interval section
+			if (self.biIntervalFooter) {
+				return self.biIntervalFooter;
+			}
+			break;
+		case P_SECT_LANGUAGE:
+			// Return custom view for language section when we have a warning to show
+			if (self.localeWarn) {
+				return self.localeWarn;
+			}
+			break;
+		default:
+			break;
+	}
+	return nil;
+}
+
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
 	PrefsSect sect = (PrefsSect)section;
 	switch (sect) {
 		case P_SECT_BI_INTERVAL: {
-			if (self.intervalSegmentedTextField) {
-				NSInteger selectedIndex = self.intervalSegmentedTextField.selectedSegmentIndex;
-				switch (selectedIndex) {
-					case 0: // Auto
-						return [NSString stringWithFormat:@"%@\n", _("Battery information updates automatically depending on system conditions.")];
-					case 1: {// Custom
-						int interval = [self.intervalSegmentedTextField textFieldAtIndex:1].text.intValue;
-						NSString *finalStr = [NSString stringWithFormat:_("Battery information updates at the selected interval.\n%@"), (interval < 10) ? _("Using a shorter interval may affect performance.") : @""];
-						return finalStr;
-					}
-					case 2: // Never
-						return [NSString stringWithFormat:@"%@\n", _("Battery information doesn’t update automatically. Pull down to refresh manually.")];
-					default:
-						break;
-				}
-			}
-			return _("Configure how often battery information is refreshed.\n");
-		}
-		case P_SECT_LANGUAGE: {
-			// Only show footer if language has changed
-			if (!languageHasChanged) {
+			if (self.biIntervalFooter) {
 				return nil;
 			}
-			
-#ifdef USE_GETTEXT
-			// Get the message in the newly selected language
-			const char *currentLang = BattmanPrefsGetCString(kBattmanPrefs_LANGUAGE);
-			if (currentLang != NULL) {
-				NSString *localeCode = [NSString stringWithUTF8String:currentLang];
-				return getLocalizedMessageForLanguage(localeCode, "Language changes will take effect after restarting the app.");
+			return _("Configure how often battery information is refreshed.");
+		}
+		case P_SECT_LANGUAGE: {
+			if (self.localeWarn) {
+				return nil;
 			}
-			return _("Language changes will take effect after restarting the app.");
-#endif
 			break;
 		}
 		case P_SECT_WIPEALL:
@@ -272,6 +395,8 @@ UITableViewCell *find_cell(UIView *view) {
 					}
 					[(UITableViewCell *)cell setAccessoryType:UITableViewCellAccessoryNone];
 					[(UITableViewCell *)cell setAccessoryView:seg];
+					// Update footer content now that we have the segmented control set up
+					[self updateBIIntervalFooter];
 					break;
 				}
 				default:
@@ -282,32 +407,11 @@ UITableViewCell *find_cell(UIView *view) {
 		case P_SECT_APPEARANCE: {
 			PrefsRowAppearance row = (PrefsRowAppearance)indexPath.row;
 			switch (row) {
-				case P_ROW_APPEARANCE_THERM_RANGE_MIN: {
+				case P_ROW_APPEARANCE_THERMOMETER: {
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
-					[(UITableViewCell *)cell textLabel].text = _("Thermometer min (℃)");
-					UITextFieldStepper *st = [UITextFieldStepper new];
-					st.maximumValue = 140 - 1;
-					st.minimumValue = -50;
-					st.value = [config_value intValue];
-					st.tag = P_ROW_APPEARANCE_THERM_RANGE_MIN;
-					[st addTarget:self action:@selector(thermometerStepperValueChanged:) forControlEvents:UIControlEventValueChanged];
-					self.thermMinStepper = st;
-					[(UITableViewCell *)cell setAccessoryView:st];
-					break;
-				}
-				case P_ROW_APPEARANCE_THERM_RANGE_MAX: {
-					if (!cell)
-						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
-					[(UITableViewCell *)cell textLabel].text = _("Thermometer max (℃)");
-					UITextFieldStepper *st = [UITextFieldStepper new];
-					st.maximumValue = 140;
-					st.minimumValue = -50 + 1;
-					st.value = [config_value intValue];
-					st.tag = P_ROW_APPEARANCE_THERM_RANGE_MAX;
-					[st addTarget:self action:@selector(thermometerStepperValueChanged:) forControlEvents:UIControlEventValueChanged];
-					self.thermMaxStepper = st;
-					[(UITableViewCell *)cell setAccessoryView:st];
+					[(UITableViewCell *)cell textLabel].text = _("Thermometer Icon");
+					[(UITableViewCell *)cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 					break;
 				}
 				case P_ROW_APPEARANCE_BRIGHTNESS_HDR: {
@@ -419,12 +523,14 @@ UITableViewCell *find_cell(UIView *view) {
 				textField.text = @"";
 				if (seg.selectedSegmentIndex == 1)
 					seg.selectedSegmentIndex = 0;
+				[self updateBIIntervalFooter];
 				[BattmanPrefs.sharedPrefs setValue:@(seg.selectedSegmentIndex) forTableView:self.tableView indexPath:indexPath];
 				[BattmanPrefs.sharedPrefs synchronize];
 			} else {
 				if ([textField.text intValue] < 5)
 					textField.text = @"5";
-				[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationAutomatic];
+				[self updateBIIntervalFooter];
+				//[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationNone];
 				[BattmanPrefs.sharedPrefs setValue:@(textField.text.intValue) forTableView:self.tableView indexPath:indexPath];
 				[BattmanPrefs.sharedPrefs synchronize];
 			}
@@ -446,62 +552,12 @@ UITableViewCell *find_cell(UIView *view) {
 
 	if (sender == self.intervalSegmentedTextField) {
 		if (sender.selectedSegmentIndex != 1) {
-			[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationAutomatic];
+			[self updateBIIntervalFooter];
+			//[self.tableView _reloadSectionHeaderFooters:[NSIndexSet indexSetWithIndex:P_SECT_BI_INTERVAL] withRowAnimation:UITableViewRowAnimationNone];
 			[BattmanPrefs.sharedPrefs setValue:@((sender.selectedSegmentIndex == 2) ? -1 : 0) forTableView:self.tableView indexPath:indexPath];
 			[BattmanPrefs.sharedPrefs synchronize];
 		}
 	}
-}
-
-#pragma mark - Thermometer Stepper Actions
-
-- (void)thermometerStepperValueChanged:(UITextFieldStepper *)sender {
-	// Prevent recursive calls when we update the other stepper
-	if (self.isUpdatingThermometerValues) {
-		return;
-	}
-	
-	UITableViewCell *cell = find_cell(sender);
-	NSIndexPath *indexPath = nil;
-	if (cell) {
-		indexPath = [self.tableView indexPathForCell:cell];
-	} else {
-		DBGLOG(@"Cannot find belonging UITableViewCell for stepper %@", sender);
-		return;
-	}
-	
-	if (!indexPath || indexPath.section != P_SECT_APPEARANCE) {
-		return;
-	}
-	
-	self.isUpdatingThermometerValues = YES;
-	
-	// Get current values from both steppers
-	double minValue = self.thermMinStepper ? self.thermMinStepper.value : -50;
-	double maxValue = self.thermMaxStepper ? self.thermMaxStepper.value : 140;
-
-	// Validate and adjust values to prevent min > max
-	if (sender.tag == P_ROW_APPEARANCE_THERM_RANGE_MIN) {
-		if (sender.value >= maxValue && sender.value < 140) {
-			self.thermMaxStepper.value = sender.value + 1;
-			// Save the adjusted max value too
-			NSIndexPath *maxIndexPath = [NSIndexPath indexPathForRow:P_ROW_APPEARANCE_THERM_RANGE_MAX inSection:P_SECT_APPEARANCE];
-			[BattmanPrefs.sharedPrefs setValue:@((int)self.thermMaxStepper.value) forTableView:self.tableView indexPath:maxIndexPath];
-		}
-	} else if (sender.tag == P_ROW_APPEARANCE_THERM_RANGE_MAX) {
-		if (sender.value <= minValue && sender.value > -50) {
-			self.thermMinStepper.value = sender.value - 1;
-			// Save the adjusted min value too
-			NSIndexPath *minIndexPath = [NSIndexPath indexPathForRow:P_ROW_APPEARANCE_THERM_RANGE_MIN inSection:P_SECT_APPEARANCE];
-			[BattmanPrefs.sharedPrefs setValue:@((int)self.thermMinStepper.value) forTableView:self.tableView indexPath:minIndexPath];
-		}
-	}
-
-	// Save the validated value to preferences
-	[BattmanPrefs.sharedPrefs setValue:@((int)sender.value) forTableView:self.tableView indexPath:indexPath];
-	[BattmanPrefs.sharedPrefs synchronize];
-	
-	self.isUpdatingThermometerValues = NO;
 }
 
 #pragma mark - Brightness HDR Segment Action
@@ -567,7 +623,7 @@ UITableViewCell *find_cell(UIView *view) {
 
 - (void)performWipeAllData:(BOOL)dryRun {
 	// Show activity indicator
-	NSString *title = dryRun ? _("Dry Run Analysis...") : _("Wiping Data...");
+	NSString *title = dryRun ? _("Dry Run Analysis…") : _("Wiping Data…");
 	NSString *message = dryRun ? _("Please wait while analyzing what would be deleted.") : _("Please wait while all data is being deleted.");
 	
 	UIAlertController *progressAlert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];

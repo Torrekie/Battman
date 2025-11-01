@@ -92,11 +92,13 @@
 
 extern void objc_msgSendSuper2(void);
 
-#define osupercall(class,obj,...) \
+#define osupercall_t(ret_type,class,obj,...) \
 	({uint64_t superclass;asm("adrp %0,l_suprefs_" #class "@PAGE\n" \
 		"ldr %0,[%0,l_suprefs_" #class "@PAGEOFF]":"=r"(superclass));\
 		uint64_t refs[2]={(uint64_t)obj,(uint64_t)superclass}; \
-		_ocall(objc_msgSendSuper2,(id)&refs,__VA_ARGS__,);})
+		_ocall_t(ret_type,objc_msgSendSuper2,(id)&refs,__VA_ARGS__,);})
+
+#define osupercall(class,obj,...) osupercall_t(void*,class,obj,__VA_ARGS__)
 
 #define _COUNT_NUM_ARGS(cnt,first,second,...) \
 	IF_ELSE(HAS_ARGS(first))( \

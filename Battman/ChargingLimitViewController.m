@@ -624,7 +624,8 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 				case CL_MAIN_DAEMONSWITCH: {
 					BOOL enforced = BIT_GET(vals[2], 1);
 					NSString *labelText = [NSString stringWithFormat:@"%@", daemon_pid ? _("Stop Daemon %@") : _("Start Daemon %@")];
-					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? @"(Enforce Mode)" : @"(Soft Mode)"];
+					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? _("(Enforce Mode)") : _("(Soft Mode)")];
+					cell.detailTextLabel.text = enforced ? _("Battman charging limits are enforced") : _("OBC may ignore Battman charging limits");
 					cell.selectionStyle = UITableViewCellSelectionStyleDefault;
 					if (@available(iOS 13.0, *)) {
 						cell.textLabel.textColor = [UIColor linkColor];

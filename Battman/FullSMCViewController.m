@@ -40,7 +40,7 @@ static NSString *valueForSMCBuffer(uint8_t *bytes, int size, char *ptype, int mo
     if (*ptype == 'h') {
         // hex_
         if (size > 8) {
-            text = [NSString stringWithFormat:_("(partial) %016llX..."), *(uint64_t *)bytes];
+            text = [NSString stringWithFormat:_("(partial) %016llX…"), *(uint64_t *)bytes];
         } else {
             text = [NSString stringWithFormat:@"%0*llX", size << 1, *(uint64_t *)bytes];
         }

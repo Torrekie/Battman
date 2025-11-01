@@ -791,7 +791,7 @@ const char *not_charging_reason_str(uint64_t code) {
                 case OS_NO_CHG: setreason(_C("OS Charging Disabled")); break;
                 case BCLM_REACHED: setreason(_C("Charging Limit Reached")); break;
                 case UPSTREAM_NO_CHG: setreason(_C("Upstream Charging Disabled")); break; // ?
-                case PM_NO_CHG: setreason(_C("PowerManagement Chagring Disabled")); break;
+                case PM_NO_CHG: setreason(_C("PowerManagement Charging Disabled")); break;
                 case TB0T_OVER_50: setreason(_C("Battery Temperature over 50℃")); break;
                 case TB0T_OVER_45: setreason(_C("Battery Temperature over 45℃")); break;
                 case TEMP_GRADIENT_TOO_HIGH: setreason(_C("Temperature Gradient Too High")); break;
