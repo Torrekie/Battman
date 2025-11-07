@@ -11,6 +11,7 @@
 #include "battery_utils/thermal.h"
 #import "common.h"
 #import "intlextern.h"
+#import "FooterHyperlinkView.h"
 #import "UberSegmentedControl/UberSegmentedControl.h"
 
 @interface ThermalSegmentedControl : UIView
@@ -132,6 +133,7 @@ static bool has_hip = false;
 
 @interface ThermalTunesViewContoller ()
 @property BOOL show_sunlight_override;
+@property (nonatomic, strong) FooterHyperlinkView *warnTitle;
 @end
 
 @implementation ThermalTunesViewContoller
@@ -159,7 +161,22 @@ static bool has_hip = false;
 	bool buf1, buf2;
 	_show_sunlight_override = getSunlightEnabled(&buf1, &buf2);
 
+	FooterHyperlinkViewConfiguration *conf = [[FooterHyperlinkViewConfiguration alloc] init];
+	NSString *hyper = _("Learn more…");
+	conf.text = [NSString stringWithFormat:_("Review the documentation before making any changes. %@"), hyper];
+	conf.URL = nil;
+	conf.target = self;
+	conf.action = @selector(openDocumentationURL);
+	NSRange range = [conf.text rangeOfString:hyper];
+	conf.linkRange = NSStringFromRange(range);
+	FooterHyperlinkView *view = [[FooterHyperlinkView alloc] initWithTableView:self.tableView configuration:conf];
+	_warnTitle = view;
+	
 	return self;
+}
+
+- (void)openDocumentationURL {
+	open_url(BATTMAN_DOC_URL);
 }
 
 - (void)viewDidLoad {
@@ -183,10 +200,18 @@ static bool has_hip = false;
 	return nil;
 }
 
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+	if (section == TT_SECT_HEADER)
+		return self.warnTitle;
+	else if ([super respondsToSelector:@selector(tableView:viewForFooterInSection:)])
+		return [super tableView:tableView viewForFooterInSection:section];
+	return nil;
+}
+
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
 	TTSects sect = (TTSects)section;
 	switch (sect) {
-		case TT_SECT_HEADER: return _("Review the documentation before making any changes.");
+		case TT_SECT_HEADER: return nil;
 		case TT_SECT_GENERAL: return _("Changing the default thermal behavior may increase wear on your battery and reduce its lifespan.");
 		case TT_SECT_HIP: return has_hip ? _("Hot-In-Pocket Protection automatically reduces CPU & GPU power when the display is off and no media is playing, to prevent overheating while the device is stored in a pocket.") : nil;
 		case TT_SECT_SUNLIGHT: return nil;

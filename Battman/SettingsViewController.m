@@ -198,6 +198,7 @@ static NSMutableArray *sns_avail = nil;
 		@"twitter://user?screen_name=Torrekie_G", @"com.atebits.Tweetie2", _("Follow @Torrekie_G"),
 		@"bilibili://space/169414691", @"tv.danmaku.bilianime", _("Subscribe me on Bilibili"),
 		@"reddit:///u/Torrekie", @"com.reddit.Reddit", _("Follow u/Torrekie on Reddit"),
+		@"weixin://qr/mp/MnX746DE-v2BreSA9yAg", @"com.tencent.xin", _("WeChat: Torrekie"),
 	];
 	sns_avail = [NSMutableArray new];
 	for (int i = 0; i < sns_list.count / 3; i++) {
@@ -340,7 +341,7 @@ static NSMutableArray *sns_avail = nil;
         } else if (indexPath.row == 1) {
             open_url("https://github.com/Torrekie/Battman");
 		} else if (indexPath.row == 2) {
-			open_url("https://github.com/Torrekie/Battman/wiki");
+			open_url(BATTMAN_DOC_URL);
 		} else if (indexPath.row == 3) {
 			show_donation(true);
 		} else if (indexPath.row == 4) {
@@ -361,7 +362,23 @@ static NSMutableArray *sns_avail = nil;
     }
 	if (indexPath.section == SS_SECT_SNS) {
 		NSString *nsstr = sns_avail[indexPath.row * 3];
-		open_url(nsstr.UTF8String);
+		// Weixin does not actually allows direct links, or we just don't know
+		if ([nsstr containsString:@"weixin"]) {
+			UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("WeChat") message:_("Copy \"Torrekie\" and search in WeChat?") preferredStyle:UIAlertControllerStyleAlert];
+			
+			UIAlertAction *continueAction = [UIAlertAction actionWithTitle:_("Continue") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+				UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+				pasteboard.string = @"Torrekie";
+				open_url(nsstr.UTF8String);
+			}];
+			UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:_("Cancel") style:UIAlertActionStyleCancel handler:nil];
+
+			[alert addAction:continueAction];
+			[alert addAction:cancelAction];
+			
+			[self presentViewController:alert animated:YES completion:nil];
+		} else
+			open_url(nsstr.UTF8String);
 	}
 #ifdef DEBUG
     if (indexPath.section == SS_SECT_DEBUG) {

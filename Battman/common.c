@@ -341,6 +341,16 @@ id find_top_controller(id root) {
 	}
 	return root;
 }
+UITableViewCell *find_cell(UIView *view) {
+	UIView *superview = ocall(view, superview);
+	while (superview && !ocall_t(bool, superview, isKindOfClass:, oclass(UITableViewCell))) {
+		superview = ocall(superview, superview);
+	}
+	if (superview && ocall_t(bool, superview, isKindOfClass:, oclass(UITableViewCell))) {
+		return (UITableViewCell *)superview;
+	}
+	return nil;
+}
 #endif
 
 const char *L_OK;
@@ -614,25 +624,17 @@ const char *second_to_datefmt(uint64_t second) {
 
 // For iOS 12 or ealier, we generate image directly from 'SF-Pro-Display-Regular.otf'
 id imageForSFProGlyph(CFStringRef glyph, CFStringRef fontName, CGFloat fontSize, id tintColor) {
-	// CGFloat (double) can NOT be treated as void* bc it uses a different register
-	id              font  = ((id(*)(Class, SEL, CFStringRef, CGFloat))objc_msgSend)(oclass(UIFont), oselector(fontWithName:size:), fontName, fontSize)
-	                  ?: ((id(*)(Class, SEL, CGFloat))objc_msgSend)(oclass(UIFont), oselector(systemFontOfSize:), fontSize);
-
+	id              font  = ocall(oclass(UIFont), fontWithName:size:, fontName, fontSize) ?: ocall(oclass(UIFont), systemFontOfSize:, fontSize);
 	CFDictionaryRef attrs = CFDictionaryCreate(NULL, (const void *[]) { NSFontAttributeName, NSForegroundColorAttributeName }, (const void *[]) { font, tintColor }, 2, NULL, NULL);
-	/*NSDictionary *attrs = @{
-	    NSFontAttributeName: font,
-	    NSForegroundColorAttributeName: tintColor
-	};*/
 
-	CGSize          sz    = ((CGSize(*)(id, SEL, CFDictionaryRef))objc_msgSend)((id)glyph, oselector(sizeWithAttributes:), attrs);
+	CGSize          sz    = ocall_t(CGSize, glyph, sizeWithAttributes:, attrs);
 	UIGraphicsBeginImageContextWithOptions(sz, NO, 0);
-	((void (*)(id, SEL, CGPoint, CFDictionaryRef))objc_msgSend)((id)glyph, oselector(drawAtPoint:withAttributes:), CGPointZero, attrs);
+	ocall_t(void, glyph, drawAtPoint:withAttributes:, CGPointZero, attrs);
 	CFRelease(attrs);
 	id img = objc_retain((id)UIGraphicsGetImageFromCurrentImageContext());
 	UIGraphicsEndImageContext();
 
-	// template so tintColor still applies if you change it later
-	id ret=ocall(img,imageWithRenderingMode:,/*UIImageRenderingModeAlwaysTemplate*/ 2);
+	id ret = ocall(img, imageWithRenderingMode:,/*UIImageRenderingModeAlwaysTemplate*/ 2);
 
 	objc_release(img);
 
@@ -1039,7 +1041,7 @@ bool metal_available(bool ignore_config) {
 
 	// 3: Try get Metal device
 	extern id MTLCreateSystemDefaultDevice(void);
-	ret = (MTLCreateSystemDefaultDevice() == nil);
+	ret = (MTLCreateSystemDefaultDevice() != nil);
 	if (!ret) return ret;
 
 	return ret;

@@ -48,9 +48,10 @@ extern void objc_msgSendSuper(void);
 #define _ocall_name_expand_() _ocall_name_expand_r
 #define _ocall_name_expand(...) IF(HAS_ARGS(__VA_ARGS__)) ( EVAL(_ocall_name_expand_r(__VA_ARGS__)) )
 
-#define _ocall(send,obj,sel,...) ((void*(*)(typeof(obj),SEL _ocall_type_expand(__VA_ARGS__)))send)(obj,oselector(sel) _ocall_name_expand(__VA_ARGS__))
+#define _ocall_t(ret_type,send,obj,sel,...) ((ret_type(*)(typeof(obj),SEL _ocall_type_expand(__VA_ARGS__)))send)(obj,oselector(sel) _ocall_name_expand(__VA_ARGS__))
 
-#define ocall(...) _ocall(objc_msgSend,__VA_ARGS__,)
+#define ocall(...) _ocall_t(void*,objc_msgSend,__VA_ARGS__,)
+#define ocall_t(ret_type,...) _ocall_t(ret_type,objc_msgSend,__VA_ARGS__,)
 
 
 #include "./cobjc_types.h"

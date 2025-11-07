@@ -136,6 +136,10 @@ typedef enum {
 #define ENABLE_BRIGHTNESS 1
 #endif
 
+#ifndef BATTMAN_DOC_URL
+#define BATTMAN_DOC_URL "https://github.com/Torrekie/Battman/wiki"
+#endif
+
 __BEGIN_DECLS
 
 #ifndef __OBJC__

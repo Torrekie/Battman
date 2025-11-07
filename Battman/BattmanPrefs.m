@@ -6,6 +6,7 @@
 //
 
 #import "PreferencesViewController.h"
+#import "ThermAniTestViewController.h"
 #import "BattmanPrefs.h"
 #include "common.h"
 #import <UIKit/UIKit.h>
@@ -18,6 +19,7 @@
 @implementation BattmanPrefs
 
 static NSDictionary<NSNumber *, NSDictionary<NSNumber *, NSString *> *> *PreferencesViewControllerKeys = nil;
+static NSDictionary<NSNumber *, NSDictionary<NSNumber *, NSString *> *> *ThermAniTestViewControllerKeys = nil;
 static NSArray<NSString *> *BattmanGlobalKeys = nil;
 
 - (instancetype)init {
@@ -38,6 +40,12 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 		BattmanGlobalKeys = @[
 			@kBattmanPrefs_Version,
 		];
+		ThermAniTestViewControllerKeys = @{
+			@(TAT_SECT_THERM_RANGE): @{
+					@(TAT_ROW_THERM_RANGE_MIN): @kBattmanPrefs_THERM_UI_MIN,
+					@(TAT_ROW_THERM_RANGE_MAX): @kBattmanPrefs_THERM_UI_MAX,
+			},
+		};
 		PreferencesViewControllerKeys = @{
 			@(P_SECT_LANGUAGE) : @{
 					@(P_ROW_LANGUAGE): @kBattmanPrefs_LANGUAGE,
@@ -46,8 +54,8 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 					@(P_ROW_BI_INTERVAL): @kBattmanPrefs_BI_INTERVAL,
 			},
 			@(P_SECT_APPEARANCE): @{
-					@(P_ROW_APPEARANCE_THERM_RANGE_MIN): @kBattmanPrefs_THERM_UI_MIN,
-					@(P_ROW_APPEARANCE_THERM_RANGE_MAX): @kBattmanPrefs_THERM_UI_MAX,
+					// No preference key for Thermometer, see ThermAniTestViewControllerKeys
+					// @(P_ROW_APPEARANCE_THERMOMETER): nil,
 #if ENABLE_BRIGHTNESS
 					@(P_ROW_APPEARANCE_BRIGHTNESS_HDR): @kBattmanPrefs_BRIGHT_UI_HDR,
 #endif
@@ -59,12 +67,19 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 		
 		// Enumerate all preference keys and set default values if not already present
 		NSMutableArray<NSString *> *allPrefsKeys = [NSMutableArray array];
-		[PreferencesViewControllerKeys enumerateKeysAndObjectsUsingBlock:^(NSNumber *sectionKey, NSDictionary<NSNumber *, NSString *> *rowDict, BOOL *stop) {
-			[rowDict enumerateKeysAndObjectsUsingBlock:^(NSNumber *rowKey, NSString *prefsKey, BOOL *innerStop) {
-				[allPrefsKeys addObject:prefsKey];
+		NSArray *pending = @[PreferencesViewControllerKeys, ThermAniTestViewControllerKeys];
+		for (NSDictionary *dict in pending) {
+			[dict enumerateKeysAndObjectsUsingBlock:^(NSNumber *sectionKey, NSDictionary<NSNumber *, NSString *> *rowDict, BOOL *stop) {
+				[rowDict enumerateKeysAndObjectsUsingBlock:^(NSNumber *rowKey, NSString *prefsKey, BOOL *innerStop) {
+					[allPrefsKeys addObject:prefsKey];
+				}];
 			}];
-		}];
-		
+		}
+		// Globals
+		for (NSString *key in BattmanGlobalKeys) {
+			[allPrefsKeys addObject:key];
+		}
+
 		// Set default values for preferences that don't exist
 		NSDictionary<NSString *, id> *defaultValues = @{
 			@kBattmanPrefs_Version: @(BattmanPrefsVersion),
@@ -122,6 +137,11 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 		NSDictionary *rows = PreferencesViewControllerKeys[@(indexPath.section)];
 		if (!rows) return nil;
 		return rows[@(indexPath.row)]; // may be nil if not mapped
+	}
+	if ([tableView.nextResponder isKindOfClass:[ThermAniTestViewController class]]) {
+		NSDictionary *rows = ThermAniTestViewControllerKeys[@(indexPath.section)];
+		if (!rows) return nil;
+		return rows[@(indexPath.row)];
 	}
 	return nil;
 }

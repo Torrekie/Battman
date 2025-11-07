@@ -315,6 +315,15 @@
 		684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
+		684973012EB2523C00C9C58A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684973002EB2523C00C9C58A /* CoreGraphics.framework */; };
+		684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
+		684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
+		684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
+		6849730A2EB34BFA00C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
+		684973322EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
+		684973332EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
+		684973342EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
+		684973352EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
 		684A9EF22D65F0AF006265DC /* intl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		686AECD52D3B93CD0059ECD0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 686AECD42D3B93CD0059ECD0 /* main.m */; };
 		687742B62D43838500375A2C /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
@@ -406,6 +415,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 687742AB2D437EE400375A2C;
 			remoteInfo = "Gettext Localizations";
+		};
+		6849732B2EB3502300C9C58A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 684973262EB3502300C9C58A /* FLEX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3A4C941F1B5B20570088C3F2;
+			remoteInfo = FLEX;
+		};
+		6849732D2EB3502300C9C58A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 684973262EB3502300C9C58A /* FLEX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 1C27A8B61F0E5A0300F0D02D;
+			remoteInfo = FLEXTests;
 		};
 		687742B72D43866400375A2C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1806,6 +1829,12 @@
 		684972EC2EAF482500C9C58A /* de.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = de.po; sourceTree = "<group>"; };
 		684972FA2EB2050D00C9C58A /* GradientSDRView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GradientSDRView.m; sourceTree = "<group>"; };
 		684972FB2EB2050E00C9C58A /* GradientSDRView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GradientSDRView.h; sourceTree = "<group>"; };
+		684973002EB2523C00C9C58A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		684973042EB348D900C9C58A /* ThermAniTestViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ThermAniTestViewController.h; sourceTree = "<group>"; };
+		684973052EB348D900C9C58A /* ThermAniTestViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ThermAniTestViewController.m; sourceTree = "<group>"; };
+		684973262EB3502300C9C58A /* FLEX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FLEX.xcodeproj; path = "../../Downloads/FLEX-master/FLEX.xcodeproj"; sourceTree = "<group>"; };
+		684973302EB3789300C9C58A /* FooterHyperlinkView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FooterHyperlinkView.m; sourceTree = "<group>"; };
+		684973312EB3789300C9C58A /* FooterHyperlinkView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FooterHyperlinkView.h; sourceTree = "<group>"; };
 		686AECBF2D3B93CB0059ECD0 /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		686AECD32D3B93CD0059ECD0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		686AECD42D3B93CD0059ECD0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -1944,6 +1973,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				684973012EB2523C00C9C58A /* CoreGraphics.framework in Frameworks */,
 				684114B92E5323E2001B76B6 /* SystemConfiguration.framework in Frameworks */,
 				684114BA2E5323E2001B76B6 /* WebKit.framework in Frameworks */,
 				684114BB2E5323E2001B76B6 /* intl.framework in Frameworks */,
@@ -13850,9 +13880,19 @@
 			path = hw;
 			sourceTree = "<group>";
 		};
+		684973272EB3502300C9C58A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6849732C2EB3502300C9C58A /* FLEX.framework */,
+				6849732E2EB3502300C9C58A /* FLEXTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		686AECB62D3B93CB0059ECD0 = {
 			isa = PBXGroup;
 			children = (
+				684973262EB3502300C9C58A /* FLEX.xcodeproj */,
 				6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */,
 				684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */,
 				6845759D2E3D4A7A00618DFD /* thermtune */,
@@ -13917,6 +13957,7 @@
 		687743162D461E5100375A2C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				684973002EB2523C00C9C58A /* CoreGraphics.framework */,
 				68457FC42E42599300618DFD /* Preferences.tbd */,
 				684575AF2E42598300618DFD /* apt.torrekie.com-patches */,
 				68B751412E2A468C003C94BC /* SystemConfiguration.framework */,
@@ -13959,6 +14000,8 @@
 		68AE40A42D8EB7710023D7B0 /* CustomUIElements */ = {
 			isa = PBXGroup;
 			children = (
+				684973312EB3789300C9C58A /* FooterHyperlinkView.h */,
+				684973302EB3789300C9C58A /* FooterHyperlinkView.m */,
 				684972622EACA13300C9C58A /* UITextFieldStepper.h */,
 				6849725E2EACA13300C9C58A /* UITextFieldStepper.m */,
 				68336E422E9F8A7F00E9F180 /* GradientHDRView.h */,
@@ -14109,6 +14152,8 @@
 				684113FE2E4A3492001B76B6 /* DonationViewController.m */,
 				68336E492EA0CF3400E9F180 /* PreferencesViewController.h */,
 				68336E4A2EA0CF3400E9F180 /* PreferencesViewController.m */,
+				684973042EB348D900C9C58A /* ThermAniTestViewController.h */,
+				684973052EB348D900C9C58A /* ThermAniTestViewController.m */,
 				684972E72EAE1B5F00C9C58A /* LanguageSelectionViewController.h */,
 				684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */,
 			);
@@ -14443,6 +14488,10 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
+					ProductGroup = 684973272EB3502300C9C58A /* Products */;
+					ProjectRef = 684973262EB3502300C9C58A /* FLEX.xcodeproj */;
+				},
+				{
 					ProductGroup = 687743102D461E4300375A2C /* Products */;
 					ProjectRef = 6877430F2D461E4300375A2C /* gettext.xcodeproj */;
 				},
@@ -14466,6 +14515,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		6849732C2EB3502300C9C58A /* FLEX.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = FLEX.framework;
+			remoteRef = 6849732B2EB3502300C9C58A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		6849732E2EB3502300C9C58A /* FLEXTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = FLEXTests.xctest;
+			remoteRef = 6849732D2EB3502300C9C58A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		687743152D461E4400375A2C /* intl.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
@@ -14793,12 +14856,14 @@
 				684114952E5323E2001B76B6 /* wrapper.c in Sources */,
 				684114962E5323E2001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D082E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
+				684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				684114972E5323E2001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114982E5323E2001B76B6 /* localized.c in Sources */,
 				684114992E5323E2001B76B6 /* BatteryInfoViewController.m in Sources */,
 				68336E892EA4E03F00E9F180 /* BattmanPrefs.m in Sources */,
 				6841149A2E5323E2001B76B6 /* SPWaterProgressIndicatorView.m in Sources */,
+				684973332EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
 				6841149B2E5323E2001B76B6 /* WarnAccessoryView.m in Sources */,
 				6841149C2E5323E2001B76B6 /* main.m in Sources */,
 				6841149D2E5323E2001B76B6 /* StackViewGestureHandler.m in Sources */,
@@ -14869,12 +14934,14 @@
 				684114EB2E57BDE7001B76B6 /* wrapper.c in Sources */,
 				684114EC2E57BDE7001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D072E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
+				684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				684114ED2E57BDE7001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114EE2E57BDE7001B76B6 /* localized.c in Sources */,
 				684114EF2E57BDE7001B76B6 /* BatteryInfoViewController.m in Sources */,
 				68336E8A2EA4E03F00E9F180 /* BattmanPrefs.m in Sources */,
 				683B2D722E8143D100FECDF5 /* licensing.S in Sources */,
+				684973342EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
 				684114F02E57BDE7001B76B6 /* SPWaterProgressIndicatorView.m in Sources */,
 				684114F12E57BDE7001B76B6 /* WarnAccessoryView.m in Sources */,
 				684114F22E57BDE7001B76B6 /* main.m in Sources */,
@@ -14951,12 +15018,14 @@
 				6849727E2EACB71B00C9C58A /* UIImage+SVG.m in Sources */,
 				6849727F2EACB71B00C9C58A /* wrapper.c in Sources */,
 				684972802EACB71B00C9C58A /* NSData+HexString.m in Sources */,
+				684973352EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
 				684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */,
 				684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */,
 				684972832EACB71B00C9C58A /* SimpleTemperatureViewController.m in Sources */,
 				684972842EACB71B00C9C58A /* localized.c in Sources */,
 				684972852EACB71B00C9C58A /* BatteryInfoViewController.m in Sources */,
 				684972862EACB71B00C9C58A /* BattmanPrefs.m in Sources */,
+				6849730A2EB34BFA00C9C58A /* ThermAniTestViewController.m in Sources */,
 				684972872EACB71B00C9C58A /* licensing.S in Sources */,
 				684972882EACB71B00C9C58A /* SPWaterProgressIndicatorView.m in Sources */,
 				684972892EACB71B00C9C58A /* WarnAccessoryView.m in Sources */,
@@ -15028,6 +15097,7 @@
 				68B7513E2E2A425D003C94BC /* wrapper.c in Sources */,
 				68B16F122E1BBCC7009B63AC /* NSData+HexString.m in Sources */,
 				68B291362DD1E6960089BA1F /* SimpleTemperatureViewController.m in Sources */,
+				684973322EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
 				6838BF762DBF810D007EB66C /* localized.c in Sources */,
 				68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				68336E3D2E9F80DF00E9F180 /* BrightnessInfoTableViewCell.m in Sources */,
@@ -15049,6 +15119,7 @@
 				68B291232DC754100089BA1F /* daemon.c in Sources */,
 				68A3EAFB2D5204D2003381DF /* battery_info.c in Sources */,
 				684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
+				684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				6841152D2E57E166001B76B6 /* control in Sources */,
 				684611502E0D5250006B651D /* IOMFB_interaction.c in Sources */,
 				68B291282DC75F610089BA1F /* pmnotification.c in Sources */,
