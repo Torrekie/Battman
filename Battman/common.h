@@ -69,10 +69,6 @@
 #define DBGALT(x, y, z)
 #endif
 
-#ifndef USE_MOBILEGESTALT
-#define USE_MOBILEGESTALT 0
-#endif
-
 #define LICENSE_MIT 2
 #define LICENSE_GPL 3
 #define LICENSE_NONFREE 4
@@ -193,6 +189,8 @@ bool        match_regex(const char *string, const char *pattern);
 const char *second_to_datefmt(uint64_t second);
 
 int         is_rosetta(void);
+bool        is_maccatalyst(void);
+bool        is_simulator(void);
 
 const char *battman_config_dir(void);
 const char *lang_cfg_file(void);

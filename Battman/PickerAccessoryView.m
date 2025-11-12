@@ -5,6 +5,7 @@
 //  Created by Torrekie on 2025/8/29.
 //
 
+#import "ObjCExt/CALayer+smoothCorners.h"
 #import "PickerAccessoryView.h"
 #import <objc/message.h>
 
@@ -23,10 +24,6 @@ static UIView *find_first_subview_class(id view, char *className) {
 	}
 	return nil;
 }
-
-@interface CALayer ()
-@property (atomic, assign, readwrite) BOOL continuousCorners;
-@end
 
 @interface PickerAccessoryView () <UIPickerViewDataSource, UIPickerViewDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) UIFont *font;
@@ -80,7 +77,6 @@ static UIView *find_first_subview_class(id view, char *className) {
 		// Full of magics, man
 		column.subviews[2].layer.cornerRadius = 8;
 		if (@available(iOS 13.0, *)) {
-			[column.subviews[2].layer setCornerCurve:kCACornerCurveContinuous];
 			// tertiarySystemFillColor does not working quite well on iOS 13
 			// this dynamic color does not cover all cases, but has been calibrated with iOS 14 Dark/Light mode
 			column.subviews[2].backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traits) {
@@ -94,7 +90,7 @@ static UIView *find_first_subview_class(id view, char *className) {
 		} else {
 			column.subviews[2].backgroundColor = [UIColor colorWithRed:118.0f / 255 green:118.0f / 255 blue:129.0f / 255 alpha:0.15];
 		}
-		column.subviews[2].layer.continuousCorners = YES;
+		[column.subviews[2].layer setSmoothCorners:YES];
 	}
 }
 

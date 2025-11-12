@@ -9,6 +9,8 @@
 #include "common.h"
 #include "intlextern.h"
 
+#import "ObjCExt/UIColor+compat.h"
+
 #import <CoreText/CoreText.h>
 #include <sys/sysctl.h>
 
@@ -116,10 +118,7 @@ void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
 		equipCellHighLegit(cell.detailTextLabel);
 	}
 
-	if (@available(iOS 13.0, *))
-		cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
-	else
-		cell.detailTextLabel.textColor = [UIColor colorWithRed:(60.0f / 255) green:(60.0f / 255) blue:(67.0f / 255) alpha:0.6];
+	cell.detailTextLabel.textColor = [UIColor compatSecondaryLabelColor];
 
 	return;
 }
@@ -155,7 +154,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		WarnAccessoryView *button = [WarnAccessoryView warnAccessoryView];
 		[equippedCell setAccessoryType:UITableViewCellAccessoryNone];
 		[equippedCell setAccessoryView:button];
-		equippedCell.detailTextLabel.textColor = [UIColor systemRedColor];
+		equippedCell.detailTextLabel.textColor = [UIColor compatRedColor];
 
 		if (warnText == NULL) {
 			switch (number) {

@@ -1,4 +1,5 @@
 #import "PLGraphViewTableCell.h"
+#import "ObjCExt/UIColor+compat.h"
 
 @interface UIView ()
 - (CGSize)size;
@@ -21,11 +22,7 @@
 	self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
 	if (self) {
 		self.backgroundColor = [UIColor clearColor];
-		if (@available(iOS 13.0, *))
-			self->labelColor = [UIColor labelColor];
-		else
-			self->labelColor = [UIColor blackColor];
-
+		self->labelColor = [UIColor compatLabelColor];
 		self->graphColor = self.backgroundColor;
 		self->_graphArray = nil;
 		self->waitingForData = NO;

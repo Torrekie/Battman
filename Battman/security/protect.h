@@ -3,6 +3,10 @@
 // protect_method
 // @LNSSPsd, May/23/25
 
+#define DISABLE_PROTECT 1
+
+#ifndef DISABLE_PROTECT
+
 #define protect_method(c,s,f) \
 	asm("mov x2,%0 \n" \
 		"adrp x3,\"!$$protect_method::" #c "::" #s "::dovl\"@PAGE \n" \
@@ -41,3 +45,9 @@
 		"cbz x16,\"L!$$protect_method::" #c "::" #s "::eval*Fr\" \n" \
 		"br x16\n\"L!$$protect_method::" #c "::" #s "::eval*Fr\": ret \n" \
 		"\"L!$$protect_method::" #c "::" #s "::cc\":")
+
+#else
+
+#define protect_method(...)
+
+#endif

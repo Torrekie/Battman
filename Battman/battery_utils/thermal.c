@@ -62,7 +62,7 @@ const char *get_thermal_pressure_string(thermal_pressure_t pressure) {
 	return numstr;
 }
 
-const char *get_thermal_notif_level_string(thermal_notif_level_t level) {
+const char *get_thermal_notif_level_string(thermal_notif_level_t level, bool with_number) {
 	static char numstr[32];
 	// Knowing a special value 8: thermtune controlled
 	int realval = OSThermalNotificationCurrentLevel();
@@ -70,10 +70,16 @@ const char *get_thermal_notif_level_string(thermal_notif_level_t level) {
 	if (level <= kBattmanThermalNotificationLevelAny)
 		return L_NONE;
 
+	const char *fmt = NULL;
+	if (with_number)
+		fmt = "%s (%d)";
+	else
+		fmt = "%s";
+
 	if (level > kBattmanThermalNotificationLevelAny && level < kBattmanThermalNotificationLevelUnknown) {
-		sprintf(numstr, "%s (%d)", _C(thermal_notif_level_string[level]), realval);
+		sprintf(numstr, fmt, _C(thermal_notif_level_string[level]), realval);
 	} else {
-		sprintf(numstr, "%s (%d)", _C("Unknown"), realval);
+		sprintf(numstr, fmt, _C("Unknown"), realval);
 	}
 
 	return numstr;
@@ -130,27 +136,119 @@ thermal_pressure_t thermal_pressure(void) {
 	return kBattmanThermalPressureLevelError;
 }
 
-thermal_notif_level_t thermal_notif_level(void) {
-	static bool got_levels = false;
-	static int  levels[11] = { 0 };
+int set_thermal_pressure(thermal_pressure_t pressure) {
+	uint64_t    level = 0;
+	int         token = 0;
 
+	if (notify_register_check(kOSThermalNotificationPressureLevelName, &token))
+		return -1; // Unsupported
+
+	// FIXME: Should be !(is_mac || is_maccatalyst)
+	if (!is_maccatalyst()) {
+		switch (pressure) {
+			case kBattmanThermalPressureLevelLight:
+				level = 10;
+				break;
+			case kBattmanThermalPressureLevelModerate:
+				level = 20;
+				break;
+			case kBattmanThermalPressureLevelHeavy:
+				level = 30;
+				break;
+			case kBattmanThermalPressureLevelTrapping:
+				level = 40;
+				break;
+			case kBattmanThermalPressureLevelSleeping:
+				level = 50;
+				break;
+			default:
+				break;
+		}
+	} else {
+		switch (pressure) {
+			case kBattmanThermalPressureLevelLight:
+			case kBattmanThermalPressureLevelModerate:
+				level = 1;
+				break;
+			case kBattmanThermalPressureLevelHeavy:
+				level = 2;
+				break;
+			case kBattmanThermalPressureLevelTrapping:
+				level = 3;
+				break;
+			case kBattmanThermalPressureLevelSleeping:
+				level = 4;
+				break;
+			default:
+				break;
+		}
+	}
+
+	
+	if (notify_set_state(token, level)) {
+		return 1; // Failed
+	}
+	DBGLOG(CFSTR("set_thermal_pressure: %d"), level);
+	if (notify_post(kOSThermalNotificationPressureLevelName)) {
+		return 2; // Success, but failed to notify
+	}
+
+	return 0;
+}
+
+static bool got_levels = false;
+static int  notif_levels[11] = { 0 };
+
+thermal_notif_level_t thermal_notif_level(void) {
 	// macOS has no such thing
 	if (kOSThermalNotificationName == NULL)
 		return kBattmanThermalNotificationLevelAny;
 
 	/* The level can be any number since there has _OSThermalNotificationSetLevelForBehavior */
-	if (!got_levels)
+	if (!got_levels) {
 		for (int i = 0; i < kBattmanThermalNotificationLevelUnknown; i++)
-			levels[i] = _OSThermalNotificationLevelForBehavior(i);
+			notif_levels[i] = _OSThermalNotificationLevelForBehavior(i);
+		got_levels = true;
+	}
 
 	/* is there a condition that current level is not any of those levels? */
 	int raw_level = OSThermalNotificationCurrentLevel();
 	for (int i = 0; i < kBattmanThermalNotificationLevelUnknown; i++)
-		if (levels[i] == raw_level)
+		if (notif_levels[i] == raw_level)
 			return (thermal_notif_level_t)i;
 
 	return kBattmanThermalNotificationLevelUnknown;
 }
+
+int *thermal_notif_levels(void) {
+	if (!got_levels) {
+		(void)thermal_notif_level();
+
+		if (!got_levels)
+			return NULL;
+	}
+
+	return notif_levels;
+}
+
+int set_thermal_notif_level(thermal_notif_level_t level) {
+	int token = 0;
+
+	if (kOSThermalNotificationName == NULL)
+		return -1; // Unsupported
+
+	if (notify_register_check(kOSThermalNotificationName, &token))
+		return -1; // Unsupported
+
+	if (notify_set_state(token, level))
+		return 1; // Failed
+
+	if (notify_post(kOSThermalNotificationName))
+		return 2; // Success, but failed to notify
+
+	return 0;
+}
+
 
 float thermal_max_trigger_temperature(void) {
 	int      token;

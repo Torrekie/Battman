@@ -44,14 +44,18 @@ typedef enum {
 __BEGIN_DECLS
 
 const char *get_thermal_pressure_string(thermal_pressure_t pressure);
-const char *get_thermal_notif_level_string(thermal_notif_level_t level);
+const char *get_thermal_notif_level_string(thermal_notif_level_t level, bool with_number);
 
 thermal_pressure_t thermal_pressure(void);
+int set_thermal_pressure(thermal_pressure_t pressure);
+
 float thermal_max_trigger_temperature(void);
 int thermal_solar_state(void);
 
 #if !(TARGET_OS_OSX || TARGET_OS_MACCATALYST)
 thermal_notif_level_t thermal_notif_level(void);
+int *thermal_notif_levels(void);
+int set_thermal_notif_level(thermal_notif_level_t level);
 #endif
 
 __END_DECLS

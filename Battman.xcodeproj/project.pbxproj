@@ -373,6 +373,22 @@
 		68C0C7442E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
 		68C0C7452E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
 		68C0C7462E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
+		68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
+		68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
+		68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
+		68CFB5DB2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
+		68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
+		68CFB5E42EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
+		68CFB5E52EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
+		68CFB5E62EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
+		68CFB5E92EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
+		68CFB5EA2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
+		68CFB5EB2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
+		68CFB5EC2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
+		68CFB5EF2EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
+		68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
+		68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
+		68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
@@ -1928,6 +1944,14 @@
 		68C0C7422E93BA3C006F73EA /* SVG.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVG.m; sourceTree = "<group>"; };
 		68C0C7432E93BA3C006F73EA /* SVG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVG.h; sourceTree = "<group>"; };
 		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../../../wifi/20/SFSymbols.pkg/Library/Fonts/SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
+		68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libbrightness.h; sourceTree = "<group>"; };
+		68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BSC_Provider.m; sourceTree = "<group>"; };
+		68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ColorSegProgressView.m; sourceTree = "<group>"; };
+		68CFB5E22EB9F3D7007ECAC8 /* ColorSegProgressView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorSegProgressView.h; sourceTree = "<group>"; };
+		68CFB5E72EB9F476007ECAC8 /* CALayer+smoothCorners.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CALayer+smoothCorners.h"; sourceTree = "<group>"; };
+		68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "CALayer+smoothCorners.m"; sourceTree = "<group>"; };
+		68CFB5ED2EBA02C3007ECAC8 /* UIColor+compat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIColor+compat.h"; sourceTree = "<group>"; };
+		68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIColor+compat.m"; sourceTree = "<group>"; };
 		68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SegmentedViewCell.m; sourceTree = "<group>"; };
 		68D6DEBF2D745DCB00E129A0 /* SegmentedViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SegmentedViewCell.h; sourceTree = "<group>"; };
 		68D6DEC02D77071300E129A0 /* not_charging_reason.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = not_charging_reason.h; sourceTree = "<group>"; };
@@ -2083,6 +2107,8 @@
 		68336E482E9F9F5700E9F180 /* brightness */ = {
 			isa = PBXGroup;
 			children = (
+				68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */,
+				68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */,
 			);
 			path = brightness;
 			sourceTree = "<group>";
@@ -14000,6 +14026,8 @@
 		68AE40A42D8EB7710023D7B0 /* CustomUIElements */ = {
 			isa = PBXGroup;
 			children = (
+				68CFB5E22EB9F3D7007ECAC8 /* ColorSegProgressView.h */,
+				68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */,
 				684973312EB3789300C9C58A /* FooterHyperlinkView.h */,
 				684973302EB3789300C9C58A /* FooterHyperlinkView.m */,
 				684972622EACA13300C9C58A /* UITextFieldStepper.h */,
@@ -14073,6 +14101,10 @@
 				68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */,
 				68336DE02E9662B700E9F180 /* UIScreen+Auto.h */,
 				68336DE12E9662B700E9F180 /* UIScreen+Auto.m */,
+				68CFB5E72EB9F476007ECAC8 /* CALayer+smoothCorners.h */,
+				68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */,
+				68CFB5ED2EBA02C3007ECAC8 /* UIColor+compat.h */,
+				68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */,
 			);
 			path = ObjCExt;
 			sourceTree = "<group>";
@@ -14835,6 +14867,7 @@
 				684114852E5323E2001B76B6 /* iokit_connection.c in Sources */,
 				684114862E5323E2001B76B6 /* thermal.c in Sources */,
 				684114872E5323E2001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				684114882E5323E2001B76B6 /* SegmentButton.m in Sources */,
 				684114892E5323E2001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D092E6C361100FECDF5 /* UPSMonitor.m in Sources */,
@@ -14844,6 +14877,7 @@
 				684972642EACA13300C9C58A /* UITextFieldStepper.m in Sources */,
 				6841148D2E5323E2001B76B6 /* accessory.c in Sources */,
 				6841148E2E5323E2001B76B6 /* Constants.m in Sources */,
+				68CFB5E42EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				6841148F2E5323E2001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
 				684114902E5323E2001B76B6 /* DividerView.m in Sources */,
 				684114912E5323E2001B76B6 /* DatePickerTableViewCell.m in Sources */,
@@ -14882,6 +14916,7 @@
 				684114A82E5323E2001B76B6 /* daemon.c in Sources */,
 				684114A92E5323E2001B76B6 /* battery_info.c in Sources */,
 				684114AA2E5323E2001B76B6 /* IOMFB_interaction.c in Sources */,
+				68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684114AB2E5323E2001B76B6 /* pmnotification.c in Sources */,
 				683B2C9E2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
 				684114AC2E5323E2001B76B6 /* GradientArcView.m in Sources */,
@@ -14890,6 +14925,7 @@
 				684114AE2E5323E2001B76B6 /* licensing.S in Sources */,
 				68336E452E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
+				68CFB5EA2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				684114AF2E5323E2001B76B6 /* ThermalTunesViewContoller.m in Sources */,
 				684114B02E5323E2001B76B6 /* SliderTableViewCell.m in Sources */,
 				68336E842EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
@@ -14913,6 +14949,7 @@
 				684114DB2E57BDE7001B76B6 /* iokit_connection.c in Sources */,
 				684114DC2E57BDE7001B76B6 /* thermal.c in Sources */,
 				684114DD2E57BDE7001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				684114DE2E57BDE7001B76B6 /* SegmentButton.m in Sources */,
 				684114DF2E57BDE7001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D0A2E6C361100FECDF5 /* UPSMonitor.m in Sources */,
@@ -14922,6 +14959,7 @@
 				684972652EACA13300C9C58A /* UITextFieldStepper.m in Sources */,
 				684114E32E57BDE7001B76B6 /* accessory.c in Sources */,
 				684114E42E57BDE7001B76B6 /* Constants.m in Sources */,
+				68CFB5E52EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				684114E52E57BDE7001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
 				684114E62E57BDE7001B76B6 /* DividerView.m in Sources */,
 				684114E72E57BDE7001B76B6 /* DatePickerTableViewCell.m in Sources */,
@@ -14960,6 +14998,7 @@
 				684114FD2E57BDE7001B76B6 /* FullSMCViewController.m in Sources */,
 				684114FE2E57BDE7001B76B6 /* daemon.c in Sources */,
 				684114FF2E57BDE7001B76B6 /* battery_info.c in Sources */,
+				68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684115002E57BDE7001B76B6 /* IOMFB_interaction.c in Sources */,
 				684115012E57BDE7001B76B6 /* pmnotification.c in Sources */,
 				683B2C9F2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
@@ -14968,6 +15007,7 @@
 				684115032E57BDE7001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				68336E462E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
+				68CFB5EB2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				684115052E57BDE7001B76B6 /* ThermalTunesViewContoller.m in Sources */,
 				684115062E57BDE7001B76B6 /* SliderTableViewCell.m in Sources */,
 				68336E852EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
@@ -15036,6 +15076,7 @@
 				6849728E2EACB71B00C9C58A /* TemperatureInfoTableViewCell.m in Sources */,
 				6849728F2EACB71B00C9C58A /* CreditViewController.c in Sources */,
 				684972902EACB71B00C9C58A /* worker.c in Sources */,
+				68CFB5DB2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684972912EACB71B00C9C58A /* BrightnessInfoTableViewCell.m in Sources */,
 				684972922EACB71B00C9C58A /* MultilineViewCell.m in Sources */,
 				684972932EACB71B00C9C58A /* UIView+Fill.m in Sources */,
@@ -15047,6 +15088,7 @@
 				684972992EACB71B00C9C58A /* battery_info.c in Sources */,
 				6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */,
 				6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */,
+				68CFB5EC2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				6849729C2EACB71B00C9C58A /* PickerAccessoryView.m in Sources */,
 				684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				6849729D2EACB71B00C9C58A /* UIScreen+Auto.m in Sources */,
@@ -15057,6 +15099,7 @@
 				684972A22EACB71B00C9C58A /* ThermalTunesViewContoller.m in Sources */,
 				684972A32EACB71B00C9C58A /* SliderTableViewCell.m in Sources */,
 				684972A42EACB71B00C9C58A /* SegmentedTextField.m in Sources */,
+				68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				684972A52EACB71B00C9C58A /* BatteryDetailsViewController.m in Sources */,
 				684972A62EACB71B00C9C58A /* CompatibilityHelper.c in Sources */,
 				684972A72EACB71B00C9C58A /* common.c in Sources */,
@@ -15066,6 +15109,7 @@
 				684972AB2EACB71B00C9C58A /* ChargingLimitViewController.m in Sources */,
 				684972AC2EACB71B00C9C58A /* PLBatteryUIMoveableGraphView.m in Sources */,
 				684972AD2EACB71B00C9C58A /* libsmc.c in Sources */,
+				68CFB5E62EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15076,6 +15120,7 @@
 				6834254B2D7C4F560070CE6F /* iokit_connection.c in Sources */,
 				68B68F6C2E21026600431E14 /* thermal.c in Sources */,
 				68336E372E9F7F7A00E9F180 /* BrightnessDetailsViewController.m in Sources */,
+				68CFB5E92EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				68AFCBA42E054D04007A9EC7 /* UILabel+SFSymbolsOverride.m in Sources */,
 				683B2C9D2E6185D900FECDF5 /* PickerAccessoryView.m in Sources */,
 				68AE40BE2D8EB8870023D7B0 /* SegmentButton.m in Sources */,
@@ -15102,6 +15147,7 @@
 				68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				68336E3D2E9F80DF00E9F180 /* BrightnessInfoTableViewCell.m in Sources */,
 				687743372D4E08AD00375A2C /* BatteryInfoViewController.m in Sources */,
+				68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				687743472D4F6C7800375A2C /* SPWaterProgressIndicatorView.m in Sources */,
 				6833A8C92DA3C6E500B71299 /* WarnAccessoryView.m in Sources */,
 				686AECD52D3B93CD0059ECD0 /* main.m in Sources */,
@@ -15140,11 +15186,13 @@
 				68FBDD192DE30A8E0057870A /* common.c in Sources */,
 				684114052E4A35E0001B76B6 /* DonationViewController.m in Sources */,
 				687743362D4E08AD00375A2C /* SettingsViewController.m in Sources */,
+				68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
 				683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */,
 				68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */,
 				68336E832EA3891900E9F180 /* SegmentedTextField.m in Sources */,
 				68171A302D5221C400DD4224 /* libsmc.c in Sources */,
+				68CFB5EF2EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15215,6 +15263,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
@@ -15239,6 +15288,7 @@
 				);
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15269,6 +15319,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15291,6 +15342,7 @@
 				);
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15323,6 +15375,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15346,6 +15399,7 @@
 				LLVM_LTO = YES;
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15377,6 +15431,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15399,6 +15454,7 @@
 				LLVM_LTO = YES;
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15454,6 +15510,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15478,6 +15535,7 @@
 				LLVM_LTO = YES;
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15509,6 +15567,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15532,6 +15591,7 @@
 				LLVM_LTO = YES;
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = (
 					"$(CUSTOM_CFLAGS)",
 					"-DLICENSE=LICENSE_NONFREE",
@@ -15686,6 +15746,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15708,6 +15769,7 @@
 				);
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = "$(CUSTOM_CFLAGS)";
 				OTHER_LDFLAGS = "$(OLDFL)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
@@ -15731,6 +15793,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -15752,6 +15815,7 @@
 				);
 				LOCALIZED_STRING_MACRO_NAMES = _;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = "$(CUSTOM_CFLAGS)";
 				OTHER_LDFLAGS = "$(OLDFL)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;

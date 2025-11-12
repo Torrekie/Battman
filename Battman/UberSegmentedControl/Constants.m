@@ -1,16 +1,12 @@
 #import <UIKit/UIKit.h>
+#import "../ObjCExt/UIColor+compat.h"
 #import "Constants.h"
 #import "../CompatibilityHelper.h"
 
 @implementation ConstantsColor
 
 + (UIColor *)divider {
-    if (@available(iOS 13.0, *)) {
-        return [UIColor secondarySystemFillColor];
-    } else {
-        // orig: return [UIColor blackColor];
-        return [UIColor colorWithRed:(120.0f / 255) green:(120.0f / 255) blue:(128.0f / 255) alpha:0.16f];
-    }
+	return [UIColor secondaryCompatFillColor];
 }
 
 + (UIColor *)selectedSegmentTint {
@@ -28,21 +24,11 @@
 }
 
 + (UIColor *)label {
-    if (@available(iOS 13.0, *)) {
-        return [UIColor labelColor];
-    } else {
-        // (kCGColorSpaceICCBased; kCGColorSpaceModelMonochrome; Generic Gray Gamma 2.2 Profile; extended range)] ( 0 1 )
-        return [UIColor blackColor];
-    }
+	return [UIColor compatLabelColor];
 }
 
 + (UIColor *)background {
-    if (@available(iOS 13.0, *)) {
-        return [UIColor tertiarySystemFillColor];
-    } else {
-        // orig: return [[UIColor blackColor] colorWithAlphaComponent:0.25];
-        return [UIColor colorWithRed:(118.0f / 255) green:(118.0f / 255) blue:(128.0f / 255) alpha:0.12f];
-    }
+	return [UIColor tertiaryCompatFillColor];
 }
 
 + (UIColor *)segmentShadow {

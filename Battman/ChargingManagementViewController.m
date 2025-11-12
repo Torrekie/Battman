@@ -5,6 +5,8 @@
 #include "common.h"
 #include "intlextern.h"
 
+#import "ObjCExt/UIColor+compat.h"
+
 #include <notify.h>
 
 enum sections_cl {
@@ -501,11 +503,7 @@ tvend:
 		} else {
 			cell.selectionStyle = UITableViewCellSelectionStyleDefault;
 			cell.textLabel.text = _("Schedule");
-            if (@available(iOS 13.0, *)) {
-                cell.textLabel.textColor = [UIColor linkColor];
-            } else {
-                cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
-            }
+			cell.textLabel.textColor = [UIColor compatLinkColor];
 		}
     } else if (indexPath.section == CM_SECT_LOW_POWER_MODE) {
         UISwitch *cswitch = [UISwitch new];

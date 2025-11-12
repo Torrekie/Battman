@@ -5,6 +5,8 @@
 //  Created by Torrekie on 2025/8/10.
 //
 
+#import "ObjCExt/CALayer+smoothCorners.h"
+#import "ObjCExt/UIColor+compat.h"
 #import "DonationViewController.h"
 #import "DonationPrompter.h"
 #import "CGIconSet/BattmanVectorIcon.h"
@@ -19,10 +21,6 @@
 @property (nonatomic, strong) NSString *selectedDonate;
 @property (nonatomic, strong) NSArray *donates;
 @property (assign) BOOL manual;
-@end
-
-@interface CALayer ()
-@property (atomic, assign, readwrite) BOOL continuousCorners;
 @end
 
 @implementation DonationViewController
@@ -46,11 +44,9 @@
 	UIBarButtonSystemItem button = UIBarButtonSystemItemCancel;
 	if (@available(iOS 13.0, *)) {
 		[self setModalInPresentation:YES];
-		self.view.backgroundColor = [UIColor systemBackgroundColor];
 		button = UIBarButtonSystemItemClose;
-	} else {
-		self.view.backgroundColor = [UIColor whiteColor];
 	}
+	self.view.backgroundColor = [UIColor compatBackgroundColor];
 	
 	// Close button
 	self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:button target:self action:@selector(dismissSelf)];
@@ -68,11 +64,7 @@
 	self.icon.contentMode = UIViewContentModeScaleAspectFit;
 	self.icon.userInteractionEnabled = YES;
 	[self.icon.layer setCornerRadius:120.0f * 0.225]; // App Store uses 22.5%
-	if (@available(iOS 13.0, *)) {
-		[self.icon.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([self.icon.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[self.icon.layer setContinuousCorners:YES];
+	[self.icon.layer setSmoothCorners:YES];
 	
 	// "Vivid" animations when tapping our icon
 	self.icon.translatesAutoresizingMaskIntoConstraints = NO;
@@ -127,47 +119,29 @@
 	UIButton *report = [UIButton buttonWithType:UIButtonTypeSystem];
 	report.translatesAutoresizingMaskIntoConstraints = NO;
 	report.layer.cornerRadius = 12;
-	if (@available(iOS 13.0, *)) {
-		[report.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([report.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[report.layer setContinuousCorners:YES];
+	[report.layer setSmoothCorners:YES];
 	report.clipsToBounds = YES;
 	report.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	report.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
 	[report setTitle:_("Create a new GitHub issue") forState:UIControlStateNormal];
 	report.backgroundColor = [UIColor clearColor];
 	report.layer.borderWidth = 1.0;
-	if (@available(iOS 13.0, *)) {
-		report.layer.borderColor = [UIColor systemGray4Color].CGColor;
-		[report setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
-	} else {
-		report.layer.borderColor = [UIColor lightGrayColor].CGColor;
-		[report setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-	}
+	report.layer.borderColor = [UIColor compatGray4Color].CGColor;
+	[report setTitleColor:[UIColor compatLabelColor] forState:UIControlStateNormal];
 	[report addTarget:self action:@selector(issueTapped:) forControlEvents:UIControlEventTouchUpInside];
 	
 	UIButton *email = [UIButton buttonWithType:UIButtonTypeSystem];
 	email.translatesAutoresizingMaskIntoConstraints = NO;
 	email.layer.cornerRadius = 12;
-	if (@available(iOS 13.0, *)) {
-		[email.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([email.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[email.layer setContinuousCorners:YES];
+	[email.layer setSmoothCorners:YES];
 	email.clipsToBounds = YES;
 	email.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	email.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
 	[email setTitle:_("Send an Email") forState:UIControlStateNormal];
 	email.backgroundColor = [UIColor clearColor];
 	email.layer.borderWidth = 1.0;
-	if (@available(iOS 13.0, *)) {
-		email.layer.borderColor = [UIColor systemGray4Color].CGColor;
-		[email setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
-	} else {
-		email.layer.borderColor = [UIColor lightGrayColor].CGColor;
-		[email setTitleColor:[UIColor grayColor] forState:UIControlStateNormal];
-	}
+	email.layer.borderColor = [UIColor compatGray4Color].CGColor;
+	[email setTitleColor:[UIColor compatLabelColor] forState:UIControlStateNormal];
 	[email addTarget:self action:@selector(emailTapped:) forControlEvents:UIControlEventTouchUpInside];
 	
 	NSMutableArray *btns = [NSMutableArray arrayWithCapacity:_donates.count / 2];
@@ -180,16 +154,10 @@
 		UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
 		b.layer.cornerRadius = 10;
 		b.layer.borderWidth = 1.0;
-		if (@available(iOS 13.0, *)) {
-			[b.layer setCornerCurve:kCACornerCurveContinuous];
-			b.layer.borderColor = [UIColor systemGray4Color].CGColor;
-			[b setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
-		} else {
-			b.layer.borderColor = [UIColor lightGrayColor].CGColor;
-			[b setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-		}
-		if ([b.layer respondsToSelector:@selector(setContinuousCorners:)])
-			[b.layer setContinuousCorners:YES];
+		b.layer.borderColor = [UIColor compatGray4Color].CGColor;
+		[b setTitleColor:[UIColor compatLabelColor] forState:UIControlStateNormal];
+
+		[b.layer setSmoothCorners:YES];
 		
 		b.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
 		[b setTitle:_donates[i * 2] forState:UIControlStateNormal];
@@ -204,16 +172,12 @@
 	UIButton *donate = [UIButton buttonWithType:UIButtonTypeSystem];
 	donate.translatesAutoresizingMaskIntoConstraints = NO;
 	donate.layer.cornerRadius = 12;
-	if (@available(iOS 13.0, *)) {
-		[donate.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([donate.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[donate.layer setContinuousCorners:YES];
+	[donate.layer setSmoothCorners:YES];
 	donate.clipsToBounds = YES;
 	donate.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
 	donate.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
 	[donate setTitle:_("No, thanks") forState:UIControlStateNormal];
-	donate.backgroundColor = [UIColor systemRedColor];
+	donate.backgroundColor = [UIColor compatRedColor];
 	[donate setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
 	[donate addTarget:self action:@selector(bottomTapped:) forControlEvents:UIControlEventTouchUpInside];
 	self.bottomButton = donate;
@@ -258,11 +222,7 @@
 	for (UIButton *b in self.donateButtons) {
 		b.backgroundColor = [UIColor clearColor];
 	}
-	if (@available(iOS 13.0, *))
-		selected.backgroundColor = [UIColor systemGray4Color];
-	else
-		selected.backgroundColor = [UIColor lightGrayColor];
-	
+	selected.backgroundColor = [UIColor compatGray4Color];
 	selected.layer.borderColor = [UIColor grayColor].CGColor;
 	
 	self.selectedDonate = link;

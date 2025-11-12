@@ -1,4 +1,6 @@
 #import "ObjCExt/UIScreen+Auto.h"
+#import "ObjCExt/CALayer+smoothCorners.h"
+#import "ObjCExt/UIColor+compat.h"
 #import "SettingsViewController.h"
 #import "PreferencesViewController.h"
 #import "LanguageSelectionViewController.h"
@@ -13,10 +15,6 @@
 // #import "SerialQRCodeTableViewCell.h"
 
 #include "security/selfcheck.h"
-
-@interface CALayer ()
-@property (atomic, assign) BOOL continuousCorners;
-@end
 
 @interface UIImage ()
 + (instancetype)_applicationIconImageForBundleIdentifier:(NSString*)bundleIdentifier format:(int)format scale:(CGFloat)scale;
@@ -568,11 +566,7 @@ static NSMutableArray *sns_avail = nil;
 		}
 		// Color
 		if (linkColor) {
-			if (@available(iOS 13.0, *)) {
-				cell.textLabel.textColor = [UIColor linkColor];
-			} else {
-				cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
-			}
+			cell.textLabel.textColor = [UIColor compatLinkColor];
 		}
     }
 	if (indexPath.section == SS_SECT_SNS) {
@@ -659,11 +653,7 @@ static NSMutableArray *sns_avail = nil;
 	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen autoScreen].scale];
 	if (cell.imageView.image != nil) {
 		[cell.imageView.layer setCornerRadius:tmp.size.width * 0.225f];
-		if (@available(iOS 13.0, *)) {
-			[cell.imageView.layer setCornerCurve:kCACornerCurveContinuous];
-		}
-		if ([cell.imageView.layer respondsToSelector:@selector(setContinuousCorners:)])
-			[cell.imageView.layer setContinuousCorners:YES];
+		[cell.imageView.layer setSmoothCorners:YES];
 	}
 	cell.imageView.clipsToBounds = YES;
 }
@@ -721,11 +711,7 @@ static NSString *_contrib[] = {
 - (UITableViewCell *)tableView:(id)tv cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [UITableViewCell new];
     cell.textLabel.text = _contrib[indexPath.row * 2];
-    if (@available(iOS 13.0, *)) {
-        cell.textLabel.textColor = [UIColor linkColor];
-    } else {
-        cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
-    }
+	cell.textLabel.textColor = [UIColor compatLinkColor];
 
     return cell;
 }

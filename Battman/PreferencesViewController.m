@@ -14,6 +14,8 @@
 #import "UITextFieldStepper.h"
 #import "FooterHyperlinkView.h"
 
+#import "ObjCExt/UIColor+compat.h"
+
 static BOOL languageHasChanged = NO;
 
 @interface PreferencesViewController () <UITextFieldDelegate>
@@ -427,10 +429,11 @@ extern UITableViewCell *find_cell(UIView *view);
 					} else {
 						extern BOOL metal_hdr_available(id device);
 						extern id MTLCreateSystemDefaultDevice(void);
-						if (!metal_hdr_available(MTLCreateSystemDefaultDevice()))
+						if (!metal_hdr_available(MTLCreateSystemDefaultDevice())) {
 							[seg setEnabled:NO forSegmentAtIndex:0];
-						if (selected < 2)
-							selected = 1;
+							if (selected < 2)
+								selected = 1;
+						}
 					}
 					[seg setSelectedSegmentIndex:selected];
 					seg.tag = P_ROW_APPEARANCE_BRIGHTNESS_HDR;
@@ -449,10 +452,7 @@ extern UITableViewCell *find_cell(UIView *view);
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
 					[(UITableViewCell *)cell textLabel].text = _("Wipe All Battman Data");
-					if (@available(iOS 13.0, *))
-						[(UITableViewCell *)cell textLabel].textColor = [UIColor systemRedColor];
-					else
-						[(UITableViewCell *)cell textLabel].textColor = [UIColor redColor];
+					[(UITableViewCell *)cell textLabel].textColor = [UIColor compatRedColor];
 					[(UITableViewCell *)cell setAccessoryType:UITableViewCellAccessoryNone];
 					break;
 				}
@@ -573,6 +573,7 @@ extern UITableViewCell *find_cell(UIView *view);
 	}
 	
 	if (!indexPath || indexPath.section != P_SECT_APPEARANCE || indexPath.row != P_ROW_APPEARANCE_BRIGHTNESS_HDR) {
+		DBGLOG(@"brightnessHDRSwitchValueChanged: Wrong Row (%@)", perform_selector2(sel_registerName("_prefsKeyForTableView:indexPath:"), BattmanPrefs.sharedPrefs, self.tableView, indexPath));
 		return;
 	}
 	

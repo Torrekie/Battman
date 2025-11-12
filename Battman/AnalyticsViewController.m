@@ -6,6 +6,8 @@
 #import "common.h"
 #import "AnalyticsViewController.h"
 
+#import "ObjCExt/UIColor+compat.h"
+
 UIImage *imageForSFProGlyph(NSString *glyph, NSString *fontName, CGFloat fontSize, UIColor *tintColor);
 
 @implementation AnalyticsViewController
@@ -45,11 +47,7 @@ UIImage *imageForSFProGlyph(NSString *glyph, NSString *fontName, CGFloat fontSiz
 	emptyLabel.text = _("Unimplemented Yet");
 	emptyLabel.textAlignment = NSTextAlignmentCenter;
 	emptyLabel.font = [UIFont systemFontOfSize:18.0 weight:UIFontWeightMedium];
-	if (@available(iOS 13.0, *)) {
-		emptyLabel.textColor = [UIColor secondaryLabelColor];
-	} else {
-		emptyLabel.textColor = [UIColor grayColor];
-	}
+	emptyLabel.textColor = [UIColor compatSecondaryLabelColor];
 	emptyLabel.numberOfLines = 0;
 
 	self.tableView.backgroundView = emptyLabel;

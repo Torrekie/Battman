@@ -1,6 +1,9 @@
 #import "SimpleTemperatureViewController.h"
+#import "ColorSegProgressView.h"
 #import "common.h"
 #include "intlextern.h"
+
+#include "ObjCExt/UIColor+compat.h"
 
 #include "scprefs/wrapper.h"
 #include "battery_utils/thermal.h"
@@ -27,8 +30,8 @@ static NSMutableDictionary *thermalBasics;
 		[thermalBasics setValue:[NSString stringWithCString:get_thermal_pressure_string(thermal_pressure()) encoding:NSUTF8StringEncoding] forKey:@"Thermal Pressure"];
 		// OSNotification level is Embedded only
 		thermal_notif_level_t notif_level = thermal_notif_level();
-		if ((notif_level != kBattmanThermalNotificationLevelAny) && !(is_rosetta() || getenv("SIMULATOR_DEVICE_NAME")))
-			[thermalBasics setValue:[NSString stringWithCString:get_thermal_notif_level_string(notif_level) encoding:NSUTF8StringEncoding] forKey:@"Thermal Notification Level"];
+		if ((notif_level != kBattmanThermalNotificationLevelAny) && !(is_rosetta() || is_simulator()))
+			[thermalBasics setValue:[NSString stringWithCString:get_thermal_notif_level_string(notif_level, true) encoding:NSUTF8StringEncoding] forKey:@"Thermal Notification Level"];
 		float max_temp = thermal_max_trigger_temperature();
 		if (max_temp > 0)
 			[thermalBasics setValue:@(max_temp) forKey:@"Max Trigger Temperature"];
@@ -119,7 +122,7 @@ static NSMutableDictionary *thermalBasics;
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tv {
 	// IOHID is not available in Simulators, try find other ways later
-	return getenv("SIMULATOR_DEVICE_NAME") ? 2 : 5;
+	return is_simulator() ? 2 : 5;
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
@@ -224,15 +227,10 @@ static NSMutableDictionary *thermalBasics;
 
 			if (pid != -1 && pid != 0) {
 				cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ (%d)", _("Running"), pid];
-			} else if (is_rosetta() || getenv("SIMULATOR_DEVICE_NAME")) {
+			} else if (is_rosetta() || is_simulator()) {
 				cell.detailTextLabel.text = _("Simulator");
 			} else {
-				UIColor *red;
-				if (@available(iOS 13.0, *))
-					red = [UIColor systemRedColor];
-				else
-					red = [UIColor redColor];
-				cell.detailTextLabel.textColor = red;
+				cell.detailTextLabel.textColor = [UIColor compatRedColor];
 				cell.accessoryType = UITableViewCellAccessoryDetailButton;
 				if (pid == -1) {
 					cell.detailTextLabel.text = _("Unable to detect");
@@ -256,12 +254,7 @@ static NSMutableDictionary *thermalBasics;
 					break;
 			}
 			if (status != 3) {
-				UIColor *red;
-				if (@available(iOS 13.0, *))
-					red = [UIColor systemRedColor];
-				else
-					red = [UIColor redColor];
-				cell.detailTextLabel.textColor = red;
+				cell.detailTextLabel.textColor = [UIColor compatRedColor];
 			}
 		}
 		return cell;
@@ -275,12 +268,53 @@ static NSMutableDictionary *thermalBasics;
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"maxtherm"];
 			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
 			cell.accessoryType = UITableViewCellAccessoryDetailButton;
+		} else if ([label isEqualToString:@"Thermal Pressure"]) {
+			cell = [tv dequeueReusableCellWithIdentifier:@"thermpressure"];
+			if (!cell)
+				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"thermpressure"];
+			thermal_pressure_t pressure = thermal_pressure();
+			if (pressure != kBattmanThermalPressureLevelError && pressure != kBattmanThermalPressureLevelUnknown) {
+				// FIXME: macOS/macCatalyst/Simulator has no "light" level, so segment count should be 4
+				ColorSegProgressView *seg = [[ColorSegProgressView alloc] initWithSegmentCount:kBattmanThermalPressureLevelSleeping colorTransition:@[UIColor.compatGreenColor, UIColor.compatRedColor]];
+				seg.segmentSpacing = 1.0;
+				seg.userInteractionEnabled = NO;
+				seg.forceSquareSegments = YES;
+				seg.valueShouldFollowSegments = YES;
+				seg.showSeparators = NO;
+				seg.colorForUnfilled = UIColor.clearColor;
+				seg.colorTransitionMode = kColorSegTransitionAnalogous;
+				seg.maximumValue = kBattmanThermalPressureLevelSleeping;
+				seg.minimumValue = kBattmanThermalPressureLevelNominal;
+				// XXX: Consider add this to UIColor+compat.m
+				if (@available(iOS 14.0, *)) {
+					seg.backgroundColor = UIColor.tertiarySystemFillColor;
+				} else if (@available(iOS 13.0, *)) {
+					// tertiarySystemFillColor does not working quite well on iOS 13
+					// this dynamic color does not cover all cases, but has been calibrated with iOS 14 Dark/Light mode
+					seg.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traits) {
+						if ([(id)traits userInterfaceStyle] == UIUserInterfaceStyleDark) {
+							return [UIColor colorWithRed:(118.0f / 255) green:(118.0f / 255) blue:(129.0f / 255) alpha:0.30];
+						} else {
+							return [UIColor colorWithRed:(118.0f / 255) green:(118.0f / 255) blue:(128.0f / 255) alpha:0.15];
+						}
+					}];
+				} else {
+					seg.backgroundColor = [UIColor colorWithRed:118.0f / 255 green:118.0f / 255 blue:129.0f / 255 alpha:0.15];
+				}
+				/* we display "Nominal" with one segment filled
+				 * this will them map "Trapping" to a full value
+				 * before the device actually got "Sleeping" */
+				seg.value = pressure + (pressure < kBattmanThermalPressureLevelSleeping);
+				cell.detailTextLabel.text = dict[dict.allKeys[ip.row]];
+				CGSize progressSize = [seg sizeThatFits:CGSizeZero];
+				seg.frame = CGRectMake(0, 0, progressSize.width, progressSize.height);
+				cell.accessoryView = seg;
+			}
 		} else {
 			cell.detailTextLabel.text = dict[dict.allKeys[ip.row]];
 			cell.accessoryType = UITableViewCellAccessoryNone;
 			cell.accessoryView = nil;
 		}
-		// TODO: Better UI for pressures
 		cell.textLabel.text = _([label UTF8String]);
 
 		return cell;

@@ -7,6 +7,7 @@
 
 #import "main.h"
 #import "common.h"
+#import <objc/message.h>
 #import "ObjCExt/UIScreen+Auto.h"
 #import "GradientHDRView.h"
 #import "BattmanPrefs.h"
@@ -17,11 +18,17 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 140000
+extern const CFStringRef kCGColorSpaceITUR_2100_PQ;
+#endif
+
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2100_PQ);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ_EOTF);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2020_PQ_EOTF);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedLinearDisplayP3);
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedLinearITUR_2020);
 
 #pragma clang diagnostic pop
 
@@ -82,11 +89,25 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
     
     // Set pixel format based on HDR support
     if (_supportsHDR) {
-        if ([self safelySetPixelFormat:MTLPixelFormatBGR10A2Unorm forMetalLayer:_metalLayer]) {
+        BOOL pixelFormatSet = NO;
+        
+        // Only try BGR10A2Unorm on macCatalyst
+        if (is_maccatalyst()) {
+            if ([self safelySetPixelFormat:MTLPixelFormatBGR10A2Unorm forMetalLayer:_metalLayer]) {
+                _metalLayer.wantsExtendedDynamicRangeContent = YES;
+                [self tryHDRColorspaceWithFallbacks];
+                pixelFormatSet = YES;
+            }
+        }
+        
+        // Try RGBA16Float if BGR10A2Unorm wasn't set
+        if (!pixelFormatSet && [self safelySetPixelFormat:MTLPixelFormatRGBA16Float forMetalLayer:_metalLayer]) {
             _metalLayer.wantsExtendedDynamicRangeContent = YES;
-
             [self tryHDRColorspaceWithFallbacks];
-        } else {
+            pixelFormatSet = YES;
+        }
+        
+        if (!pixelFormatSet) {
             DBGLOG(@"Failed to set HDR pixel format, falling back to standard format");
             _supportsHDR = NO;
             [self safelySetPixelFormat:MTLPixelFormatBGRA8Unorm forMetalLayer:_metalLayer];
@@ -141,7 +162,25 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
         }
     };
 
-    if (tryColorspace(kCGColorSpaceITUR_2100_PQ, "ITU-R 2100 PQ") || tryColorspace(kCGColorSpaceDisplayP3_PQ, "Display P3 PQ") || tryColorspace(kCGColorSpaceDisplayP3_PQ_EOTF, "Display P3 PQ EOTF") || tryColorspace(kCGColorSpaceITUR_2020_PQ_EOTF, "ITU-R 2020 PQ EOTF") || tryColorspace(kCGColorSpaceExtendedSRGB, "Extended sRGB")) {
+    BOOL success = NO;
+    
+    // Different colorspace fallbacks based on pixel format
+    if (_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float) {
+        // RGBA16Float: Use extended linear colorspaces
+        success = tryColorspace(kCGColorSpaceExtendedLinearDisplayP3, "Extended Linear Display P3") ||
+                  tryColorspace(kCGColorSpaceExtendedLinearITUR_2020, "Extended Linear ITU-R 2020") ||
+                  tryColorspace(kCGColorSpaceExtendedLinearSRGB, "Extended Linear sRGB") ||
+                  tryColorspace(kCGColorSpaceExtendedSRGB, "Extended sRGB");
+    } else if (_metalLayer.pixelFormat == MTLPixelFormatBGR10A2Unorm) {
+        // BGR10A2Unorm: Use PQ (Perceptual Quantizer) colorspaces
+        success = tryColorspace(kCGColorSpaceITUR_2100_PQ, "ITU-R 2100 PQ") ||
+                  tryColorspace(kCGColorSpaceDisplayP3_PQ, "Display P3 PQ") ||
+                  tryColorspace(kCGColorSpaceDisplayP3_PQ_EOTF, "Display P3 PQ EOTF") ||
+                  tryColorspace(kCGColorSpaceITUR_2020_PQ_EOTF, "ITU-R 2020 PQ EOTF") ||
+                  tryColorspace(kCGColorSpaceExtendedSRGB, "Extended sRGB");
+    }
+
+    if (success) {
         return;
     }
 
@@ -185,30 +224,79 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedSRGB);
 BOOL metal_hdr_available(id<MTLDevice> device) {
 	// Check if device supports HDR pixel formats
 	BOOL support_hdr = NO;
-	if ([device supportsTextureSampleCount:1] &&
-#if TARGET_OS_MACCATALYST
-		[device supportsFamily:MTLGPUFamilyApple3])
-#else
-		[device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1])
-#endif
-	{
+	BOOL hasRequiredGPU = NO;
+	
+	if (is_maccatalyst()) {
+		if ([device respondsToSelector:sel_registerName("supportsFamily:")])
+			hasRequiredGPU = ((BOOL (*)(id, SEL, NSInteger))objc_msgSend)(device, sel_registerName("supportsFamily:"), 1003); // MTLGPUFamilyApple3
+	} else {
+		hasRequiredGPU = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily3_v1];
+	}
+	
+	if ([device supportsTextureSampleCount:1] && hasRequiredGPU) {
 		// Check if the display supports extended dynamic range
 		UIScreen *screen = [UIScreen autoScreen];
-		NSOperatingSystemVersion iOS10 = {.majorVersion = 10, .minorVersion = 0, .patchVersion = 0};
-		if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:iOS10]) {
-			if (screen.traitCollection.displayGamut == UIDisplayGamutP3) {
-				support_hdr = YES;
-				DBGLOG(@"HDR supported (P3 display)");
+		
+		// Check for EDR headroom (iOS 16+)
+		if (@available(iOS 16.0, *)) {
+			if ([screen respondsToSelector:sel_registerName("potentialEDRHeadroom")]) {
+				CGFloat edrHeadroom = ((CGFloat (*)(id, SEL))objc_msgSend)(screen, sel_registerName("potentialEDRHeadroom"));
+				if (edrHeadroom > 1.0) {
+					support_hdr = YES;
+					DBGLOG(@"HDR supported (EDR headroom: %.2f)", edrHeadroom);
+				} else {
+					DBGLOG(@"EDR headroom insufficient: %.2f", edrHeadroom);
+				}
 			}
 		}
-			
-		// Check if we can create the HDR pixel format texture
+		
+		// Fallback: Check display gamut for older iOS versions
+		if (!support_hdr) {
+			NSOperatingSystemVersion iOS10 = {.majorVersion = 10, .minorVersion = 0, .patchVersion = 0};
+			if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:iOS10]) {
+				if (screen.traitCollection.displayGamut == UIDisplayGamutP3) {
+					support_hdr = YES;
+					DBGLOG(@"HDR supported (P3 display, pre-iOS 16)");
+				}
+			}
+		}
+
+		// Verify we can actually use HDR pixel formats by testing CAMetalLayer
 		if (support_hdr) {
-			MTLTextureDescriptor *testDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGR10A2Unorm width:1 height:1 mipmapped:NO];
-			id<MTLTexture> testTexture = [device newTextureWithDescriptor:testDesc];
-			if (!testTexture) {
+			CAMetalLayer *testLayer = [CAMetalLayer layer];
+			testLayer.device = device;
+			
+			BOOL canUseBGR10A2 = NO;
+			BOOL canUseRGBA16Float = NO;
+			
+			// Test BGR10A2Unorm (only on macCatalyst)
+			if (is_maccatalyst()) {
+				@try {
+					testLayer.pixelFormat = MTLPixelFormatBGR10A2Unorm;
+					testLayer.wantsExtendedDynamicRangeContent = YES;
+					canUseBGR10A2 = YES;
+					DBGLOG(@"CAMetalLayer supports BGR10A2Unorm");
+				}
+				@catch (NSException *exception) {
+					DBGLOG(@"CAMetalLayer doesn't support BGR10A2Unorm: %@", exception.reason);
+				}
+			}
+			
+			// Test RGBA16Float (all platforms)
+			@try {
+				testLayer.pixelFormat = MTLPixelFormatRGBA16Float;
+				testLayer.wantsExtendedDynamicRangeContent = YES;
+				canUseRGBA16Float = YES;
+				DBGLOG(@"CAMetalLayer supports RGBA16Float");
+			}
+			@catch (NSException *exception) {
+				DBGLOG(@"CAMetalLayer doesn't support RGBA16Float: %@", exception.reason);
+			}
+			
+			// HDR is only supported if at least one format works
+			if (!canUseBGR10A2 && !canUseRGBA16Float) {
 				support_hdr = NO;
-				DBGLOG(@"Device doesn't support BGR10A2Unorm format for textures - HDR disabled");
+				DBGLOG(@"Device doesn't support any HDR pixel formats on CAMetalLayer - HDR disabled");
 			}
 		}
 	} else {
@@ -221,7 +309,7 @@ BOOL metal_hdr_available(id<MTLDevice> device) {
     _supportsHDR = NO;
 
 	if ([BattmanPrefs.sharedPrefs objectForKey:@kBattmanPrefs_BRIGHT_UI_HDR]) {
-		if (![BattmanPrefs.sharedPrefs boolForKey:@kBattmanPrefs_BRIGHT_UI_HDR])
+		if ([BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_BRIGHT_UI_HDR] != 0)
 			goto skip_hdr_check;
 	}
 
@@ -338,11 +426,13 @@ skip_hdr_check:
     
     NSUInteger width = _gradientTexture.width;
     NSUInteger height = _gradientTexture.height;
-    NSUInteger bytesPerPixel = _supportsHDR ? 4 : 4; // Both formats use 4 bytes per pixel
+	NSUInteger bytesPerPixel = 4;
+	if (_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float)
+		bytesPerPixel = 8;
     NSUInteger bytesPerRow = width * bytesPerPixel;
     
     // Allocate pixel data
-    uint32_t *pixelData = (uint32_t *)malloc(width * height * sizeof(uint32_t));
+	uint32_t *pixelData = malloc(width * height * bytesPerPixel);
     
     // Calculate center and gradient radius
     float centerX = width * 0.5f;
@@ -363,7 +453,7 @@ skip_hdr_check:
             // Calculate adaptive falloff factor based on radius size
             // Smaller radius = softer edge (mimics ambient light diffusion)
             float radiusNormalized = _gradientRadius; // 0.2 to 1.0
-            float edgeSoftness = 1.0f + (1.0f - radiusNormalized) * 4.0f; // Range: 1.0 to 4.2
+			float edgeSoftness = 1.0f + (1.0f - radiusNormalized) * ((_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float) ? 9.4f : 4.0f); // Range: 1.0 to 4.2
             
             // Apply adaptive distance scaling for softer edges on smaller radii
             float adaptiveDistance = normalizedDistance / edgeSoftness;
@@ -378,35 +468,45 @@ skip_hdr_check:
             
             // Calculate intensity
             float intensity = t * _gradientBrightness;
-            
-            uint32_t packedPixel;
-            
+
+			NSUInteger pixelIndex = y * width + x;
             if (_supportsHDR) {
-                // Convert to 10-bit values (0-1023) for BGR10A2Unorm format
-                uint32_t pixelValue10bit = (uint32_t)(intensity * 1023.0f);
-                pixelValue10bit = MIN(pixelValue10bit, 1023); // Clamp to 10-bit max
-                
-                // Pack BGR10A2Unorm: B(10) + G(10) + R(10) + A(2) = 32 bits
-                packedPixel = 
-                    (3U << 30) |                           // A: 2 bits (full alpha = 3)
-                    (pixelValue10bit << 20) |              // R: 10 bits
-                    (pixelValue10bit << 10) |              // G: 10 bits
-                    pixelValue10bit;                       // B: 10 bits
+				if (_metalLayer.pixelFormat == MTLPixelFormatBGR10A2Unorm) {
+					// Convert to 10-bit values (0-1023) for BGR10A2Unorm format
+					uint32_t pixelValue10bit = (uint32_t)(intensity * 1023.0f);
+					pixelValue10bit = MIN(pixelValue10bit, 1023); // Clamp to 10-bit max
+					
+					// Pack BGR10A2Unorm: B(10) + G(10) + R(10) + A(2) = 32 bits
+					pixelData[pixelIndex] =
+					(3U << 30) |							// A: 2 bits (full alpha = 3)
+					(pixelValue10bit << 20) |              	// R: 10 bits
+					(pixelValue10bit << 10) |              	// G: 10 bits
+					pixelValue10bit;                       	// B: 10 bits
+				} else if (_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float) {
+					// RGBA16Float requires 4 x half (16-bit float)
+					uint64_t *hp = (uint64_t *)pixelData;
+					uint64_t pixelValue16bit = (uint64_t)(intensity * 31743.0f * 0.4);
+					pixelValue16bit = MIN(pixelValue16bit, 31743); // Clamp to half-precision float max
+
+					// Pack RGBA16Float: B(16) + G(16) + R(16) + A(16) = 64 bits
+					hp[pixelIndex] =
+					((uint64_t)30720U << 48) |				// A: 16 bits (full alpha = 1.0/0x3CFF)
+					(pixelValue16bit << 32) |				// B: 16 bits
+					(pixelValue16bit << 16) |				// G: 16 bits
+					pixelValue16bit;						// R: 16 bits
+				}
             } else {
                 // Convert to 8-bit values (0-255) for BGRA8Unorm format
                 uint32_t pixelValue8bit = (uint32_t)(intensity * 255.0f);
                 pixelValue8bit = MIN(pixelValue8bit, 255); // Clamp to 8-bit max
                 
                 // Pack BGRA8Unorm: B(8) + G(8) + R(8) + A(8) = 32 bits
-                packedPixel = 
-                    (255U << 24) |                         // A: 8 bits (full alpha)
-                    (pixelValue8bit << 16) |               // R: 8 bits
-                    (pixelValue8bit << 8) |                // G: 8 bits
-                    pixelValue8bit;                        // B: 8 bits
+				pixelData[pixelIndex] =
+				(255U << 24) |								// A: 8 bits (full alpha)
+				(pixelValue8bit << 16) |               		// R: 8 bits
+				(pixelValue8bit << 8) |                		// G: 8 bits
+				pixelValue8bit;                        		// B: 8 bits
             }
-            
-            NSUInteger pixelIndex = y * width + x;
-            pixelData[pixelIndex] = packedPixel;
         }
     }
     

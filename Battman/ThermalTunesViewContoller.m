@@ -6,6 +6,7 @@
 //
 
 #import "ThermalTunesViewContoller.h"
+#import "ObjCExt/UIColor+compat.h"
 
 #include <sys/sysctl.h>
 #include "battery_utils/thermal.h"
@@ -13,6 +14,9 @@
 #import "intlextern.h"
 #import "FooterHyperlinkView.h"
 #import "UberSegmentedControl/UberSegmentedControl.h"
+#import "ColorSegProgressView.h"
+//#import "PickerAccessoryView.h"
+#import "DatePickerCompactButton.h"
 
 @interface ThermalSegmentedControl : UIView
 @property (nonatomic, assign) BOOL toggled;
@@ -106,6 +110,7 @@ typedef enum {
 	TT_SECT_GENERAL,
 	TT_SECT_HIP,
 	TT_SECT_SUNLIGHT,
+	TT_SECT_LEVEL,
 
 	TT_SECT_COUNT
 } TTSects;
@@ -129,12 +134,20 @@ typedef enum {
 	TT_ROW_SUNLIGHT_STATUS,
 } TTSectSunlight;
 
+// TT_SECT_LEVEL
+typedef enum {
+	TT_ROW_LEVEL_PRESSURE,
+	TT_ROW_LEVEL_NOTIF,
+} TTSectLevel;
+
 static bool has_hip = false;
 
 @interface ThermalTunesViewContoller ()
 @property BOOL show_sunlight_override;
 @property (nonatomic, strong) FooterHyperlinkView *warnTitle;
 @end
+
+extern UITableViewCell *find_cell(UIView *view);
 
 @implementation ThermalTunesViewContoller
 
@@ -185,7 +198,7 @@ static bool has_hip = false;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-	return getenv("SIMULATOR_DEVICE_NAME") ? 1 : TT_SECT_COUNT;
+	return is_simulator() ? 1 : TT_SECT_COUNT;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -195,6 +208,7 @@ static bool has_hip = false;
 		case TT_SECT_GENERAL: return _("General");
 		case TT_SECT_HIP: return has_hip ? _("Hot-In-Pocket Mode") : nil; // Sadly, HIP heuristics has no official translations
 		case TT_SECT_SUNLIGHT: return _("Sunlight Exposure");
+		case TT_SECT_LEVEL: return _("Thermal Levels");
 		case TT_SECT_COUNT: break;
 	}
 	return nil;
@@ -215,6 +229,7 @@ static bool has_hip = false;
 		case TT_SECT_GENERAL: return _("Changing the default thermal behavior may increase wear on your battery and reduce its lifespan.");
 		case TT_SECT_HIP: return has_hip ? _("Hot-In-Pocket Protection automatically reduces CPU & GPU power when the display is off and no media is playing, to prevent overheating while the device is stored in a pocket.") : nil;
 		case TT_SECT_SUNLIGHT: return nil;
+		case TT_SECT_LEVEL: return _("Thermal levels are normally controlled by the system. Changing them can affect power, media playback, backlight, flashlight and wireless charging.");
 		case TT_SECT_COUNT: break;
 	}
 	return nil;
@@ -227,6 +242,7 @@ static bool has_hip = false;
 		case TT_SECT_GENERAL: return 2;
 		case TT_SECT_HIP: return has_hip ? 2 : 0;
 		case TT_SECT_SUNLIGHT: return 3;
+		case TT_SECT_LEVEL: return 2 - (is_maccatalyst());
 		case TT_SECT_COUNT: break;
 	}
 	return 0;
@@ -257,10 +273,7 @@ static bool has_hip = false;
 		switch (row) {
 			case TT_ROW_GENERAL_ENABLED: {
 				cell.textLabel.text = _("State Updates");
-				if (@available(iOS 13.0, *))
-					cell.detailTextLabel.textColor = [UIColor systemGrayColor];
-				else
-					cell.detailTextLabel.textColor = [UIColor grayColor];
+				cell.detailTextLabel.textColor = [UIColor compatGrayColor];
 				cell.detailTextLabel.text = _("Whether applications receive thermal state updates");
 				ThermalSegmentedControl *control = [[ThermalSegmentedControl alloc] initWithLockerSwitch];
 				extern bool getOSNotifEnabled(bool *enable, bool *persist);
@@ -273,10 +286,7 @@ static bool has_hip = false;
 			}
 			case TT_ROW_GENERAL_CLTM: {
 				cell.textLabel.text = _("Thermal Mitigations");
-				if (@available(iOS 13.0, *))
-					cell.detailTextLabel.textColor = [UIColor systemGrayColor];
-				else
-					cell.detailTextLabel.textColor = [UIColor grayColor];
+				cell.detailTextLabel.textColor = [UIColor compatGrayColor];
 				cell.detailTextLabel.text = _("Reduce power budget when heating");
 				ThermalSegmentedControl *control = [[ThermalSegmentedControl alloc] initWithLockerSwitch];
 				extern bool getCLTMEnabled(bool *enable, bool *persist);
@@ -346,48 +356,188 @@ static bool has_hip = false;
 			}
 		}
 	}
+	if (indexPath.section == TT_SECT_LEVEL) {
+		TTSectLevel row = (TTSectLevel)indexPath.row;
+		switch (row) {
+			case TT_ROW_LEVEL_PRESSURE: {
+				thermal_pressure_t pressure = thermal_pressure();
+				if (pressure == kBattmanThermalPressureLevelError) {
+					cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+					cell.textLabel.text = _("Pressure");
+					cell.detailTextLabel.text = _("Unavailable");
+					break;
+				}
+				cell.textLabel.text = _("Pressure");
+				cell.detailTextLabel.text = _("Tap to adjust");
+
+				ColorSegProgressView *seg = [[ColorSegProgressView alloc] initWithSegmentCount:kBattmanThermalPressureLevelSleeping colorTransition:@[UIColor.compatGreenColor, UIColor.compatRedColor]];
+				seg.segmentSpacing = 1.0;
+				seg.userInteractionEnabled = YES;
+				seg.forceSquareSegments = YES;
+				seg.valueShouldFollowSegments = YES;
+				seg.showSeparators = NO;
+				seg.colorForUnfilled = UIColor.clearColor;
+				seg.colorTransitionMode = kColorSegTransitionAnalogous;
+				seg.maximumValue = 5;
+				seg.minimumValue = 0;
+				// XXX: Consider add this to UIColor+compat.m
+				if (@available(iOS 14.0, *)) {
+					seg.backgroundColor = UIColor.tertiarySystemFillColor;
+				} else if (@available(iOS 13.0, *)) {
+					// tertiarySystemFillColor does not working quite well on iOS 13
+					// this dynamic color does not cover all cases, but has been calibrated with iOS 14 Dark/Light mode
+					seg.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traits) {
+						if ([(id)traits userInterfaceStyle] == UIUserInterfaceStyleDark) {
+							return [UIColor colorWithRed:(118.0f / 255) green:(118.0f / 255) blue:(129.0f / 255) alpha:0.30];
+						} else {
+							return [UIColor colorWithRed:(118.0f / 255) green:(118.0f / 255) blue:(128.0f / 255) alpha:0.15];
+						}
+					}];
+				} else {
+					seg.backgroundColor = [UIColor colorWithRed:118.0f / 255 green:118.0f / 255 blue:129.0f / 255 alpha:0.15];
+				}
+				/* we display "Nominal" with one segment filled
+				 * this will then map "Trapping" to a full value
+				 * before the device actually got "Sleeping" */
+				seg.value = pressure + (pressure < kBattmanThermalPressureLevelSleeping);
+				CGSize progressSize = [seg sizeThatFits:CGSizeZero];
+				seg.frame = CGRectMake(0, 0, progressSize.width, progressSize.height);
+				[seg addTarget:self action:@selector(sliderChanged:) forControlEvents:UIControlEventValueChanged];
+				cell.accessoryView = seg;
+				break;
+			}
+			case TT_ROW_LEVEL_NOTIF: {
+				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				thermal_notif_level_t notif = thermal_notif_level();
+				cell.textLabel.text = _("Notification");
+				if (notif == kBattmanThermalNotificationLevelAny) {
+					cell.detailTextLabel.text = _("Unavailable");
+					break;
+				}
+				cell.detailTextLabel.text = [NSString stringWithUTF8String:get_thermal_notif_level_string(notif, true)];
+				DatePickerCompactButton *btn = [[DatePickerCompactButton alloc] initWithTitle:_("Reset")];
+				[btn addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
+				[btn setTitleColor:[UIColor compatLinkColor] forState:UIControlStateNormal];
+				btn.titleLabel.font = cell.detailTextLabel.font;
+				cell.accessoryView = btn;
+				break;
+#if 0
+				/* Don't provide explicit setter for notif level, OSNotif seems unstable */
+				NSMutableArray *options = [NSMutableArray array];
+				int *levels = thermal_notif_levels();
+				if (levels != NULL) {
+					for (int i = 0; i < kBattmanThermalNotificationLevelUnknown; i++) {
+						NSString *optionText = [NSString stringWithFormat:@"%d", levels[i]];
+						if (![options containsObject:optionText])
+							[options addObject:optionText];
+					}
+				}
+
+				PickerAccessoryView *picker = [[PickerAccessoryView alloc] initWithFrame:CGRectZero font:nil options:options];
+				[picker addTarget:self action:@selector(pickerChanged:)];
+				[picker selectAutomaticRow:[options indexOfObject:[NSString stringWithFormat:@"%d", notif]] animated:YES];
+				cell.detailTextLabel.text = [NSString stringWithUTF8String:get_thermal_notif_level_string(notif, false)];
+				cell.accessoryView = picker;
+				break;
+#else
+				
+#endif
+			}
+		}
+	}
 	// TODO: Override4CC
 	return cell;
 }
 
 - (void)controllerChanged:(UIView *)controller {
-	UIView *view = controller;
-	while (view && ![view isKindOfClass:[UITableViewCell class]]) {
-		view = [view superview];
+	UITableViewCell *cell = find_cell(controller);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for UIView %@", controller);
+		return;
 	}
-	if (view) {
-		UITableViewCell *cell = (UITableViewCell *)view;
-		UIView *tb = view;
-		while (tb && ![tb isKindOfClass:[UITableView class]]) {
-			tb = [tb superview];
-		}
-		if (tb) {
-			UITableView *tv = (UITableView *)tb;
-			NSIndexPath *ip = [tv indexPathForCell:cell];
 
-			[self writeThermalBoolByIndexPath:ip control:(UIControl *)cell.accessoryView];
-
-			// Special
-			if (ip.section == TT_SECT_SUNLIGHT && ip.row == TT_ROW_SUNLIGHT_AUTO) {
-				UISwitch *control = (UISwitch *)controller;
-				_show_sunlight_override = !control.on;
-				[tv beginUpdates];
-				[tv endUpdates];
-			}
+	if (self.tableView) {
+		[self writeThermalBoolByIndexPath:indexPath control:(UIControl *)cell.accessoryView];
+		// Special
+		if (indexPath.section == TT_SECT_SUNLIGHT && indexPath.row == TT_ROW_SUNLIGHT_AUTO) {
+			UISwitch *control = (UISwitch *)controller;
+			_show_sunlight_override = !control.on;
+			[self.tableView beginUpdates];
+			[self.tableView endUpdates];
 			return;
 		}
 	}
-	
-	DBGLOG(@"FIXME: controllerChanged without cell view!");
+
+	DBGLOG(@"FIXME: controllerChanged without tableView!");
 }
+
+- (void)sliderChanged:(ColorSegProgressView *)slider {
+	UITableViewCell *cell = find_cell(slider);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for ColorSegProgressView %@", slider);
+		return;
+	}
+	DBGLOG(@"sliderChanged: %f", slider.value);
+	if (slider.value < 1.0) {
+		slider.value = 1.0;
+	}
+
+	if (slider.value >= 4.0) {
+		UIAlertController *warning = [UIAlertController alertControllerWithTitle:_("Are you 100% sure?") message:[NSString stringWithFormat:_("Setting thermal pressure to %s may trigger a persistent temperature warning screen. Do you want to continue?"), get_thermal_pressure_string((int)floor(slider.value - 1))] preferredStyle:UIAlertControllerStyleAlert];
+		[warning addAction:[UIAlertAction actionWithTitle:_("Proceed") style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+			[self writeThermalInt8ByIndexPath:indexPath control:(UIControl *)slider];
+		}]];
+		[warning addAction:[UIAlertAction actionWithTitle:_("Cancel") style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+			thermal_pressure_t pressure = thermal_pressure();
+			slider.value = pressure + (pressure < kBattmanThermalPressureLevelSleeping);
+		}]];
+		[self presentViewController:warning animated:1 completion:nil];
+	} else
+		[self writeThermalInt8ByIndexPath:indexPath control:(UIControl *)slider];
+}
+
+#if 0
+- (void)pickerChanged:(PickerAccessoryView *)picker {
+	UITableViewCell *cell = find_cell(picker);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for PickerAccessoryView %@", picker);
+		return;
+	}
+	
+	[self writeThermalInt8ByIndexPath:indexPath control:(UIControl *)picker];
+	[self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+}
+#else
+- (void)buttonTapped:(DatePickerCompactButton *)button {
+	UITableViewCell *cell = find_cell(button);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for DatePickerCompactButton %@", button);
+		return;
+	}
+	
+	[self writeThermalInt8ByIndexPath:indexPath control:(UIControl *)button];
+}
+#endif
 
 // 0    0   00
 // SECT ROW VALUE
 //          0x1: On/Off
 //          0x2: Persist
-#define WORKER_THERMAL_BOOL_CMD (uint32_t)((indexPath.section << 12) | (indexPath.row << 8) | (ctrl.persist << 1) | (ctrl.toggled))
+#define WORKER_THERMAL_BOOL_CMD (uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | (ctrl.persist << 1) | (ctrl.toggled))
 
-- (void)writeThermalBoolCmd:(uint16_t)cmd {
+- (void)writeThermalCmd:(uint16_t)cmd {
 	extern uint64_t battman_worker_call(char cmd, void *arg, uint64_t arglen);
 	// SCStatus and SCError is int (4 bytes)
 	uint32_t ret = battman_worker_call(5, (void *)&cmd, 2) & 0xFFFFFFFF;
@@ -403,12 +553,37 @@ static bool has_hip = false;
 	if ([control isKindOfClass:[ThermalSegmentedControl class]]) {
 		ThermalSegmentedControl *ctrl = (ThermalSegmentedControl *)control;
 		if (ctrl.isLockerSwitch)
-			[self writeThermalBoolCmd:WORKER_THERMAL_BOOL_CMD];
+			[self writeThermalCmd:WORKER_THERMAL_BOOL_CMD];
 	}
 	if ([control isKindOfClass:[UISwitch class]]) {
 		UISwitch *ctrl = (UISwitch *)control;
-		[self writeThermalBoolCmd:(uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | (ctrl.on))];
+		[self writeThermalCmd:(uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | (ctrl.on))];
 	}
+}
+
+// 0    0   00
+// SECT ROW VALUE
+- (void)writeThermalInt8ByIndexPath:(NSIndexPath *)indexPath control:(UIControl *)control {
+	if ([control isKindOfClass:[ColorSegProgressView class]]) {
+		ColorSegProgressView *ctrl = (ColorSegProgressView *)control;
+		uint16_t cmd = (uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | (uint8_t)(((int)floor(ctrl.value - 1)) & 0xFF));
+		[self writeThermalCmd:cmd];
+	}
+#if 0
+	if ([control isKindOfClass:[PickerAccessoryView class]]) {
+		PickerAccessoryView *picker = (PickerAccessoryView *)control;
+		NSInteger row = [picker selectedRowInComponent:0];
+		NSInteger opt = row % picker.options.count;
+		show_alert("PICKER", [NSString stringWithFormat:@"ROW: %ld\nOPT: %ld\nTITLE: %@", row, opt, picker.options[opt]].UTF8String, L_OK);
+		[self writeThermalCmd:(uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | ([picker.options[opt] intValue] & 0xFF))];
+	}
+#else
+	if ([control isKindOfClass:[DatePickerCompactButton class]]) {
+		// Reset OSNotif to 0, instead of custom values
+		[self writeThermalCmd:(uint16_t)((indexPath.section << 12) | (indexPath.row << 8) | 0)];
+		[self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+	}
+#endif
 }
 
 @end

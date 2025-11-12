@@ -7,7 +7,8 @@
 
 #import "common.h"
 #import "battery_utils/libsmc.h"
-#import "UIScreen+Auto.h"
+#import "ObjCExt/UIScreen+Auto.h"
+#import "ObjCExt/CALayer+smoothCorners.h"
 #import "ThermAniTestViewController.h"
 #import "GradientArcView.h"
 #import "BattmanPrefs.h"
@@ -21,10 +22,6 @@
 @property (nonatomic, strong) CAShapeLayer *maskLayer;
 @property (nonatomic, strong) UILabel *leftLabel;
 @property (nonatomic, strong) UILabel *rightLabel;
-@end
-
-@interface CALayer ()
-@property (atomic, assign, readwrite) BOOL continuousCorners;
 @end
 
 extern UITableViewCell *find_cell(UIView *view);
@@ -102,11 +99,7 @@ extern UITableViewCell *find_cell(UIView *view);
 	self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
 	if (self) {
 		self.borderView = [[UIView alloc] initWithFrame:CGRectZero];
-		if (@available(iOS 13.0, *)) {
-			[self.borderView.layer setCornerCurve:kCACornerCurveContinuous];
-		}
-		if ([self.borderView.layer respondsToSelector:@selector(setContinuousCorners:)])
-			[self.borderView.layer setContinuousCorners:YES];
+		[self.borderView.layer setSmoothCorners:YES];
 		self.borderView.layer.masksToBounds = YES;
 		self.borderView.translatesAutoresizingMaskIntoConstraints = NO;
 

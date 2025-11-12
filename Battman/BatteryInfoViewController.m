@@ -1,4 +1,5 @@
 #import "ObjCExt/UIScreen+Auto.h"
+#import "ObjCExt/CALayer+smoothCorners.h"
 
 #import "BatteryInfoViewController.h"
 #import "BatteryCellView/BatteryInfoTableViewCell.h"
@@ -15,11 +16,6 @@
 
 #include "common.h"
 #include "intlextern.h"
-
-// Privates
-@interface CALayer ()
-@property (atomic, assign) BOOL continuousCorners;
-@end
 
 @interface UIImage ()
 + (instancetype)_applicationIconImageForBundleIdentifier:(NSString*)bundleIdentifier format:(int)format scale:(CGFloat)scale;
@@ -317,11 +313,7 @@ enum sections_batteryinfo {
 	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen autoScreen].scale];
 	if (cell.imageView.image != nil) {
 		[cell.imageView.layer setCornerRadius:tmp.size.width * 0.225f];
-		if (@available(iOS 13.0, *)) {
-			[cell.imageView.layer setCornerCurve:kCACornerCurveContinuous];
-		}
-		if ([cell.imageView.layer respondsToSelector:@selector(setContinuousCorners:)])
-			[cell.imageView.layer setContinuousCorners:YES];
+		[cell.imageView.layer setSmoothCorners:YES];
 	}
 	cell.imageView.clipsToBounds = YES;
 }

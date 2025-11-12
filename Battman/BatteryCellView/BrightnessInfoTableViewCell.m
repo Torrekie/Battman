@@ -5,13 +5,12 @@
 //  Created by Torrekie on 2025/10/15.
 //
 
+#import "../BattmanPrefs.h"
 #import "../GradientHDRView.h"
 #import "../GradientSDRView.h"
 #import "BrightnessInfoTableViewCell.h"
 
-@interface CALayer ()
-@property (atomic, assign, readwrite) BOOL continuousCorners;
-@end
+#import "../ObjCExt/CALayer+smoothCorners.h"
 
 @interface BrightnessCellView ()
 @property (nonatomic, strong) UIView *gradientView;
@@ -23,16 +22,12 @@
 	self = [super initWithFrame:frame];
 	UIView *brightnessView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
 	brightnessView.layer.cornerRadius = 30;
-	if (@available(iOS 13.0, *)) {
-		[brightnessView.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([brightnessView.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[brightnessView.layer setContinuousCorners:YES];
+	[brightnessView.layer setSmoothCorners:YES];
 	brightnessView.layer.masksToBounds = YES;
 
 	{
 		// Check if Metal is disabled by user config
-		BOOL metalDisabled = [[[NSUserDefaults alloc] initWithSuiteName:@"com.apple.coreanimation"] boolForKey:@"DisableMetal"];
+		BOOL metalDisabled = ([BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_BRIGHT_UI_HDR] == 2);
 		self.gradientView = [[(metalDisabled ? [GradientSDRView class] : [GradientHDRView class]) alloc] initWithFrame:brightnessView.bounds];
 		self.gradientView.center = brightnessView.center;
 		[brightnessView addSubview:self.gradientView];

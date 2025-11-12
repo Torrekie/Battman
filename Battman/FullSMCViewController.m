@@ -1,4 +1,5 @@
 #import "ObjCExt/UIScreen+Auto.h"
+#import "ObjCExt/UIColor+compat.h"
 #import "FullSMCViewController.h"
 #include "battery_utils/libsmc.h"
 #include "common.h"
@@ -15,9 +16,6 @@
     NSArray<UISegmentedControl *> *allTypeControls;
     int endian;
 }
-
-// TODO: Implement shim UIKit instead change colors every sources
-@property (nonatomic, strong) UIColor *systemRedColor;
 
 - (instancetype)initWithKey:(struct smc_key *)skey;
 @end
@@ -205,11 +203,7 @@ static NSString *valueForSMCBufferSafe(uint8_t *bytes, int size, char *ptype, in
             simpleCell.textLabel.enabled = 0;
         } else {
             simpleCell.textLabel.text = _("Jump to key");
-            if (@available(iOS 13.0, *)) {
-                simpleCell.textLabel.textColor = [UIColor linkColor];
-            } else {
-                simpleCell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
-            }
+			simpleCell.textLabel.textColor = [UIColor compatLinkColor];
         }
         return simpleCell;
     }
@@ -552,33 +546,12 @@ static int smctype_to_length(int type) {
     [self presentViewController:warningAlert animated:1 completion:nil];
 }
 
-- (void)updateColors {
-    if (@available(iOS 13.0, *)) {
-        self.view.backgroundColor = [UIColor systemBackgroundColor];
-        [self setSystemRedColor:[UIColor systemRedColor]];
-        return;
-    }
-
-    if (@available(iOS 12.0, *)) {
-        // We already have a non published darkmode in iOS 12, some tweaks may be able to enforce it
-        if ([(id)UIScreen.autoScreen.traitCollection userInterfaceStyle] == UIUserInterfaceStyleDark) {
-            self.view.backgroundColor = [UIColor blackColor];
-            [self setSystemRedColor:[UIColor colorWithRed:1 green:(69.0f / 255) blue:(58.0f / 255) alpha:1]];
-            return;
-        }
-    }
-
-    self.view.backgroundColor = [UIColor whiteColor];
-    [self setSystemRedColor:[UIColor colorWithRed:1 green:(59.0f / 255) blue:(48.0f / 255) alpha:1]];
-}
-
 - (void)loadView {
     [super loadView];
     UIView *view = self.view;
     [view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(endEditing)]];
 
-    // Set bgcolor
-    [self updateColors];
+	self.view.backgroundColor = [UIColor compatBackgroundColor];
 
     keyLabel = [UILabel new];
     keyLabel.text = [NSString stringWithFormat:_("%.4s(%d byte(s)) %.4s"), type, length, key];
@@ -663,7 +636,7 @@ static int smctype_to_length(int type) {
     UIButton *writeButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [writeButton setTitle:_("Write to SMC") forState:UIControlStateNormal];
     writeButton.translatesAutoresizingMaskIntoConstraints = 0;
-    writeButton.tintColor = [self systemRedColor];
+    writeButton.tintColor = [UIColor compatRedColor];
     [view addSubview:writeButton];
     [writeButton.topAnchor constraintEqualToAnchor:noteLabel.bottomAnchor constant:30].active = 1;
     [writeButton.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-20].active = 1;

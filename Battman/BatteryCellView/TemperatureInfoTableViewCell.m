@@ -1,4 +1,5 @@
 #import "../ObjCExt/UIScreen+Auto.h"
+#import "../ObjCExt/CALayer+smoothCorners.h"
 #import "../common.h"
 #import "TemperatureInfoTableViewCell.h"
 #import "../GradientArcView.h"
@@ -9,9 +10,6 @@
 
 #import "../BattmanPrefs.h"
 
-@interface CALayer ()
-@property (atomic, assign, readwrite) BOOL continuousCorners;
-@end
 
 @interface TemperatureCellView ()
 @property (nonatomic, strong) CAGradientLayer *borderGradient;
@@ -63,11 +61,7 @@
     self = [super initWithFrame:frame];
     UIView *temperatureView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
     temperatureView.layer.cornerRadius = 30;
-	if (@available(iOS 13.0, *)) {
-		[temperatureView.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([temperatureView.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[temperatureView.layer setContinuousCorners:YES];
+	[temperatureView.layer setSmoothCorners:YES];
     temperatureView.layer.masksToBounds = YES;
 
     self.borderGradient = [CAGradientLayer layer];

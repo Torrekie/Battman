@@ -588,24 +588,26 @@ const char *second_to_datefmt(uint64_t second) {
 	id pool = objc_alloc_init(oclass(NSAutoreleasePool));
 
 	id fmt = objc_alloc_init(oclass(NSDateComponentsFormatter));
-	id localeId = ((id (*)(Class, SEL, const char *))objc_msgSend)(oclass(NSString), oselector(stringWithUTF8String:), preferred_language());
-	id locale = ((id (*)(Class, SEL, id))objc_msgSend)(oclass(NSLocale), oselector(localeWithLocaleIdentifier:), localeId);
-	id calendar = ((id (*)(id, SEL))objc_msgSend)(fmt, oselector(calendar));
+	id localeId = ocall(oclass(NSString), stringWithUTF8String:, preferred_language());
+	id locale = ocall(oclass(NSLocale), localeWithLocaleIdentifier:, localeId);
+
+	id calendar = ocall(fmt, calendar);
 	if (calendar) {
-		((void (*)(id, SEL, id))objc_msgSend)(calendar, oselector(setLocale:), locale);
+		ocall_t(void, calendar, setLocale:, locale);
 	}
 
-	((void (*)(id, SEL, unsigned long))objc_msgSend)(fmt, oselector(setAllowedUnits:), (kCFCalendarUnitDay | kCFCalendarUnitHour | kCFCalendarUnitMinute));
+	ocall_t(void, fmt, setAllowedUnits:, (kCFCalendarUnitDay | kCFCalendarUnitHour | kCFCalendarUnitMinute));
 
 	// NSDateComponentsFormatterUnitsStyleShort;
-	((void (*)(id, SEL, long))objc_msgSend)(fmt, oselector(setUnitsStyle:), 2);
+	ocall_t(void, fmt, setUnitsStyle:, 2);
 	// NSDateComponentsFormatterZeroFormattingBehaviorDropAll;
-	((void (*)(id, SEL, unsigned long))objc_msgSend)(fmt, oselector(setZeroFormattingBehavior:), 14);
-	id s = ((id (*)(id, SEL, double))objc_msgSend)(fmt, oselector(stringFromTimeInterval:), (double)second);
+	ocall_t(void, fmt, setZeroFormattingBehavior:, 14);
+	
+	id s = ocall(fmt, stringFromTimeInterval:, (double)second);
 
 	const char *c = NULL;
 	if (s) {
-		c = ((const char *(*)(id, SEL))objc_msgSend)(s, oselector(UTF8String));
+		c = (const char *)ocall_t(char*, s, UTF8String);
 	}
 
 	const char *ret = NULL;
@@ -616,7 +618,7 @@ const char *second_to_datefmt(uint64_t second) {
 	}
 
 	if (pool) {
-		((void (*)(id, SEL))objc_msgSend)(pool, oselector(drain));
+		ocall_t(void, pool, drain);
 	}
 
 	return ret;
@@ -651,6 +653,23 @@ int is_rosetta(void) {
 		return -1;
 	}
 	return ret;
+}
+
+bool is_maccatalyst(void) {
+	bool isMacCatalystApp = false;
+	id processInfo = ocall(oclass(NSProcessInfo), processInfo);
+	if (processInfo != nil) {
+		if (ocall_t(bool, processInfo, respondsToSelector:, oselector(isMacCatalystApp)))
+			isMacCatalystApp = ocall_t(bool, processInfo, isMacCatalystApp);
+		else if (ocall_t(bool, processInfo, respondsToSelector:, oselector(macCatalystApp)))
+			isMacCatalystApp = ocall_t(bool, processInfo, macCatalystApp);
+	}
+	
+	return isMacCatalystApp;
+}
+
+bool is_simulator(void) {
+	return getenv("SIMULATOR_DEVICE_NAME") != NULL;
 }
 
 int mkdir_p(const char *path, mode_t mode) {
@@ -740,7 +759,7 @@ const char *battman_config_dir(void) {
 			if (chown(confdir, pw->pw_uid, gr->gr_gid) != 0) {
 				os_log_error(gLog, "battman_config_dir: Cannot set config dir ownership to mobile: %s", strerror(errno));
 			}
-		} else if (!getenv("SIMULATOR_DEVICE_NAME")) {
+		} else if (!is_simulator()) {
 			os_log_fault(gLog, "battman_config_dir: How can your mobile uid/gid gone?");
 		}
 		DBGLOG(CFSTR("battman_config_dir: %s"), confdir);
@@ -1024,26 +1043,41 @@ int add_notification_with_content(UNUserNotificationCenter *uc, UNMutableNotific
 
 bool metal_available(bool ignore_config) {
 	bool ret = true;
+	char *reason = NULL;
 
 	// 0: If BattmanPrefs suggests avoid Metal
 	if (!ignore_config)
 		ret = (BattmanPrefsGetInt(kBattmanPrefs_BRIGHT_UI_HDR) != 2);
-	if (!ret) return ret;
+	if (!ret) {
+		reason = "BattmanPrefsGetInt(kBattmanPrefs_BRIGHT_UI_HDR) == 2";
+		goto done;
+	}
 
 	// 1: If user manually disabled Metal
 	ret = !CFPreferencesGetAppBooleanValue(CFSTR("DisableMetal"), CFSTR("com.apple.coreanimation"), NULL);
-	if (!ret) return ret;
+	if (!ret) {
+		reason = "CFPrefs(com.apple.coreanimation, DisableMetal) == YES";
+		goto done;
+	}
 
 	// 2: If MobileGestalt suggests no Metal
-	if (!getenv("SIMULATOR_DEVICE_NAME"))
-		ret = MGGetBoolAnswerPtr(CFSTR("MetalCapability"));
-	if (!ret) return ret;
+	if (!is_simulator())
+		ret = MGGetBoolAnswerPtr(CFSTR("metal"));
+	if (!ret) {
+		reason = "MGGetBoolAnswer(kMGQMetalCapability) == NO";
+		return ret;
+	}
 
 	// 3: Try get Metal device
 	extern id MTLCreateSystemDefaultDevice(void);
 	ret = (MTLCreateSystemDefaultDevice() != nil);
-	if (!ret) return ret;
+	if (!ret) {
+		reason = "MTLCreateSystemDefaultDevice() == nil";
+		goto done;
+	}
 
+done:
+	DBGLOG(CFSTR("metal_available: %s, reason: %s"), ret ? "YES" : "NO", reason ? reason : "");
 	return ret;
 }
 

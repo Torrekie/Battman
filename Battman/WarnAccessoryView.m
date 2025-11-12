@@ -1,3 +1,4 @@
+#import "ObjCExt/UIColor+compat.h"
 #import "WarnAccessoryView.h"
 #import "CompatibilityHelper.h"
 #import "common.h"
@@ -18,7 +19,7 @@
         button.titleLabel.font = [UIFont fontWithName:@SFPRO size:22];
     }
 
-    button.tintColor = [UIColor systemBlueColor];
+    button.tintColor = [UIColor compatBlueColor];
     [button sizeToFit];
     return button;
 }

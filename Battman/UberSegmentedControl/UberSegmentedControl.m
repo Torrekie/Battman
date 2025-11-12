@@ -1,3 +1,4 @@
+#import "../ObjCExt/CALayer+smoothCorners.h"
 #import "UberSegmentedControl.h"
 #import "DividerView.h"
 #import "SegmentButton.h"
@@ -6,10 +7,6 @@
 #import "UIView+Fill.h"
 #import "../CompatibilityHelper.h"
 
-// Privates
-@interface CALayer ()
-@property (atomic, assign) BOOL continuousCorners;
-@end
 
 @interface UberSegmentedControl () <UIGestureRecognizerDelegate>
 
@@ -443,11 +440,7 @@
     self.translatesAutoresizingMaskIntoConstraints = NO;
     self.backgroundColor = [ConstantsColor background];
     self.layer.cornerRadius = [ConstantsMeasure cornerRadius];
-	if (@available(iOS 13.0, *)) {
-		[self.layer setCornerCurve:kCACornerCurveContinuous];
-	}
-	if ([self.layer respondsToSelector:@selector(setContinuousCorners:)])
-		[self.layer setContinuousCorners:YES];
+	[self.layer setSmoothCorners:YES];
     
     // Initialize stack views
     _dividersStackView = [[UIStackView alloc] init];

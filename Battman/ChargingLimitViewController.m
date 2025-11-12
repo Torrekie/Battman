@@ -16,6 +16,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#import "ObjCExt/UIColor+compat.h"
+
 typedef enum {
 	CL_SECTION_GRAPH,
 	CL_SECTION_MAIN,
@@ -627,11 +629,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? _("(Enforce Mode)") : _("(Soft Mode)")];
 					cell.detailTextLabel.text = enforced ? _("Battman charging limits are enforced") : _("OBC may ignore Battman charging limits");
 					cell.selectionStyle = UITableViewCellSelectionStyleDefault;
-					if (@available(iOS 13.0, *)) {
-						cell.textLabel.textColor = [UIColor linkColor];
-					} else {
-						cell.textLabel.textColor = [UIColor colorWithRed:0 green:(122.0f / 255) blue:1 alpha:1];
-					}
+					cell.textLabel.textColor = [UIColor compatLinkColor];
 					break;
 				}
 				case CL_MAIN_COUNT: {
