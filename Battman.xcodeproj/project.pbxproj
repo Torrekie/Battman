@@ -390,6 +390,7 @@
 		68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
+		68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
@@ -15038,6 +15039,7 @@
 			files = (
 				6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */,
 				6849726C2EACB71B00C9C58A /* thermal.c in Sources */,
+				68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */,
 				6849726D2EACB71B00C9C58A /* UILabel+SFSymbolsOverride.m in Sources */,
 				6849726E2EACB71B00C9C58A /* SegmentButton.m in Sources */,
 				6849726F2EACB71B00C9C58A /* BatteryCellView.m in Sources */,

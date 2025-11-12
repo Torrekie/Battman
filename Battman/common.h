@@ -162,8 +162,10 @@ extern os_log_t       gLog;
 extern os_log_t       gLogDaemon;
 extern battman_type_t gAppType;
 
+#ifdef USE_GETTEXT
 extern bool use_libintl;
 extern bool has_locale;
+#endif
 
 void                  show_alert(const char *title, const char *message, const char *cancel_button_title);
 #ifdef __OBJC__

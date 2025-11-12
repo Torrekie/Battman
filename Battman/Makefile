@@ -1,7 +1,7 @@
 .PHONY: all publish_mounted_site publish_local_site publish_none clean
 
 # Please make sure this is synced with xcodeproj
-BATTMAN_VERSION := 1.0.1
+BATTMAN_VERSION := 1.0.2
 
 SED = sed
 
@@ -23,7 +23,8 @@ FRAMEWORKS := -framework UIKit \
 	      -framework SystemConfiguration \
 	      -framework MessageUI \
 	      -framework UserNotifications \
-	      -framework Metal
+	      -framework Metal \
+	      -framework CoreImage
 
 CFLAGS = -Wno-deprecated-declarations -Wno-nullability-completeness -Werror -target arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET} -target arm64-apple-darwin -fobjc-arc -fconstant-cfstrings -I./EXTERNAL_HEADERS -DUSE_MOBILEGESTALT -DBATTMAN_VERSION_STRING=\"$(BATTMAN_VERSION)\"
 LDFLAGS = -target arm64-apple-ios$(IPHONEOS_DEPLOYMENT_TARGET) -target arm64-apple-darwin $(LIBS) $(FRAMEWORKS) -Wl,-dead_strip_dylibs

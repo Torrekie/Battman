@@ -1,6 +1,6 @@
 Package: com.torrekie.battman
 Name: Battman
-Version: 1.0.1
+Version: 1.0.2
 Architecture: ARCH
 Section: Applications
 Depends: firmware (>= 12.0), cy+model.iphone (>= 10.1) | cy+model.ipad (>= 8.1), libintl8 | libintl

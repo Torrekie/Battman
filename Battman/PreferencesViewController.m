@@ -66,7 +66,11 @@ extern UITableViewCell *find_cell(UIView *view);
 
 - (void)updateLocaleWarning {
 	// Determine what type of warning to show
+#ifdef USE_GETTEXT
 	BOOL shouldShowLocaleWarning = (use_libintl && !has_locale);
+#else
+	BOOL shouldShowLocaleWarning = NO;
+#endif
 	BOOL shouldShowLanguageChangeWarning = languageHasChanged;
 	
 	// If neither condition is met, clear the warning

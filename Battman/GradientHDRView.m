@@ -19,10 +19,13 @@
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 140000
-extern const CFStringRef kCGColorSpaceITUR_2100_PQ;
+// Use dlsym instead of weakref when iPhoneOS.sdk < 14
+// Or otherwise we will need to explicitly set ldflags
+#define kCGColorSpaceITUR_2100_PQ GET_SECT_SYMBOL(CFStringRef, kCGColorSpaceITUR_2100_PQ)
+#else
+WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2100_PQ);
 #endif
 
-WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2100_PQ);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceDisplayP3_PQ_EOTF);
 WEAK_LINK_FORCE_IMPORT(kCGColorSpaceITUR_2020_PQ_EOTF);
