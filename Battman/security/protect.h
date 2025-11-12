@@ -3,8 +3,6 @@
 // protect_method
 // @LNSSPsd, May/23/25
 
-#define DISABLE_PROTECT 1
-
 #ifndef DISABLE_PROTECT
 
 #define protect_method(c,s,f) \
