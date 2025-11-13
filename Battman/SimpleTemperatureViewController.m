@@ -27,16 +27,8 @@ static NSMutableDictionary *thermalBasics;
 	// This is terrible, try enhance the code later
 	if (thermalBasics == NULL) {
 		thermalBasics = [[NSMutableDictionary alloc] init];
-		[thermalBasics setValue:[NSString stringWithCString:get_thermal_pressure_string(thermal_pressure()) encoding:NSUTF8StringEncoding] forKey:@"Thermal Pressure"];
-		// OSNotification level is Embedded only
-		thermal_notif_level_t notif_level = thermal_notif_level();
-		if ((notif_level != kBattmanThermalNotificationLevelAny) && !(is_rosetta() || is_simulator()))
-			[thermalBasics setValue:[NSString stringWithCString:get_thermal_notif_level_string(notif_level, true) encoding:NSUTF8StringEncoding] forKey:@"Thermal Notification Level"];
-		float max_temp = thermal_max_trigger_temperature();
-		if (max_temp > 0)
-			[thermalBasics setValue:@(max_temp) forKey:@"Max Trigger Temperature"];
-		[thermalBasics setValue:thermal_solar_state() == 100 ? _("True") : _("False") forKey:@"Sunlight Exposure"];
 	}
+	[self refreshThermalBasics];
 	temperatureHIDData = getTemperatureHIDData();
 	sensorTemperatures = getSensorTemperatures();
 	if (knownHIDSensors == NULL) {
@@ -54,8 +46,10 @@ static NSMutableDictionary *thermalBasics;
 			_("Camera Module"),
 		];
 		NSArray __unused *knownBasics = @[
-			_("Thermal Pressure"),
-			/* Thermal Cold Pressure is only for (N112 N66 N66m N69 N69u N71 N71m D10 D101 D11 D111)*/
+			/* TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed */
+			_("Pressure"),
+			/* Thermal Cold Pressure is only for (N112 N66 N66m N69 N69u N71 N71m D10 D101 D11 D111)
+			 * sadly I don't have devices to test, so no such option yet */
 			_("Thermal Notification Level"),
 			_("Max Trigger Temperature"),
 			_("Sunlight Exposure"),
@@ -108,6 +102,19 @@ static NSMutableDictionary *thermalBasics;
 		}
 	}
 	return self;
+}
+
+- (void)refreshThermalBasics {
+	[thermalBasics removeAllObjects];
+	[thermalBasics setValue:[NSString stringWithCString:get_thermal_pressure_string(thermal_pressure()) encoding:NSUTF8StringEncoding] forKey:@"Pressure"];
+	// OSNotification level is Embedded only
+	thermal_notif_level_t notif_level = thermal_notif_level();
+	if ((notif_level != kBattmanThermalNotificationLevelAny) && !(is_rosetta() || is_simulator()))
+		[thermalBasics setValue:[NSString stringWithCString:get_thermal_notif_level_string(notif_level, true) encoding:NSUTF8StringEncoding] forKey:@"Thermal Notification Level"];
+	float max_temp = thermal_max_trigger_temperature();
+	if (max_temp > 0)
+		[thermalBasics setValue:@(max_temp) forKey:@"Max Trigger Temperature"];
+	[thermalBasics setValue:thermal_solar_state() == 100 ? _("True") : _("False") forKey:@"Sunlight Exposure"];
 }
 
 - (NSString *)title {
@@ -166,6 +173,7 @@ static NSMutableDictionary *thermalBasics;
 - (void)updateTableView {
 	DBGLOG(@"STVC: updateTableView");
 	[self.refreshControl beginRefreshing];
+	[self refreshThermalBasics];
 
 	dispatch_async(dispatch_get_main_queue(), ^{
 		[self.tableView reloadData];
@@ -259,6 +267,7 @@ static NSMutableDictionary *thermalBasics;
 		}
 		return cell;
 	} else if (ip.section == 1) {
+		[self refreshThermalBasics];
 		dict = thermalBasics;
 		label = dict.allKeys[ip.row];
 		if ([label isEqualToString:@"Max Trigger Temperature"]) {
@@ -268,7 +277,7 @@ static NSMutableDictionary *thermalBasics;
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"maxtherm"];
 			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
 			cell.accessoryType = UITableViewCellAccessoryDetailButton;
-		} else if ([label isEqualToString:@"Thermal Pressure"]) {
+		} else if ([label isEqualToString:@"Pressure"]) {
 			cell = [tv dequeueReusableCellWithIdentifier:@"thermpressure"];
 			if (!cell)
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"thermpressure"];
@@ -302,13 +311,27 @@ static NSMutableDictionary *thermalBasics;
 					seg.backgroundColor = [UIColor colorWithRed:118.0f / 255 green:118.0f / 255 blue:129.0f / 255 alpha:0.15];
 				}
 				/* we display "Nominal" with one segment filled
-				 * this will them map "Trapping" to a full value
+				 * this will then map "Trapping" to a full value
 				 * before the device actually got "Sleeping" */
 				seg.value = pressure + (pressure < kBattmanThermalPressureLevelSleeping);
-				cell.detailTextLabel.text = dict[dict.allKeys[ip.row]];
 				CGSize progressSize = [seg sizeThatFits:CGSizeZero];
 				seg.frame = CGRectMake(0, 0, progressSize.width, progressSize.height);
 				cell.accessoryView = seg;
+				
+				// Check if detailTextLabel text can be fully displayed
+				NSString *detailText = dict[dict.allKeys[ip.row]];
+				CGFloat cellWidth = tv.frame.size.width - tv.separatorInset.left - tv.separatorInset.right;
+				NSString *textLabelText = _([label UTF8String]);
+				UIFont *textLabelFont = cell.textLabel.font ?: [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+				CGSize textLabelSize = [textLabelText boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName: textLabelFont} context:nil].size;
+				CGFloat availableWidth = cellWidth - textLabelSize.width - progressSize.width - 40; // 40 for spacing and padding
+				if (availableWidth > 0) {
+					UIFont *detailFont = cell.detailTextLabel.font ?: [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+					CGSize textSize = [detailText boundingRectWithSize:CGSizeMake(availableWidth, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName: detailFont} context:nil].size;
+					if (textSize.width <= availableWidth) {
+						cell.detailTextLabel.text = detailText;
+					}
+				}
 			}
 		} else {
 			cell.detailTextLabel.text = dict[dict.allKeys[ip.row]];

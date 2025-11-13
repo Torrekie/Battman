@@ -376,10 +376,11 @@ extern UITableViewCell *find_cell(UIView *view);
 				seg.forceSquareSegments = YES;
 				seg.valueShouldFollowSegments = YES;
 				seg.showSeparators = NO;
-				seg.colorForUnfilled = UIColor.clearColor;
+				// In thermtune, we use a more described view
+				// seg.colorForUnfilled = UIColor.clearColor;
 				seg.colorTransitionMode = kColorSegTransitionAnalogous;
-				seg.maximumValue = 5;
-				seg.minimumValue = 0;
+				seg.maximumValue = kBattmanThermalPressureLevelSleeping;
+				seg.minimumValue = kBattmanThermalPressureLevelNominal;
 				// XXX: Consider add this to UIColor+compat.m
 				if (@available(iOS 14.0, *)) {
 					seg.backgroundColor = UIColor.tertiarySystemFillColor;
@@ -489,7 +490,7 @@ extern UITableViewCell *find_cell(UIView *view);
 	}
 
 	if (slider.value >= 4.0) {
-		UIAlertController *warning = [UIAlertController alertControllerWithTitle:_("Are you 100% sure?") message:[NSString stringWithFormat:_("Setting thermal pressure to %s may trigger a persistent temperature warning screen. Do you want to continue?"), get_thermal_pressure_string((int)floor(slider.value - 1))] preferredStyle:UIAlertControllerStyleAlert];
+		UIAlertController *warning = [UIAlertController alertControllerWithTitle:_("Are you 100% sure?") message:[NSString stringWithFormat:_("Setting thermal pressure to %@ may trigger a persistent temperature warning screen. Do you want to continue?"), [NSString stringWithUTF8String:get_thermal_pressure_string((int)floor(slider.value - 1))]] preferredStyle:UIAlertControllerStyleAlert];
 		[warning addAction:[UIAlertAction actionWithTitle:_("Proceed") style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
 			[self writeThermalInt8ByIndexPath:indexPath control:(UIControl *)slider];
 		}]];

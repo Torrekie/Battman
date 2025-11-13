@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-12 15:46+0800\n"
+"POT-Creation-Date: 2025-11-13 13:10+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Torrekie <me@torrekie.dev>\n"
 "Language-Team: none\n"
@@ -322,7 +322,8 @@ msgstr "电池电芯4"
 msgid "Camera Module"
 msgstr "相机模块"
 
-msgid "Thermal Pressure"
+#. TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed
+msgid "Pressure"
 msgstr "温控压力"
 
 msgid "Thermal Notification Level"
@@ -685,9 +686,6 @@ msgstr "暴晒模式"
 msgid "Status"
 msgstr "状态"
 
-msgid "Pressure"
-msgstr "压力"
-
 msgid "Unavailable"
 msgstr "不可用"
 
@@ -702,9 +700,9 @@ msgstr "重置"
 
 #, objc-format
 msgid ""
-"Setting thermal pressure to %s may trigger a persistent temperature warning "
+"Setting thermal pressure to %@ may trigger a persistent temperature warning "
 "screen. Do you want to continue?"
-msgstr "将温控压力设置为 %s 可能会触发持续的温度警告屏幕。是否继续？"
+msgstr "将温控压力设置为“%@”可能会触发持续的温度警告屏幕。是否继续？"
 
 msgid "Thermal Tuning failed with error"
 msgstr "温控调校发生错误"

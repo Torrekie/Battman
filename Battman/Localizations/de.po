@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-12 15:46+0800\n"
+"POT-Creation-Date: 2025-11-13 13:10+0800\n"
 "PO-Revision-Date: 2025-10-11 17:32+0800\n"
 "Last-Translator: therealhoodboy\n"
 "Language-Team: German\n"
@@ -334,7 +334,8 @@ msgstr "Batteriezelle 4"
 msgid "Camera Module"
 msgstr "Kameramodul"
 
-msgid "Thermal Pressure"
+#. TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed
+msgid "Pressure"
 msgstr "Wärmebelastung"
 
 msgid "Thermal Notification Level"
@@ -713,9 +714,6 @@ msgstr "Belichtungsmodus"
 msgid "Status"
 msgstr "Status"
 
-msgid "Pressure"
-msgstr "Wärmebelastung"
-
 msgid "Unavailable"
 msgstr "Nicht verfügbar"
 
@@ -730,10 +728,10 @@ msgstr "Zurücksetzen"
 
 #, objc-format
 msgid ""
-"Setting thermal pressure to %s may trigger a persistent temperature warning "
+"Setting thermal pressure to %@ may trigger a persistent temperature warning "
 "screen. Do you want to continue?"
 msgstr ""
-"Das Festlegen des Wärmebelastung auf %s kann eine dauerhafte "
+"Das Festlegen des Wärmebelastung auf %@ kann eine dauerhafte "
 "Temperaturwarnung auslösen. Möchtest du fortfahren?"
 
 msgid "Thermal Tuning failed with error"

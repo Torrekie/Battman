@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-12 15:46+0800\n"
+"POT-Creation-Date: 2025-11-13 13:10+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -314,7 +314,8 @@ msgstr ""
 msgid "Camera Module"
 msgstr ""
 
-msgid "Thermal Pressure"
+#. TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed
+msgid "Pressure"
 msgstr ""
 
 msgid "Thermal Notification Level"
@@ -665,9 +666,6 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-msgid "Pressure"
-msgstr ""
-
 msgid "Unavailable"
 msgstr ""
 
@@ -682,7 +680,7 @@ msgstr ""
 
 #, objc-format
 msgid ""
-"Setting thermal pressure to %s may trigger a persistent temperature warning "
+"Setting thermal pressure to %@ may trigger a persistent temperature warning "
 "screen. Do you want to continue?"
 msgstr ""
 
