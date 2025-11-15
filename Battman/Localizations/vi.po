@@ -1,0 +1,2102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Torrekie <me@torrekie.dev>
+# This file is distributed under the same license as the Battman package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Battman 1.0.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-12 15:46+0800\n"
+"PO-Revision-Date: 2025-11-16 17:35+0000\n"
+"Last-Translator: romlayvn-0411\n"
+"Language-Team: Vietnamese\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Failed"
+msgstr "Thất bại"
+
+msgid "Error"
+msgstr "Lỗi"
+
+msgid "None"
+msgstr "Không"
+
+msgid "mA"
+msgstr "mA"
+
+msgid "mAh"
+msgstr "mAh"
+
+msgid "mV"
+msgstr "mV"
+
+msgid "True"
+msgstr "Đúng"
+
+msgid "False"
+msgstr "Sai"
+
+msgid "Swipe up to exit"
+msgstr "Vuốt lên để thoát"
+
+msgid "Done"
+msgstr "Xong"
+
+msgid "Logs"
+msgstr "Nhật ký"
+
+msgid "More"
+msgstr "Thêm"
+
+msgid "Torrekie's website (zh_CN)"
+msgstr "Trang web của Torrekie (zh_CN)"
+
+msgid "Follow @Torrekie_G"
+msgstr "Theo dõi @Torrekie_G"
+
+msgid "Subscribe me on Bilibili"
+msgstr "Đăng ký kênh tôi trên Bilibili"
+
+msgid "Follow u/Torrekie on Reddit"
+msgstr "Theo dõi u/Torrekie trên Reddit"
+
+msgid "WeChat: Torrekie"
+msgstr "WeChat: Torrekie"
+
+msgid "About Battman"
+msgstr "Về Battman"
+
+msgid "Debug"
+msgstr "Gỡ lỗi"
+
+msgid "Gonna tell us something?"
+msgstr "Bạn muốn nói gì với chúng tôi?"
+
+msgid ""
+"Found a bug or have an idea? Please choose one way to contact us:\n"
+"open a GitHub Issue (public — great for steps/logs)\n"
+"or Send Email (for private info or attachments). We really appreciate your "
+"help!"
+msgstr ""
+"Phát hiện lỗi hoặc có ý tưởng? Vui lòng chọn một trong các cách liên hệ:\n"
+"mở Issue trên GitHub (công khai — thuận tiện cho các bước/nhật ký)\n"
+"hoặc gửi Email (cho thông tin riêng tư hoặc tệp đính kèm). Chúng tôi rất "
+"trân trọng sự giúp đỡ của bạn!"
+
+msgid "Open GitHub Issue"
+msgstr "Mở Issue trên GitHub"
+
+msgid "Send Email"
+msgstr "Gửi Email"
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "WeChat"
+msgstr "WeChat"
+
+msgid "Copy \"Torrekie\" and search in WeChat?"
+msgstr "Sao chép \"Torrekie\" và tìm trên WeChat?"
+
+msgid "Continue"
+msgstr "Tiếp tục"
+
+msgid "Version"
+msgstr "Phiên bản"
+
+msgid "Preferences"
+msgstr "Tùy chọn"
+
+msgid "Report Bug"
+msgstr "Báo lỗi"
+
+msgid "Credit"
+msgstr "Ghi nhận"
+
+msgid "Source Code"
+msgstr "Mã nguồn"
+
+msgid "Battman Wiki & User Manual"
+msgstr "Wiki & Hướng dẫn sử dụng Battman"
+
+msgid "Support Us"
+msgstr "Ủng hộ chúng tôi"
+
+msgid "View Battman On Havoc"
+msgstr "Xem Battman trên Havoc"
+
+msgid "Join Battman Discord"
+msgstr "Tham gia Discord của Battman"
+
+msgid "Logs (stdout)"
+msgstr "Nhật ký (stdout)"
+
+msgid "Select language override"
+msgstr "Chọn ghi đè ngôn ngữ"
+
+msgid "Exit App"
+msgstr "Thoát ứng dụng"
+
+msgid "Logs (stdout) (very cool)"
+msgstr "Nhật ký (stdout) (rất ngầu)"
+
+msgid "Redirect daemon logs"
+msgstr "Chuyển hướng nhật ký daemon"
+
+msgid "Show fatal error view"
+msgstr "Hiển thị màn hình lỗi nghiêm trọng"
+
+msgid "Trigger fatal notify"
+msgstr "Kích hoạt thông báo lỗi nghiêm trọng"
+
+msgid "Trigger UTF jitter"
+msgstr "Kích hoạt nhiễu UTF"
+
+msgid "Remove token and exit"
+msgstr "Xóa token và thoát"
+
+msgid "Battman Credit"
+msgstr "Ghi nhận Battman"
+
+msgid "Charging Management"
+msgstr "Quản lý sạc"
+
+msgid "General"
+msgstr "Chung"
+
+msgid "Smart Charging"
+msgstr "Sạc thông minh"
+
+msgid "Low Power Mode"
+msgstr "Chế độ tiết kiệm pin"
+
+msgid ""
+"These values can’t be overridden when the Charging Limit daemon is running."
+msgstr ""
+"Những giá trị này không thể bị ghi đè khi daemon Giới hạn Sạc đang chạy."
+
+#, objc-format
+msgid ""
+"Block Charging suspends battery charging and allows the battery to discharge "
+"while maintaining power source operation. %@"
+msgstr ""
+"Chặn sạc sẽ tạm dừng việc nạp pin và cho phép pin xả trong khi vẫn giữ "
+"nguồn hoạt động. %@"
+
+msgid ""
+"Certain values may not be overridable when Optimized Battery Charging is "
+"enabled."
+msgstr "Một số giá trị có thể không được ghi đè khi Tối ưu hóa Sạc Pin được bật."
+
+msgid ""
+"Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
+"in, or the date you scheduled, whichever one comes first."
+msgstr ""
+"Sạc Thông minh sẽ bắt đầu sau 900 giây (15 phút) kể từ khi cắm nguồn, hoặc "
+"vào thời điểm bạn đã lên lịch, tùy điều kiện nào xảy ra trước."
+
+msgid "Enabled"
+msgstr "Đã bật"
+
+msgid "Disabled"
+msgstr "Đã tắt"
+
+msgid "Never been used before"
+msgstr "Chưa từng dùng trước đây"
+
+#, objc-format
+msgid " since %@"
+msgstr " kể từ %@"
+
+#, objc-format
+msgid " at %d%% charge"
+msgstr " ở %d%% dung lượng"
+
+msgid "These settings are retained across iTunes backups and restores."
+msgstr "Các thiết lập này được giữ khi sao lưu và phục hồi qua iTunes."
+
+msgid "Not supported on this device"
+msgstr "Không hỗ trợ trên thiết bị này"
+
+msgid "Something went wrong when setting this property."
+msgstr "Có lỗi xảy ra khi thiết lập thuộc tính này."
+
+msgid "Failed to load"
+msgstr "Tải thất bại"
+
+msgid "Unable to set Low Power Mode."
+msgstr "Không thể đặt Chế độ Tiết Kiệm Pin."
+
+msgid "Failed to enable Smart Charging."
+msgstr "Không thể bật Sạc Thông minh."
+
+msgid "Engaged"
+msgstr "Đã kích hoạt"
+
+msgid ""
+"Smart Charging has been engaged. It will start after 15 minutes of power "
+"supply, or at the date you picked, whichever comes first."
+msgstr ""
+"Sạc Thông minh đã được kích hoạt. Nó sẽ bắt đầu sau 15 phút có nguồn hoặc "
+"vào ngày bạn đã chọn, tùy theo điều kiện nào xảy ra trước."
+
+msgid "Block Charging"
+msgstr "Chặn sạc"
+
+msgid "Block Power Supply"
+msgstr "Chặn nguồn"
+
+msgid "Starting at"
+msgstr "Bắt đầu từ"
+
+msgid "Until"
+msgstr "Đến"
+
+msgid "Schedule"
+msgstr "Lịch"
+
+msgid "Disable on A/C"
+msgstr "Vô hiệu khi cắm A/C"
+
+msgid "Disable When Exceeds"
+msgstr "Vô hiệu khi vượt quá"
+
+msgid "Hide Low Power Alert"
+msgstr "Ẩn cảnh báo pin yếu"
+
+msgid "Thermometer Icon"
+msgstr "Biểu tượng nhiệt kế"
+
+msgid "Temperature Range"
+msgstr "Phạm vi nhiệt độ"
+
+msgid "Thermometer Preview"
+msgstr "Xem trước nhiệt kế"
+
+msgid "Set the temperature range shown in Thermometer."
+msgstr "Đặt phạm vi nhiệt độ hiển thị trong Nhiệt kế."
+
+msgid ""
+"This preview shows how the pointer adjusts to match the current temperature "
+"based on your selected range."
+msgstr ""
+"Xem trước này hiển thị cách con trỏ điều chỉnh để phản ánh nhiệt độ hiện "
+"tại dựa trên phạm vi bạn chọn."
+
+msgid "Min Temperature"
+msgstr "Nhiệt độ tối thiểu"
+
+msgid "Max Temperature"
+msgstr "Nhiệt độ tối đa"
+
+msgid "Agree"
+msgstr "Đồng ý"
+
+msgid "Decline"
+msgstr "Từ chối"
+
+msgid "License"
+msgstr "Giấy phép"
+
+msgid "Terms of Use"
+msgstr "Điều khoản sử dụng"
+
+msgid "Device Avg."
+msgstr "Trung bình thiết bị"
+
+msgid "Battery Cell 1"
+msgstr "Cell pin 1"
+
+msgid "Battery Cell 2"
+msgstr "Cell pin 2"
+
+msgid "Battery Cell 3"
+msgstr "Cell pin 3"
+
+msgid "Battery Cell 4"
+msgstr "Cell pin 4"
+
+msgid "Camera Module"
+msgstr "Module camera"
+
+msgid "Thermal Pressure"
+msgstr "Áp lực nhiệt"
+
+msgid "Thermal Notification Level"
+msgstr "Mức thông báo nhiệt"
+
+msgid "Max Trigger Temperature"
+msgstr "Nhiệt độ kích hoạt tối đa"
+
+msgid "Sunlight Exposure"
+msgstr "Tiếp xúc ánh nắng"
+
+msgid "Hardware Temperature"
+msgstr "Nhiệt độ phần cứng"
+
+msgid "System Thermal Monitor State"
+msgstr "Trạng thái Giám sát nhiệt hệ thống"
+
+msgid "Thermal Basics"
+msgstr "Cơ bản về nhiệt"
+
+msgid "Device Sensors"
+msgstr "Cảm biến thiết bị"
+
+msgid "HID"
+msgstr "HID"
+
+msgid "HID Raw Data"
+msgstr "Dữ liệu thô HID"
+
+msgid "Adjust ThermalMonitor behavior on the Thermal Tunes page."
+msgstr "Điều chỉnh hành vi ThermalMonitor trên trang Thermal Tunes."
+
+msgid "Some sensors may not provide real‑time temperature data."
+msgstr "Một số cảm biến có thể không cung cấp dữ liệu nhiệt theo thời gian thực."
+
+msgid "Daemon State"
+msgstr "Trạng thái daemon"
+
+msgid ""
+"ThermalMonitor is a critical system component responsible for managing "
+"device and battery health. Disabling it may lead to unexpected behavior and "
+"is not recommended."
+msgstr ""
+"ThermalMonitor là thành phần hệ thống quan trọng chịu trách nhiệm quản lý "
+"sức khỏe thiết bị và pin. Vô hiệu hóa có thể gây ra hành vi bất thường và "
+"không được khuyến nghị."
+
+msgid ""
+"Maximum device‑skin temperature per thermal‑monitoring cycle. Exceeding this "
+"threshold within the cycle automatically generates an AppleCare "
+"thermal‑exception log."
+msgstr ""
+"Nhiệt độ bề mặt thiết bị tối đa trong mỗi chu kỳ giám sát nhiệt. Vượt quá "
+"ngưỡng này trong chu kỳ sẽ tự động tạo nhật ký ngoại lệ nhiệt AppleCare."
+
+msgid "Running"
+msgstr "Đang chạy"
+
+msgid "Simulator"
+msgstr "Trình mô phỏng"
+
+msgid "Unable to detect"
+msgstr "Không thể phát hiện"
+
+msgid "CLTM State"
+msgstr "Trạng thái CLTM"
+
+msgid "Using CLTMv2"
+msgstr "Đang dùng CLTMv2"
+
+msgid "Unsupported"
+msgstr "Không được hỗ trợ"
+
+msgid "Not Running"
+msgstr "Không chạy"
+
+msgid "Battman"
+msgstr "Battman"
+
+msgid "2025 Ⓒ Torrekie <me@torrekie.dev>"
+msgstr "2025 Ⓒ Torrekie <me@torrekie.dev>"
+
+msgid "Debug Commit"
+msgstr "Commit gỡ lỗi"
+
+msgid "Commit"
+msgstr "Commit"
+
+msgid "Sandboxed"
+msgstr "Chạy trong sandbox"
+
+msgid "Simulator Sandboxed"
+msgstr "Mô phỏng (sandboxed)"
+
+msgid "Simulator Unsandboxed"
+msgstr "Mô phỏng (không sandboxed)"
+
+msgid "Roothide Unsandboxed"
+msgstr "Roothide (không sandboxed)"
+
+msgid "Unsandboxed"
+msgstr "Không sandboxed"
+
+msgid "Platfomized"
+msgstr "Được nền tảng hóa"
+
+msgid "Debugger Attached"
+msgstr "Đã gắn trình gỡ lỗi"
+
+msgid "Battery"
+msgstr "Pin"
+
+msgid "Battery Info"
+msgstr "Thông tin pin"
+
+msgid "Brightness"
+msgstr "Độ sáng"
+
+msgid "Manage"
+msgstr "Quản lý"
+
+msgid "Unimplemented Yet"
+msgstr "Chưa triển khai"
+
+msgid "Will be introduced in future updates."
+msgstr "Sẽ được giới thiệu trong các bản cập nhật tiếp theo."
+
+msgid "Charging Limit"
+msgstr "Giới hạn sạc"
+
+msgid "Thermal Tunes"
+msgstr "Thermal Tunes"
+
+msgid "Analytics"
+msgstr "Phân tích"
+
+msgid "Sorry"
+msgstr "Xin lỗi"
+
+msgid "Please download Battman from our official page."
+msgstr "Vui lòng tải Battman từ trang chính thức."
+
+msgid "Open URL"
+msgstr "Mở URL"
+
+msgid "Exit"
+msgstr "Thoát"
+
+msgid "Preferred Language"
+msgstr "Ngôn ngữ ưu tiên"
+
+msgid "Clear"
+msgstr "Xóa"
+
+msgid "Default"
+msgstr "Mặc định"
+
+msgid "Battery Avg."
+msgstr "Trung bình pin"
+
+msgid "Sensors Avg."
+msgstr "Trung bình cảm biến"
+
+msgid "Main Screen"
+msgstr "Màn hình chính"
+
+msgid "Who moved my temperature sensors?"
+msgstr "Ai đã di chuyển cảm biến nhiệt của tôi?"
+
+#, objc-format
+msgid "(partial) %016llX…"
+msgstr "(một phần) %016llX…"
+
+msgid "Unknown array"
+msgstr "Mảng không xác định"
+
+#, objc-format
+msgid "(Unknown type) %0*llX"
+msgstr "(Loại không xác định) %0*llX"
+
+msgid "Jump to"
+msgstr "Chuyển tới"
+
+msgid "Enter the key below."
+msgstr "Nhập khóa bên dưới."
+
+msgid "Jump"
+msgstr "Đi"
+
+msgid "Invalid key"
+msgstr "Khóa không hợp lệ"
+
+msgid "Key not found"
+msgstr "Không tìm thấy khóa"
+
+msgid "Click a row to edit"
+msgstr "Nhấp hàng để chỉnh sửa"
+
+msgid "Jump to key"
+msgstr "Nhảy tới khóa"
+
+msgid "(Unable to read)"
+msgstr "(Không thể đọc)"
+
+msgid "Write to SMC"
+msgstr "Ghi vào SMC"
+
+msgid "Type Change"
+msgstr "Thay đổi kiểu"
+
+#, objc-format
+msgid ""
+"Are you sure you want to interpret the item \"%.4s\" as type \"%.4s\"? This "
+"may cause undefined behavior."
+msgstr ""
+"Bạn có chắc muốn hiểu mục \"%.4s\" là kiểu \"%.4s\" không? Điều này có thể "
+"gây ra hành vi không xác định."
+
+msgid "Proceed"
+msgstr "Tiếp tục"
+
+#, c-format
+msgid "Are you 100% sure?"
+msgstr "Bạn có chắc 100% không?"
+
+#, objc-format
+msgid ""
+"The type \"%.4s\" you requested is %d bytes long, which doesn't match the "
+"current length of %d bytes. Only continue if you're certain of the "
+"consequences. Proceed?"
+msgstr ""
+"Kiểu \"% .4s\" bạn yêu cầu dài %d byte, không khớp với độ dài hiện tại là %d "
+"byte. Chỉ tiếp tục nếu bạn chắc chắn về hậu quả. Tiếp tục?"
+
+msgid "Array"
+msgstr "Mảng"
+
+msgid "Element count mismatch."
+msgstr "Số phần tử không khớp."
+
+msgid "Invalid value detected."
+msgstr "Phát hiện giá trị không hợp lệ."
+
+msgid "Flags Editor"
+msgstr "Trình chỉnh sửa Flags"
+
+msgid "Data too long"
+msgstr "Dữ liệu quá dài"
+
+msgid "Invalid flag value found"
+msgstr "Phát hiện giá trị flag không hợp lệ"
+
+msgid "Hex Editing"
+msgstr "Chỉnh sửa Hex"
+
+msgid "Please use the hex editor below instead."
+msgstr "Vui lòng sử dụng trình chỉnh sửa hex bên dưới."
+
+msgid "Hex Editor"
+msgstr "Trình chỉnh sửa Hex"
+
+msgid "Data length mismatch"
+msgstr "Độ dài dữ liệu không khớp"
+
+msgid "Invalid value detected"
+msgstr "Phát hiện giá trị không hợp lệ"
+
+msgid "Disclaimer"
+msgstr "Tuyên bố từ chối trách nhiệm"
+
+msgid "Please read the entire message."
+msgstr "Vui lòng đọc toàn bộ thông điệp."
+
+msgid ""
+"Writing to the SMC can be harmful. If unexpected behavior occurs, the "
+"developers offer NO WARRANTY to the fullest extent permitted by law."
+msgstr ""
+"Ghi vào SMC có thể gây hại. Nếu xảy ra hành vi không mong muốn, nhà phát "
+"triển KHÔNG CUNG CẤP BẢO HÀNH trong phạm vi pháp luật cho phép."
+
+msgid "Make sure you understand what you're doing before continuing."
+msgstr "Hãy chắc chắn bạn hiểu mình đang làm gì trước khi tiếp tục."
+
+msgid "I understand, write to SMC NOW"
+msgstr "Tôi đã hiểu, ghi vào SMC NGAY"
+
+msgid "AppleSMC"
+msgstr "AppleSMC"
+
+msgid "Failed to write to SMC."
+msgstr "Ghi vào SMC thất bại."
+
+#, objc-format
+msgid "%.4s(%d byte(s)) %.4s"
+msgstr "%.4s(%d byte(s)) %.4s"
+
+msgid "Hex Dump"
+msgstr "Hiển thị Hex"
+
+msgid "No data is sent to the SMC until you click \"Write to SMC.\""
+msgstr "Không có dữ liệu nào được gửi đến SMC cho đến khi bạn nhấn \"Ghi vào SMC.\""
+
+msgid "Refetch Data"
+msgstr "Tải lại dữ liệu"
+
+msgid "Learn more…"
+msgstr "Tìm hiểu thêm…"
+
+#, objc-format
+msgid "Review the documentation before making any changes. %@"
+msgstr "Xem lại tài liệu trước khi thực hiện thay đổi. %@"
+
+msgid "Hot-In-Pocket Mode"
+msgstr "Chế độ nóng trong túi"
+
+msgid "Thermal Levels"
+msgstr "Mức nhiệt"
+
+msgid ""
+"Changing the default thermal behavior may increase wear on your battery and "
+"reduce its lifespan."
+msgstr ""
+"Thay đổi hành vi nhiệt mặc định có thể tăng hao mòn pin và rút ngắn tuổi "
+"thọ của pin."
+
+msgid ""
+"Hot-In-Pocket Protection automatically reduces CPU & GPU power when the "
+"display is off and no media is playing, to prevent overheating while the "
+"device is stored in a pocket."
+msgstr ""
+"Bảo vệ 'nóng trong túi' tự động giảm công suất CPU & GPU khi màn hình tắt "
+"và không có media đang phát, nhằm ngăn quá nhiệt khi thiết bị để trong túi."
+
+msgid ""
+"Thermal levels are normally controlled by the system. Changing them can "
+"affect power, media playback, backlight, flashlight and wireless charging."
+msgstr ""
+"Các mức nhiệt thường do hệ thống điều khiển. Thay đổi có thể ảnh hưởng "
+"đến công suất, phát media, đèn nền, đèn pin và sạc không dây."
+
+msgid "State Updates"
+msgstr "Cập nhật trạng thái"
+
+msgid "Whether applications receive thermal state updates"
+msgstr "Ứng dụng có nhận cập nhật trạng thái nhiệt hay không"
+
+msgid "Thermal Mitigations"
+msgstr "Giảm thiểu nhiệt"
+
+msgid "Reduce power budget when heating"
+msgstr "Giảm ngân sách công suất khi quá nhiệt"
+
+msgid "Enable"
+msgstr "Bật"
+
+msgid "Simulate HIP"
+msgstr "Mô phỏng HIP"
+
+msgid "Auto Detect"
+msgstr "Tự phát hiện"
+
+msgid "Exposure Mode"
+msgstr "Chế độ tiếp xúc"
+
+msgid "Status"
+msgstr "Trạng thái"
+
+msgid "Pressure"
+msgstr "Áp suất"
+
+msgid "Unavailable"
+msgstr "Không khả dụng"
+
+msgid "Tap to adjust"
+msgstr "Chạm để điều chỉnh"
+
+msgid "Notification"
+msgstr "Thông báo"
+
+msgid "Reset"
+msgstr "Đặt lại"
+
+#, objc-format
+msgid ""
+"Setting thermal pressure to %s may trigger a persistent temperature warning "
+"screen. Do you want to continue?"
+msgstr ""
+"Đặt áp lực nhiệt thành %s có thể kích hoạt màn hình cảnh báo nhiệt kéo dài. "
+"Bạn có muốn tiếp tục không?"
+
+msgid "Thermal Tuning failed with error"
+msgstr "Điều chỉnh nhiệt thất bại với lỗi"
+
+msgid "locale_name"
+msgstr "vi"
+
+msgid "Unregistered Locale"
+msgstr "Bản địa chưa đăng ký"
+
+msgid ""
+"You are using a localization file which not officially provided by Battman, "
+"the translations may inaccurate."
+msgstr ""
+"Bạn đang sử dụng tệp bản địa hóa không có nguồn chính thức từ Battman, các "
+"bản dịch có thể không chính xác."
+
+msgid ""
+"stdio logs not redirected in Simulator build, please check stdio in Xcode "
+"console output instead."
+msgstr ""
+"Nhật ký stdio không được chuyển hướng trong bản build Simulator, vui lòng "
+"kiểm tra stdio trong console Xcode."
+
+msgid "Battman CLI not implemented yet."
+msgstr "Battman CLI chưa được triển khai."
+
+msgid "Discharge, Keep A/C"
+msgstr "Xả, giữ A/C"
+
+msgid "Block A/C"
+msgstr "Chặn A/C"
+
+msgid "Failed to open daemon settings file"
+msgstr "Mở tệp cài đặt daemon thất bại"
+
+msgid "File mapping failed"
+msgstr "Map tệp thất bại"
+
+msgid "7-Day Battery Level"
+msgstr "Mức pin 7 ngày"
+
+msgid "Charging Limit (Experimental)"
+msgstr "Giới hạn sạc (Thử nghiệm)"
+
+msgid ""
+"The system logs battery charge–level changes for the past 7 days. If this "
+"graph is empty, the power-log service may not be running correctly."
+msgstr ""
+"Hệ thống ghi lại thay đổi mức sạc pin trong 7 ngày qua. Nếu đồ thị trống, "
+"dịch vụ power-log có thể không chạy đúng."
+
+msgid ""
+"Charging Limit uses a background service to monitor your battery's charge "
+"level and automatically adjust charging behavior."
+msgstr ""
+"Giới hạn sạc dùng dịch vụ nền để giám sát mức sạc pin và tự động điều "
+"chỉnh hành vi sạc."
+
+msgid "Invalid Setup"
+msgstr "Cài đặt không hợp lệ"
+
+msgid "Limit Value should be bigger than Resume Value"
+msgstr "Giá trị giới hạn phải lớn hơn giá trị tiếp tục"
+
+msgid "Unable to connect to the daemon."
+msgstr "Không thể kết nối đến daemon."
+
+msgid "Couldn't start the daemon — it isn’t responding."
+msgstr "Không thể khởi động daemon — nó không phản hồi."
+
+msgid "When limit is reached"
+msgstr "Khi đạt giới hạn"
+
+msgid "Limit charging at (%)"
+msgstr "Giới hạn sạc ở (%)"
+
+msgid "Resume charging at (%)"
+msgstr "Tiếp tục sạc ở (%)"
+
+msgid "Drain Mode"
+msgstr "Chế độ xả"
+
+msgid "Override OBC On Cycle"
+msgstr "Ghi đè OBC theo chu kỳ"
+
+msgid "OBC will turn off"
+msgstr "OBC sẽ tắt"
+
+msgid "OBC will not be affected"
+msgstr "OBC sẽ không bị ảnh hưởng"
+
+msgid "Daemon is active"
+msgstr "Daemon đang hoạt động"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "Daemon is inactive"
+msgstr "Daemon không hoạt động"
+
+#, objc-format
+msgid "Stop Daemon %@"
+msgstr "Dừng Daemon %@"
+
+#, objc-format
+msgid "Start Daemon %@"
+msgstr "Bắt đầu Daemon %@"
+
+msgid "(Enforce Mode)"
+msgstr "(Chế độ ép buộc)"
+
+msgid "(Soft Mode)"
+msgstr "(Chế độ nhẹ)"
+
+msgid "Battman charging limits are enforced"
+msgstr "Giới hạn sạc Battman đang được áp dụng"
+
+msgid "OBC may ignore Battman charging limits"
+msgstr "OBC có thể bỏ qua giới hạn sạc của Battman"
+
+msgid "Localizations"
+msgstr "Bản địa hóa"
+
+msgid "Language changes will take effect after restarting the app."
+msgstr "Thay đổi ngôn ngữ sẽ có hiệu lực sau khi khởi động lại ứng dụng."
+
+msgid "Create a new GitHub issue"
+msgstr "Tạo issue GitHub mới"
+
+#, objc-format
+msgid "Battman hasn't added your language yet. %@"
+msgstr "Battman chưa thêm ngôn ngữ của bạn. %@"
+
+msgid ""
+"Battery information updates automatically depending on system conditions."
+msgstr ""
+"Thông tin pin được cập nhật tự động tùy theo điều kiện hệ thống."
+
+#, objc-format
+msgid "Battery information updates at the selected interval. %@"
+msgstr "Thông tin pin được cập nhật theo khoảng thời gian đã chọn. %@"
+
+msgid "Using a shorter interval may affect performance."
+msgstr "Dùng khoảng thời gian ngắn hơn có thể ảnh hưởng hiệu năng."
+
+msgid ""
+"Battery information doesn’t update automatically. Pull down to refresh "
+"manually."
+msgstr ""
+"Thông tin pin không tự động cập nhật. Kéo xuống để làm mới thủ công."
+
+msgid "Configure how often battery information is refreshed."
+msgstr "Cấu hình tần suất làm mới thông tin pin."
+
+msgid "Battery Info Refresh Rate"
+msgstr "Tần suất làm mới Thông tin Pin"
+
+msgid "Appearance"
+msgstr "Giao diện"
+
+msgid "Data Management"
+msgstr "Quản lý dữ liệu"
+
+msgid ""
+"This will permanently delete all Battman data, preferences, and cached "
+"files. This action cannot be undone."
+msgstr ""
+"Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu Battman, tùy chọn và tệp đệm. "
+"Hành động không thể hoàn tác."
+
+msgid "Language"
+msgstr "Ngôn ngữ"
+
+msgid "Interval (s)"
+msgstr "Khoảng thời gian (s)"
+
+#. TRANSLATORS: Please ensure this string won't be longer as "Custom"
+msgid "Custom"
+msgstr "Tùy chỉnh"
+
+msgid "Auto"
+msgstr "Tự động"
+
+msgid "Never"
+msgstr "Không bao giờ"
+
+msgid "Brightness Icon"
+msgstr "Biểu tượng độ sáng"
+
+msgid "EDR"
+msgstr "EDR"
+
+msgid "SDR"
+msgstr "SDR"
+
+msgid "Quartz"
+msgstr "Quartz"
+
+msgid "Wipe All Battman Data"
+msgstr "Xóa toàn bộ dữ liệu Battman"
+
+#, objc-format
+msgid "This will wipe all data under %@"
+msgstr "Điều này sẽ xóa tất cả dữ liệu dưới %@"
+
+msgid "Dry Run"
+msgstr "Chạy thử"
+
+msgid "Dry Run Analysis…"
+msgstr "Phân tích chạy thử…"
+
+msgid "Wiping Data…"
+msgstr "Đang xóa dữ liệu…"
+
+msgid "Please wait while analyzing what would be deleted."
+msgstr "Vui lòng chờ trong khi phân tích những gì sẽ bị xóa."
+
+msgid "Please wait while all data is being deleted."
+msgstr "Vui lòng chờ trong khi tất cả dữ liệu đang được xóa."
+
+msgid "Dry Run Complete"
+msgstr "Chạy thử hoàn tất"
+
+msgid ""
+"Analysis complete. Check the console/logs to see what would be deleted. No "
+"data was actually removed."
+msgstr ""
+"Phân tích hoàn tất. Kiểm tra console/nhật ký để xem những gì sẽ bị xóa. Không "
+"dữ liệu nào bị xóa thực sự."
+
+msgid "Data Wiped"
+msgstr "Dữ liệu đã bị xóa"
+
+msgid "All Battman data has been successfully deleted. The app will now exit."
+msgstr "Tất cả dữ liệu Battman đã bị xóa thành công. Ứng dụng sẽ thoát ngay bây giờ."
+
+msgid "Patreon"
+msgstr "Patreon"
+
+msgid "Afdian"
+msgstr "Afdian"
+
+msgid "UniFans"
+msgstr "UniFans"
+
+msgid "Support Battman"
+msgstr "Ủng hộ Battman"
+
+msgid ""
+"If Battman saved you time or made your day easier, please consider a small "
+"donation. Even a few dollars make a real difference and help me keep adding "
+"improvements (also helps my living)."
+msgstr ""
+"Nếu Battman đã giúp bạn tiết kiệm thời gian hoặc làm mọi thứ dễ dàng hơn, "
+"xin hãy cân nhắc ủng hộ một khoản nhỏ. Dù vài đô la cũng giúp rất nhiều và "
+"giúp tôi tiếp tục phát triển."
+
+msgid "You can at least get Battman early accesses by donating us 🥺"
+msgstr "Bạn có thể được truy cập sớm Battman nếu ủng hộ chúng tôi 🥺"
+
+msgid "Don't worry about annoyance, this page only popup itself for once 🥺"
+msgstr "Đừng lo phiền toái, trang này chỉ hiển thị một lần thôi 🥺"
+
+msgid "Having Problems?"
+msgstr "Gặp vấn đề?"
+
+msgid ""
+"We'd love to hear from you! Let us know if you find any bugs or have "
+"suggestions to make things better."
+msgstr ""
+"Chúng tôi rất muốn nghe ý kiến từ bạn! Hãy cho chúng tôi biết nếu bạn tìm "
+"thấy lỗi hoặc có đề xuất cải thiện."
+
+msgid "Send an Email"
+msgstr "Gửi Email"
+
+msgid "No, thanks"
+msgstr "Không, cảm ơn"
+
+#, objc-format
+msgid "Goto %@"
+msgstr "Đi tới %@"
+
+#, objc-format
+msgid "Error when opening URL: %@"
+msgstr "Lỗi khi mở URL: %@"
+
+msgid "Your device does not support sending Emails."
+msgstr "Thiết bị của bạn không hỗ trợ gửi Email."
+
+msgid ""
+"No value returned from sensor, device should be checked by service "
+"technician."
+msgstr ""
+"Không có giá trị trả về từ cảm biến, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+
+msgid ""
+"Value exceeded the designed, device should be checked by service technician."
+msgstr ""
+"Giá trị vượt quá mức thiết kế, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+
+msgid "Unusual value, device should be checked by service technician."
+msgstr "Giá trị bất thường, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+
+msgid ""
+"Significant abnormal data, device should be checked by service technician."
+msgstr ""
+"Dữ liệu bất thường nghiêm trọng, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+
+msgid "Error Data"
+msgstr "Dữ liệu lỗi"
+
+msgid "Unusual Data"
+msgstr "Dữ liệu bất thường"
+
+msgid "Data Too Large"
+msgstr "Dữ liệu quá lớn"
+
+msgid "Empty Data"
+msgstr "Dữ liệu rỗng"
+
+msgid "Wrong Data"
+msgstr "Dữ liệu sai"
+
+msgid "Internal Battery"
+msgstr "Pin trong máy"
+
+msgid "Copied!"
+msgstr "Đã sao chép!"
+
+msgid "Advanced"
+msgstr "Nâng cao"
+
+msgid "Type"
+msgstr "Loại"
+
+msgid "Value"
+msgstr "Giá trị"
+
+msgid "Unit"
+msgstr "Đơn vị"
+
+msgid "Current"
+msgstr "Dòng"
+
+msgid "Voltage"
+msgstr "Điện áp"
+
+msgid "Power"
+msgstr "Công suất"
+
+msgid "Capacity"
+msgstr "Dung lượng"
+
+msgid "Health"
+msgstr "Tình trạng"
+
+msgid "Temperature"
+msgstr "Nhiệt độ"
+
+msgid "Charging"
+msgstr "Đang sạc"
+
+msgid "Discharging"
+msgstr "Đang xả"
+
+msgid "Plugged In"
+msgstr "Đã cắm nguồn"
+
+msgid "Unplugged"
+msgstr "Chưa cắm nguồn"
+
+msgid "Unknown"
+msgstr "Không xác định"
+
+msgid "Yes"
+msgstr "Có"
+
+msgid "No"
+msgstr "Không"
+
+msgid "Save"
+msgstr "Lưu"
+
+msgid "Apply"
+msgstr "Áp dụng"
+
+msgid "Reset"
+msgstr "Đặt lại"
+
+msgid "Close"
+msgstr "Đóng"
+
+msgid "Open"
+msgstr "Mở"
+
+msgid "Refresh"
+msgstr "Làm mới"
+
+msgid "Start"
+msgstr "Bắt đầu"
+
+msgid "Stop"
+msgstr "Dừng"
+
+msgid "Pause"
+msgstr "Tạm dừng"
+
+msgid "Resume"
+msgstr "Tiếp tục"
+
+msgid "Connect"
+msgstr "Kết nối"
+
+msgid "Disconnect"
+msgstr "Ngắt kết nối"
+
+msgid "Session"
+msgstr "Phiên"
+
+msgid "Duration"
+msgstr "Thời lượng"
+
+msgid "Average"
+msgstr "Trung bình"
+
+msgid "Maximum"
+msgstr "Tối đa"
+
+msgid "Minimum"
+msgstr "Tối thiểu"
+
+msgid "Status"
+msgstr "Trạng thái"
+
+msgid "Overview"
+msgstr "Tổng quan"
+
+msgid "Details"
+msgstr "Chi tiết"
+
+msgid "Graphs"
+msgstr "Biểu đồ"
+
+msgid "Export"
+msgstr "Xuất"
+
+msgid "Import"
+msgstr "Nhập"
+
+msgid "Backup"
+msgstr "Sao lưu"
+
+msgid "Restore"
+msgstr "Phục hồi"
+
+msgid "Connected"
+msgstr "Đã kết nối"
+
+msgid "Disconnected"
+msgstr "Đã ngắt kết nối"
+
+msgid "Low"
+msgstr "Thấp"
+
+msgid "Normal"
+msgstr "Bình thường"
+
+msgid "High"
+msgstr "Cao"
+
+msgid "Critical"
+msgstr "Nguy cấp"
+
+msgid "Battery health is degraded."
+msgstr "Tình trạng pin đã giảm."
+
+msgid "Replace battery soon."
+msgstr "Cần thay pin sớm."
+
+msgid "Charging paused"
+msgstr "Sạc đã tạm dừng"
+
+msgid "Charging resumed"
+msgstr "Sạc đã tiếp tục"
+
+msgid "Full"
+msgstr "Đầy"
+
+msgid "Empty"
+msgstr "Rỗng"
+
+msgid "Remaining"
+msgstr "Còn lại"
+
+msgid "Estimated time remaining"
+msgstr "Ước tính thời gian còn lại"
+
+msgid "Calibration recommended"
+msgstr "Nên hiệu chuẩn"
+
+msgid "Calibration in progress"
+msgstr "Đang hiệu chuẩn"
+
+msgid "Capacity (rated)"
+msgstr "Dung lượng (định mức)"
+
+msgid "Capacity (measured)"
+msgstr "Dung lượng (đo được)"
+
+msgid "Cycle Count"
+msgstr "Số chu kỳ"
+
+msgid "Charge Cycles"
+msgstr "Chu kỳ sạc"
+
+msgid "Designed Capacity"
+msgstr "Dung lượng thiết kế"
+
+msgid "Full Charge Capacity"
+msgstr "Dung lượng sạc đầy"
+
+msgid "Instantaneous Current"
+msgstr "Dòng tức thời"
+
+msgid "Average Current"
+msgstr "Dòng trung bình"
+
+msgid "Instantaneous Power"
+msgstr "Công suất tức thời"
+
+msgid "Average Power"
+msgstr "Công suất trung bình"
+
+msgid "Input Power"
+msgstr "Công suất vào"
+
+msgid "Output Power"
+msgstr "Công suất ra"
+
+msgid "Charge Rate"
+msgstr "Tốc độ sạc"
+
+msgid "Discharge Rate"
+msgstr "Tốc độ xả"
+
+msgid "Plug Type"
+msgstr "Loại cổng"
+
+msgid "AC Adapter"
+msgstr "Adapter AC"
+
+msgid "USB"
+msgstr "USB"
+
+msgid "Wireless"
+msgstr "Không dây"
+
+msgid "Unknown sensor"
+msgstr "Cảm biến không rõ"
+
+msgid "Sensor offline"
+msgstr "Cảm biến ngoại tuyến"
+
+msgid "Sensor error"
+msgstr "Lỗi cảm biến"
+
+msgid "Calibration required"
+msgstr "Cần hiệu chuẩn"
+
+msgid "Schedule conflict"
+msgstr "Xung đột lịch"
+
+msgid "Invalid value"
+msgstr "Giá trị không hợp lệ"
+
+msgid "Out of range"
+msgstr "Ngoài phạm vi"
+
+msgid "Saving…"
+msgstr "Đang lưu…"
+
+msgid "Loading…"
+msgstr "Đang tải…"
+
+msgid "Completed"
+msgstr "Hoàn thành"
+
+msgid "Failed to save"
+msgstr "Lưu thất bại"
+
+msgid "Failed to load"
+msgstr "Tải thất bại"
+
+msgid "Permission denied"
+msgstr "Từ chối quyền"
+
+msgid "Operation not permitted"
+msgstr "Thao tác không được phép"
+
+msgid "Unsupported operation"
+msgstr "Thao tác không được hỗ trợ"
+
+msgid "Invalid configuration"
+msgstr "Cấu hình không hợp lệ"
+
+msgid "Connection error"
+msgstr "Lỗi kết nối"
+
+msgid "Timeout"
+msgstr "Hết thời gian chờ"
+
+msgid "Retry"
+msgstr "Thử lại"
+
+msgid "Abort"
+msgstr "Hủy"
+
+msgid "Confirm"
+msgstr "Xác nhận"
+
+msgid "Are you sure?"
+msgstr "Bạn có chắc không?"
+
+msgid "This action cannot be undone."
+msgstr "Hành động này không thể hoàn tác."
+
+msgid "Advanced options"
+msgstr "Tùy chọn nâng cao"
+
+msgid "Developer options"
+msgstr "Tùy chọn nhà phát triển"
+
+msgid "Enable logging"
+msgstr "Bật ghi nhật ký"
+
+msgid "Verbose logging"
+msgstr "Ghi nhật ký chi tiết"
+
+msgid "System information"
+msgstr "Thông tin hệ thống"
+
+msgid "Diagnostics"
+msgstr "Chẩn đoán"
+
+msgid "Send diagnostics"
+msgstr "Gửi chẩn đoán"
+
+msgid "Privacy"
+msgstr "Quyền riêng tư"
+
+msgid "Legal"
+msgstr "Pháp lý"
+
+msgid "Help"
+msgstr "Trợ giúp"
+
+msgid "Feedback"
+msgstr "Phản hồi"
+
+msgid "Report"
+msgstr "Báo cáo"
+
+msgid "View logs"
+msgstr "Xem nhật ký"
+
+msgid "Clear logs"
+msgstr "Xóa nhật ký"
+
+msgid "Export logs"
+msgstr "Xuất nhật ký"
+
+msgid "Import settings"
+msgstr "Nhập cài đặt"
+
+msgid "Export settings"
+msgstr "Xuất cài đặt"
+
+msgid "Factory reset"
+msgstr "Đặt lại gốc"
+
+msgid "Restart"
+msgstr "Khởi động lại"
+
+msgid "Shutdown"
+msgstr "Tắt"
+
+msgid "Update available"
+msgstr "Có bản cập nhật"
+
+msgid "Up to date"
+msgstr "Đã cập nhật"
+
+msgid "Install update"
+msgstr "Cài cập nhật"
+
+msgid "Later"
+msgstr "Sau"
+
+msgid "Now"
+msgstr "Ngay"
+
+msgid "Download"
+msgstr "Tải xuống"
+
+msgid "Checking for updates…"
+msgstr "Đang kiểm tra cập nhật…"
+
+msgid "No updates found"
+msgstr "Không tìm thấy cập nhật"
+
+msgid "Error checking updates"
+msgstr "Lỗi khi kiểm tra cập nhật"
+
+msgid "Beta"
+msgstr "Beta"
+
+msgid "Stable"
+msgstr "Ổn định"
+
+msgid "Experimental"
+msgstr "Thử nghiệm"
+
+msgid "Optional"
+msgstr "Tùy chọn"
+
+msgid "Required"
+msgstr "Bắt buộc"
+
+msgid "Unknown error"
+msgstr "Lỗi không xác định"
+
+msgid "Network error"
+msgstr "Lỗi mạng"
+
+msgid "Insufficient storage"
+msgstr "Không đủ dung lượng"
+
+msgid "Low memory"
+msgstr "Bộ nhớ thấp"
+
+msgid "Permission required"
+msgstr "Cần quyền"
+
+msgid "Enter a name"
+msgstr "Nhập tên"
+
+msgid "Enter a value"
+msgstr "Nhập giá trị"
+
+msgid "Search"
+msgstr "Tìm kiếm"
+
+msgid "Filter"
+msgstr "Bộ lọc"
+
+msgid "Sort"
+msgstr "Sắp xếp"
+
+msgid "Ascending"
+msgstr "Tăng dần"
+
+msgid "Descending"
+msgstr "Giảm dần"
+
+msgid "Apply filter"
+msgstr "Áp dụng bộ lọc"
+
+msgid "Clear filter"
+msgstr "Xóa bộ lọc"
+
+msgid "No results"
+msgstr "Không có kết quả"
+
+msgid "Loading more…"
+msgstr "Đang tải thêm…"
+
+msgid "End of list"
+msgstr "Kết thúc danh sách"
+
+msgid "New"
+msgstr "Mới"
+
+msgid "Edit"
+msgstr "Chỉnh sửa"
+
+msgid "Delete"
+msgstr "Xóa"
+
+msgid "Add"
+msgstr "Thêm"
+
+msgid "Remove"
+msgstr "Gỡ bỏ"
+
+msgid "Enable feature"
+msgstr "Bật tính năng"
+
+msgid "Disable feature"
+msgstr "Tắt tính năng"
+
+msgid "Feature enabled"
+msgstr "Tính năng đã bật"
+
+msgid "Feature disabled"
+msgstr "Tính năng đã tắt"
+
+msgid "Billing"
+msgstr "Thanh toán"
+
+msgid "Subscription"
+msgstr "Đăng ký"
+
+msgid "Purchase"
+msgstr "Mua"
+
+msgid "Restore purchase"
+msgstr "Khôi phục mua hàng"
+
+msgid "Trial"
+msgstr "Dùng thử"
+
+msgid "Expired"
+msgstr "Hết hạn"
+
+msgid "Active"
+msgstr "Đang hoạt động"
+
+msgid "Paused"
+msgstr "Tạm dừng"
+
+msgid "Canceled"
+msgstr "Đã hủy"
+
+msgid "Invoice"
+msgstr "Hóa đơn"
+
+msgid "Receipt"
+msgstr "Biên lai"
+
+msgid "Account"
+msgstr "Tài khoản"
+
+msgid "Profile"
+msgstr "Hồ sơ"
+
+msgid "Sign in"
+msgstr "Đăng nhập"
+
+msgid "Sign out"
+msgstr "Đăng xuất"
+
+msgid "Create account"
+msgstr "Tạo tài khoản"
+
+msgid "Forgot password?"
+msgstr "Quên mật khẩu?"
+
+msgid "Change password"
+msgstr "Đổi mật khẩu"
+
+msgid "Old password"
+msgstr "Mật khẩu cũ"
+
+msgid "New password"
+msgstr "Mật khẩu mới"
+
+msgid "Confirm password"
+msgstr "Xác nhận mật khẩu"
+
+msgid "Two-factor authentication"
+msgstr "Xác thực hai yếu tố"
+
+msgid "Enable 2FA"
+msgstr "Bật 2FA"
+
+msgid "Disable 2FA"
+msgstr "Tắt 2FA"
+
+msgid "Recovery codes"
+msgstr "Mã khôi phục"
+
+msgid "Session expired"
+msgstr "Phiên đã hết hạn"
+
+msgid "Sign in required"
+msgstr "Cần đăng nhập"
+
+msgid "Access denied"
+msgstr "Truy cập bị từ chối"
+
+msgid "Session invalid"
+msgstr "Phiên không hợp lệ"
+
+msgid "Token expired"
+msgstr "Token đã hết hạn"
+
+msgid "Refresh token"
+msgstr "Làm mới token"
+
+msgid "Revoke access"
+msgstr "Thu hồi quyền truy cập"
+
+msgid "Sign up"
+msgstr "Đăng ký"
+
+msgid "Already have an account?"
+msgstr "Đã có tài khoản?"
+
+msgid "Terms"
+msgstr "Điều khoản"
+
+msgid "Privacy Policy"
+msgstr "Chính sách Quyền riêng tư"
+
+msgid "License Agreement"
+msgstr "Thỏa thuận cấp phép"
+
+msgid "Changelog"
+msgstr "Nhật ký thay đổi"
+
+msgid "What's new"
+msgstr "Có gì mới"
+
+msgid "Send Feedback"
+msgstr "Gửi phản hồi"
+
+msgid "Report Issue"
+msgstr "Báo cáo lỗi"
+
+msgid "System log"
+msgstr "Nhật ký hệ thống"
+
+msgid "Developer Tools"
+msgstr "Công cụ nhà phát triển"
+
+msgid "Enable experimental features"
+msgstr "Bật tính năng thử nghiệm"
+
+msgid "Show diagnostic data"
+msgstr "Hiển thị dữ liệu chẩn đoán"
+
+msgid "Upload logs"
+msgstr "Tải lên nhật ký"
+
+msgid "Clear cache"
+msgstr "Xóa bộ nhớ đệm"
+
+msgid "Cache cleared"
+msgstr "Đã xóa bộ nhớ đệm"
+
+msgid "Reset to defaults"
+msgstr "Đặt lại về mặc định"
+
+msgid "Accept"
+msgstr "Chấp nhận"
+
+msgid "Decline"
+msgstr "Từ chối"
+
+msgid "Blocked"
+msgstr "Bị chặn"
+
+msgid "Unblocked"
+msgstr "Không còn bị chặn"
+
+msgid "Auto-update"
+msgstr "Tự động cập nhật"
+
+msgid "Manual update"
+msgstr "Cập nhật thủ công"
+
+msgid "Developer Mode"
+msgstr "Chế độ nhà phát triển"
+
+msgid "Diagnostics sent"
+msgstr "Đã gửi chẩn đoán"
+
+msgid "Upload failed"
+msgstr "Tải lên thất bại"
+
+msgid "Upload successful"
+msgstr "Tải lên thành công"
+
+msgid "API Error"
+msgstr "Lỗi API"
+
+msgid "Service unavailable"
+msgstr "Dịch vụ không khả dụng"
+
+msgid "Maintenance mode"
+msgstr "Chế độ bảo trì"
+
+msgid "Beta features"
+msgstr "Tính năng Beta"
+
+msgid "Telemetry"
+msgstr "Thu thập dữ liệu"
+
+msgid "Allow telemetry"
+msgstr "Cho phép thu thập"
+
+msgid "Deny telemetry"
+msgstr "Từ chối thu thập"
+
+msgid "Privacy settings"
+msgstr "Cài đặt quyền riêng tư"
+
+msgid "Export data"
+msgstr "Xuất dữ liệu"
+
+msgid "Import data"
+msgstr "Nhập dữ liệu"
+
+msgid "Data exported"
+msgstr "Đã xuất dữ liệu"
+
+msgid "Data imported"
+msgstr "Đã nhập dữ liệu"
+
+msgid "Invalid file"
+msgstr "Tệp không hợp lệ"
+
+msgid "Unsupported file format"
+msgstr "Định dạng tệp không được hỗ trợ"
+
+msgid "File too large"
+msgstr "Tệp quá lớn"
+
+msgid "Operation completed"
+msgstr "Hoàn tất thao tác"
+
+msgid "Operation failed"
+msgstr "Thao tác thất bại"
+
+msgid "Insufficient permissions"
+msgstr "Quyền không đủ"
+
+msgid "Authentication required"
+msgstr "Cần xác thực"
+
+msgid "Logout"
+msgstr "Đăng xuất"
+
+msgid "Are you sure you want to log out?"
+msgstr "Bạn có chắc muốn đăng xuất không?"
+
+msgid "Signed out"
+msgstr "Đã đăng xuất"
+
+msgid "Signed in as %@"
+msgstr "Đã đăng nhập với %@"
+
+msgid "Language selection"
+msgstr "Chọn ngôn ngữ"
+
+msgid "Auto-detect language"
+msgstr "Tự động phát hiện ngôn ngữ"
+
+msgid "UI scale"
+msgstr "Tỷ lệ giao diện"
+
+msgid "Small"
+msgstr "Nhỏ"
+
+msgid "Medium"
+msgstr "Trung bình"
+
+msgid "Large"
+msgstr "Lớn"
+
+msgid "Accessibility"
+msgstr "Trợ năng"
+
+msgid "VoiceOver"
+msgstr "VoiceOver"
+
+msgid "Screen reader"
+msgstr "Đọc màn hình"
+
+msgid "High contrast"
+msgstr "Độ tương phản cao"
+
+msgid "Reduce motion"
+msgstr "Giảm chuyển động"
+
+msgid "Notifications"
+msgstr "Thông báo"
+
+msgid "Enable notifications"
+msgstr "Bật thông báo"
+
+msgid "Disable notifications"
+msgstr "Tắt thông báo"
+
+msgid "Notification sound"
+msgstr "Âm thông báo"
+
+msgid "Vibrate"
+msgstr "Rung"
+
+msgid "Do not disturb"
+msgstr "Không làm phiền"
+
+msgid "Schedule Do Not Disturb"
+msgstr "Lên lịch Không làm phiền"
+
+msgid "From"
+msgstr "Từ"
+
+msgid "To"
+msgstr "Đến"
+
+msgid "Repeat"
+msgstr "Lặp lại"
+
+msgid "Never"
+msgstr "Không bao giờ"
+
+msgid "Daily"
+msgstr "Hàng ngày"
+
+msgid "Weekly"
+msgstr "Hàng tuần"
+
+msgid "Monthly"
+msgstr "Hàng tháng"
+
+msgid "Yearly"
+msgstr "Hàng năm"
+
+msgid "Advanced diagnostics"
+msgstr "Chẩn đoán nâng cao"
+
+msgid "Collect system report"
+msgstr "Thu thập báo cáo hệ thống"
+
+msgid "Collect battery report"
+msgstr "Thu thập báo cáo pin"
+
+msgid "Collect thermal report"
+msgstr "Thu thập báo cáo nhiệt"
+
+msgid "Report generated"
+msgstr "Đã tạo báo cáo"
+
+msgid "Report failed"
+msgstr "Tạo báo cáo thất bại"
+
+msgid "Email report"
+msgstr "Gửi báo cáo qua Email"
+
+msgid "Attach logs"
+msgstr "Đính kèm nhật ký"
+
+msgid "Include system info"
+msgstr "Bao gồm thông tin hệ thống"
+
+msgid "Privacy notice"
+msgstr "Thông báo quyền riêng tư"
+
+msgid "Data usage"
+msgstr "Sử dụng dữ liệu"
+
+msgid "We collect anonymous usage data to improve the app."
+msgstr "Chúng tôi thu thập dữ liệu sử dụng ẩn danh để cải thiện ứng dụng."
+
+msgid "Do you consent?"
+msgstr "Bạn có đồng ý không?"
+
+msgid "Consent granted"
+msgstr "Đã đồng ý"
+
+msgid "Consent revoked"
+msgstr "Đã thu hồi đồng ý"
+
+msgid "Diagnostics level"
+msgstr "Mức chẩn đoán"
+
+msgid "Minimal"
+msgstr "Tối thiểu"
+
+msgid "Normal"
+msgstr "Bình thường"
+
+msgid "Full"
+msgstr "Đầy đủ"
+
+msgid "Developer log level"
+msgstr "Mức nhật ký nhà phát triển"
+
+msgid "Error"
+msgstr "Lỗi"
+
+msgid "Warning"
+msgstr "Cảnh báo"
+
+msgid "Info"
+msgstr "Thông tin"
+
+msgid "Debug"
+msgstr "Gỡ lỗi"
+
+msgid "Verbose"
+msgstr "Chi tiết"
+
+msgid "Crash reports"
+msgstr "Báo cáo treo ứng dụng"
+
+msgid "Send crash reports"
+msgstr "Gửi báo cáo treo"
+
+msgid "Don't send"
+msgstr "Không gửi"
+
+msgid "Always send"
+msgstr "Luôn gửi"
+
+msgid "Ask before sending"
+msgstr "Hỏi trước khi gửi"
+
+msgid "Experimental: OBC tuning"
+msgstr "Thử nghiệm: điều chỉnh OBC"
+
+msgid "OBC override is experimental and may be ignored by firmware."
+msgstr "Ghi đè OBC đang thử nghiệm và có thể bị firmware bỏ qua."
+
+msgid "Apply OBC override"
+msgstr "Áp dụng ghi đè OBC"
+
+msgid "OBC override applied"
+msgstr "Đã áp dụng ghi đè OBC"
+
+msgid "OBC override failed"
+msgstr "Áp dụng ghi đè OBC thất bại"
+
+msgid "Battery safety"
+msgstr "An toàn pin"
+
+msgid "Ensure charging within safe limits."
+msgstr "Đảm bảo sạc trong giới hạn an toàn."
+
+msgid "Safe temperature range"
+msgstr "Phạm vi nhiệt an toàn"
+
+msgid "Minimum safe temperature"
+msgstr "Nhiệt độ an toàn tối thiểu"
+
+msgid "Maximum safe temperature"
+msgstr "Nhiệt độ an toàn tối đa"
+
+msgid "Thermal throttling"
+msgstr "Giảm hiệu năng do nhiệt"
+
+msgid "Thermal throttling active"
+msgstr "Đang giảm hiệu năng do nhiệt"
+
+msgid "Thermal throttling cleared"
+msgstr "Đã dỡ giảm hiệu năng do nhiệt"
+
+msgid "Hardware monitoring"
+msgstr "Giám sát phần cứng"
+
+msgid "Sensor calibration"
+msgstr "Hiệu chuẩn cảm biến"
+
+msgid "Start calibration"
+msgstr "Bắt đầu hiệu chuẩn"
+
+msgid "Stop calibration"
+msgstr "Dừng hiệu chuẩn"
+
+msgid "Calibration complete"
+msgstr "Hoàn tất hiệu chuẩn"
+
+msgid "Calibration failed"
+msgstr "Hiệu chuẩn thất bại"
+
+msgid "Factory data"
+msgstr "Dữ liệu gốc nhà máy"
+
+msgid "View factory settings"
+msgstr "Xem cài đặt gốc"
+
+msgid "Restore factory defaults"
+msgstr "Khôi phục về mặc định nhà máy"
+
+msgid "Factory restore complete"
+msgstr "Khôi phục gốc hoàn tất"
+
+msgid "Factory restore failed"
+msgstr "Khôi phục gốc thất bại"
+
+msgid "Support info"
+msgstr "Thông tin hỗ trợ"
+
+msgid "Device model"
+msgstr "Mẫu thiết bị"
+
+msgid "OS version"
+msgstr "Phiên bản OS"
+
+msgid "Firmware version"
+msgstr "Phiên bản firmware"
+
+msgid "Serial number"
+msgstr "Số sê-ri"
+
+msgid "Hardware revision"
+msgstr "Phiên bản phần cứng"
+
+msgid "Bootloader"
+msgstr "Bootloader"
+
+msgid "Kernel"
+msgstr "Kernel"
+
+msgid "Uptime"
+msgstr "Thời gian hoạt động"
+
+msgid "Last boot"
+msgstr "Khởi động lần cuối"
+
+msgid "Installed packages"
+msgstr "Gói đã cài"
+
+msgid "Service status"
+msgstr "Trạng thái dịch vụ"
+
+msgid "Enable service"
+msgstr "Bật dịch vụ"
+
+msgid "Disable service"
+msgstr "Tắt dịch vụ"
+
+msgid "Service started"
+msgstr "Dịch vụ đã khởi động"
+
+msgid "Service stopped"
+msgstr "Dịch vụ đã dừng"
+
+msgid "Service restart required"
+msgstr "Cần khởi động lại dịch vụ"
+
+msgid "No permission"
+msgstr "Không có quyền"
+
+msgid "Admin required"
+msgstr "Cần quyền quản trị"
+
+msgid "Contact support"
+msgstr "Liên hệ hỗ trợ"
+
+msgid "Support email"
+msgstr "Email hỗ trợ"
+
+msgid "Support website"
+msgstr "Trang hỗ trợ"
+
+msgid "Documentation"
+msgstr "Tài liệu"
+
+msgid "User Manual"
+msgstr "Hướng dẫn sử dụng"
+
+msgid "Release Notes"
+msgstr "Ghi chú phát hành"
+
+msgid "Acknowledgements"
+msgstr "Ghi nhận"
+
+msgid "Contributors"
+msgstr "Người đóng góp"
+
+msgid "Open-source licenses"
+msgstr "Giấy phép mã nguồn mở"
+
+msgid "Third-party libraries"
+msgstr "Thư viện bên thứ ba"
+
+msgid "End of file"
+msgstr "Kết thúc tệp"
