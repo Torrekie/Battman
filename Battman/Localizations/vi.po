@@ -1,21 +1,22 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Torrekie <me@torrekie.dev>
+# Vietnamese translations for Battman package
+# Bản dịch Tiếng Việt dành cho gói Battman.
+# Copyright (C) 2025 Torrekie <me@torrekie.dev>
 # This file is distributed under the same license as the Battman package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Automatically generated, 2025.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-12 15:46+0800\n"
-"PO-Revision-Date: 2025-11-16 17:35+0000\n"
+"POT-Creation-Date: 2025-11-17 18:34+0800\n"
+"PO-Revision-Date: 2025-11-13 13:10+0800\n"
 "Last-Translator: romlayvn-0411\n"
 "Language-Team: Vietnamese\n"
 "Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid "OK"
 msgstr "OK"
@@ -188,13 +189,14 @@ msgid ""
 "Block Charging suspends battery charging and allows the battery to discharge "
 "while maintaining power source operation. %@"
 msgstr ""
-"Chặn sạc sẽ tạm dừng việc nạp pin và cho phép pin xả trong khi vẫn giữ "
-"nguồn hoạt động. %@"
+"Chặn sạc sẽ tạm dừng việc nạp pin và cho phép pin xả trong khi vẫn giữ nguồn "
+"hoạt động. %@"
 
 msgid ""
 "Certain values may not be overridable when Optimized Battery Charging is "
 "enabled."
-msgstr "Một số giá trị có thể không được ghi đè khi Tối ưu hóa Sạc Pin được bật."
+msgstr ""
+"Một số giá trị có thể không được ghi đè khi Tối ưu hóa Sạc Pin được bật."
 
 msgid ""
 "Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
@@ -288,8 +290,8 @@ msgid ""
 "This preview shows how the pointer adjusts to match the current temperature "
 "based on your selected range."
 msgstr ""
-"Xem trước này hiển thị cách con trỏ điều chỉnh để phản ánh nhiệt độ hiện "
-"tại dựa trên phạm vi bạn chọn."
+"Xem trước này hiển thị cách con trỏ điều chỉnh để phản ánh nhiệt độ hiện tại "
+"dựa trên phạm vi bạn chọn."
 
 msgid "Min Temperature"
 msgstr "Nhiệt độ tối thiểu"
@@ -327,7 +329,8 @@ msgstr "Cell pin 4"
 msgid "Camera Module"
 msgstr "Module camera"
 
-msgid "Thermal Pressure"
+#. TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed
+msgid "Pressure"
 msgstr "Áp lực nhiệt"
 
 msgid "Thermal Notification Level"
@@ -361,7 +364,8 @@ msgid "Adjust ThermalMonitor behavior on the Thermal Tunes page."
 msgstr "Điều chỉnh hành vi ThermalMonitor trên trang Thermal Tunes."
 
 msgid "Some sensors may not provide real‑time temperature data."
-msgstr "Một số cảm biến có thể không cung cấp dữ liệu nhiệt theo thời gian thực."
+msgstr ""
+"Một số cảm biến có thể không cung cấp dữ liệu nhiệt theo thời gian thực."
 
 msgid "Daemon State"
 msgstr "Trạng thái daemon"
@@ -628,10 +632,29 @@ msgid "Hex Dump"
 msgstr "Hiển thị Hex"
 
 msgid "No data is sent to the SMC until you click \"Write to SMC.\""
-msgstr "Không có dữ liệu nào được gửi đến SMC cho đến khi bạn nhấn \"Ghi vào SMC.\""
+msgstr ""
+"Không có dữ liệu nào được gửi đến SMC cho đến khi bạn nhấn \"Ghi vào SMC.\""
 
 msgid "Refetch Data"
 msgstr "Tải lại dữ liệu"
+
+msgid "Screen Hardware Temperature"
+msgstr ""
+
+msgid "Resolution"
+msgstr ""
+
+msgid "Color Gamut"
+msgstr ""
+
+msgid "Temperature"
+msgstr "Nhiệt độ"
+
+msgid "Night Shift"
+msgstr ""
+
+msgid "True Tone"
+msgstr ""
 
 msgid "Learn more…"
 msgstr "Tìm hiểu thêm…"
@@ -650,23 +673,23 @@ msgid ""
 "Changing the default thermal behavior may increase wear on your battery and "
 "reduce its lifespan."
 msgstr ""
-"Thay đổi hành vi nhiệt mặc định có thể tăng hao mòn pin và rút ngắn tuổi "
-"thọ của pin."
+"Thay đổi hành vi nhiệt mặc định có thể tăng hao mòn pin và rút ngắn tuổi thọ "
+"của pin."
 
 msgid ""
 "Hot-In-Pocket Protection automatically reduces CPU & GPU power when the "
 "display is off and no media is playing, to prevent overheating while the "
 "device is stored in a pocket."
 msgstr ""
-"Bảo vệ 'nóng trong túi' tự động giảm công suất CPU & GPU khi màn hình tắt "
-"và không có media đang phát, nhằm ngăn quá nhiệt khi thiết bị để trong túi."
+"Bảo vệ 'nóng trong túi' tự động giảm công suất CPU & GPU khi màn hình tắt và "
+"không có media đang phát, nhằm ngăn quá nhiệt khi thiết bị để trong túi."
 
 msgid ""
 "Thermal levels are normally controlled by the system. Changing them can "
 "affect power, media playback, backlight, flashlight and wireless charging."
 msgstr ""
-"Các mức nhiệt thường do hệ thống điều khiển. Thay đổi có thể ảnh hưởng "
-"đến công suất, phát media, đèn nền, đèn pin và sạc không dây."
+"Các mức nhiệt thường do hệ thống điều khiển. Thay đổi có thể ảnh hưởng đến "
+"công suất, phát media, đèn nền, đèn pin và sạc không dây."
 
 msgid "State Updates"
 msgstr "Cập nhật trạng thái"
@@ -695,9 +718,6 @@ msgstr "Chế độ tiếp xúc"
 msgid "Status"
 msgstr "Trạng thái"
 
-msgid "Pressure"
-msgstr "Áp suất"
-
 msgid "Unavailable"
 msgstr "Không khả dụng"
 
@@ -712,17 +732,16 @@ msgstr "Đặt lại"
 
 #, objc-format
 msgid ""
-"Setting thermal pressure to %s may trigger a persistent temperature warning "
+"Setting thermal pressure to %@ may trigger a persistent temperature warning "
 "screen. Do you want to continue?"
-msgstr ""
-"Đặt áp lực nhiệt thành %s có thể kích hoạt màn hình cảnh báo nhiệt kéo dài. "
-"Bạn có muốn tiếp tục không?"
+"Đặt áp lực nhiệt thành %@ có thể kích hoạt màn hình cảnh báo nhiệt kéo "
+"dài. Bạn có muốn tiếp tục không?"
 
 msgid "Thermal Tuning failed with error"
 msgstr "Điều chỉnh nhiệt thất bại với lỗi"
 
 msgid "locale_name"
-msgstr "vi"
+msgstr "Tiếng Việt"
 
 msgid "Unregistered Locale"
 msgstr "Bản địa chưa đăng ký"
@@ -773,8 +792,8 @@ msgid ""
 "Charging Limit uses a background service to monitor your battery's charge "
 "level and automatically adjust charging behavior."
 msgstr ""
-"Giới hạn sạc dùng dịch vụ nền để giám sát mức sạc pin và tự động điều "
-"chỉnh hành vi sạc."
+"Giới hạn sạc dùng dịch vụ nền để giám sát mức sạc pin và tự động điều chỉnh "
+"hành vi sạc."
 
 msgid "Invalid Setup"
 msgstr "Cài đặt không hợp lệ"
@@ -853,8 +872,7 @@ msgstr "Battman chưa thêm ngôn ngữ của bạn. %@"
 
 msgid ""
 "Battery information updates automatically depending on system conditions."
-msgstr ""
-"Thông tin pin được cập nhật tự động tùy theo điều kiện hệ thống."
+msgstr "Thông tin pin được cập nhật tự động tùy theo điều kiện hệ thống."
 
 #, objc-format
 msgid "Battery information updates at the selected interval. %@"
@@ -866,8 +884,7 @@ msgstr "Dùng khoảng thời gian ngắn hơn có thể ảnh hưởng hiệu n
 msgid ""
 "Battery information doesn’t update automatically. Pull down to refresh "
 "manually."
-msgstr ""
-"Thông tin pin không tự động cập nhật. Kéo xuống để làm mới thủ công."
+msgstr "Thông tin pin không tự động cập nhật. Kéo xuống để làm mới thủ công."
 
 msgid "Configure how often battery information is refreshed."
 msgstr "Cấu hình tần suất làm mới thông tin pin."
@@ -896,7 +913,7 @@ msgstr "Khoảng thời gian (s)"
 
 #. TRANSLATORS: Please ensure this string won't be longer as "Custom"
 msgid "Custom"
-msgstr "Tùy chỉnh"
+msgstr "…"
 
 msgid "Auto"
 msgstr "Tự động"
@@ -945,14 +962,15 @@ msgid ""
 "Analysis complete. Check the console/logs to see what would be deleted. No "
 "data was actually removed."
 msgstr ""
-"Phân tích hoàn tất. Kiểm tra console/nhật ký để xem những gì sẽ bị xóa. Không "
-"dữ liệu nào bị xóa thực sự."
+"Phân tích hoàn tất. Kiểm tra console/nhật ký để xem những gì sẽ bị xóa. "
+"Không dữ liệu nào bị xóa thực sự."
 
 msgid "Data Wiped"
 msgstr "Dữ liệu đã bị xóa"
 
 msgid "All Battman data has been successfully deleted. The app will now exit."
-msgstr "Tất cả dữ liệu Battman đã bị xóa thành công. Ứng dụng sẽ thoát ngay bây giờ."
+msgstr ""
+"Tất cả dữ liệu Battman đã bị xóa thành công. Ứng dụng sẽ thoát ngay bây giờ."
 
 msgid "Patreon"
 msgstr "Patreon"
@@ -1008,11 +1026,21 @@ msgstr "Lỗi khi mở URL: %@"
 msgid "Your device does not support sending Emails."
 msgstr "Thiết bị của bạn không hỗ trợ gửi Email."
 
+msgid "Primary Screen"
+msgstr ""
+
+msgid "Resolutions"
+msgstr ""
+
+msgid "Gamut"
+msgstr ""
+
 msgid ""
 "No value returned from sensor, device should be checked by service "
 "technician."
 msgstr ""
-"Không có giá trị trả về từ cảm biến, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+"Không có giá trị trả về từ cảm biến, thiết bị nên được kiểm tra bởi kỹ thuật "
+"viên."
 
 msgid ""
 "Value exceeded the designed, device should be checked by service technician."
@@ -1025,7 +1053,8 @@ msgstr "Giá trị bất thường, thiết bị nên được kiểm tra bởi 
 msgid ""
 "Significant abnormal data, device should be checked by service technician."
 msgstr ""
-"Dữ liệu bất thường nghiêm trọng, thiết bị nên được kiểm tra bởi kỹ thuật viên."
+"Dữ liệu bất thường nghiêm trọng, thiết bị nên được kiểm tra bởi kỹ thuật "
+"viên."
 
 msgid "Error Data"
 msgstr "Dữ liệu lỗi"
@@ -1054,1049 +1083,932 @@ msgstr "Nâng cao"
 msgid "Type"
 msgstr "Loại"
 
-msgid "Value"
-msgstr "Giá trị"
+msgid ""
+"\"External Power\" indicator may suggest that the connected adapter is a "
+"wireless charger. Most information may not be displayed because wireless "
+"chargers are handled differently by the hardware."
+msgstr ""
 
-msgid "Unit"
-msgstr "Đơn vị"
+msgid "Remaining Capacity"
+msgstr ""
 
-msgid "Current"
-msgstr "Dòng"
+msgid ""
+"Unusual Remaining Capacity, a non-genuine battery component may be in use."
+msgstr ""
 
-msgid "Voltage"
-msgstr "Điện áp"
+msgid "Estimated Remaining"
+msgstr ""
 
-msgid "Power"
-msgstr "Công suất"
-
-msgid "Capacity"
-msgstr "Dung lượng"
-
-msgid "Health"
-msgstr "Tình trạng"
-
-msgid "Temperature"
-msgstr "Nhiệt độ"
-
-msgid "Charging"
-msgstr "Đang sạc"
-
-msgid "Discharging"
-msgstr "Đang xả"
-
-msgid "Plugged In"
-msgstr "Đã cắm nguồn"
-
-msgid "Unplugged"
-msgstr "Chưa cắm nguồn"
-
-msgid "Unknown"
-msgstr "Không xác định"
-
-msgid "Yes"
-msgstr "Có"
-
-msgid "No"
-msgstr "Không"
-
-msgid "Save"
-msgstr "Lưu"
-
-msgid "Apply"
-msgstr "Áp dụng"
-
-msgid "Reset"
-msgstr "Đặt lại"
-
-msgid "Close"
-msgstr "Đóng"
-
-msgid "Open"
-msgstr "Mở"
-
-msgid "Refresh"
-msgstr "Làm mới"
-
-msgid "Start"
-msgstr "Bắt đầu"
-
-msgid "Stop"
-msgstr "Dừng"
-
-msgid "Pause"
-msgstr "Tạm dừng"
-
-msgid "Resume"
-msgstr "Tiếp tục"
-
-msgid "Connect"
-msgstr "Kết nối"
-
-msgid "Disconnect"
-msgstr "Ngắt kết nối"
-
-msgid "Session"
-msgstr "Phiên"
-
-msgid "Duration"
-msgstr "Thời lượng"
-
-msgid "Average"
-msgstr "Trung bình"
-
-msgid "Maximum"
-msgstr "Tối đa"
-
-msgid "Minimum"
-msgstr "Tối thiểu"
-
-msgid "Status"
-msgstr "Trạng thái"
-
-msgid "Overview"
-msgstr "Tổng quan"
-
-msgid "Details"
-msgstr "Chi tiết"
-
-msgid "Graphs"
-msgstr "Biểu đồ"
-
-msgid "Export"
-msgstr "Xuất"
-
-msgid "Import"
-msgstr "Nhập"
-
-msgid "Backup"
-msgstr "Sao lưu"
-
-msgid "Restore"
-msgstr "Phục hồi"
-
-msgid "Connected"
-msgstr "Đã kết nối"
-
-msgid "Disconnected"
-msgstr "Đã ngắt kết nối"
-
-msgid "Low"
-msgstr "Thấp"
-
-msgid "Normal"
-msgstr "Bình thường"
-
-msgid "High"
-msgstr "Cao"
-
-msgid "Critical"
-msgstr "Nguy cấp"
-
-msgid "Battery health is degraded."
-msgstr "Tình trạng pin đã giảm."
-
-msgid "Replace battery soon."
-msgstr "Cần thay pin sớm."
-
-msgid "Charging paused"
-msgstr "Sạc đã tạm dừng"
-
-msgid "Charging resumed"
-msgstr "Sạc đã tiếp tục"
-
-msgid "Full"
-msgstr "Đầy"
-
-msgid "Empty"
-msgstr "Rỗng"
-
-msgid "Remaining"
-msgstr "Còn lại"
-
-msgid "Estimated time remaining"
-msgstr "Ước tính thời gian còn lại"
-
-msgid "Calibration recommended"
-msgstr "Nên hiệu chuẩn"
-
-msgid "Calibration in progress"
-msgstr "Đang hiệu chuẩn"
-
-msgid "Capacity (rated)"
-msgstr "Dung lượng (định mức)"
-
-msgid "Capacity (measured)"
-msgstr "Dung lượng (đo được)"
+msgid "Remaining Capacity not detected."
+msgstr ""
 
 msgid "Cycle Count"
-msgstr "Số chu kỳ"
+msgstr ""
 
-msgid "Charge Cycles"
-msgstr "Chu kỳ sạc"
+msgid ""
+"Cycle Count exceeded designed cycle count, consider replacing with a genuine "
+"battery."
+msgstr ""
 
-msgid "Designed Capacity"
-msgstr "Dung lượng thiết kế"
+msgid "Time to Empty"
+msgstr ""
 
-msgid "Full Charge Capacity"
-msgstr "Dung lượng sạc đầy"
+msgid "Unusual Time to Empty, a non-genuine battery component may be in use."
+msgstr ""
 
-msgid "Instantaneous Current"
-msgstr "Dòng tức thời"
+msgid "Depth of Discharge"
+msgstr ""
 
-msgid "Average Current"
-msgstr "Dòng trung bình"
+msgid ""
+"Unusual Depth of Discharge, a non-genuine battery component may be in use."
+msgstr ""
 
-msgid "Instantaneous Power"
-msgstr "Công suất tức thời"
+msgid "Not HVC"
+msgstr ""
 
-msgid "Average Power"
-msgstr "Công suất trung bình"
+msgid "Software Controlled"
+msgstr ""
 
-msgid "Input Power"
-msgstr "Công suất vào"
+msgid "Helper failed to launch"
+msgstr ""
 
-msgid "Output Power"
-msgstr "Công suất ra"
+msgid "IOMainPort Open Failed"
+msgstr ""
 
-msgid "Charge Rate"
-msgstr "Tốc độ sạc"
+msgid "AppleSMC Unsupported"
+msgstr ""
 
-msgid "Discharge Rate"
-msgstr "Tốc độ xả"
+msgid "AppleSMC Open Failed"
+msgstr ""
 
-msgid "Plug Type"
-msgstr "Loại cổng"
+msgid "Fully Charged"
+msgstr ""
 
-msgid "AC Adapter"
-msgstr "Adapter AC"
+msgid "Too Cold"
+msgstr ""
 
-msgid "USB"
-msgstr "USB"
+msgid "Too Hot"
+msgstr ""
 
-msgid "Wireless"
-msgstr "Không dây"
+msgid "Too Cold To Start"
+msgstr ""
 
-msgid "Unknown sensor"
-msgstr "Cảm biến không rõ"
+msgid "Too Hot To Start"
+msgstr ""
 
-msgid "Sensor offline"
-msgstr "Cảm biến ngoại tuyến"
+msgid "Charger Wachdog Timeout"
+msgstr ""
 
-msgid "Sensor error"
-msgstr "Lỗi cảm biến"
+msgid "Battery Not Present"
+msgstr ""
 
-msgid "Calibration required"
-msgstr "Cần hiệu chuẩn"
+msgid "VBUS Not Present"
+msgstr ""
 
-msgid "Schedule conflict"
-msgstr "Xung đột lịch"
+msgid "High SoC High Temp Stopped"
+msgstr ""
 
-msgid "Invalid value"
-msgstr "Giá trị không hợp lệ"
+msgid "Sensor Communication Failed"
+msgstr ""
 
-msgid "Out of range"
-msgstr "Ngoài phạm vi"
+msgid "Accessory Connecting"
+msgstr ""
 
-msgid "Saving…"
-msgstr "Đang lưu…"
+msgid "Kiosk Mode"
+msgstr ""
 
-msgid "Loading…"
-msgstr "Đang tải…"
+msgid "CoreMotion"
+msgstr ""
 
-msgid "Completed"
-msgstr "Hoàn thành"
+msgid "USB-PD Connecting"
+msgstr ""
 
-msgid "Failed to save"
-msgstr "Lưu thất bại"
+msgid "setbatt Controlled"
+msgstr ""
 
-msgid "Failed to load"
-msgstr "Tải thất bại"
+msgid "Predictive Charging"
+msgstr ""
 
-msgid "Permission denied"
-msgstr "Từ chối quyền"
+msgid "Wireless Charger Controlled"
+msgstr ""
 
-msgid "Operation not permitted"
-msgstr "Thao tác không được phép"
+msgid "Gas Gauge FW Updating"
+msgstr ""
 
-msgid "Unsupported operation"
-msgstr "Thao tác không được hỗ trợ"
+msgid "Battery Inhibit Inflow Unsupported"
+msgstr ""
 
-msgid "Invalid configuration"
-msgstr "Cấu hình không hợp lệ"
+msgid "PCTM"
+msgstr ""
 
-msgid "Connection error"
-msgstr "Lỗi kết nối"
+msgid "Inhibit Client Adapter"
+msgstr ""
 
-msgid "Timeout"
-msgstr "Hết thời gian chờ"
+msgid "Cell Voltage Too High"
+msgstr ""
 
-msgid "Retry"
-msgstr "Thử lại"
+msgid "Battery Not Requesting Charge"
+msgstr ""
 
-msgid "Abort"
-msgstr "Hủy"
+msgid "Camera Streaming"
+msgstr ""
 
-msgid "Confirm"
-msgstr "Xác nhận"
+msgid "VACTFB"
+msgstr ""
 
-msgid "Are you sure?"
-msgstr "Bạn có chắc không?"
+msgid "Field Diagnostics"
+msgstr ""
 
-msgid "This action cannot be undone."
-msgstr "Hành động này không thể hoàn tác."
+msgid "Inhibit Inflow"
+msgstr ""
 
-msgid "Advanced options"
-msgstr "Tùy chọn nâng cao"
+msgid "Carrier Mode Testing"
+msgstr ""
 
-msgid "Developer options"
-msgstr "Tùy chọn nhà phát triển"
+msgid "Vbatt Fault"
+msgstr ""
 
-msgid "Enable logging"
-msgstr "Bật ghi nhật ký"
+msgid "Ibatt MinFault"
+msgstr ""
 
-msgid "Verbose logging"
-msgstr "Ghi nhật ký chi tiết"
+msgid "Charger Communication Failure"
+msgstr ""
 
-msgid "System information"
-msgstr "Thông tin hệ thống"
+msgid "Cell Check Fault"
+msgstr ""
 
-msgid "Diagnostics"
-msgstr "Chẩn đoán"
+msgid "Charged Too Long"
+msgstr ""
 
-msgid "Send diagnostics"
-msgstr "Gửi chẩn đoán"
+msgid "Permanent Battery Failure"
+msgstr ""
 
-msgid "Privacy"
-msgstr "Quyền riêng tư"
+msgid "No Battery"
+msgstr ""
 
-msgid "Legal"
-msgstr "Pháp lý"
+msgid "Bad Battery"
+msgstr ""
 
-msgid "Help"
-msgstr "Trợ giúp"
+msgid "Using AC Power"
+msgstr ""
 
-msgid "Feedback"
-msgstr "Phản hồi"
+msgid "G3 Mechanical Off"
+msgstr ""
 
-msgid "Report"
-msgstr "Báo cáo"
+msgid "Adapter Disabled"
+msgstr ""
 
-msgid "View logs"
-msgstr "Xem nhật ký"
+msgid "Unknown Adapter"
+msgstr ""
 
-msgid "Clear logs"
-msgstr "Xóa nhật ký"
+msgid "Adapter Not Allowed"
+msgstr ""
 
-msgid "Export logs"
-msgstr "Xuất nhật ký"
+msgid "Calibration"
+msgstr ""
 
-msgid "Import settings"
-msgstr "Nhập cài đặt"
+msgid "Charging Disabled"
+msgstr ""
 
-msgid "Export settings"
-msgstr "Xuất cài đặt"
+msgid "OS Charging Disabled"
+msgstr ""
 
-msgid "Factory reset"
-msgstr "Đặt lại gốc"
+msgid "Charging Limit Reached"
+msgstr ""
 
-msgid "Restart"
-msgstr "Khởi động lại"
+msgid "Upstream Charging Disabled"
+msgstr ""
 
-msgid "Shutdown"
-msgstr "Tắt"
+msgid "PowerManagement Charging Disabled"
+msgstr ""
 
-msgid "Update available"
-msgstr "Có bản cập nhật"
+msgid "Battery Temperature over 50℃"
+msgstr ""
 
-msgid "Up to date"
-msgstr "Đã cập nhật"
+msgid "Battery Temperature over 45℃"
+msgstr ""
 
-msgid "Install update"
-msgstr "Cài cập nhật"
+msgid "Temperature Gradient Too High"
+msgstr ""
 
-msgid "Later"
-msgstr "Sau"
+msgid "TEMP_NOT_ATV_VLD"
+msgstr ""
 
-msgid "Now"
-msgstr "Ngay"
+msgid "BATTERY_TCA"
+msgstr ""
 
-msgid "Download"
-msgstr "Tải xuống"
+msgid "OW_TDM_LINK_ACTIVE"
+msgstr ""
 
-msgid "Checking for updates…"
-msgstr "Đang kiểm tra cập nhật…"
+msgid "VACTFB_NO_CHG"
+msgstr ""
 
-msgid "No updates found"
-msgstr "Không tìm thấy cập nhật"
+msgid "INVALID_NOT_CHARGING_REASON_VALUE"
+msgstr ""
 
-msgid "Error checking updates"
-msgstr "Lỗi khi kiểm tra cập nhật"
+msgid "Disconnected"
+msgstr ""
 
-msgid "Beta"
-msgstr "Beta"
+msgid "FireWire"
+msgstr ""
 
-msgid "Stable"
-msgstr "Ổn định"
+msgid "USB Host"
+msgstr ""
 
-msgid "Experimental"
-msgstr "Thử nghiệm"
+msgid "USB SDP"
+msgstr ""
 
-msgid "Optional"
-msgstr "Tùy chọn"
+msgid "USB Device"
+msgstr ""
 
-msgid "Required"
-msgstr "Bắt buộc"
+msgid "USB Adapter"
+msgstr ""
 
-msgid "Unknown error"
-msgstr "Lỗi không xác định"
+msgid "USB DCP"
+msgstr ""
 
-msgid "Network error"
-msgstr "Lỗi mạng"
+msgid "USB CDP"
+msgstr ""
 
-msgid "Insufficient storage"
-msgstr "Không đủ dung lượng"
+msgid "USB CP"
+msgstr ""
 
-msgid "Low memory"
-msgstr "Bộ nhớ thấp"
+msgid "Unknown USB"
+msgstr ""
 
-msgid "Permission required"
-msgstr "Cần quyền"
+msgid "USB-C Brick"
+msgstr ""
 
-msgid "Enter a name"
-msgstr "Nhập tên"
+msgid "USB-C Type-C"
+msgstr ""
 
-msgid "Enter a value"
-msgstr "Nhập giá trị"
+msgid "USB-C PD"
+msgstr ""
 
-msgid "Search"
-msgstr "Tìm kiếm"
+msgid "AC Power"
+msgstr ""
 
-msgid "Filter"
-msgstr "Bộ lọc"
+msgid "Externel Power 1"
+msgstr ""
 
-msgid "Sort"
-msgstr "Sắp xếp"
+msgid "Externel Power 2"
+msgstr ""
 
-msgid "Ascending"
-msgstr "Tăng dần"
+msgid "Externel Power 3"
+msgstr ""
 
-msgid "Descending"
-msgstr "Giảm dần"
+msgid "Externel Power 4"
+msgstr ""
 
-msgid "Apply filter"
-msgstr "Áp dụng bộ lọc"
+msgid "Externel Power 5"
+msgstr ""
 
-msgid "Clear filter"
-msgstr "Xóa bộ lọc"
+msgid "Externel Power 6"
+msgstr ""
 
-msgid "No results"
-msgstr "Không có kết quả"
+msgid "Externel Power 7"
+msgstr ""
 
-msgid "Loading more…"
-msgstr "Đang tải thêm…"
+msgid "Unknown"
+msgstr ""
 
-msgid "End of list"
-msgstr "Kết thúc danh sách"
+msgid "Nominal"
+msgstr ""
 
-msgid "New"
-msgstr "Mới"
+msgid "Light"
+msgstr ""
 
-msgid "Edit"
-msgstr "Chỉnh sửa"
+msgid "Moderate"
+msgstr ""
 
-msgid "Delete"
-msgstr "Xóa"
+msgid "Heavy"
+msgstr ""
 
-msgid "Add"
-msgstr "Thêm"
+msgid "Trapping"
+msgstr ""
 
-msgid "Remove"
-msgstr "Gỡ bỏ"
-
-msgid "Enable feature"
-msgstr "Bật tính năng"
-
-msgid "Disable feature"
-msgstr "Tắt tính năng"
-
-msgid "Feature enabled"
-msgstr "Tính năng đã bật"
-
-msgid "Feature disabled"
-msgstr "Tính năng đã tắt"
-
-msgid "Billing"
-msgstr "Thanh toán"
-
-msgid "Subscription"
-msgstr "Đăng ký"
-
-msgid "Purchase"
-msgstr "Mua"
-
-msgid "Restore purchase"
-msgstr "Khôi phục mua hàng"
-
-msgid "Trial"
-msgstr "Dùng thử"
-
-msgid "Expired"
-msgstr "Hết hạn"
-
-msgid "Active"
-msgstr "Đang hoạt động"
-
-msgid "Paused"
-msgstr "Tạm dừng"
-
-msgid "Canceled"
-msgstr "Đã hủy"
-
-msgid "Invoice"
-msgstr "Hóa đơn"
-
-msgid "Receipt"
-msgstr "Biên lai"
-
-msgid "Account"
-msgstr "Tài khoản"
-
-msgid "Profile"
-msgstr "Hồ sơ"
-
-msgid "Sign in"
-msgstr "Đăng nhập"
-
-msgid "Sign out"
-msgstr "Đăng xuất"
-
-msgid "Create account"
-msgstr "Tạo tài khoản"
-
-msgid "Forgot password?"
-msgstr "Quên mật khẩu?"
-
-msgid "Change password"
-msgstr "Đổi mật khẩu"
-
-msgid "Old password"
-msgstr "Mật khẩu cũ"
-
-msgid "New password"
-msgstr "Mật khẩu mới"
-
-msgid "Confirm password"
-msgstr "Xác nhận mật khẩu"
-
-msgid "Two-factor authentication"
-msgstr "Xác thực hai yếu tố"
-
-msgid "Enable 2FA"
-msgstr "Bật 2FA"
-
-msgid "Disable 2FA"
-msgstr "Tắt 2FA"
-
-msgid "Recovery codes"
-msgstr "Mã khôi phục"
-
-msgid "Session expired"
-msgstr "Phiên đã hết hạn"
-
-msgid "Sign in required"
-msgstr "Cần đăng nhập"
-
-msgid "Access denied"
-msgstr "Truy cập bị từ chối"
-
-msgid "Session invalid"
-msgstr "Phiên không hợp lệ"
-
-msgid "Token expired"
-msgstr "Token đã hết hạn"
-
-msgid "Refresh token"
-msgstr "Làm mới token"
-
-msgid "Revoke access"
-msgstr "Thu hồi quyền truy cập"
-
-msgid "Sign up"
-msgstr "Đăng ký"
-
-msgid "Already have an account?"
-msgstr "Đã có tài khoản?"
-
-msgid "Terms"
-msgstr "Điều khoản"
-
-msgid "Privacy Policy"
-msgstr "Chính sách Quyền riêng tư"
-
-msgid "License Agreement"
-msgstr "Thỏa thuận cấp phép"
-
-msgid "Changelog"
-msgstr "Nhật ký thay đổi"
-
-msgid "What's new"
-msgstr "Có gì mới"
-
-msgid "Send Feedback"
-msgstr "Gửi phản hồi"
-
-msgid "Report Issue"
-msgstr "Báo cáo lỗi"
-
-msgid "System log"
-msgstr "Nhật ký hệ thống"
-
-msgid "Developer Tools"
-msgstr "Công cụ nhà phát triển"
-
-msgid "Enable experimental features"
-msgstr "Bật tính năng thử nghiệm"
-
-msgid "Show diagnostic data"
-msgstr "Hiển thị dữ liệu chẩn đoán"
-
-msgid "Upload logs"
-msgstr "Tải lên nhật ký"
-
-msgid "Clear cache"
-msgstr "Xóa bộ nhớ đệm"
-
-msgid "Cache cleared"
-msgstr "Đã xóa bộ nhớ đệm"
-
-msgid "Reset to defaults"
-msgstr "Đặt lại về mặc định"
-
-msgid "Accept"
-msgstr "Chấp nhận"
-
-msgid "Decline"
-msgstr "Từ chối"
-
-msgid "Blocked"
-msgstr "Bị chặn"
-
-msgid "Unblocked"
-msgstr "Không còn bị chặn"
-
-msgid "Auto-update"
-msgstr "Tự động cập nhật"
-
-msgid "Manual update"
-msgstr "Cập nhật thủ công"
-
-msgid "Developer Mode"
-msgstr "Chế độ nhà phát triển"
-
-msgid "Diagnostics sent"
-msgstr "Đã gửi chẩn đoán"
-
-msgid "Upload failed"
-msgstr "Tải lên thất bại"
-
-msgid "Upload successful"
-msgstr "Tải lên thành công"
-
-msgid "API Error"
-msgstr "Lỗi API"
-
-msgid "Service unavailable"
-msgstr "Dịch vụ không khả dụng"
-
-msgid "Maintenance mode"
-msgstr "Chế độ bảo trì"
-
-msgid "Beta features"
-msgstr "Tính năng Beta"
-
-msgid "Telemetry"
-msgstr "Thu thập dữ liệu"
-
-msgid "Allow telemetry"
-msgstr "Cho phép thu thập"
-
-msgid "Deny telemetry"
-msgstr "Từ chối thu thập"
-
-msgid "Privacy settings"
-msgstr "Cài đặt quyền riêng tư"
-
-msgid "Export data"
-msgstr "Xuất dữ liệu"
-
-msgid "Import data"
-msgstr "Nhập dữ liệu"
-
-msgid "Data exported"
-msgstr "Đã xuất dữ liệu"
-
-msgid "Data imported"
-msgstr "Đã nhập dữ liệu"
-
-msgid "Invalid file"
-msgstr "Tệp không hợp lệ"
-
-msgid "Unsupported file format"
-msgstr "Định dạng tệp không được hỗ trợ"
-
-msgid "File too large"
-msgstr "Tệp quá lớn"
-
-msgid "Operation completed"
-msgstr "Hoàn tất thao tác"
-
-msgid "Operation failed"
-msgstr "Thao tác thất bại"
-
-msgid "Insufficient permissions"
-msgstr "Quyền không đủ"
-
-msgid "Authentication required"
-msgstr "Cần xác thực"
-
-msgid "Logout"
-msgstr "Đăng xuất"
-
-msgid "Are you sure you want to log out?"
-msgstr "Bạn có chắc muốn đăng xuất không?"
-
-msgid "Signed out"
-msgstr "Đã đăng xuất"
-
-msgid "Signed in as %@"
-msgstr "Đã đăng nhập với %@"
-
-msgid "Language selection"
-msgstr "Chọn ngôn ngữ"
-
-msgid "Auto-detect language"
-msgstr "Tự động phát hiện ngôn ngữ"
-
-msgid "UI scale"
-msgstr "Tỷ lệ giao diện"
-
-msgid "Small"
-msgstr "Nhỏ"
-
-msgid "Medium"
-msgstr "Trung bình"
-
-msgid "Large"
-msgstr "Lớn"
-
-msgid "Accessibility"
-msgstr "Trợ năng"
-
-msgid "VoiceOver"
-msgstr "VoiceOver"
-
-msgid "Screen reader"
-msgstr "Đọc màn hình"
-
-msgid "High contrast"
-msgstr "Độ tương phản cao"
-
-msgid "Reduce motion"
-msgstr "Giảm chuyển động"
-
-msgid "Notifications"
-msgstr "Thông báo"
-
-msgid "Enable notifications"
-msgstr "Bật thông báo"
-
-msgid "Disable notifications"
-msgstr "Tắt thông báo"
-
-msgid "Notification sound"
-msgstr "Âm thông báo"
-
-msgid "Vibrate"
-msgstr "Rung"
-
-msgid "Do not disturb"
-msgstr "Không làm phiền"
-
-msgid "Schedule Do Not Disturb"
-msgstr "Lên lịch Không làm phiền"
-
-msgid "From"
-msgstr "Từ"
-
-msgid "To"
-msgstr "Đến"
-
-msgid "Repeat"
-msgstr "Lặp lại"
-
-msgid "Never"
-msgstr "Không bao giờ"
-
-msgid "Daily"
-msgstr "Hàng ngày"
-
-msgid "Weekly"
-msgstr "Hàng tuần"
-
-msgid "Monthly"
-msgstr "Hàng tháng"
-
-msgid "Yearly"
-msgstr "Hàng năm"
-
-msgid "Advanced diagnostics"
-msgstr "Chẩn đoán nâng cao"
-
-msgid "Collect system report"
-msgstr "Thu thập báo cáo hệ thống"
-
-msgid "Collect battery report"
-msgstr "Thu thập báo cáo pin"
-
-msgid "Collect thermal report"
-msgstr "Thu thập báo cáo nhiệt"
-
-msgid "Report generated"
-msgstr "Đã tạo báo cáo"
-
-msgid "Report failed"
-msgstr "Tạo báo cáo thất bại"
-
-msgid "Email report"
-msgstr "Gửi báo cáo qua Email"
-
-msgid "Attach logs"
-msgstr "Đính kèm nhật ký"
-
-msgid "Include system info"
-msgstr "Bao gồm thông tin hệ thống"
-
-msgid "Privacy notice"
-msgstr "Thông báo quyền riêng tư"
-
-msgid "Data usage"
-msgstr "Sử dụng dữ liệu"
-
-msgid "We collect anonymous usage data to improve the app."
-msgstr "Chúng tôi thu thập dữ liệu sử dụng ẩn danh để cải thiện ứng dụng."
-
-msgid "Do you consent?"
-msgstr "Bạn có đồng ý không?"
-
-msgid "Consent granted"
-msgstr "Đã đồng ý"
-
-msgid "Consent revoked"
-msgstr "Đã thu hồi đồng ý"
-
-msgid "Diagnostics level"
-msgstr "Mức chẩn đoán"
-
-msgid "Minimal"
-msgstr "Tối thiểu"
+msgid "Sleeping"
+msgstr ""
 
 msgid "Normal"
-msgstr "Bình thường"
+msgstr ""
 
-msgid "Full"
-msgstr "Đầy đủ"
+msgid "70% Torch"
+msgstr ""
 
-msgid "Developer log level"
-msgstr "Mức nhật ký nhà phát triển"
+msgid "70% Backlight"
+msgstr ""
 
-msgid "Error"
-msgstr "Lỗi"
+msgid "50% Torch"
+msgstr ""
 
-msgid "Warning"
-msgstr "Cảnh báo"
+msgid "50% Backlight"
+msgstr ""
 
-msgid "Info"
-msgstr "Thông tin"
+msgid "Torch Disabled"
+msgstr ""
 
-msgid "Debug"
-msgstr "Gỡ lỗi"
+msgid "25% Backlight"
+msgstr ""
 
-msgid "Verbose"
-msgstr "Chi tiết"
+msgid "Maps halo Disabled"
+msgstr ""
 
-msgid "Crash reports"
-msgstr "Báo cáo treo ứng dụng"
+msgid "App Terminated"
+msgstr ""
 
-msgid "Send crash reports"
-msgstr "Gửi báo cáo treo"
+msgid "Device Restart"
+msgstr ""
 
-msgid "Don't send"
-msgstr "Không gửi"
+msgid "Ready"
+msgstr ""
 
-msgid "Always send"
-msgstr "Luôn gửi"
+msgid "℃"
+msgstr ""
 
-msgid "Ask before sending"
-msgstr "Hỏi trước khi gửi"
+msgid "%"
+msgstr ""
 
-msgid "Experimental: OBC tuning"
-msgstr "Thử nghiệm: điều chỉnh OBC"
+msgid "mW"
+msgstr ""
 
-msgid "OBC override is experimental and may be ignored by firmware."
-msgstr "Ghi đè OBC đang thử nghiệm và có thể bị firmware bỏ qua."
+msgid "min"
+msgstr ""
 
-msgid "Apply OBC override"
-msgstr "Áp dụng ghi đè OBC"
+msgid "Hr"
+msgstr ""
 
-msgid "OBC override applied"
-msgstr "Đã áp dụng ghi đè OBC"
+msgid "Gas Gauge (Basic)"
+msgstr ""
 
-msgid "OBC override failed"
-msgstr "Áp dụng ghi đè OBC thất bại"
+msgid ""
+"All Gas Gauge metrics are dynamically retrieved from the onboard sensor "
+"array in real time. Should anomalies be detected in specific readings, this "
+"may indicate the presence of unauthorized components or require diagnostics "
+"through Apple Authorised Service Provider."
+msgstr ""
 
-msgid "Battery safety"
-msgstr "An toàn pin"
+msgid "Device Name"
+msgstr ""
 
-msgid "Ensure charging within safe limits."
-msgstr "Đảm bảo sạc trong giới hạn an toàn."
+msgid ""
+"This indicates the name of the current Gas Gauge IC used by the installed "
+"battery."
+msgstr ""
 
-msgid "Safe temperature range"
-msgstr "Phạm vi nhiệt an toàn"
+msgid "Health"
+msgstr ""
 
-msgid "Minimum safe temperature"
-msgstr "Nhiệt độ an toàn tối thiểu"
+msgid "SoC"
+msgstr ""
 
-msgid "Maximum safe temperature"
-msgstr "Nhiệt độ an toàn tối đa"
+msgid "Avg. Temperature"
+msgstr ""
 
-msgid "Thermal throttling"
-msgstr "Giảm hiệu năng do nhiệt"
+msgid "Charging"
+msgstr ""
 
-msgid "Thermal throttling active"
-msgstr "Đang giảm hiệu năng do nhiệt"
+msgid "Full Charge Capacity"
+msgstr ""
 
-msgid "Thermal throttling cleared"
-msgstr "Đã dỡ giảm hiệu năng do nhiệt"
+msgid "Designed Capacity"
+msgstr ""
 
-msgid "Hardware monitoring"
-msgstr "Giám sát phần cứng"
+msgid "Battery Uptime"
+msgstr ""
 
-msgid "Sensor calibration"
-msgstr "Hiệu chuẩn cảm biến"
+msgid "The length of time the Battery Management System (BMS) has been up."
+msgstr ""
 
-msgid "Start calibration"
-msgstr "Bắt đầu hiệu chuẩn"
+msgid "Qmax"
+msgstr ""
 
-msgid "Stop calibration"
-msgstr "Dừng hiệu chuẩn"
+msgid ""
+"Current chemical depth of discharge (DOD₀). The gas gauge updates "
+"information on the DOD₀ based on open-circuit voltage (OCV) readings when in "
+"a relaxed state."
+msgstr ""
 
-msgid "Calibration complete"
-msgstr "Hoàn tất hiệu chuẩn"
+msgid "Passed Charge"
+msgstr ""
 
-msgid "Calibration failed"
-msgstr "Hiệu chuẩn thất bại"
+msgid ""
+"The cumulative capacity of the current charging or discharging cycle. It is "
+"reset to zero with each DOD₀ update."
+msgstr ""
 
-msgid "Factory data"
-msgstr "Dữ liệu gốc nhà máy"
+msgid "Voltage"
+msgstr ""
 
-msgid "View factory settings"
-msgstr "Xem cài đặt gốc"
+msgid "Avg. Current"
+msgstr ""
 
-msgid "Restore factory defaults"
-msgstr "Khôi phục về mặc định nhà máy"
+msgid "Avg. Power"
+msgstr ""
 
-msgid "Factory restore complete"
-msgstr "Khôi phục gốc hoàn tất"
+msgid "Cell Count"
+msgstr ""
 
-msgid "Factory restore failed"
-msgstr "Khôi phục gốc thất bại"
+msgid "Designed Cycle Count"
+msgstr ""
 
-msgid "Support info"
-msgstr "Thông tin hỗ trợ"
+msgid "State of Charge"
+msgstr ""
 
-msgid "Device model"
-msgstr "Mẫu thiết bị"
+msgid "State of Charge (UI)"
+msgstr ""
 
-msgid "OS version"
-msgstr "Phiên bản OS"
+msgid ""
+"The \"Battery Percentage\" displayed exactly on your status bar. This is the "
+"SoC that Apple wants to tell you."
+msgstr ""
 
-msgid "Firmware version"
-msgstr "Phiên bản firmware"
+msgid "Resistance Scale"
+msgstr ""
 
-msgid "Serial number"
-msgstr "Số sê-ri"
+msgid "Battery Serial No."
+msgstr ""
 
-msgid "Hardware revision"
-msgstr "Phiên bản phần cứng"
+msgid "Chemistry ID"
+msgstr ""
 
-msgid "Bootloader"
-msgstr "Bootloader"
+msgid ""
+"Chemistry unique identifier (ChemID) assigned to each battery in Texas "
+"Instruments' database. It ensures accurate calculations and predictions."
+msgstr ""
 
-msgid "Kernel"
-msgstr "Kernel"
+msgid "Flags"
+msgstr ""
 
-msgid "Uptime"
-msgstr "Thời gian hoạt động"
+msgid "True Remaining Capacity"
+msgstr ""
 
-msgid "Last boot"
-msgstr "Khởi động lần cuối"
+msgid "OCV Current"
+msgstr ""
 
-msgid "Installed packages"
-msgstr "Gói đã cài"
+msgid "OCV Voltage"
+msgstr ""
 
-msgid "Service status"
-msgstr "Trạng thái dịch vụ"
+msgid "Max Load Current"
+msgstr ""
 
-msgid "Enable service"
-msgstr "Bật dịch vụ"
+msgid "Max Load Current 2"
+msgstr ""
 
-msgid "Disable service"
-msgstr "Tắt dịch vụ"
+msgid "IT Misc Status"
+msgstr ""
 
-msgid "Service started"
-msgstr "Dịch vụ đã khởi động"
+msgid ""
+"This field refers to the miscellaneous data returned by battery Impedance "
+"Track™ Gas Gauge IC."
+msgstr ""
 
-msgid "Service stopped"
-msgstr "Dịch vụ đã dừng"
+msgid "Simulation Rate"
+msgstr ""
 
-msgid "Service restart required"
-msgstr "Cần khởi động lại dịch vụ"
+msgid ""
+"This field refers to the rate of Gas Gauge performing Impedance Track™ "
+"simulations."
+msgstr ""
 
-msgid "No permission"
-msgstr "Không có quyền"
+msgid "Daily Max SoC"
+msgstr ""
 
-msgid "Admin required"
-msgstr "Cần quyền quản trị"
+msgid "Daily Min SoC"
+msgstr ""
 
-msgid "Contact support"
-msgstr "Liên hệ hỗ trợ"
+msgid "Adapter Details"
+msgstr ""
 
-msgid "Support email"
-msgstr "Email hỗ trợ"
+msgid ""
+"All adapter information is dynamically retrieved from the hardware of the "
+"currently connected adapter (or cable if you are using Lightning ports). If "
+"any of the data is missing, it may indicate that the power source is not "
+"providing the relevant information, or there may be a hardware issue with "
+"the power source."
+msgstr ""
 
-msgid "Support website"
-msgstr "Trang hỗ trợ"
+msgid "Port"
+msgstr ""
 
-msgid "Documentation"
-msgstr "Tài liệu"
+msgid ""
+"Port of currently connected adapter. On macOS, this is the USB port that the "
+"adapter currently attached."
+msgstr ""
 
-msgid "User Manual"
-msgstr "Hướng dẫn sử dụng"
+msgid "Adapter Type"
+msgstr ""
 
-msgid "Release Notes"
-msgstr "Ghi chú phát hành"
+msgid "Compatibility"
+msgstr ""
 
-msgid "Acknowledgements"
-msgstr "Ghi nhận"
+msgid ""
+"This field refers to the Family Code (kIOPSPowerAdapterFamilyKey) of "
+"currently connected power adapter."
+msgstr ""
 
-msgid "Contributors"
-msgstr "Người đóng góp"
+msgid "Reason"
+msgstr ""
 
-msgid "Open-source licenses"
-msgstr "Giấy phép mã nguồn mở"
+msgid ""
+"If this field appears in the list, it indicates that an issue has occurred "
+"or that a condition was met, causing charging to stop."
+msgstr ""
 
-msgid "Third-party libraries"
-msgstr "Thư viện bên thứ ba"
+msgid "Current Rating"
+msgstr ""
 
-msgid "End of file"
-msgstr "Kết thúc tệp"
+msgid ""
+"Current rating of connected power source, this does not indicates the real-"
+"time passing current."
+msgstr ""
+
+msgid "Voltage Rating"
+msgstr ""
+
+msgid ""
+"Voltage rating of connected power source, this does not indicates the real-"
+"time passing voltage."
+msgstr ""
+
+msgid "Input Current"
+msgstr ""
+
+msgid "Real-time input current (IBUS) from the connected power source."
+msgstr ""
+
+msgid "Input Voltage"
+msgstr ""
+
+msgid "Real-time input voltage (VBUS) from the connected power source."
+msgstr ""
+
+msgid "Charging Current"
+msgstr ""
+
+msgid "The real-time passing current to internal battery."
+msgstr ""
+
+msgid "Charging Voltage"
+msgstr ""
+
+msgid "The real-time passing voltage to internal battery."
+msgstr ""
+
+msgid "Charger IC ID"
+msgstr ""
+
+msgid "Model Name"
+msgstr ""
+
+msgid "Manufacturer"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Firmware Version"
+msgstr ""
+
+msgid "Hardware Version"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid ""
+"Short description provided by Apple PMU on current power adapter Family "
+"Code. Sometimes may not set."
+msgstr ""
+
+msgid "Serial No."
+msgstr ""
+
+msgid "PMU Configuration"
+msgstr ""
+
+msgid ""
+"The Configuration values is the max allowed Charging Current configurations."
+msgstr ""
+
+msgid "Charger Configuration"
+msgstr ""
+
+msgid "HVC Mode"
+msgstr ""
+
+msgid ""
+"High Voltage Charging (HVC) Mode may accquired by your power adapter or "
+"system, all supported modes will be listed below."
+msgstr ""
+
+msgid "Inductive Port"
+msgstr ""
+
+msgid "Acc. ID"
+msgstr ""
+
+msgid "Port Type"
+msgstr ""
+
+msgid "Allowed Features"
+msgstr ""
+
+msgid "Accessory Feature Flags, I don't know how to parse it yet."
+msgstr ""
+
+msgid "Product ID"
+msgstr ""
+
+msgid "Vendor ID"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "PPID"
+msgstr ""
+
+msgid "Battery Pack"
+msgstr ""
+
+msgid "This indicates if an accessory is now working as a Battery Pack."
+msgstr ""
+
+msgid "Providing Power"
+msgstr ""
+
+msgid "This indicates if an accessory is now providing power."
+msgstr ""
+
+msgid "Max Capacity"
+msgstr ""
+
+msgid "The accessory battery's Full Charge Capacity."
+msgstr ""
+
+msgid "Current Capacity"
+msgstr ""
+
+msgid "Avg. Charging Current"
+msgstr ""
+
+msgid "Charging Voltage Rating"
+msgstr ""
+
+msgid "Current"
+msgstr ""
+
+msgid "Real-time output current by attached accessory."
+msgstr ""
+
+msgid "Real-time output voltage by attached accessory."
+msgstr ""
+
+msgid "Incoming Current"
+msgstr ""
+
+msgid "Incoming Voltage"
+msgstr ""
+
+msgid "Accepting Charge"
+msgstr ""
+
+msgid "This indicates if accessory is accepting charge."
+msgstr ""
+
+msgid "Acc. Time to Empty"
+msgstr ""
+
+msgid "Acc. Time to Full"
+msgstr ""
+
+msgid "The accessory battery percentage reported by AppleSMC."
+msgstr ""
+
+msgid "Power Mode"
+msgstr ""
+
+msgid "Sleep Power"
+msgstr ""
+
+msgid "Supervised Acc. Attached"
+msgstr ""
+
+msgid "Supervised Transports Restricted"
+msgstr ""
+
+msgid "Inductive FW Mode"
+msgstr ""
+
+msgid "Inductive Region Code"
+msgstr ""
+
+msgid ""
+"This indicates if current inductive accesory is following specific region "
+"configuration."
+msgstr ""
+
+msgid "Inductive Auth Timeout"
+msgstr ""
+
+msgid "Serial Port"
+msgstr ""
+
+msgid "Digital ID"
+msgstr ""
+
+msgid "The \"Chip ID\" of attached accessory."
+msgstr ""
+
+msgid "ID Serial No."
+msgstr ""
+
+msgid "Interface Device Serial Number (ID-SN)."
+msgstr ""
+
+msgid "IM Serial No."
+msgstr ""
+
+msgid "Interface Module Serial Number (MSN)."
+msgstr ""
+
+msgid "Accessory Serial Number (ASN)."
+msgstr ""
+
+msgid "USB Connect State"
+msgstr ""
+
+msgid "USB Charging Volt."
+msgstr ""
+
+msgid "USB Current Config"
+msgstr ""
+
+msgid "External Connected"
+msgstr ""
+
+msgid "Charger Capable"
+msgstr ""
+
+msgid "Not Charging"
+msgstr ""
+
+msgid "Unspecified"
+msgstr ""
+
+msgid "Configured Mode"
+msgstr ""
+
+msgid "Active Mode"
+msgstr ""
+
+msgid "Limit"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Published Type"
+msgstr ""
+
+msgid "Accelerometer"
+msgstr ""
+
+msgid "Gyroscope"
+msgstr ""
+
+msgid "Compass"
+msgstr ""
+
+msgid "Atmos Pressure Sensor"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Low"
+msgstr ""
+
+msgid "On"
+msgstr ""
+
+msgid "High Current"
+msgstr ""
+
+msgid "High Current (BM3)"
+msgstr ""
+
+msgid "Low Voltage"
+msgstr ""
+
+msgid "Charger"
+msgstr ""
+
+msgid "Host"
+msgstr ""
+
+msgid "Host (alternate config)"
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Device (Auth required)"
+msgstr ""
+
+msgid "Virtual"
+msgstr ""
+
+msgid "USB-C"
+msgstr ""
+
+msgid "USB-A"
+msgstr ""
+
+msgid "Mini DP"
+msgstr ""
+
+msgid "FireWire 800"
+msgstr ""
+
+msgid "HDMI"
+msgstr ""
+
+msgid "Audio Jack (Mini)"
+msgstr ""
+
+msgid "Ethernet"
+msgstr ""
+
+msgid "MagSafe"
+msgstr ""
+
+msgid "MagSafe 2"
+msgstr ""
+
+msgid "SD Card"
+msgstr ""
+
+msgid "Lightning"
+msgstr ""
+
+msgid "30-Pin"
+msgstr ""
+
+msgid "Inductive"
+msgstr ""
+
+msgid "Smart Connector"
+msgstr ""
+
+msgid "Display Port"
+msgstr ""
+
+msgid "MagSafe 3"
+msgstr ""
+
+msgid "Contactless"
+msgstr ""
+
+msgid "Wireless"
+msgstr ""
+
+msgid "RX"
+msgstr ""
+
+msgid "TX"
+msgstr ""
+
+msgid "TEST"
+msgstr ""
+
+msgid "INVALID"
+msgstr ""
+
+msgid "Supported List"
+msgstr ""
+
+msgid "Detached"
+msgstr ""
+
+msgid "Base"
+msgstr ""
+
+msgid "Offset"
+msgstr ""
+
+msgid "Max"
+msgstr ""
+
+msgid "Undefined"
+msgstr ""
+
+msgid "Negative Power Value"
+msgstr ""
+
+msgid "Not Enough Data Points"
+msgstr ""
