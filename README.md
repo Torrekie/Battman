@@ -108,7 +108,7 @@ Please file [issues](../../issues/new) if Battman not working correctly on your 
 
 ### License
 
-MIT for now, may become [non-free license](LICENSE/LICENSE.md) later (at least MIT for now), you won't blame me if I want to make living with this right?
+As of 27th Sat Sep 2025 UTC+0, Battman uses [non-free license](LICENSE/LICENSE.md) instead of MIT, you won't blame me if I want to make living with this right?
 
 ## Disclaimer
 

@@ -104,7 +104,7 @@ make -C Battman all
 
 ### 许可证
 
-目前为MIT，之后可能会转变为[非自由协议](../LICENSE/LICENSE.md)（至少目前是MIT），你不会因为我想以此维持生计而怪罪于我，对吧？
+自 27th Sat Sep 2025 UTC+0 起，Battman 由 MIT 转变为[非自由协议](../LICENSE/LICENSE.md)，你不会因为我想以此维持生计而怪罪于我，对吧？
 
 ## 免责声明
 
