@@ -1,4 +1,9 @@
 #import "NightShiftVectorIcon.h"
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
+#else
+#import <Cocoa/Cocoa.h>
+#endif
 
 #define NIGHT_SHIFT_ICON_WIDTH 30
 #define NIGHT_SHIFT_ICON_HEIGHT 30

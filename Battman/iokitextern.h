@@ -90,6 +90,7 @@ extern int IOServiceAddMatchingNotification(IONotificationPortRef notifyPort, co
 extern CFRunLoopSourceRef IONotificationPortGetRunLoopSource(IONotificationPortRef notify);
 extern void IONotificationPortDestroy(IONotificationPortRef notify);
 extern CFTypeRef IORegistryEntrySearchCFProperty(io_registry_entry_t entry, const char *plane, CFStringRef key, CFAllocatorRef allocator, uint32_t options);
+extern io_registry_entry_t IORegistryEntryFromPath(mach_port_t, const char *);
 extern kern_return_t IOCreatePlugInInterfaceForService(io_service_t service, CFUUIDRef pluginType, CFUUIDRef interfaceType, IOCFPlugInInterface ***theInterface, SInt32 *theScore);
 extern kern_return_t IORegistryEntryGetRegistryEntryID(io_registry_entry_t entry, uint64_t *entryID);
 __END_DECLS

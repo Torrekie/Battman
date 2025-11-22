@@ -15,6 +15,7 @@
 #include "cobjc/UNNotificationRequest.h"
 #include "gtkextern.h"
 #include "intlextern.h"
+#include "iokitextern.h"
 
 #if __has_include(<libproc.h>)
 #include <libproc.h>
@@ -709,6 +710,159 @@ bool is_maccatalyst(void) {
 
 bool is_simulator(void) {
 	return getenv("SIMULATOR_DEVICE_NAME") != NULL;
+}
+
+bool is_ipad(void) {
+	static dispatch_once_t onceToken;
+	static bool            value;
+
+	dispatch_once(&onceToken, ^{
+		const char *simModel = NULL;
+		if (is_simulator() && (simModel = getenv("SIMULATOR_MODEL_IDENTIFIER")) != NULL) {
+			value = (strncmp(simModel, "iPad", 4) == 0);
+			return;
+		}
+
+		int    mib[2] = { CTL_HW, HW_MACHINE };
+		size_t len    = 0;
+		if (sysctl(mib, 2, NULL, &len, NULL, 0) != 0 || len == 0) {
+			value = false;
+			return;
+		}
+		char *machine = malloc(len + 1);
+		if (!machine) {
+			value = false;
+			return;
+		}
+		if (sysctl(mib, 2, machine, &len, NULL, 0) != 0) {
+			free(machine);
+			value = false;
+			return;
+		}
+		machine[len] = '\0';
+		value        = (strncmp(machine, "iPad", 4) == 0);
+		free(machine);
+	});
+
+	return value;
+}
+
+static bool simulator_has_homebutton(const char *model) {
+	if (!model)
+		return false;
+
+	int major = 0, minor = 0;
+	if (strncmp(model, "iPhone", 6) == 0) {
+		if (sscanf(model, "iPhone%d,%d", &major, &minor) != 2)
+			return false;
+		/* Pre-iPhone X have Home button */
+		if (major <= 9)
+			return true;
+		/* iPhone 8 / 8 Plus vs X: 10,3 and 10,6 are X (no Home) */
+		if (major == 10)
+			return !(minor == 3 || minor == 6);
+		/* SE 2 and SE 3 have Home button */
+		if (major == 12 && minor == 8)
+			return true; /* iPhone SE (2nd generation) */
+		if (major == 14 && minor == 6)
+			return true; /* iPhone SE (3rd generation) */
+		return false;
+	}
+	if (strncmp(model, "iPad", 4) == 0) {
+		/* Most iPads have a Home button; exclude known full-screen models */
+		if (strncmp(model, "iPad8,", 6) == 0)
+			return false; /* iPad Pro (3rd/4th gen, etc.) */
+		if (sscanf(model, "iPad%d,%d", &major, &minor) == 2) {
+			/* iPad Pro 11" / 12.9" M1/M2 and iPad 10th gen (approximate list) */
+			if (major == 13 && ((minor >= 4 && minor <= 7) || (minor >= 8 && minor <= 11) || (minor >= 16 && minor <= 19)))
+				return false;
+			if (major == 14 && (minor >= 3 && minor <= 6))
+				return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool has_homebutton(void) {
+#if TARGET_OS_IPHONE
+	static dispatch_once_t onceToken;
+	static bool            value;
+
+	dispatch_once(&onceToken, ^{
+		const char *simModel = NULL;
+		if (is_simulator() && (simModel = getenv("SIMULATOR_MODEL_IDENTIFIER")) != NULL) {
+			value = simulator_has_homebutton(simModel);
+			return;
+		}
+
+		if (!MGGetSInt32AnswerPtr) {
+			value = false;
+			return;
+		}
+
+		SInt32 hwValue = MGGetSInt32AnswerPtr(CFSTR("JwLB44/jEB8aFDpXQ16Tuw"), 0);
+		if (hwValue == 2) {
+			value = false;
+			return;
+		}
+		value = true;
+	});
+
+	return value;
+#else
+	return false;
+#endif
+}
+
+static bool simulator_has_island_notch(const char *model) {
+	if (!model)
+		return false;
+
+	int major = 0, minor = 0;
+	if (sscanf(model, "iPhone%d,%d", &major, &minor) != 2)
+		return false;
+
+	/* iPhone 14 and earlier */
+	if (major < 15)
+		return false;
+	/* iPhone 14 Pro/Pro Max */
+	if (major == 15 && (minor == 2 || minor == 3))
+		return true;
+	/* iPhone 15 Pro/Pro Max and above (except iPhone 16e) */
+	if (major >= 16 && !(major == 17 && minor == 5))
+		return true;
+
+	return false;
+}
+
+bool has_island_notch(void) {
+	static dispatch_once_t onceToken;
+	static bool            value;
+
+	dispatch_once(&onceToken, ^{
+		const char *simModel = NULL;
+		if (is_simulator() && (simModel = getenv("SIMULATOR_MODEL_IDENTIFIER")) != NULL) {
+			value = simulator_has_island_notch(simModel);
+			return;
+		}
+
+		io_registry_entry_t entry = IORegistryEntryFromPath(kIOMasterPortDefault, "IODeviceTree:/product");
+		if (!entry) {
+			value = false;
+			return;
+		}
+		CFTypeRef prop = IORegistryEntryCreateCFProperty(entry, CFSTR("island-notch-location"), kCFAllocatorDefault, 0);
+		IOObjectRelease(entry);
+		if (!prop) {
+			value = false;
+			return;
+		}
+		CFRelease(prop);
+		value = true;
+	});
+
+	return value;
 }
 
 int mkdir_p(const char *path, mode_t mode) {

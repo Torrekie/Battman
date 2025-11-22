@@ -1,4 +1,5 @@
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 @interface TrueToneVectorIcon : NSObject
 

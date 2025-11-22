@@ -5,12 +5,19 @@
 //  Created by Torrekie on 2025/11/15.
 //
 
+#import "ObjCExt/UIScreen+Auto.h"
 #import "ObjCExt/UIColor+compat.h"
 #import "ObjCExt/CALayer+smoothCorners.h"
 #import "common.h"
 #import "BrightnessCardCell.h"
 #import "CGIconSet/NightShiftVectorIcon.h"
 #import "CGIconSet/TrueToneVectorIcon.h"
+#import "CGIconSet/IPhoneVectorIcon.h"
+#import "CGIconSet/IPhoneD7VectorIcon.h"
+#import "CGIconSet/IPhoneHomeButtonVectorIcon.h"
+#import "CGIconSet/IPadVectorIcon.h"
+#import "CGIconSet/IPadHomeButtonVectorIcon.h"
+#import "CGIconSet/DesktopVectorIcon.h"
 
 extern UIImage *imageForSFProGlyph(NSString *glyph, NSString *fontName, CGFloat fontSize, UIColor *tintColor);
 extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
@@ -53,13 +60,14 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
 	[super traitCollectionDidChange:previousTraitCollection];
-	if (self.traitCollection.verticalSizeClass != previousTraitCollection.verticalSizeClass) {
+	if (self.traitCollection.verticalSizeClass != previousTraitCollection.verticalSizeClass ||
+		self.traitCollection.horizontalSizeClass != previousTraitCollection.horizontalSizeClass) {
 		[self _updateLayoutForOrientation];
 	}
 
 	if (@available(iOS 12.0, *)) {
 		if (self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle) {
-			BOOL isLandscape = self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact;
+			BOOL isLandscape = [self _isLandscapeLayout];
 			[self _updateNightShiftLabelWithFontSize:isLandscape ? 14 : 15];
 			[self _updateTrueToneLabelWithFontSize:isLandscape ? 14 : 15];
 		}
@@ -92,11 +100,37 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	self.iconImageView.translatesAutoresizingMaskIntoConstraints = NO;
 	self.iconImageView.contentMode = UIViewContentModeScaleAspectFit;
 	self.iconImageView.tintColor = [UIColor compatGrayColor];
+	CGImageRef baseCGImage = NULL;
 
-#warning Use custom CGIconSet
-	if (@available(iOS 13.0, *)) {
-		UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:28 weight:UIImageSymbolWeightMedium];
-		self.iconImageView.image = [UIImage systemImageNamed:@"iphone" withConfiguration:config];
+	if (is_maccatalyst()) {
+		baseCGImage = [DesktopVectorIcon DesktopCGImage];
+	} else {
+		if (is_ipad()) {
+			if (has_homebutton())
+				baseCGImage = [IPadHomeButtonVectorIcon IPadHomeButtonCGImage];
+			else
+				baseCGImage = [IPadVectorIcon IPadCGImage];
+		} else {
+			if (has_homebutton()) {
+				baseCGImage = [IPhoneHomeButtonVectorIcon IPhoneHomeButtonCGImage];
+			} else if (has_island_notch()) {
+				baseCGImage = [IPhoneD7VectorIcon IPhoneD7CGImage];
+			} else {
+				baseCGImage = [IPhoneVectorIcon IPhoneCGImage];
+			}
+		}
+	}
+
+	if (baseCGImage) {
+		UIImage *baseImage = [UIImage imageWithCGImage:baseCGImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+		CGSize intrinsicSize = baseImage.size;
+		CGFloat maxSide = 32.0;
+		CGFloat scale = maxSide / MAX(intrinsicSize.width, intrinsicSize.height);
+		if (scale > 1.0)
+			scale = 1.0;
+		CGSize iconTargetSize = CGSizeMake(intrinsicSize.width * scale, intrinsicSize.height * scale);
+		UIImage *tinted = redrawUIImage(baseImage, self.iconImageView.tintColor, iconTargetSize);
+		self.iconImageView.image = tinted ?: baseImage;
 	}
 	[self.iconBackgroundView addSubview:self.iconImageView];
 	
@@ -255,8 +289,15 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	];
 }
 
+- (BOOL)_isLandscapeLayout {
+	UIWindow *window = self.window ?: self.contentView.window;
+	CGFloat width = window ? window.bounds.size.width : [UIScreen autoScreen].bounds.size.width;
+	BOOL wideRegular = (width >= 700.0 && self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular);
+	return (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) || wideRegular;
+}
+
 - (void)_updateLayoutForOrientation {
-	BOOL isLandscape = self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact;
+	BOOL isLandscape = [self _isLandscapeLayout];
 	
 	if (isLandscape) {
 		[NSLayoutConstraint deactivateConstraints:self.portraitConstraints];

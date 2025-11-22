@@ -427,6 +427,30 @@
 		68E6745E2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68E6745F2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68E674602ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
+		68E674922ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
+		68E674932ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
+		68E674942ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
+		68E674952ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
+		68E674962ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
+		68E674972ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
+		68E674982ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
+		68E674992ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
+		68E6749A2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
+		68E6749B2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
+		68E6749C2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
+		68E6749D2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
+		68E6749E2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
+		68E6749F2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
+		68E674A02ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
+		68E674A12ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
+		68E674A22ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
+		68E674A32ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
+		68E674A42ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
+		68E674A52ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
+		68E674A62ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
+		68E674A72ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
+		68E674A82ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
+		68E674A92ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
@@ -2015,6 +2039,18 @@
 		68E674562ED05349006F94DE /* CardProgressView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CardProgressView.h; sourceTree = "<group>"; };
 		68E674572ED05349006F94DE /* VirtBriCardCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VirtBriCardCell.m; sourceTree = "<group>"; };
 		68E674582ED05349006F94DE /* CardProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CardProgressView.m; sourceTree = "<group>"; };
+		68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPadHomeButtonVectorIcon.m; sourceTree = "<group>"; };
+		68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPhoneD7VectorIcon.m; sourceTree = "<group>"; };
+		68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPhoneVectorIcon.m; sourceTree = "<group>"; };
+		68E674892ED1A01B006F94DE /* IPhoneVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPhoneVectorIcon.h; sourceTree = "<group>"; };
+		68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPadVectorIcon.m; sourceTree = "<group>"; };
+		68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DesktopVectorIcon.m; sourceTree = "<group>"; };
+		68E6748C2ED1A01B006F94DE /* IPadVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPadVectorIcon.h; sourceTree = "<group>"; };
+		68E6748D2ED1A01B006F94DE /* DesktopVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DesktopVectorIcon.h; sourceTree = "<group>"; };
+		68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IPhoneHomeButtonVectorIcon.m; sourceTree = "<group>"; };
+		68E6748F2ED1A01B006F94DE /* IPhoneD7VectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPhoneD7VectorIcon.h; sourceTree = "<group>"; };
+		68E674902ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPhoneHomeButtonVectorIcon.h; sourceTree = "<group>"; };
+		68E674912ED1A01B006F94DE /* IPadHomeButtonVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IPadHomeButtonVectorIcon.h; sourceTree = "<group>"; };
 		68E938992D58980B00223285 /* iokit_connection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iokit_connection.h; sourceTree = "<group>"; };
 		68E9389A2D58980B00223285 /* iokit_connection.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = iokit_connection.c; sourceTree = "<group>"; };
 		68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLBatteryUIMoveableGraphView.m; sourceTree = "<group>"; };
@@ -2125,6 +2161,18 @@
 		68336DE82E979C4400E9F180 /* CGIconSet */ = {
 			isa = PBXGroup;
 			children = (
+				68E6748D2ED1A01B006F94DE /* DesktopVectorIcon.h */,
+				68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */,
+				68E674912ED1A01B006F94DE /* IPadHomeButtonVectorIcon.h */,
+				68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */,
+				68E6748C2ED1A01B006F94DE /* IPadVectorIcon.h */,
+				68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */,
+				68E6748F2ED1A01B006F94DE /* IPhoneD7VectorIcon.h */,
+				68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */,
+				68E674902ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.h */,
+				68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */,
+				68E674892ED1A01B006F94DE /* IPhoneVectorIcon.h */,
+				68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */,
 				68D800C02EC9CD700012B84A /* NightShiftVectorIcon.h */,
 				68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */,
 				68D800C12EC9CD700012B84A /* TrueToneVectorIcon.h */,
@@ -14943,6 +14991,7 @@
 				684114892E5323E2001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D092E6C361100FECDF5 /* UPSMonitor.m in Sources */,
 				6841148A2E5323E2001B76B6 /* ChargingManagementViewController.m in Sources */,
+				68E674972ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
 				6841148B2E5323E2001B76B6 /* BatteryInfoTableViewCell.m in Sources */,
 				6841148C2E5323E2001B76B6 /* selfcheck.c in Sources */,
 				684972642EACA13300C9C58A /* UITextFieldStepper.m in Sources */,
@@ -14950,6 +14999,7 @@
 				6841148E2E5323E2001B76B6 /* Constants.m in Sources */,
 				68CFB5E42EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				6841148F2E5323E2001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
+				68E674A72ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
 				684114902E5323E2001B76B6 /* DividerView.m in Sources */,
 				68E6745A2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684114912E5323E2001B76B6 /* DatePickerTableViewCell.m in Sources */,
@@ -14960,6 +15010,7 @@
 				684972EA2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				68C0C7402E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				684114952E5323E2001B76B6 /* wrapper.c in Sources */,
+				68E674A32ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
 				684114962E5323E2001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D082E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
 				684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
@@ -15002,6 +15053,8 @@
 				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
 				68CFB5EA2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				684114AF2E5323E2001B76B6 /* ThermalTunesViewContoller.m in Sources */,
+				68E6749B2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */,
+				68E6749F2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
 				684114B02E5323E2001B76B6 /* SliderTableViewCell.m in Sources */,
 				68336E842EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
 				684114B12E5323E2001B76B6 /* BatteryDetailsViewController.m in Sources */,
@@ -15009,6 +15062,7 @@
 				684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684114B32E5323E2001B76B6 /* common.c in Sources */,
 				683B2C5E2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
+				68E674932ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
 				68E674492ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				684114B42E5323E2001B76B6 /* DonationViewController.m in Sources */,
 				684114B52E5323E2001B76B6 /* SettingsViewController.m in Sources */,
@@ -15033,6 +15087,7 @@
 				684114DF2E57BDE7001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D0A2E6C361100FECDF5 /* UPSMonitor.m in Sources */,
 				684114E02E57BDE7001B76B6 /* ChargingManagementViewController.m in Sources */,
+				68E674982ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
 				684114E12E57BDE7001B76B6 /* BatteryInfoTableViewCell.m in Sources */,
 				684114E22E57BDE7001B76B6 /* selfcheck.c in Sources */,
 				684972652EACA13300C9C58A /* UITextFieldStepper.m in Sources */,
@@ -15040,6 +15095,7 @@
 				684114E42E57BDE7001B76B6 /* Constants.m in Sources */,
 				68CFB5E52EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				684114E52E57BDE7001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
+				68E674A82ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
 				684114E62E57BDE7001B76B6 /* DividerView.m in Sources */,
 				68E6745B2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684114E72E57BDE7001B76B6 /* DatePickerTableViewCell.m in Sources */,
@@ -15050,6 +15106,7 @@
 				684972EB2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				68C0C7412E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				684114EB2E57BDE7001B76B6 /* wrapper.c in Sources */,
+				68E674A42ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
 				684114EC2E57BDE7001B76B6 /* NSData+HexString.m in Sources */,
 				683B2D072E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
 				684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
@@ -15092,6 +15149,8 @@
 				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
 				68CFB5EB2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
 				684115052E57BDE7001B76B6 /* ThermalTunesViewContoller.m in Sources */,
+				68E6749C2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */,
+				68E674A02ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
 				684115062E57BDE7001B76B6 /* SliderTableViewCell.m in Sources */,
 				68336E852EA3891A00E9F180 /* SegmentedTextField.m in Sources */,
 				684115072E57BDE7001B76B6 /* BatteryDetailsViewController.m in Sources */,
@@ -15099,6 +15158,7 @@
 				684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684115092E57BDE7001B76B6 /* common.c in Sources */,
 				683B2C5F2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
+				68E674942ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
 				68E6744A2ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				6841150A2E57BDE7001B76B6 /* DonationViewController.m in Sources */,
 				6841150B2E57BDE7001B76B6 /* SettingsViewController.m in Sources */,
@@ -15131,6 +15191,7 @@
 				6849726F2EACB71B00C9C58A /* BatteryCellView.m in Sources */,
 				684972702EACB71B00C9C58A /* UPSMonitor.m in Sources */,
 				684972712EACB71B00C9C58A /* ChargingManagementViewController.m in Sources */,
+				68E674992ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
 				684972722EACB71B00C9C58A /* BatteryInfoTableViewCell.m in Sources */,
 				684972732EACB71B00C9C58A /* selfcheck.c in Sources */,
 				684972742EACB71B00C9C58A /* UITextFieldStepper.m in Sources */,
@@ -15138,6 +15199,7 @@
 				684972762EACB71B00C9C58A /* Constants.m in Sources */,
 				684972772EACB71B00C9C58A /* MultiSelectSegmentedControl.m in Sources */,
 				684972782EACB71B00C9C58A /* DividerView.m in Sources */,
+				68E674A92ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
 				684972792EACB71B00C9C58A /* DatePickerTableViewCell.m in Sources */,
 				68E6745C2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				6849727A2EACB71B00C9C58A /* BattmanVectorIcon.m in Sources */,
@@ -15148,6 +15210,7 @@
 				6849727F2EACB71B00C9C58A /* wrapper.c in Sources */,
 				684972802EACB71B00C9C58A /* NSData+HexString.m in Sources */,
 				684973352EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
+				68E674A52ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
 				684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */,
 				684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */,
 				684972832EACB71B00C9C58A /* SimpleTemperatureViewController.m in Sources */,
@@ -15190,6 +15253,8 @@
 				684972A12EACB71B00C9C58A /* SVG.m in Sources */,
 				684972A22EACB71B00C9C58A /* ThermalTunesViewContoller.m in Sources */,
 				684972A32EACB71B00C9C58A /* SliderTableViewCell.m in Sources */,
+				68E6749D2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */,
+				68E674A12ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
 				684972A42EACB71B00C9C58A /* SegmentedTextField.m in Sources */,
 				68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				684972A52EACB71B00C9C58A /* BatteryDetailsViewController.m in Sources */,
@@ -15197,6 +15262,7 @@
 				684972A72EACB71B00C9C58A /* common.c in Sources */,
 				684972A82EACB71B00C9C58A /* DatePickerCompactButton.m in Sources */,
 				684972A92EACB71B00C9C58A /* DonationViewController.m in Sources */,
+				68E674952ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
 				68E6744B2ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				684972AA2EACB71B00C9C58A /* SettingsViewController.m in Sources */,
 				684972AB2EACB71B00C9C58A /* ChargingLimitViewController.m in Sources */,
@@ -15222,6 +15288,7 @@
 				687743462D4F6C7800375A2C /* BatteryCellView.m in Sources */,
 				6838BF832DC27F1E007EB66C /* ChargingManagementViewController.m in Sources */,
 				687743482D4F6C7800375A2C /* BatteryInfoTableViewCell.m in Sources */,
+				68E6749A2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */,
 				68B2914A2DDC76B10089BA1F /* selfcheck.c in Sources */,
 				68B2913D2DD86AAB0089BA1F /* accessory.c in Sources */,
 				68AE40BD2D8EB8870023D7B0 /* Constants.m in Sources */,
@@ -15243,9 +15310,12 @@
 				687743372D4E08AD00375A2C /* BatteryInfoViewController.m in Sources */,
 				68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				687743472D4F6C7800375A2C /* SPWaterProgressIndicatorView.m in Sources */,
+				68E674922ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
 				68D800BA2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				6833A8C92DA3C6E500B71299 /* WarnAccessoryView.m in Sources */,
 				686AECD52D3B93CD0059ECD0 /* main.m in Sources */,
+				68E674A62ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
+				68E6749E2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
 				68AE40BC2D8EB8870023D7B0 /* StackViewGestureHandler.m in Sources */,
 				68FBDCE82DE1A1D40057870A /* protect.S in Sources */,
 				68B5FF302D85617400919BC2 /* TemperatureInfoTableViewCell.m in Sources */,
@@ -15273,6 +15343,7 @@
 				684972FC2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				6838BF6B2DB8D06B007EB66C /* licensing.S in Sources */,
 				68C0C7442E93BA3C006F73EA /* SVG.m in Sources */,
+				68E674A22ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
 				68336E882EA4E03F00E9F180 /* BattmanPrefs.m in Sources */,
 				684575AD2E3E038800618DFD /* ThermalTunesViewContoller.m in Sources */,
 				68C0C73F2E93B93E006F73EA /* UIImage+SVG.m in Sources */,
@@ -15289,6 +15360,7 @@
 				68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				68D800842EC5B8140012B84A /* dcp.c in Sources */,
 				68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
+				68E674962ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
 				683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */,
 				68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */,
 				68336E832EA3891900E9F180 /* SegmentedTextField.m in Sources */,

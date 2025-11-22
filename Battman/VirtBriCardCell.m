@@ -6,6 +6,7 @@
 //
 
 #import "ObjCExt/UIColor+compat.h"
+#import "ObjCExt/UIScreen+Auto.h"
 #import "ObjCExt/CALayer+smoothCorners.h"
 #import "common.h"
 #import "VirtBriCardCell.h"
@@ -34,6 +35,7 @@
     if (self) {
         [self _configureView];
         [self _setupConstraints];
+        [self _updateLayoutForOrientation];
     }
     return self;
 }
@@ -188,6 +190,35 @@
         [self.edrLabel.centerXAnchor constraintEqualToAnchor:self.edrContainer.centerXAnchor],
         [self.edrLabel.centerYAnchor constraintEqualToAnchor:self.edrContainer.centerYAnchor],
     ]];
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+	[super traitCollectionDidChange:previousTraitCollection];
+	if (self.traitCollection.verticalSizeClass != previousTraitCollection.verticalSizeClass ||
+		self.traitCollection.horizontalSizeClass != previousTraitCollection.horizontalSizeClass) {
+		[self _updateLayoutForOrientation];
+	}
+}
+
+- (void)_updateLayoutForOrientation {
+	UIWindow *window = self.window ?: self.contentView.window;
+	CGFloat width = window ? window.bounds.size.width : [UIScreen autoScreen].bounds.size.width;
+	BOOL wideRegular = (width >= 700.0 && self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular);
+	BOOL isLandscape = (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) || wideRegular;
+
+	if (isLandscape) {
+		self.brightnessTitleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightLight];
+		self.brightnessPercentageLabel.font = [UIFont systemFontOfSize:24 weight:UIFontWeightSemibold];
+		self.nitsProgressView.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightLight];
+		self.dimmingLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+		self.edrLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+	} else {
+		self.brightnessTitleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightLight];
+		self.brightnessPercentageLabel.font = [UIFont systemFontOfSize:28 weight:UIFontWeightSemibold];
+		self.nitsProgressView.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightLight];
+		self.dimmingLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+		self.edrLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+	}
 }
 
 - (void)_updateDimmingBadge {

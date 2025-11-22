@@ -188,6 +188,9 @@ const char *second_to_datefmt(uint64_t second);
 int         is_rosetta(void);
 bool        is_maccatalyst(void);
 bool        is_simulator(void);
+bool        is_ipad(void);
+bool        has_homebutton(void);
+bool        has_island_notch(void);
 
 const char *battman_config_dir(void);
 const char *lang_cfg_file(void);

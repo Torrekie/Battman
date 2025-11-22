@@ -1,4 +1,9 @@
 #import "TrueToneVectorIcon.h"
+#if TARGET_OS_IPHONE
+#import <UIKit/UIKit.h>
+#else
+#import <Cocoa/Cocoa.h>
+#endif
 
 #define TRUE_TONE_ICON_WIDTH 30
 #define TRUE_TONE_ICON_HEIGHT 30

@@ -485,6 +485,12 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 				// But they still had to report a real SoC so that indicating actual conditions.
 				sprintf(errmsg, "%s\n%s: %ld", _C("Unusual Remaining Capacity, a non-genuine battery component may be in use."), _C("Estimated Remaining"), lrintf((float)full_cap * gGauge.StateOfCharge / 100.0f));
 				*str = errmsg;
+			} else if ((gGauge.RemainingCapacity - 10) > gGauge.TrueRemainingCapacity) {
+				// Battery is lying
+				// TrueRemainingCapacity is calculated by device, not GGIC
+				// So the diff would not exceed 1 normally, we generously allowing 10 here
+				code = WARN_UNUSUAL;
+				*str = _C("Unusual Remaining Capacity, a non-genuine battery component may be in use.");
 			} else if (remain_cap == 0) {
 				code = WARN_EMPTYVAL;
 				*str = _C("Remaining Capacity not detected.");
