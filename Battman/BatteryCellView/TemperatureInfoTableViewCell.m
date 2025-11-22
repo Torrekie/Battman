@@ -103,6 +103,14 @@
     return self;
 }
 
+- (void)updatePercentage:(CGFloat)percentage {
+    [self.arcView rotatePointerToPercentage:percentage];
+}
+
+- (void)updatePercentage:(CGFloat)percentage duration:(NSTimeInterval)duration {
+    [self.arcView rotatePointerToPercentage:percentage duration:duration];
+}
+
 #pragma clang diagnostic pop
 
 @end
@@ -127,8 +135,20 @@
 	UILabel *temperatureLabel = [UILabel new];
 	temperatureLabel.lineBreakMode = NSLineBreakByWordWrapping;
 	temperatureLabel.numberOfLines = 0;
+	[self.contentView addSubview:temperatureLabel];
+	temperatureLabel.translatesAutoresizingMaskIntoConstraints = NO;
+	[temperatureLabel.rightAnchor constraintEqualToAnchor:self.rightAnchor constant:-20].active = 1;
+	[temperatureLabel.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = 1;
+	[temperatureLabel.heightAnchor constraintEqualToAnchor:self.heightAnchor multiplier:0.8].active = 1;
+	[temperatureLabel.leftAnchor constraintEqualToAnchor:temperatureCell.rightAnchor constant:20].active = 1;
 
-	NSString *finalText;
+	_temperatureCell = temperatureCell;
+	_temperatureLabel = temperatureLabel;
+	return self;
+}
+
+- (void)updateTemperatureInfo {
+	NSString *finalText = @"";
 	typedef enum {
 		TEMP_NULL = 0,
 		TEMP_BATT = (1 << 0),
@@ -155,7 +175,11 @@
 	float snsrtemp = getSensorAvgTemperature();
 	if (snsrtemp != -1) {
 		got_temp |= TEMP_SNSR;
-		finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
+		if (finalText.length > 0) {
+			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
+		} else {
+			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
+		}
 	}
 
 	// I've seen a broken screen that not reporting this, so this could also be a way to check screen sanity
@@ -163,7 +187,11 @@
 	double scrntemp = iomfb_primary_screen_temperature();
 	if (scrntemp != -1) {
 		got_temp |= TEMP_SCRN;
-		finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Main Screen"), scrntemp];
+		if (finalText.length > 0) {
+			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Main Screen"), scrntemp];
+		} else {
+			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Main Screen"), scrntemp];
+		}
 	}
 
 	float minVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MIN];
@@ -174,12 +202,19 @@
 #define TEMP_TO_PERCENTAGE(x) (x > maxVal) ? 1.0 : (x < minVal ? 0.0 : (x - minVal) / (maxVal - minVal))
 	// Temp meter anim
 	DBGLOG(@"TEMP_TO_PERCENTAGE(batttemp: %f): %f", batttemp, TEMP_TO_PERCENTAGE(batttemp));
+	
+	// Cancel existing timer if any
+	if (self.timerSource) {
+		dispatch_source_cancel(self.timerSource);
+		self.timerSource = nil;
+	}
+	
 	if (got_temp & TEMP_BATT) {
-		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(batttemp)];
+		[self.temperatureCell updatePercentage:TEMP_TO_PERCENTAGE(batttemp)];
 	} else if (got_temp & TEMP_SNSR) {
-		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(snsrtemp)];
+		[self.temperatureCell updatePercentage:TEMP_TO_PERCENTAGE(snsrtemp)];
 	} else if (got_temp & TEMP_SCRN) {
-		[[temperatureCell arcView] rotatePointerToPercentage:TEMP_TO_PERCENTAGE(scrntemp)];
+		[self.temperatureCell updatePercentage:TEMP_TO_PERCENTAGE(scrntemp)];
 	} else {
 		finalText = _("Who moved my temperature sensors?");
 		dispatch_queue_t queue = dispatch_get_main_queue();
@@ -188,22 +223,13 @@
 		dispatch_source_set_event_handler(self.timerSource, ^{
 			float percent = (arc4random_uniform(300)) / 100.0f;
 			float duration = (arc4random_uniform(101)) / 100.0f;
-			[[self.temperatureCell arcView] rotatePointerToPercentage:percent duration:duration];
+			[self.temperatureCell updatePercentage:percent duration:duration];
 		});
 		dispatch_resume(self.timerSource);
 	}
 
 	// We need a better UI for representing temperatures ig
-	temperatureLabel.text = finalText;
-	[self.contentView addSubview:temperatureLabel];
-	temperatureLabel.translatesAutoresizingMaskIntoConstraints = NO;
-	[temperatureLabel.rightAnchor constraintEqualToAnchor:self.rightAnchor constant:-20].active = 1;
-	[temperatureLabel.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = 1;
-	[temperatureLabel.heightAnchor constraintEqualToAnchor:self.heightAnchor multiplier:0.8].active = 1;
-	[temperatureLabel.leftAnchor constraintEqualToAnchor:temperatureCell.rightAnchor constant:20].active = 1;
-
-	_temperatureCell = temperatureCell;
-	return self;
+	self.temperatureLabel.text = finalText;
 }
 
 - (void)dealloc {

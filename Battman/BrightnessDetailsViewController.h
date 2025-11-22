@@ -7,6 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface BrightnessDetailsViewController : UIViewController
+@interface BrightnessDetailsViewController : UITableViewController
 
 @end

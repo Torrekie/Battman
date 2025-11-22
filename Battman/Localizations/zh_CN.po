@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-13 13:10+0800\n"
+"POT-Creation-Date: 2025-11-21 16:59+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Torrekie <me@torrekie.dev>\n"
 "Language-Team: none\n"
@@ -480,6 +480,30 @@ msgstr "清除"
 msgid "Default"
 msgstr "默认"
 
+msgid "Brightness Slider"
+msgstr "亮度滑块"
+
+msgid "Brightness Limits (nits)"
+msgstr "亮度限制"
+
+msgid "Slider Max"
+msgstr "滑块最大值"
+
+msgid "Dimming"
+msgstr "调暗"
+
+msgid "EDR"
+msgstr "EDR"
+
+msgid "Present"
+msgstr "当前"
+
+msgid "Physical"
+msgstr "实际亮度"
+
+msgid "Min (Dimming)"
+msgstr "最低值（调暗）"
+
 msgid "Battery Avg."
 msgstr "电池平均"
 
@@ -625,6 +649,27 @@ msgstr "在点击 “写入 SMC” 之前，不会向 SMC 写入任何数据。"
 
 msgid "Refetch Data"
 msgstr "刷新数据"
+
+msgid "Screen Hardware Temperature"
+msgstr "屏幕硬件温度"
+
+msgid "Resolution"
+msgstr "分辨率"
+
+msgid "Color Gamut"
+msgstr "色域"
+
+msgid "Temperature"
+msgstr "温度"
+
+msgid "Night Shift"
+msgstr "夜览"
+
+msgid "True Tone"
+msgstr "原彩显示"
+
+msgid "Unknown"
+msgstr "未知"
 
 msgid "Learn more…"
 msgstr "了解更多…"
@@ -885,9 +930,6 @@ msgstr "永不"
 msgid "Brightness Icon"
 msgstr "“亮度”图标"
 
-msgid "EDR"
-msgstr "EDR"
-
 msgid "SDR"
 msgstr "SDR"
 
@@ -983,6 +1025,43 @@ msgstr "打开 URL 时发生错误：%@"
 
 msgid "Your device does not support sending Emails."
 msgstr "您的设备不支持发送邮件。"
+
+msgid "Primary Screen"
+msgstr "主屏幕"
+
+msgid "Specs (Basic)"
+msgstr "参数（基本）"
+
+msgid ""
+"These limitations are typically determined by the hardware and returned by "
+"the Brightness system."
+msgstr "这些限制通常由硬件定义，并由亮度系统返回。"
+
+msgid ""
+"These parameters are sourced from the system’s high-level graphics layer. "
+"Because the display is ultimately composed through CoreAnimation and "
+"backboardd before it reaches the screen hardware, the values shown here are "
+"estimates and may not precisely reflect the true behavior of the physical "
+"display."
+msgstr ""
+"这些参数来自系统的图形层。由于显示内容最终是通过 CoreAnimation 和 backboardd "
+"后传递给屏幕硬件，因此此处显示的数值只是大致估算，且可能无法完全反映显示器硬"
+"件的真实行为。"
+
+msgid "Brightness Backend"
+msgstr "亮度后端"
+
+msgid "Ambient Light Sensor"
+msgstr "环境光传感器"
+
+msgid "Refresh Rate"
+msgstr "刷新率"
+
+msgid "Color Depth"
+msgstr "色彩深度"
+
+msgid "Bits"
+msgstr "位"
 
 msgid ""
 "No value returned from sensor, device should be checked by service "
@@ -1314,9 +1393,6 @@ msgstr "外部电源6"
 
 msgid "Externel Power 7"
 msgstr "外部电源7"
-
-msgid "Unknown"
-msgstr "未知"
 
 msgid "Nominal"
 msgstr "正常"
@@ -1736,9 +1812,6 @@ msgstr "正在接受充电"
 
 msgid "This indicates if accessory is accepting charge."
 msgstr "此项表示配件是否正在接受充电。"
-
-msgid "Temperature"
-msgstr "温度"
 
 msgid "Acc. Time to Empty"
 msgstr "配件耗尽时间"

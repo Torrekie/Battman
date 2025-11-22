@@ -60,12 +60,12 @@ double iomfb_primary_screen_temperature(void) {
 	// Q16.16
 	if (temp_comp[0] == 3) {
 		// version 3
-		// temp_comp[91] brightness
-		// temp_comp[92] temperature
+		// temp_comp[91] brightness (nits)
+		// temp_comp[92] temperature (c)
 		temp = (double)(int)temp_comp[92] * pow(2, -16);
 	} else if (temp_comp[0] == 1) {
 		// version 1
-		// temp_comp[84] temperature
+		// temp_comp[84] temperature (c)
 		temp = (double)(int)temp_comp[84] * pow(2, -16);
 	} else {
 		// Do alert? Can user actually understand what we wanted?

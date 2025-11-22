@@ -16,6 +16,7 @@ typedef struct {
 	float currentInterval;
 	BOOL isAutoMode;
 	BOOL isNeverMode;
+	BOOL isInitialized;
 } BSVCTimerContext;
 
 // Helper function to get timer context from view controller
@@ -27,7 +28,21 @@ static BSVCTimerContext *BSVCGetTimerContext(id self) {
 		return NULL;
 	}
 	
-	return (BSVCTimerContext *)COBJC_STRUCT(BatterySubscriberViewControllerBase, self);
+	BSVCTimerContext *context = (BSVCTimerContext *)COBJC_STRUCT(BatterySubscriberViewControllerBase, self);
+	if (!context)
+		return NULL;
+	
+	// Lazily initialize the context to ensure safe defaults before first use
+	if (!context->isInitialized) {
+		memset(context, 0, sizeof(BSVCTimerContext));
+		context->refreshTimer   = NULL;
+		context->currentInterval = 0.0f;
+		context->isAutoMode     = YES;
+		context->isNeverMode    = NO;
+		context->isInitialized  = YES;
+	}
+	
+	return context;
 }
 
 // Timer callback function

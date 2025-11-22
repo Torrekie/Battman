@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.1\n"
+"Project-Id-Version: Battman 1.0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-13 13:10+0800\n"
+"POT-Creation-Date: 2025-11-21 16:59+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -468,6 +468,30 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
+msgid "Brightness Slider"
+msgstr ""
+
+msgid "Brightness Limits (nits)"
+msgstr ""
+
+msgid "Slider Max"
+msgstr ""
+
+msgid "Dimming"
+msgstr ""
+
+msgid "EDR"
+msgstr ""
+
+msgid "Present"
+msgstr ""
+
+msgid "Physical"
+msgstr ""
+
+msgid "Min (Dimming)"
+msgstr ""
+
 msgid "Battery Avg."
 msgstr ""
 
@@ -608,6 +632,27 @@ msgid "No data is sent to the SMC until you click \"Write to SMC.\""
 msgstr ""
 
 msgid "Refetch Data"
+msgstr ""
+
+msgid "Screen Hardware Temperature"
+msgstr ""
+
+msgid "Resolution"
+msgstr ""
+
+msgid "Color Gamut"
+msgstr ""
+
+msgid "Temperature"
+msgstr ""
+
+msgid "Night Shift"
+msgstr ""
+
+msgid "True Tone"
+msgstr ""
+
+msgid "Unknown"
 msgstr ""
 
 msgid "Learn more…"
@@ -861,9 +906,6 @@ msgstr ""
 msgid "Brightness Icon"
 msgstr ""
 
-msgid "EDR"
-msgstr ""
-
 msgid "SDR"
 msgstr ""
 
@@ -953,6 +995,40 @@ msgid "Error when opening URL: %@"
 msgstr ""
 
 msgid "Your device does not support sending Emails."
+msgstr ""
+
+msgid "Primary Screen"
+msgstr ""
+
+msgid "Specs (Basic)"
+msgstr ""
+
+msgid ""
+"These limitations are typically determined by the hardware and returned by "
+"the Brightness system."
+msgstr ""
+
+msgid ""
+"These parameters are sourced from the system’s high-level graphics layer. "
+"Because the display is ultimately composed through CoreAnimation and "
+"backboardd before it reaches the screen hardware, the values shown here are "
+"estimates and may not precisely reflect the true behavior of the physical "
+"display."
+msgstr ""
+
+msgid "Brightness Backend"
+msgstr ""
+
+msgid "Ambient Light Sensor"
+msgstr ""
+
+msgid "Refresh Rate"
+msgstr ""
+
+msgid "Color Depth"
+msgstr ""
+
+msgid "Bits"
 msgstr ""
 
 msgid ""
@@ -1282,9 +1358,6 @@ msgid "Externel Power 6"
 msgstr ""
 
 msgid "Externel Power 7"
-msgstr ""
-
-msgid "Unknown"
 msgstr ""
 
 msgid "Nominal"
@@ -1690,9 +1763,6 @@ msgid "Accepting Charge"
 msgstr ""
 
 msgid "This indicates if accessory is accepting charge."
-msgstr ""
-
-msgid "Temperature"
 msgstr ""
 
 msgid "Acc. Time to Empty"

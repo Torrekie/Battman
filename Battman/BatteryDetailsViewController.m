@@ -440,12 +440,6 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		cell = [[cell_class alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:ident];
 	}
 	
-	if (ip.section == 0 && !strcmp("de", preferred_language())) {
-		// Workaround for too-long texts
-		cell.detailTextLabel.numberOfLines = 0;
-		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-	}
-
 	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, ip.section);
 	struct battery_info_node    *pending_bi = bi_section->data + ip.row + pendingLoadOffsets[ip.section][ip.row];
 	/* Flags special handler */
@@ -472,6 +466,12 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 #pragma mark - Warn Conditions
 	equipDetailCell(cell, pending_bi);
+	
+	// Workaround for too-long texts in section 0
+	if (ip.section == 0 && cell.detailTextLabel.text.length > 25) {
+		cell.detailTextLabel.numberOfLines = 0;
+		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+	}
 	/* Warning conditions */
 	if (bi_section->context->custom_identifier == BI_GAS_GAUGE_SECTION_ID) {
 		equipWarningCondition_b(cell, _("Remaining Capacity"), ^warn_condition_t(const char **str) {

@@ -456,7 +456,7 @@ skip_hdr_check:
             // Calculate adaptive falloff factor based on radius size
             // Smaller radius = softer edge (mimics ambient light diffusion)
             float radiusNormalized = _gradientRadius; // 0.2 to 1.0
-			float edgeSoftness = 1.0f + (1.0f - radiusNormalized) * ((_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float) ? 9.4f : 4.0f); // Range: 1.0 to 4.2
+			float edgeSoftness = 1.0f + (1.0f - radiusNormalized) * ((_metalLayer.pixelFormat == MTLPixelFormatRGBA16Float) ? 8.4f : 4.0f); // Range: 1.0 to 4.2
             
             // Apply adaptive distance scaling for softer edges on smaller radii
             float adaptiveDistance = normalizedDistance / edgeSoftness;

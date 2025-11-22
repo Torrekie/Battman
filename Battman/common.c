@@ -643,6 +643,45 @@ id imageForSFProGlyph(CFStringRef glyph, CFStringRef fontName, CGFloat fontSize,
 	return ret;
 }
 
+id redrawUIImage(id image, UIColor *color, CGSize size) {
+	//extern void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque, CGFloat scale);
+	extern CGContextRef UIGraphicsGetCurrentContext(void);
+	extern id UIGraphicsGetImageFromCurrentImageContext(void);
+	extern void UIGraphicsEndImageContext(void);
+
+	if (!image) return nil;
+	CGSize targetSize = CGSizeEqualToSize(size, CGSizeZero) ? ocall_t(CGSize, image, size) : size;
+	
+	if (!color) {
+		if (CGSizeEqualToSize(targetSize, ocall_t(CGSize, image, size))) {
+			return image;
+		} else {
+			UIGraphicsBeginImageContextWithOptions(targetSize, NO, 0.0);
+			ocall_t(void, image, drawInRect:, CGRectMake(0, 0, targetSize.width, targetSize.height));
+			id resized = UIGraphicsGetImageFromCurrentImageContext();
+			UIGraphicsEndImageContext();
+			return resized;
+		}
+	}
+	
+	UIGraphicsBeginImageContextWithOptions(targetSize, NO, 0.0);
+	CGContextRef ctx = UIGraphicsGetCurrentContext();
+	// UIKit drawing is flipped appropriately for UIImage drawing functions, but
+	// we use CoreGraphics clipping to mask so no extra transform is needed.
+	
+	CGContextSaveGState(ctx);
+	CGContextTranslateCTM(ctx, 0, targetSize.height);
+	CGContextScaleCTM(ctx, 1.0, -1.0); // flip because CGContextClipToMask expects CG coords
+	CGContextClipToMask(ctx, CGRectMake(0, 0, targetSize.width, targetSize.height), ocall_t(CGImageRef, image, CGImage));
+	CGContextSetFillColorWithColor(ctx, UIColorGetCGColor(color));
+	CGContextFillRect(ctx, CGRectMake(0, 0, targetSize.width, targetSize.height));
+	CGContextRestoreGState(ctx);
+	
+	id colored = UIGraphicsGetImageFromCurrentImageContext();
+	UIGraphicsEndImageContext();
+	return colored;
+}
+
 // HTML operations broken on Rosetta Sims pre iOS 14
 int is_rosetta(void) {
 	int    ret  = 0;

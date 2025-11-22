@@ -127,11 +127,6 @@ typedef enum {
 	BATTMAN_SUBPROCESS,
 } battman_type_t;
 
-#ifdef DEBUG
-#warning Remember to finalize ENABLE_BRIGHTNESS when releasing
-#define ENABLE_BRIGHTNESS 1
-#endif
-
 #ifndef BATTMAN_DOC_URL
 #define BATTMAN_DOC_URL "https://github.com/Torrekie/Battman/wiki"
 #endif

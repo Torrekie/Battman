@@ -72,6 +72,15 @@ static inline NSInteger _currentUserInterfaceStyle() {
 	return UIColorWithRGBA8(0, 122, 255, 255);
 }
 
++ (instancetype)compatOrangeColor {
+	returnIfSystemColor(systemOrangeColor);
+	
+	if (currentUserInterfaceStyle == UIUserInterfaceStyleDark)
+		return UIColorWithRGBA8(255, 159, 10, 255);
+	
+	return UIColorWithRGBA8(255, 149, 0, 255);
+}
+
 + (instancetype)compatGrayColor {
 	returnIfSystemColor(systemGrayColor);
 	
@@ -116,6 +125,15 @@ static inline NSInteger _currentUserInterfaceStyle() {
 		return UIColorWithRGBA8(9, 132, 255, 255);
 
 	return UIColorWithRGBA8(0, 122, 255, 255);
+}
+
++ (instancetype)compatSeparatorColor {
+	returnIfSystemColor(separatorColor);
+	
+	if (currentUserInterfaceStyle == UIUserInterfaceStyleDark)
+		return UIColorWithRGBA8(84, 84, 88, 153);
+	
+	return UIColorWithRGBA8(60, 60, 67, 74);
 }
 
 + (instancetype)compatBackgroundColor {

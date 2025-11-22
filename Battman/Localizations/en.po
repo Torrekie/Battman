@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-13 13:10+0800\n"
+"POT-Creation-Date: 2025-11-21 16:59+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -489,6 +489,30 @@ msgstr "Clear"
 msgid "Default"
 msgstr "Default"
 
+msgid "Brightness Slider"
+msgstr "Brightness Slider"
+
+msgid "Brightness Limits (nits)"
+msgstr "Brightness Limits (nits)"
+
+msgid "Slider Max"
+msgstr "Slider Max"
+
+msgid "Dimming"
+msgstr "Dimming"
+
+msgid "EDR"
+msgstr "EDR"
+
+msgid "Present"
+msgstr "Present"
+
+msgid "Physical"
+msgstr "Physical"
+
+msgid "Min (Dimming)"
+msgstr "Min (Dimming)"
+
 msgid "Battery Avg."
 msgstr "Battery Avg."
 
@@ -637,6 +661,27 @@ msgstr "No data is sent to the SMC until you click \"Write to SMC.\""
 
 msgid "Refetch Data"
 msgstr "Refetch Data"
+
+msgid "Screen Hardware Temperature"
+msgstr "Screen Hardware Temperature"
+
+msgid "Resolution"
+msgstr "Resolution"
+
+msgid "Color Gamut"
+msgstr "Color Gamut"
+
+msgid "Temperature"
+msgstr "Temperature"
+
+msgid "Night Shift"
+msgstr "Night Shift"
+
+msgid "True Tone"
+msgstr "True Tone"
+
+msgid "Unknown"
+msgstr "Unknown"
 
 msgid "Learn more…"
 msgstr "Learn more…"
@@ -911,9 +956,6 @@ msgstr "Never"
 msgid "Brightness Icon"
 msgstr "Brightness Icon"
 
-msgid "EDR"
-msgstr "EDR"
-
 msgid "SDR"
 msgstr "SDR"
 
@@ -1011,6 +1053,47 @@ msgstr "Error when opening URL: %@"
 
 msgid "Your device does not support sending Emails."
 msgstr "Your device does not support sending Emails."
+
+msgid "Primary Screen"
+msgstr "Primary Screen"
+
+msgid "Specs (Basic)"
+msgstr "Specs (Basic)"
+
+msgid ""
+"These limitations are typically determined by the hardware and returned by "
+"the Brightness system."
+msgstr ""
+"These limitations are typically determined by the hardware and returned by "
+"the Brightness system."
+
+msgid ""
+"These parameters are sourced from the system’s high-level graphics layer. "
+"Because the display is ultimately composed through CoreAnimation and "
+"backboardd before it reaches the screen hardware, the values shown here are "
+"estimates and may not precisely reflect the true behavior of the physical "
+"display."
+msgstr ""
+"These parameters are sourced from the system’s high-level graphics layer. "
+"Because the display is ultimately composed through CoreAnimation and "
+"backboardd before it reaches the screen hardware, the values shown here are "
+"estimates and may not precisely reflect the true behavior of the physical "
+"display."
+
+msgid "Brightness Backend"
+msgstr "Brightness Backend"
+
+msgid "Ambient Light Sensor"
+msgstr "Ambient Light Sensor"
+
+msgid "Refresh Rate"
+msgstr "Refresh Rate"
+
+msgid "Color Depth"
+msgstr "Color Depth"
+
+msgid "Bits"
+msgstr "Bits"
 
 msgid ""
 "No value returned from sensor, device should be checked by service "
@@ -1351,9 +1434,6 @@ msgstr "Externel Power 6"
 
 msgid "Externel Power 7"
 msgstr "Externel Power 7"
-
-msgid "Unknown"
-msgstr "Unknown"
 
 msgid "Nominal"
 msgstr "Nominal"
@@ -1799,9 +1879,6 @@ msgstr "Accepting Charge"
 msgid "This indicates if accessory is accepting charge."
 msgstr "This indicates if accessory is accepting charge."
 
-msgid "Temperature"
-msgstr "Temperature"
-
 msgid "Acc. Time to Empty"
 msgstr "Acc. Time to Empty"
 
@@ -2039,3 +2116,6 @@ msgstr "Negative Power Value"
 
 msgid "Not Enough Data Points"
 msgstr "Not Enough Data Points"
+
+#~ msgid "Brightness Limits"
+#~ msgstr "Brightness Limits"

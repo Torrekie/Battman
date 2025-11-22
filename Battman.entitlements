@@ -92,6 +92,12 @@
 	<key>com.apple.system.get-hardware-identifiers</key>
 	<true/>
 
+	<!-- IOMobileFramebuffer/DFR-->
+        <key>com.apple.private.iomfb.set-block</key>
+        <true/>
+        <key>com.apple.private.dfr.brightness-access</key>
+        <true/>
+
 	<!-- Security exceptions -->
 	<key>com.apple.security.system-groups</key>
 	<array>

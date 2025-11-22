@@ -391,6 +391,42 @@
 		68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
 		68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
+		68D8007F2EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
+		68D800802EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
+		68D800812EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
+		68D800822EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
+		68D800842EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
+		68D800852EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
+		68D800862EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
+		68D800872EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
+		68D800BA2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
+		68D800BB2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
+		68D800BC2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
+		68D800BD2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
+		68D800C22EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
+		68D800C32EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
+		68D800C42EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
+		68D800C52EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
+		68D800C62EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
+		68D800C72EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
+		68D800C82EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
+		68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
+		68D800CB2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
+		68D800CC2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
+		68D800CD2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
+		68D800CE2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
+		68E674482ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
+		68E674492ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
+		68E6744A2ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
+		68E6744B2ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
+		68E674592ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
+		68E6745A2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
+		68E6745B2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
+		68E6745C2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
+		68E6745D2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
+		68E6745E2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
+		68E6745F2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
+		68E674602ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
@@ -1944,7 +1980,7 @@
 		68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+SVG.m"; sourceTree = "<group>"; };
 		68C0C7422E93BA3C006F73EA /* SVG.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVG.m; sourceTree = "<group>"; };
 		68C0C7432E93BA3C006F73EA /* SVG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVG.h; sourceTree = "<group>"; };
-		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../../../wifi/20/SFSymbols.pkg/Library/Fonts/SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
+		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
 		68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libbrightness.h; sourceTree = "<group>"; };
 		68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BSC_Provider.m; sourceTree = "<group>"; };
 		68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ColorSegProgressView.m; sourceTree = "<group>"; };
@@ -1957,6 +1993,15 @@
 		68D6DEBF2D745DCB00E129A0 /* SegmentedViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SegmentedViewCell.h; sourceTree = "<group>"; };
 		68D6DEC02D77071300E129A0 /* not_charging_reason.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = not_charging_reason.h; sourceTree = "<group>"; };
 		68D6DEC12D770B9F00E129A0 /* kiosk_mode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = kiosk_mode.h; sourceTree = "<group>"; };
+		68D8007E2EC5A5490012B84A /* backlight-control.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "backlight-control.c"; sourceTree = "<group>"; };
+		68D800832EC5B8140012B84A /* dcp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dcp.c; sourceTree = "<group>"; };
+		68D800B82EC9CB250012B84A /* BrightnessCardCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BrightnessCardCell.h; sourceTree = "<group>"; };
+		68D800B92EC9CB250012B84A /* BrightnessCardCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BrightnessCardCell.m; sourceTree = "<group>"; };
+		68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TrueToneVectorIcon.m; sourceTree = "<group>"; };
+		68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NightShiftVectorIcon.m; sourceTree = "<group>"; };
+		68D800C02EC9CD700012B84A /* NightShiftVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NightShiftVectorIcon.h; sourceTree = "<group>"; };
+		68D800C12EC9CD700012B84A /* TrueToneVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrueToneVectorIcon.h; sourceTree = "<group>"; };
+		68D800CA2ECB200E0012B84A /* vi.po */ = {isa = PBXFileReference; lastKnownFileType = text; path = vi.po; sourceTree = "<group>"; };
 		68DCA5602D3D0AC5004D0104 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 		68DCA5AA2D3F935E004D0104 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		68DCA5AB2D3F9A10004D0104 /* gtkextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtkextern.h; sourceTree = "<group>"; };
@@ -1965,6 +2010,11 @@
 		68DCA5B72D40F4A5004D0104 /* base.pot */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = base.pot; sourceTree = "<group>"; };
 		68DCA5BD2D40FDE3004D0104 /* en.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = en.po; sourceTree = "<group>"; };
 		68DCA5BE2D40FDE3004D0104 /* zh_CN.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = zh_CN.po; sourceTree = "<group>"; };
+		68E674472ECC6D4C006F94DE /* CADisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CADisplay.h; sourceTree = "<group>"; };
+		68E674552ED05349006F94DE /* VirtBriCardCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VirtBriCardCell.h; sourceTree = "<group>"; };
+		68E674562ED05349006F94DE /* CardProgressView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CardProgressView.h; sourceTree = "<group>"; };
+		68E674572ED05349006F94DE /* VirtBriCardCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VirtBriCardCell.m; sourceTree = "<group>"; };
+		68E674582ED05349006F94DE /* CardProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CardProgressView.m; sourceTree = "<group>"; };
 		68E938992D58980B00223285 /* iokit_connection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iokit_connection.h; sourceTree = "<group>"; };
 		68E9389A2D58980B00223285 /* iokit_connection.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = iokit_connection.c; sourceTree = "<group>"; };
 		68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLBatteryUIMoveableGraphView.m; sourceTree = "<group>"; };
@@ -2075,6 +2125,10 @@
 		68336DE82E979C4400E9F180 /* CGIconSet */ = {
 			isa = PBXGroup;
 			children = (
+				68D800C02EC9CD700012B84A /* NightShiftVectorIcon.h */,
+				68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */,
+				68D800C12EC9CD700012B84A /* TrueToneVectorIcon.h */,
+				68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */,
 				6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */,
 				6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */,
 			);
@@ -2110,6 +2164,8 @@
 			children = (
 				68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */,
 				68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */,
+				68D8007E2EC5A5490012B84A /* backlight-control.c */,
+				68D800832EC5B8140012B84A /* dcp.c */,
 			);
 			path = brightness;
 			sourceTree = "<group>";
@@ -14027,6 +14083,10 @@
 		68AE40A42D8EB7710023D7B0 /* CustomUIElements */ = {
 			isa = PBXGroup;
 			children = (
+				68E674562ED05349006F94DE /* CardProgressView.h */,
+				68E674582ED05349006F94DE /* CardProgressView.m */,
+				68E674552ED05349006F94DE /* VirtBriCardCell.h */,
+				68E674572ED05349006F94DE /* VirtBriCardCell.m */,
 				68CFB5E22EB9F3D7007ECAC8 /* ColorSegProgressView.h */,
 				68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */,
 				684973312EB3789300C9C58A /* FooterHyperlinkView.h */,
@@ -14067,6 +14127,8 @@
 				683B2D0D2E6C4D9E00FECDF5 /* SerialQRCodeTableViewCell.m */,
 				68336E822EA3891900E9F180 /* SegmentedTextField.h */,
 				68336E812EA3891900E9F180 /* SegmentedTextField.m */,
+				68D800B82EC9CB250012B84A /* BrightnessCardCell.h */,
+				68D800B92EC9CB250012B84A /* BrightnessCardCell.m */,
 			);
 			name = CustomUIElements;
 			sourceTree = "<group>";
@@ -14113,6 +14175,7 @@
 		68B2913E2DD86ABF0089BA1F /* EXTERNAL_HEADERS */ = {
 			isa = PBXGroup;
 			children = (
+				68E674472ECC6D4C006F94DE /* CADisplay.h */,
 				68B2913F2DD86ABF0089BA1F /* IOAccessoryManager.h */,
 			);
 			path = EXTERNAL_HEADERS;
@@ -14284,6 +14347,7 @@
 		68DCA5B42D40EDE8004D0104 /* Localizations */ = {
 			isa = PBXGroup;
 			children = (
+				68D800CA2ECB200E0012B84A /* vi.po */,
 				684972EC2EAF482500C9C58A /* de.po */,
 				68DCA5BD2D40FDE3004D0104 /* en.po */,
 				68DCA5BE2D40FDE3004D0104 /* zh_CN.po */,
@@ -14580,6 +14644,7 @@
 				684114BE2E5323E2001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684114BF2E5323E2001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684114C02E5323E2001B76B6 /* license.html in Resources */,
+				68D800CC2ECB200F0012B84A /* vi.po in Resources */,
 				684972EE2EAF482500C9C58A /* de.po in Resources */,
 				684114C12E5323E2001B76B6 /* locales in Resources */,
 			);
@@ -14593,6 +14658,7 @@
 				684115142E57BDE7001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684115152E57BDE7001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684115162E57BDE7001B76B6 /* license.html in Resources */,
+				68D800CD2ECB200F0012B84A /* vi.po in Resources */,
 				684972EF2EAF482500C9C58A /* de.po in Resources */,
 				684115172E57BDE7001B76B6 /* locales in Resources */,
 			);
@@ -14606,6 +14672,7 @@
 				684972B52EACB71B00C9C58A /* BattmanIcons@2x.artwork in Resources */,
 				684972B62EACB71B00C9C58A /* BattmanIcons@3x.artwork in Resources */,
 				684972B72EACB71B00C9C58A /* license.html in Resources */,
+				68D800CE2ECB200F0012B84A /* vi.po in Resources */,
 				684972F02EAF482500C9C58A /* de.po in Resources */,
 				684972B82EACB71B00C9C58A /* locales in Resources */,
 			);
@@ -14618,6 +14685,7 @@
 				684972ED2EAF482500C9C58A /* de.po in Resources */,
 				6845759C2E3CBFEB00618DFD /* BattmanIcons@2x.artwork in Resources */,
 				6845759A2E3CBD2B00618DFD /* BattmanIcons@3x.artwork in Resources */,
+				68D800CB2ECB200F0012B84A /* vi.po in Resources */,
 				6838BF6A2DB8D06B007EB66C /* license.html in Resources */,
 				687742B62D43838500375A2C /* locales in Resources */,
 			);
@@ -14802,7 +14870,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nLOC_TGT=\"${PROJECT_DIR}/${PROJECT_NAME}/locales\"\nNAME_LOW=\"$(echo ${PROJECT_NAME} | tr '[:upper:]' '[:lower:]')\"\n\nfor locs in $LOCS; do mkdir -p \"${LOC_TGT}/${locs}/LC_MESSAGES/\" && msgfmt \"${LOC_BASE}/$locs.po\" -o \"${LOC_TGT}/${locs}/LC_MESSAGES/${NAME_LOW}.mo\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nLOC_TGT=\"${PROJECT_DIR}/${PROJECT_NAME}/locales\"\nNAME_LOW=\"$(echo ${PROJECT_NAME} | tr '[:upper:]' '[:lower:]')\"\n\nfor locs in $LOCS; do mkdir -p \"${LOC_TGT}/${locs}/LC_MESSAGES/\" && msgfmt \"${LOC_BASE}/$locs.po\" -o \"${LOC_TGT}/${locs}/LC_MESSAGES/${NAME_LOW}.mo\"; done\n";
 		};
 		6877432A2D4CACCC00375A2C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14820,7 +14888,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge --no-location -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge --no-location -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
 		};
 		68DCA5B32D40EC61004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14856,7 +14924,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po\" --locale=\"$locs\" --no-translator; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po\" --locale=\"$locs\" --no-translator; done\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -14868,7 +14936,9 @@
 				684114852E5323E2001B76B6 /* iokit_connection.c in Sources */,
 				684114862E5323E2001B76B6 /* thermal.c in Sources */,
 				684114872E5323E2001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68D800802EC5A5490012B84A /* backlight-control.c in Sources */,
 				68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
+				68D800C32EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
 				684114882E5323E2001B76B6 /* SegmentButton.m in Sources */,
 				684114892E5323E2001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D092E6C361100FECDF5 /* UPSMonitor.m in Sources */,
@@ -14881,6 +14951,7 @@
 				68CFB5E42EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				6841148F2E5323E2001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
 				684114902E5323E2001B76B6 /* DividerView.m in Sources */,
+				68E6745A2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684114912E5323E2001B76B6 /* DatePickerTableViewCell.m in Sources */,
 				684114922E5323E2001B76B6 /* BattmanVectorIcon.m in Sources */,
 				684114932E5323E2001B76B6 /* DonationPrompter.m in Sources */,
@@ -14916,6 +14987,8 @@
 				684114A72E5323E2001B76B6 /* FullSMCViewController.m in Sources */,
 				684114A82E5323E2001B76B6 /* daemon.c in Sources */,
 				684114A92E5323E2001B76B6 /* battery_info.c in Sources */,
+				68D800C72EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
+				68D800852EC5B8140012B84A /* dcp.c in Sources */,
 				684114AA2E5323E2001B76B6 /* IOMFB_interaction.c in Sources */,
 				68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684114AB2E5323E2001B76B6 /* pmnotification.c in Sources */,
@@ -14923,6 +14996,7 @@
 				684114AC2E5323E2001B76B6 /* GradientArcView.m in Sources */,
 				68336DE32E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
 				684114AD2E5323E2001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
+				68D800BB2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				684114AE2E5323E2001B76B6 /* licensing.S in Sources */,
 				68336E452E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
@@ -14935,9 +15009,11 @@
 				684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684114B32E5323E2001B76B6 /* common.c in Sources */,
 				683B2C5E2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
+				68E674492ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				684114B42E5323E2001B76B6 /* DonationViewController.m in Sources */,
 				684114B52E5323E2001B76B6 /* SettingsViewController.m in Sources */,
 				684114B62E5323E2001B76B6 /* ChargingLimitViewController.m in Sources */,
+				68E6745E2ED05349006F94DE /* CardProgressView.m in Sources */,
 				68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				684114B72E5323E2001B76B6 /* libsmc.c in Sources */,
 			);
@@ -14950,7 +15026,9 @@
 				684114DB2E57BDE7001B76B6 /* iokit_connection.c in Sources */,
 				684114DC2E57BDE7001B76B6 /* thermal.c in Sources */,
 				684114DD2E57BDE7001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68D800812EC5A5490012B84A /* backlight-control.c in Sources */,
 				68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
+				68D800C42EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
 				684114DE2E57BDE7001B76B6 /* SegmentButton.m in Sources */,
 				684114DF2E57BDE7001B76B6 /* BatteryCellView.m in Sources */,
 				683B2D0A2E6C361100FECDF5 /* UPSMonitor.m in Sources */,
@@ -14963,6 +15041,7 @@
 				68CFB5E52EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				684114E52E57BDE7001B76B6 /* MultiSelectSegmentedControl.m in Sources */,
 				684114E62E57BDE7001B76B6 /* DividerView.m in Sources */,
+				68E6745B2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684114E72E57BDE7001B76B6 /* DatePickerTableViewCell.m in Sources */,
 				684114E82E57BDE7001B76B6 /* BattmanVectorIcon.m in Sources */,
 				684114E92E57BDE7001B76B6 /* DonationPrompter.m in Sources */,
@@ -14998,6 +15077,8 @@
 				684114FC2E57BDE7001B76B6 /* SegmentedViewCell.m in Sources */,
 				684114FD2E57BDE7001B76B6 /* FullSMCViewController.m in Sources */,
 				684114FE2E57BDE7001B76B6 /* daemon.c in Sources */,
+				68D800C82EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
+				68D800862EC5B8140012B84A /* dcp.c in Sources */,
 				684114FF2E57BDE7001B76B6 /* battery_info.c in Sources */,
 				68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684115002E57BDE7001B76B6 /* IOMFB_interaction.c in Sources */,
@@ -15005,6 +15086,7 @@
 				683B2C9F2E61866200FECDF5 /* PickerAccessoryView.m in Sources */,
 				68336DE42E9662B700E9F180 /* UIScreen+Auto.m in Sources */,
 				684115022E57BDE7001B76B6 /* GradientArcView.m in Sources */,
+				68D800BC2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				684115032E57BDE7001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				68336E462E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
@@ -15017,9 +15099,11 @@
 				684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				684115092E57BDE7001B76B6 /* common.c in Sources */,
 				683B2C5F2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
+				68E6744A2ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				6841150A2E57BDE7001B76B6 /* DonationViewController.m in Sources */,
 				6841150B2E57BDE7001B76B6 /* SettingsViewController.m in Sources */,
 				6841150C2E57BDE7001B76B6 /* ChargingLimitViewController.m in Sources */,
+				68E6745F2ED05349006F94DE /* CardProgressView.m in Sources */,
 				68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				6841150D2E57BDE7001B76B6 /* libsmc.c in Sources */,
 			);
@@ -15040,7 +15124,9 @@
 				6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */,
 				6849726C2EACB71B00C9C58A /* thermal.c in Sources */,
 				68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */,
+				68D800822EC5A5490012B84A /* backlight-control.c in Sources */,
 				6849726D2EACB71B00C9C58A /* UILabel+SFSymbolsOverride.m in Sources */,
+				68D800C52EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
 				6849726E2EACB71B00C9C58A /* SegmentButton.m in Sources */,
 				6849726F2EACB71B00C9C58A /* BatteryCellView.m in Sources */,
 				684972702EACB71B00C9C58A /* UPSMonitor.m in Sources */,
@@ -15053,6 +15139,7 @@
 				684972772EACB71B00C9C58A /* MultiSelectSegmentedControl.m in Sources */,
 				684972782EACB71B00C9C58A /* DividerView.m in Sources */,
 				684972792EACB71B00C9C58A /* DatePickerTableViewCell.m in Sources */,
+				68E6745C2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				6849727A2EACB71B00C9C58A /* BattmanVectorIcon.m in Sources */,
 				6849727B2EACB71B00C9C58A /* DonationPrompter.m in Sources */,
 				6849727C2EACB71B00C9C58A /* hid.m in Sources */,
@@ -15088,6 +15175,8 @@
 				684972972EACB71B00C9C58A /* FullSMCViewController.m in Sources */,
 				684972982EACB71B00C9C58A /* daemon.c in Sources */,
 				684972992EACB71B00C9C58A /* battery_info.c in Sources */,
+				68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
+				68D800872EC5B8140012B84A /* dcp.c in Sources */,
 				6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */,
 				6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */,
 				68CFB5EC2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
@@ -15095,6 +15184,7 @@
 				684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
 				6849729D2EACB71B00C9C58A /* UIScreen+Auto.m in Sources */,
 				6849729E2EACB71B00C9C58A /* GradientArcView.m in Sources */,
+				68D800BD2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				6849729F2EACB71B00C9C58A /* BatterySubscriberViewControllerBase.c in Sources */,
 				684972A02EACB71B00C9C58A /* GradientHDRView.m in Sources */,
 				684972A12EACB71B00C9C58A /* SVG.m in Sources */,
@@ -15107,9 +15197,11 @@
 				684972A72EACB71B00C9C58A /* common.c in Sources */,
 				684972A82EACB71B00C9C58A /* DatePickerCompactButton.m in Sources */,
 				684972A92EACB71B00C9C58A /* DonationViewController.m in Sources */,
+				68E6744B2ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				684972AA2EACB71B00C9C58A /* SettingsViewController.m in Sources */,
 				684972AB2EACB71B00C9C58A /* ChargingLimitViewController.m in Sources */,
 				684972AC2EACB71B00C9C58A /* PLBatteryUIMoveableGraphView.m in Sources */,
+				68E674602ED05349006F94DE /* CardProgressView.m in Sources */,
 				684972AD2EACB71B00C9C58A /* libsmc.c in Sources */,
 				68CFB5E62EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 			);
@@ -15151,6 +15243,7 @@
 				687743372D4E08AD00375A2C /* BatteryInfoViewController.m in Sources */,
 				68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
 				687743472D4F6C7800375A2C /* SPWaterProgressIndicatorView.m in Sources */,
+				68D800BA2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				6833A8C92DA3C6E500B71299 /* WarnAccessoryView.m in Sources */,
 				686AECD52D3B93CD0059ECD0 /* main.m in Sources */,
 				68AE40BC2D8EB8870023D7B0 /* StackViewGestureHandler.m in Sources */,
@@ -15161,6 +15254,7 @@
 				683425502D7D6A240070CE6F /* MultilineViewCell.m in Sources */,
 				68336E4B2EA0CF3400E9F180 /* PreferencesViewController.m in Sources */,
 				68AE40BB2D8EB8870023D7B0 /* UIView+Fill.m in Sources */,
+				68E6745D2ED05349006F94DE /* CardProgressView.m in Sources */,
 				68AE40B82D8EB8870023D7B0 /* UberSegmentedControl.m in Sources */,
 				68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */,
 				68B291382DD1E6960089BA1F /* FullSMCViewController.m in Sources */,
@@ -15169,6 +15263,7 @@
 				684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				6841152D2E57E166001B76B6 /* control in Sources */,
+				68E674592ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684611502E0D5250006B651D /* IOMFB_interaction.c in Sources */,
 				68B291282DC75F610089BA1F /* pmnotification.c in Sources */,
 				68B5FF2E2D85606000919BC2 /* GradientArcView.m in Sources */,
@@ -15183,17 +15278,22 @@
 				68C0C73F2E93B93E006F73EA /* UIImage+SVG.m in Sources */,
 				6838BFAC2DC3984C007EB66C /* SliderTableViewCell.m in Sources */,
 				68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
+				68D800C22EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
 				68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */,
 				68B291372DD1E6960089BA1F /* CompatibilityHelper.c in Sources */,
 				68FBDD192DE30A8E0057870A /* common.c in Sources */,
+				68D8007F2EC5A5490012B84A /* backlight-control.c in Sources */,
 				684114052E4A35E0001B76B6 /* DonationViewController.m in Sources */,
+				68E674482ECC6D4C006F94DE /* CADisplay.h in Sources */,
 				687743362D4E08AD00375A2C /* SettingsViewController.m in Sources */,
 				68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
+				68D800842EC5B8140012B84A /* dcp.c in Sources */,
 				68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
 				683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */,
 				68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */,
 				68336E832EA3891900E9F180 /* SegmentedTextField.m in Sources */,
 				68171A302D5221C400DD4224 /* libsmc.c in Sources */,
+				68D800C62EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
 				68CFB5EF2EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -15647,7 +15747,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -15666,7 +15766,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -15712,7 +15812,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -15726,7 +15826,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

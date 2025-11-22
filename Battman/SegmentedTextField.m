@@ -83,8 +83,40 @@ static void replaceView(UIView *oldView, UIView *newView) {
 	[allowedItems removeAllObjects];
 }
 
+- (void)configureAllSegmentLabels {
+	// Apply font size adjustment only when text is too long
+	for (NSInteger i = 0; i < self.numberOfSegments; i++) {
+		UISegment *segment = [self _segmentAtIndex:i];
+		for (UIView *subview in segment.subviews) {
+			if ([subview isKindOfClass:NSClassFromString(@"UISegmentLabel")]) {
+				UISegmentLabel *label = (UISegmentLabel *)subview;
+				
+				// Calculate available width accounting for label's frame insets within segment
+				// The label is typically inset from the segment edges by the segment's content insets
+				CGFloat labelHorizontalInset = (segment.frame.size.width - label.frame.size.width) / 2.0;
+				// Use actual measured inset, fallback to a proportion of segment width if not yet laid out
+				CGFloat segmentPadding = labelHorizontalInset > 0 ? labelHorizontalInset * 2.0 : segment.frame.size.width * 0.2;
+				CGFloat availableWidth = segment.frame.size.width - segmentPadding;
+				
+				CGSize textSize = [label.text sizeWithAttributes:@{NSFontAttributeName: label.font}];
+				
+				// Only enable font adjustment if text is too long
+				if (textSize.width > availableWidth) {
+					label.adjustsFontSizeToFitWidth = YES;
+					label.minimumScaleFactor = 0.6;
+					label.numberOfLines = 1;
+				}
+				break;
+			}
+		}
+	}
+}
+
 - (void)layoutSubviews {
 	[super layoutSubviews];
+	
+	// Configure all segment labels for font adjustment
+	[self configureAllSegmentLabels];
 
 	// Only apply replacements once and only if we have text fields to replace
 	if (hasAppliedReplacements || textFieldsAtIndex.count == 0) {

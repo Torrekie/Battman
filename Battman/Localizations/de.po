@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-13 13:10+0800\n"
+"POT-Creation-Date: 2025-11-21 16:59+0800\n"
 "PO-Revision-Date: 2025-10-11 17:32+0800\n"
 "Last-Translator: therealhoodboy\n"
 "Language-Team: German\n"
@@ -496,6 +496,30 @@ msgstr "Leeren"
 msgid "Default"
 msgstr "Standard"
 
+msgid "Brightness Slider"
+msgstr "Helligkeitsregler"
+
+msgid "Brightness Limits (nits)"
+msgstr "Helligkeitsgrenzen (nits)"
+
+msgid "Slider Max"
+msgstr "Maximalwert des Reglers"
+
+msgid "Dimming"
+msgstr "Dimmung"
+
+msgid "EDR"
+msgstr "EDR"
+
+msgid "Present"
+msgstr "Aktuell"
+
+msgid "Physical"
+msgstr "Physisch"
+
+msgid "Min (Dimming)"
+msgstr "Minimum (Dimmung)"
+
 msgid "Battery Avg."
 msgstr "Ø Batterie"
 
@@ -648,6 +672,27 @@ msgstr ""
 
 msgid "Refetch Data"
 msgstr "Daten neu abrufen"
+
+msgid "Screen Hardware Temperature"
+msgstr "Hardware-Temperatur des Bildschirms"
+
+msgid "Resolution"
+msgstr "Auflösung"
+
+msgid "Color Gamut"
+msgstr "Farbraum"
+
+msgid "Temperature"
+msgstr "Temperatur"
+
+msgid "Night Shift"
+msgstr "Night Shift"
+
+msgid "True Tone"
+msgstr "True Tone"
+
+msgid "Unknown"
+msgstr "Unbekannt"
 
 msgid "Learn more…"
 msgstr "Weitere Infos …"
@@ -927,9 +972,6 @@ msgstr "Nie"
 msgid "Brightness Icon"
 msgstr "Helligkeitssymbol"
 
-msgid "EDR"
-msgstr "EDR"
-
 msgid "SDR"
 msgstr "SDR"
 
@@ -1031,6 +1073,47 @@ msgstr "Fehler beim Öffnen der URL: %@"
 
 msgid "Your device does not support sending Emails."
 msgstr "Ihr Gerät unterstützt das Senden von E-Mails nicht."
+
+msgid "Primary Screen"
+msgstr "Hauptbildschirm"
+
+msgid "Specs (Basic)"
+msgstr "Spezifikationen (Basis)"
+
+msgid ""
+"These limitations are typically determined by the hardware and returned by "
+"the Brightness system."
+msgstr ""
+"Diese Einschränkungen werden in der Regel von der Hardware festgelegt und "
+"vom Helligkeitssystem zurückgegeben."
+
+msgid ""
+"These parameters are sourced from the system’s high-level graphics layer. "
+"Because the display is ultimately composed through CoreAnimation and "
+"backboardd before it reaches the screen hardware, the values shown here are "
+"estimates and may not precisely reflect the true behavior of the physical "
+"display."
+msgstr ""
+"Diese Parameter stammen aus der System-Grafikschicht. Da das Display "
+"letztlich über CoreAnimation und backboardd zusammengesetzt wird, bevor es "
+"die Bildschirm-Hardware erreicht, sind die hier angezeigten Werte "
+"Schätzwerte und können vom tatsächlichen Verhalten des physischen Displays "
+"abweichen."
+
+msgid "Brightness Backend"
+msgstr "Bildschirmhelligkeit-Backend"
+
+msgid "Ambient Light Sensor"
+msgstr "Umgebungslichtsensor"
+
+msgid "Refresh Rate"
+msgstr "Bildwiederholrate"
+
+msgid "Color Depth"
+msgstr "Farbtiefe"
+
+msgid "Bits"
+msgstr "Bits"
 
 msgid ""
 "No value returned from sensor, device should be checked by service "
@@ -1380,9 +1463,6 @@ msgstr "Externe Stromversorgung 6"
 
 msgid "Externel Power 7"
 msgstr "Externe Stromversorgung 7"
-
-msgid "Unknown"
-msgstr "Unbekannt"
 
 msgid "Nominal"
 msgstr "Normal"
@@ -1829,9 +1909,6 @@ msgstr "Empfängt Ladung"
 
 msgid "This indicates if accessory is accepting charge."
 msgstr "Dies zeigt an, ob das Zubehör Ladung empfängt."
-
-msgid "Temperature"
-msgstr "Temperatur"
 
 msgid "Acc. Time to Empty"
 msgstr "Restlaufzeit (Zubehör)"

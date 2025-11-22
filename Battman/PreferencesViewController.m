@@ -235,11 +235,7 @@ extern UITableViewCell *find_cell(UIView *view);
 	switch (sect) {
 		case P_SECT_BI_INTERVAL: return P_ROW_BI_INTERVAL_COUNT;
 		case P_SECT_LANGUAGE: return P_ROW_LANGUAGE_COUNT;
-#if ENABLE_BRIGHTNESS
 		case P_SECT_APPEARANCE: return P_ROW_APPEARANCE_COUNT;
-#else
-		case P_SECT_APPEARANCE: return P_ROW_APPEARANCE_COUNT - 1;
-#endif
 		case P_SECT_WIPEALL: return P_ROW_WIPEALL_COUNT;
 		default:
 			break;
@@ -371,7 +367,25 @@ extern UITableViewCell *find_cell(UIView *view);
 				case P_ROW_BI_INTERVAL: {
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
-					[(UITableViewCell *)cell textLabel].text = _("Interval (s)");
+					UILabel *textLabel = [(UITableViewCell *)cell textLabel];
+					textLabel.text = _("Interval (s)");
+					
+					// Calculate available width for label based on table view width
+					CGFloat tableWidth = tableView.bounds.size.width;
+					// Use table view's layout margins for accurate spacing
+					UIEdgeInsets layoutMargins = tableView.layoutMargins;
+					CGFloat cellMargins = layoutMargins.left + layoutMargins.right;
+					// Estimate minimum space needed for segmented control (3 segments with reasonable min width)
+					CGFloat estimatedAccessoryWidth = MIN(tableWidth * 0.55, 240.0); // 55% of width or 240pt max
+					CGFloat availableWidth = tableWidth - estimatedAccessoryWidth - cellMargins;
+					
+					CGSize textSize = [textLabel.text sizeWithAttributes:@{NSFontAttributeName: textLabel.font}];
+					if (textSize.width > availableWidth) {
+						textLabel.numberOfLines = 0;
+						textLabel.lineBreakMode = NSLineBreakByWordWrapping;
+						textLabel.adjustsFontSizeToFitWidth = YES;
+						textLabel.minimumScaleFactor = 0.7;
+					}
 					UITextField *intervalTextField = [UITextField new];
 					NSArray *items = nil;
 					if (intervalTextField) {
@@ -388,6 +402,43 @@ extern UITableViewCell *find_cell(UIView *view);
 					SegmentedTextField *seg = [[SegmentedTextField alloc] initWithItems:items];
 					self.intervalSegmentedTextField = seg;
 					[seg addTarget:self action:@selector(segmentedControlValueChanged:) forControlEvents:UIControlEventValueChanged];
+					
+					// Calculate available width for segmented control
+					CGFloat maxSegmentedControlWidth = tableWidth - availableWidth - cellMargins;
+					// Segment padding varies by iOS version but typically 12-16pt per segment
+					CGFloat segmentPadding = layoutMargins.left; // Use layout margin as base padding
+					
+					// Check if any segment text is too long and needs fixed widths
+					BOOL needsFixedWidths = NO;
+					// Use UISegmentedControl's default font (typically systemFont matching the text style)
+					UIFont *segmentFont = [UIFont systemFontOfSize:[UIFont labelFontSize]];
+					NSArray *textItems = @[_("Auto"), _("Custom"), _("Never")];
+					CGFloat totalContentWidth = 0;
+					NSMutableArray *segmentWidths = [NSMutableArray array];
+					
+					for (NSString *text in textItems) {
+						CGSize textSize = [text sizeWithAttributes:@{NSFontAttributeName: segmentFont}];
+						CGFloat segmentWidth = textSize.width + segmentPadding;
+						[segmentWidths addObject:@(segmentWidth)];
+						totalContentWidth += segmentWidth;
+					}
+					
+					// If total width exceeds available space, use fixed widths with proportional distribution
+					if (totalContentWidth > maxSegmentedControlWidth) {
+						needsFixedWidths = YES;
+					}
+					
+					if (needsFixedWidths) {
+						seg.apportionsSegmentWidthsByContent = NO;
+						// Distribute available width proportionally based on text lengths
+						for (NSInteger i = 0; i < segmentWidths.count; i++) {
+							CGFloat proportion = [segmentWidths[i] floatValue] / totalContentWidth;
+							CGFloat allocatedWidth = maxSegmentedControlWidth * proportion;
+							if (i < seg.numberOfSegments) {
+								[seg setWidth:allocatedWidth forSegmentAtIndex:i];
+							}
+						}
+					}
 					if (config_value) {
 						int interval = [config_value intValue];
 						if (interval == 0)

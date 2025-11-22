@@ -18,8 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (class, nonatomic, readonly) UIColor *compatRedColor;
 @property (class, nonatomic, readonly) UIColor *compatGreenColor;
 @property (class, nonatomic, readonly) UIColor *compatBlueColor;
-/*
 @property (class, nonatomic, readonly) UIColor *compatOrangeColor;
+/*
 @property (class, nonatomic, readonly) UIColor *compatYellowColor;
 @property (class, nonatomic, readonly) UIColor *compatPinkColor;
 @property (class, nonatomic, readonly) UIColor *compatPurpleColor;
@@ -48,7 +48,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (class, nonatomic, readonly) UIColor *compatLinkColor;
 /*
 @property (class, nonatomic, readonly) UIColor *compatPlaceholderTextColor;
+*/
 @property (class, nonatomic, readonly) UIColor *compatSeparatorColor;
+/*
 @property (class, nonatomic, readonly) UIColor *compatOpaqueSeparatorColor;
 */
 
