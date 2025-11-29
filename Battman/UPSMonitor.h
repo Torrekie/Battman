@@ -28,7 +28,6 @@
 #include <IOKit/hid/IOHIDKeys.h>
 #else
 #define kIOFirstMatchNotification "IOServiceFirstMatch"
-#define kIOServicePlane "IOService"
 #define kIOHIDDeviceKey "IOHIDDevice"
 #define kIOHIDDeviceUsagePageKey "DeviceUsagePage"
 #define kIOHIDDeviceUsageKey "DeviceUsage"

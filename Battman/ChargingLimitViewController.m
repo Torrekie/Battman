@@ -42,22 +42,16 @@ typedef enum {
 	CL_MAIN_COUNT,
 } CLRowMain;
 
-int connect_to_daemon(void) {
+int connect_to_daemon(bool show_alerts) {
 	struct sockaddr_un sockaddr;
 	memset(&sockaddr, 0, sizeof(sockaddr));
 	sockaddr.sun_family = AF_UNIX;
 
-	// FIXME: Consider use XPC instead of socket, the sun_path only have length 104
-	char socket_path[sizeof(sockaddr.sun_path)];
-	int needed = snprintf(socket_path, sizeof(socket_path), "%s/dsck", battman_config_dir());
-	if (needed < 0 || needed >= (int)sizeof(socket_path)) {
-		char errstr[1024];
-		snprintf(errstr, sizeof(errstr), "Socket path %s is too long for sockaddr_un.sun_path[%ld].", socket_path, sizeof(sockaddr.sun_path));
-		show_alert(L_ERR, errstr, L_OK);
-		return 0;
-	}
+	// Use centralized socket path with iOS fallback paths
+	const char *socket_path = battman_socket_path();
+	strncpy(sockaddr.sun_path, socket_path, sizeof(sockaddr.sun_path) - 1);
+	sockaddr.sun_path[sizeof(sockaddr.sun_path) - 1] = '\0';
 	
-	strncpy(sockaddr.sun_path, socket_path, sizeof(sockaddr.sun_path));
 	size_t addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(sockaddr.sun_path) + 1;
 	sockaddr.sun_len = (unsigned char)addrlen;
 
@@ -85,13 +79,13 @@ int connect_to_daemon(void) {
 	char cmd = 2;
 	if (write(sock, &cmd, 1) != 1) {
 		NSLog(@"Failed to write ping to daemon: %s", strerror(errno));
-		show_alert(L_FAILED, "Failed to write to daemon.", L_OK);
+		if (show_alerts) show_alert(L_FAILED, "Failed to write to daemon.", L_OK);
 		close(sock);
 		return 0;
 	}
 	if (read(sock, &cmd, 1) != 1 || cmd != 2) {
 		NSLog(@"Failed to ping daemon: %s", strerror(errno));
-		show_alert(L_FAILED, "The daemon may not be working properly.", L_OK);
+		if (show_alerts) show_alert(L_FAILED, "The daemon may not be working properly.", L_OK);
 		close(sock);
 		return 0;
 	}
@@ -258,7 +252,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 - (void)connectToDaemon {
 	if (daemon_fd)
 		return;
-	daemon_fd = connect_to_daemon();
+	daemon_fd = connect_to_daemon(true);
 }
 
 - (NSString *)tableView:(UITableView *)tv titleForHeaderInSection:(NSInteger)sect {

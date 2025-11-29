@@ -408,8 +408,8 @@ static NSMutableArray *sns_avail = nil;
             // extern void worker_test(void);
             // worker_test();
         } else if(indexPath.row==4) {
-            extern int connect_to_daemon(void);
-            int fd = connect_to_daemon();
+            extern int connect_to_daemon(bool);
+            int fd = connect_to_daemon(true);
             if (!fd) {
                 show_alert("Daemon", "Failed to connect to daemon", "ok");
                 [tv deselectRowAtIndexPath:indexPath animated:YES];

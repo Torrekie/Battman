@@ -67,6 +67,8 @@ typedef struct IOCFPlugInInterfaceStruct {
 #define MACH_PORT_NULL 0
 #define IO_OBJECT_NULL  ((io_object_t) 0)
 
+#define kIOServicePlane "IOService"
+
 typedef struct IONotificationPort *IONotificationPortRef;
 
 typedef void (*IOServiceInterestCallback)(void *refcon, io_service_t service, uint32_t messageType, void *messageArgument);
@@ -93,6 +95,8 @@ extern CFTypeRef IORegistryEntrySearchCFProperty(io_registry_entry_t entry, cons
 extern io_registry_entry_t IORegistryEntryFromPath(mach_port_t, const char *);
 extern kern_return_t IOCreatePlugInInterfaceForService(io_service_t service, CFUUIDRef pluginType, CFUUIDRef interfaceType, IOCFPlugInInterface ***theInterface, SInt32 *theScore);
 extern kern_return_t IORegistryEntryGetRegistryEntryID(io_registry_entry_t entry, uint64_t *entryID);
+extern kern_return_t IORegistryEntryGetPath(io_registry_entry_t entry, const char *plane, const char *path);
+extern CFMutableDictionaryRef IOServiceNameMatching(const char *name);
 __END_DECLS
 #endif
 

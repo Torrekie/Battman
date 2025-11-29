@@ -2,6 +2,7 @@
 #include <TargetConditionals.h>
 
 #include <regex.h>
+#include <string.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
@@ -606,14 +607,18 @@ const char *second_to_datefmt(uint64_t second) {
 	
 	id s = ocall(fmt, stringFromTimeInterval:, (double)second);
 
-	const char *c = NULL;
-	if (s) {
-		c = (const char *)ocall_t(char*, s, UTF8String);
-	}
-
 	const char *ret = NULL;
-	if (c) {
-		ret = c;
+	if (s) {
+		// Copy the string to a static buffer to preserve it after pool draining
+		const char *c = (const char *)ocall_t(char*, s, UTF8String);
+		if (c) {
+			static char buffer[256];
+			strncpy(buffer, c, sizeof(buffer) - 1);
+			buffer[sizeof(buffer) - 1] = '\0';
+			ret = buffer;
+		} else {
+			ret = "";
+		}
 	} else {
 		ret = "";
 	}
@@ -960,6 +965,49 @@ const char *battman_config_dir(void) {
 	return confdir;
 }
 
+const char *battman_socket_path(void) {
+	static char *socket_path = NULL;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		// Try multiple fallback paths for iOS compatibility
+		const char *fallback_paths[] = {
+			NULL, // Will be filled with battman_config_dir()/dsck
+			"/var/tmp/battman-dsck",
+			"/private/var/tmp/battman-dsck",
+			"/var/db/battman-dsck",
+			"/private/var/db/battman-dsck",
+			NULL
+		};
+		
+		// First try the original config dir path
+		char config_path[PATH_MAX];
+		snprintf(config_path, sizeof(config_path), "%s/dsck", battman_config_dir());
+		fallback_paths[0] = config_path;
+		
+		// Try each path until we find one that fits in sun_path
+		for (int i = 0; fallback_paths[i] != NULL; i++) {
+			size_t path_len = strlen(fallback_paths[i]);
+
+			if (path_len < 104) {
+				socket_path = strdup(fallback_paths[i]);
+				if (socket_path != NULL) {
+					DBGLOG(CFSTR("battman_socket_path: Using socket path: %s"), socket_path);
+					return;
+				}
+			}
+		}
+		
+		// Final fallback if all else fails
+		socket_path = strdup("/tmp/battman-dsck");
+		if (socket_path == NULL) {
+			os_log_fault(gLog, "battman_socket_path: Cannot allocate memory for socket path");
+			static char emergency_fallback[] = "/tmp/battman-dsck";
+			socket_path = emergency_fallback;
+		}
+	});
+	return socket_path;
+}
+
 /* Consider use NSDefaults instead of file */
 const char *lang_cfg_file(void) {
 	static char langfile[PATH_MAX];
@@ -1272,6 +1320,31 @@ bool metal_available(bool ignore_config) {
 done:
 	DBGLOG(CFSTR("metal_available: %s, reason: %s"), ret ? "YES" : "NO", reason ? reason : "");
 	return ret;
+}
+
+bool set_badge(const char *text) {
+	id sbs = ocall(oclass(NSBundle), bundleWithIdentifier:, CFSTR("com.apple.SpringBoardServices"));
+	if (sbs == nil || !ocall_t(bool, sbs, load))
+		return false;
+	Class SBSHomeScreenService = ocall(sbs, classNamed:, CFSTR("SBSHomeScreenService"));
+	if (SBSHomeScreenService == nil)
+		return false;
+	id hsc = objc_alloc_init(SBSHomeScreenService);
+	if (hsc == nil)
+		return false;
+	CFStringRef bundleid = NULL;
+	CFBundleRef bundle = CFBundleGetMainBundle();
+	if (bundle == nil)
+		return false;
+	bundleid = CFBundleGetIdentifier(bundle);
+	CFStringRef cfstr = NULL;
+	if (!text || !strlen(text))
+		cfstr = CFSTR("");
+	else
+		cfstr = CFStringCreateWithCString(kCFAllocatorDefault, text, kCFStringEncodingUTF8);
+	// ent: com.apple.springboard.configureHomeScreenForTesting
+	ocall_t(void, hsc, overrideBadgeValue:forBundleIdentifier:, cfstr, bundleid);
+	return true;
 }
 
 id perform_selector(SEL selector, id target, id arg1) {

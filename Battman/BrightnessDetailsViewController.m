@@ -12,6 +12,7 @@
 #import "BrightnessDetailsViewController.h"
 #import "BrightnessCardCell.h"
 #import "VirtBriCardCell.h"
+#import "BrightnessAdvancedViewController.h"
 
 @interface BrightnessDetailsViewController ()
  
@@ -79,6 +80,11 @@ typedef enum {
 	self.refreshControl = refreshControl;
 	[self _reloadBrightnessCaches];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_brightnessDidChange:) name:UIScreenBrightnessDidChangeNotification object:nil];
+	self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:_("Advanced") style:UIBarButtonItemStylePlain target:self action:@selector(showAdvanced)];
+}
+
+- (void)showAdvanced {
+	[self.navigationController pushViewController:[BrightnessAdvancedViewController new] animated:YES];
 }
 
 - (void)_reloadBrightnessCaches {
@@ -114,8 +120,14 @@ typedef enum {
 }
 
 - (void)_brightnessDidChange:(NSNotification *)notification {
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_reloadBrightnessSection) object:nil];
+	[self performSelector:@selector(_reloadBrightnessSection) withObject:nil afterDelay:0.2];
+}
+
+- (void)_reloadBrightnessSection {
 	[self _reloadBrightnessCaches];
-	[self.tableView reloadData];
+	NSIndexSet *sections = [NSIndexSet indexSetWithIndex:B_SECT_LIMITS];
+	[self.tableView reloadSections:sections withRowAnimation:UITableViewRowAnimationNone];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -235,7 +247,7 @@ typedef enum {
 			switch (row) {
 				case B_ROW_SPECS_BACKEND:
 					cell.textLabel.text = _("Brightness Backend");
-					cell.detailTextLabel.text = self.dcpBacklightCached ? @"DCP" : @"DFR";
+					cell.detailTextLabel.text = self.dcpBacklightCached ? @"DCP" : _("Standard");
 					break;
 				case B_ROW_SPECS_ALS:
 					cell.textLabel.text = _("Ambient Light Sensor");
@@ -261,6 +273,7 @@ typedef enum {
 
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self];
 }
 
 @end

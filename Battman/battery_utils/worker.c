@@ -50,16 +50,22 @@ void battman_run_worker(const char *pipedata) {
 	pthread_create(&t, NULL, (void *(*)(void *))parent_monitor, NULL);
 	pthread_detach(t);
 	*(int64_t *)worker_pipefd = atoll(pipedata);
-	CFStringRef suite_name;
+	CFStringRef bs_suite_name, bs_suite_name_bri = NULL;
 
-	if (__builtin_available(iOS 15.0, macOS 12.0, *)) {
-		suite_name = CFSTR("com.apple.powerd.lowpowermode");
+	if (__builtin_available(iOS 16.0, macOS 13.0, *)) {
+		bs_suite_name = CFSTR("com.apple.powerd.lowpowermode");
+	} else if (__builtin_available(iOS 15.0, macOS 12.0, *)) {
+		bs_suite_name = CFSTR("com.apple.powerd.lowpowermode");
+		bs_suite_name_bri = CFSTR("com.apple.coreduetd.batterysaver"); // Special case
 	} else {
 		// Even this process is designed for iOS 15+, we still need to fallbacks for some curious users
 		setgid(501);
 		setuid(501);
-		suite_name = CFSTR("com.apple.coreduetd.batterysaver");
+		bs_suite_name = CFSTR("com.apple.coreduetd.batterysaver");
 	}
+	if (!bs_suite_name_bri)
+		bs_suite_name_bri = bs_suite_name;
+
 	while (1) {
 		char cmd;
 		if (read(worker_pipefd[0], &cmd, 1) != 1) {
@@ -76,8 +82,8 @@ void battman_run_worker(const char *pipedata) {
 			// set autoDisableWhenPluggedIn
 			char val;
 			read(worker_pipefd[0], &val, 1);
-			CFPreferencesSetAppValue(CFSTR("autoDisableWhenPluggedIn"),val?kCFBooleanTrue:kCFBooleanFalse,suite_name);
-			CFPreferencesAppSynchronize(suite_name);
+			CFPreferencesSetAppValue(CFSTR("autoDisableWhenPluggedIn"),val?kCFBooleanTrue:kCFBooleanFalse,bs_suite_name);
+			CFPreferencesAppSynchronize(bs_suite_name);
 			val = 1;
 			write(worker_pipefd[1], &val, 1);
 			continue;
@@ -87,10 +93,10 @@ void battman_run_worker(const char *pipedata) {
 			read(worker_pipefd[0], &val, 1);
 			const double double80=80;
 			CFNumberRef num=val?CFNumberCreate(0,kCFNumberDoubleType,(const void*)&double80):NULL;
-			CFPreferencesSetAppValue(CFSTR("autoDisableThreshold"),num,suite_name);
+			CFPreferencesSetAppValue(CFSTR("autoDisableThreshold"),num,bs_suite_name);
 			if(num)
 				CFRelease(num);
-			CFPreferencesAppSynchronize(suite_name);
+			CFPreferencesAppSynchronize(bs_suite_name);
 			val = 1;
 			write(worker_pipefd[1], &val, 1);
 			continue;
@@ -99,16 +105,16 @@ void battman_run_worker(const char *pipedata) {
 			float val;
 			read(worker_pipefd[0], &val, 4);
 			CFNumberRef num=CFNumberCreate(0,kCFNumberFloat32Type,(const void*)&val);
-			CFPreferencesSetAppValue(CFSTR("autoDisableThreshold"),num,suite_name);
+			CFPreferencesSetAppValue(CFSTR("autoDisableThreshold"),num,bs_suite_name);
 			CFRelease(num);
-			CFPreferencesAppSynchronize(suite_name);
+			CFPreferencesAppSynchronize(bs_suite_name);
 			char retval = 1;
 			write(worker_pipefd[1], &retval, 1);
 			continue;
 		} else if (cmd == 4) {
 			// get all
 			char buf[6];
-			CFNumberRef thr=CFPreferencesCopyAppValue(CFSTR("autoDisableThreshold"),suite_name);
+			CFNumberRef thr=CFPreferencesCopyAppValue(CFSTR("autoDisableThreshold"),bs_suite_name);
 			buf[4] = thr ? 1 : 0;
 			if(thr) {
 				CFNumberGetValue(thr,kCFNumberFloat32Type,(void*)buf);
@@ -116,7 +122,7 @@ void battman_run_worker(const char *pipedata) {
 			}else{
 				*(float *)buf = 80;
 			}
-			buf[5] = CFPreferencesGetAppBooleanValue(CFSTR("autoDisableWhenPluggedIn"),suite_name,NULL);
+			buf[5] = CFPreferencesGetAppBooleanValue(CFSTR("autoDisableWhenPluggedIn"),bs_suite_name,NULL);
 			char retval = 2;
 			write(worker_pipefd[1], &retval, 1);
 			write(worker_pipefd[1], buf, 6);
@@ -211,6 +217,33 @@ void battman_run_worker(const char *pipedata) {
 			write(worker_pipefd[1], &retval, 1);
 			write(worker_pipefd[1], buf, 6);
 			continue;
+		} else if (cmd == 6) {
+			// get backlight reduction
+			char buf[6];
+			CFNumberRef val = CFPreferencesCopyAppValue(CFSTR("backlightReduction"), bs_suite_name);
+			buf[4] = val ? 1 : 0;
+			if (val) {
+				CFNumberGetValue(val, kCFNumberFloat32Type,(void *)buf);
+				CFRelease(val);
+			} else {
+				*(float *)buf = 20;
+			}
+			char retval = 2;
+			write(worker_pipefd[1], &retval, 1);
+			write(worker_pipefd[1], buf, 6);
+			continue;
+		} else if (cmd == 7) {
+			// set backlight reduction
+			// set autodisablethreshold
+			float val;
+			read(worker_pipefd[0], &val, 4);
+			CFNumberRef num = CFNumberCreate(0, kCFNumberFloat32Type, (const void *)&val);
+			CFPreferencesSetAppValue(CFSTR("backlightReduction"), num, bs_suite_name_bri);
+			CFRelease(num);
+			CFPreferencesAppSynchronize(bs_suite_name_bri);
+			char retval = 1;
+			write(worker_pipefd[1], &retval, 1);
+			continue;
 		}
 	}
 }
@@ -242,8 +275,8 @@ static void battman_spawn_worker() {
 		NSLog(CFSTR("POSIX spawn failed: %s"), strerror(err));
 		char *str = malloc(1024);
 		sprintf(str, "%s: %s", _C("Helper failed to launch"), strerror(err));
-		if (is_carbon())
-			show_alert(L_FAILED, str, L_OK);
+		//if (is_carbon())
+		//	show_alert(L_FAILED, str, L_OK);
 		free(str);
 		return;
 	}

@@ -18,6 +18,8 @@
 
 	<key>platform-application</key>
 	<true/>
+	<key>com.apple.springboard.appbackgroundstyle</key>
+	<true/>
 
 	<key>com.apple.private.tcc.allow</key>
 	<array>
@@ -159,6 +161,8 @@
 
 	<!-- SpringBoard -->
 	<key>com.apple.springboard.setIdleText</key>
+	<true/>
+	<key>com.apple.springboard.configureHomeScreenForTesting</key>
 	<true/>
 
 	<!-- MobileGestalt -->

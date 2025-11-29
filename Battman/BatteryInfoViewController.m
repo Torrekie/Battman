@@ -157,6 +157,11 @@ enum sections_batteryinfo {
 	if (is_debugged())
 		copyright.text = [copyright.text stringByAppendingFormat:@", %@", _("Debugger Attached")];
 
+	extern int connect_to_daemon(bool);
+	// Clear badge state
+	if (!connect_to_daemon(false))
+		set_badge(NULL);
+
 	copyright.font = [UIFont systemFontOfSize:12];
     copyright.textAlignment = NSTextAlignmentCenter;
     copyright.textColor = [UIColor grayColor];

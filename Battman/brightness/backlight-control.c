@@ -88,7 +88,7 @@ float backlight_percent(void) {
 	if (!displayParams || CFGetTypeID(displayParams) != CFDictionaryGetTypeID())
 		return ret;
 
-	// DCP writes MilliNits, DFR writes raw values
+	// DCP writes MilliNits, non-DCP writes raw values
 	CFTypeRef brightness = CFDictionaryGetValue((CFDictionaryRef)displayParams, dcp_backlight() ? CFSTR("BrightnessMilliNits") : CFSTR("brightness"));
 	if (!brightness || CFGetTypeID(brightness) != CFDictionaryGetTypeID())
 		return ret;

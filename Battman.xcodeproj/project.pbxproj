@@ -307,10 +307,6 @@
 		684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		684972EA2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		684972EB2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
-		684972ED2EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
-		684972EE2EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
-		684972EF2EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
-		684972F02EAF482500C9C58A /* de.po in Resources */ = {isa = PBXBuildFile; fileRef = 684972EC2EAF482500C9C58A /* de.po */; };
 		684972FC2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
@@ -364,6 +360,10 @@
 		68B68F6C2E21026600431E14 /* thermal.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B68F6B2E21026600431E14 /* thermal.c */; };
 		68B7513E2E2A425D003C94BC /* wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B7513D2E2A425D003C94BC /* wrapper.c */; };
 		68B751422E2A468C003C94BC /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68B751412E2A468C003C94BC /* SystemConfiguration.framework */; };
+		68BC0A0A2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
+		68BC0A0B2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
+		68BC0A0C2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
+		68BC0A0D2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
 		68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
 		68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
 		68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
@@ -411,10 +411,6 @@
 		68D800C72EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
 		68D800C82EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
 		68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
-		68D800CB2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
-		68D800CC2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
-		68D800CD2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
-		68D800CE2ECB200F0012B84A /* vi.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D800CA2ECB200E0012B84A /* vi.po */; };
 		68E674482ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
 		68E674492ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
 		68E6744A2ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
@@ -1998,6 +1994,9 @@
 		68B7513F2E2A426F003C94BC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		68B751402E2A4529003C94BC /* wrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = wrapper.h; sourceTree = "<group>"; };
 		68B751412E2A468C003C94BC /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		68BC0A082ED5A43B0046407B /* BrightnessAdvancedViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BrightnessAdvancedViewController.h; sourceTree = "<group>"; };
+		68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BrightnessAdvancedViewController.m; sourceTree = "<group>"; };
+		68BC0A142ED82DF10046407B /* xpcextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = xpcextern.h; sourceTree = "<group>"; };
 		68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsViewController.h; path = Battman/AnalyticsViewController.h; sourceTree = SOURCE_ROOT; };
 		68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsViewController.m; path = Battman/AnalyticsViewController.m; sourceTree = SOURCE_ROOT; };
 		68C0C73D2E93B92F006F73EA /* UIImage+SVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+SVG.h"; sourceTree = "<group>"; };
@@ -2188,6 +2187,8 @@
 			children = (
 				68336E352E9F7F7900E9F180 /* BrightnessDetailsViewController.h */,
 				68336E362E9F7F7A00E9F180 /* BrightnessDetailsViewController.m */,
+				68BC0A082ED5A43B0046407B /* BrightnessAdvancedViewController.h */,
+				68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */,
 			);
 			name = BrightnessDetailsViewController;
 			sourceTree = "<group>";
@@ -14339,6 +14340,7 @@
 				68DCA5AD2D3F9BFD004D0104 /* glibextern.h */,
 				68DCA5AE2D3FA4DA004D0104 /* intlextern.h */,
 				68B291432DDC60510089BA1F /* iokitextern.h */,
+				68BC0A142ED82DF10046407B /* xpcextern.h */,
 				689FE0B72DEEEDC600550EBE /* UPSMonitor.h */,
 				689FE0B82DEEEDC600550EBE /* UPSMonitor.m */,
 				683B2D052E6C344E00FECDF5 /* UPSMonitor-new.m */,
@@ -14692,8 +14694,6 @@
 				684114BE2E5323E2001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684114BF2E5323E2001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684114C02E5323E2001B76B6 /* license.html in Resources */,
-				68D800CC2ECB200F0012B84A /* vi.po in Resources */,
-				684972EE2EAF482500C9C58A /* de.po in Resources */,
 				684114C12E5323E2001B76B6 /* locales in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14706,8 +14706,6 @@
 				684115142E57BDE7001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684115152E57BDE7001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684115162E57BDE7001B76B6 /* license.html in Resources */,
-				68D800CD2ECB200F0012B84A /* vi.po in Resources */,
-				684972EF2EAF482500C9C58A /* de.po in Resources */,
 				684115172E57BDE7001B76B6 /* locales in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14720,8 +14718,6 @@
 				684972B52EACB71B00C9C58A /* BattmanIcons@2x.artwork in Resources */,
 				684972B62EACB71B00C9C58A /* BattmanIcons@3x.artwork in Resources */,
 				684972B72EACB71B00C9C58A /* license.html in Resources */,
-				68D800CE2ECB200F0012B84A /* vi.po in Resources */,
-				684972F02EAF482500C9C58A /* de.po in Resources */,
 				684972B82EACB71B00C9C58A /* locales in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -14730,10 +14726,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				684972ED2EAF482500C9C58A /* de.po in Resources */,
 				6845759C2E3CBFEB00618DFD /* BattmanIcons@2x.artwork in Resources */,
 				6845759A2E3CBD2B00618DFD /* BattmanIcons@3x.artwork in Resources */,
-				68D800CB2ECB200F0012B84A /* vi.po in Resources */,
 				6838BF6A2DB8D06B007EB66C /* license.html in Resources */,
 				687742B62D43838500375A2C /* locales in Resources */,
 			);
@@ -15060,6 +15054,7 @@
 				684114B12E5323E2001B76B6 /* BatteryDetailsViewController.m in Sources */,
 				684114B22E5323E2001B76B6 /* CompatibilityHelper.c in Sources */,
 				684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
+				68BC0A0B2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */,
 				684114B32E5323E2001B76B6 /* common.c in Sources */,
 				683B2C5E2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
 				68E674932ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
@@ -15156,6 +15151,7 @@
 				684115072E57BDE7001B76B6 /* BatteryDetailsViewController.m in Sources */,
 				684115082E57BDE7001B76B6 /* CompatibilityHelper.c in Sources */,
 				684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
+				68BC0A0C2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */,
 				684115092E57BDE7001B76B6 /* common.c in Sources */,
 				683B2C5F2E5F74B700FECDF5 /* DatePickerCompactButton.m in Sources */,
 				68E674942ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
@@ -15260,6 +15256,7 @@
 				684972A52EACB71B00C9C58A /* BatteryDetailsViewController.m in Sources */,
 				684972A62EACB71B00C9C58A /* CompatibilityHelper.c in Sources */,
 				684972A72EACB71B00C9C58A /* common.c in Sources */,
+				68BC0A0D2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */,
 				684972A82EACB71B00C9C58A /* DatePickerCompactButton.m in Sources */,
 				684972A92EACB71B00C9C58A /* DonationViewController.m in Sources */,
 				68E674952ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
@@ -15350,6 +15347,7 @@
 				6838BFAC2DC3984C007EB66C /* SliderTableViewCell.m in Sources */,
 				68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */,
 				68D800C22EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
+				68BC0A0A2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */,
 				68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */,
 				68B291372DD1E6960089BA1F /* CompatibilityHelper.c in Sources */,
 				68FBDD192DE30A8E0057870A /* common.c in Sources */,

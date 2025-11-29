@@ -470,8 +470,13 @@ void battery_info_insert_section(struct battery_info_section *sect, struct batte
 }
 
 void battery_info_remove_section(struct battery_info_section *sect) {
-	*(sect->self_ref) = sect->next;
-	sect->self_ref    = NULL;
+	if (sect->self_ref) {
+		*(sect->self_ref) = sect->next;
+		if (sect->next) {
+			sect->next->self_ref = sect->self_ref;
+		}
+		sect->self_ref    = NULL;
+	}
 	sect->next        = NULL;
 }
 

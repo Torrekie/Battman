@@ -63,6 +63,7 @@ static void daemon_control_thread(int fd) {
 		if (read(fd, &cmd, 1) <= 0) {
 			NSLog(CFSTR("Daemon: Closing bc %s"), strerror(errno));
 			close(fd);
+			set_badge(NULL);
 			return;
 		}
 		NSLog(CFSTR("Daemon: READ cmd %d"), (int)cmd);
@@ -72,6 +73,7 @@ static void daemon_control_thread(int fd) {
 			smc_write_safe('CH0C', &val, 1);
 			write(fd, &cmd, 1);
 			close(fd);
+			set_badge(NULL);
 			exit(0);
 		} else if (cmd == 2) {
 			write(fd, &cmd, 1);
@@ -79,6 +81,7 @@ static void daemon_control_thread(int fd) {
 			update_power_level(last_power_level);
 		} else if (cmd == 5) {
 			close(fd);
+			set_badge(NULL);
 			pthread_exit(NULL);
 		} else if (cmd == 6) {
 			// Redirect logs
@@ -117,8 +120,11 @@ static void daemon_control_thread(int fd) {
 static void daemon_control() {
 	struct sockaddr_un sockaddr;
 	sockaddr.sun_family = AF_UNIX;
-	chdir(battman_config_dir());
-	strcpy(sockaddr.sun_path, "./dsck");
+	
+	const char *socket_path = battman_socket_path();
+	strncpy(sockaddr.sun_path, socket_path, sizeof(sockaddr.sun_path) - 1);
+	sockaddr.sun_path[sizeof(sockaddr.sun_path) - 1] = '\0';
+	
 	remove(sockaddr.sun_path);
 	umask(0);
 	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -188,28 +194,37 @@ static int obc_switch(bool on) {
  */
 
 static void power_switch_safe(bool on, bool override_obc, bool keep_ac) {
-	uint32_t ret4 = 0;
-	smc_read_n('CH0R', &ret4, sizeof(ret4));
-	/* Bit 1: No VBUS */
-	if (ret4 & (1 << 1))
-		return;
-
 	uint8_t ret1 = 0;
 	/* ExternalConnected also refers to inflow state */
 	smc_read_n('CHCE', &ret1, sizeof(ret1));
-	if (!ret1)
+	if (!ret1) {
+		set_badge("⊗"); // No adapter connected
 		return;
+	}
+
+	uint32_t ret4 = 0;
+	smc_read_n('CH0R', &ret4, sizeof(ret4));
+	/* Bit 1: No VBUS */
+	if (ret4 & (1 << 1)) {
+		set_badge("⏻"); // Stopped for some reason
+		return;
+	}
 
 	// keep_ac should only be set when drain unset
 	ret1 = 0;
+	bool obc_taken = false;
 	if (keep_ac) {
 		NSLog(CFSTR("Daemon setting CH0C %s"), on ? "on" : "off");
 		smc_read_n('CH0C', &ret1, sizeof(ret1));
 		/* Bit 0: On/Off (setbatt) */
 		/* Bit 1: OBC or no VBUS */
-		if (ret1 & (1 << 1) && override_obc) {
-			obc_switch(false);
-			smc_write_safe('CH0B', &on, 1);
+		if (ret1 & (1 << 1)) {
+			if (override_obc) {
+				obc_switch(false);
+				smc_write_safe('CH0B', &on, 1);
+			} else {
+				obc_taken = true;
+			}
 		}
 		/* No need to keep other bits when setting, BMS is automatically doing it */
 		if (on != CH0CCache) {
@@ -223,8 +238,11 @@ static void power_switch_safe(bool on, bool override_obc, bool keep_ac) {
 		/* Bit 5: Field Diagnostics */
 		// Otherwise, just cut off AC to stop charging
 		smc_read_n('CH0I', &ret1, sizeof(ret1));
-		if (ret1 & (1 << 1) && override_obc) {
-			obc_switch(false);
+		if (ret1 & (1 << 1)) {
+			if (override_obc)
+				obc_switch(false);
+			else
+				obc_taken = true;
 			// Do not explicitly set CH0J, it will add Bit 5 instead of Bit 1
 			// Resulting in NOT_CHARGING_REASON_FIELDDIAGS
 			// smc_write_safe('CH0J', &on, 1);
@@ -235,6 +253,10 @@ static void power_switch_safe(bool on, bool override_obc, bool keep_ac) {
 			smc_write_safe('CH0I', &on, 1);
 		}
 	}
+	if (obc_taken)
+		set_badge("⎋"); // OBC taken
+	else
+		set_badge(on ? "▶" : "⏾"); // Charging On/Off state
 }
 
 static void update_power_level(int val) {
@@ -302,11 +324,21 @@ void daemon_main(void) {
 int battman_run_daemon(void) {
 	posix_spawnattr_t sattr;
 	posix_spawnattr_init(&sattr);
-	posix_spawnattr_set_persona_np(&sattr, 99, 1);
+	posix_spawnattr_set_persona_np(&sattr, 99, 1); // POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE
 	posix_spawnattr_set_persona_uid_np(&sattr, 0);
 	posix_spawnattr_set_persona_gid_np(&sattr, 0);
 	posix_spawnattr_setprocesstype_np(&sattr, 0x300); // daemon standard
-	posix_spawnattr_setjetsam_ext(&sattr, 0, 3, 80, 80);
+	// JETSAM_PRIORITY_IMPORTANT(18) or JETSAM_PRIORITY_BACKGROUND(3)?
+	// FIXME: Consider add a toggle for it
+	int priority = 18;
+	if (__builtin_available(iOS 16.0, *)) {
+		priority = 180;
+	}
+	// XXX: Consider force to UI role, since this was not a real launchdaemon
+	// posix_spawnattr_set_darwin_role_np(&attr, PRIO_DARWIN_ROLE_UI);
+
+	// Limit 80 MiB
+	posix_spawnattr_setjetsam_ext(&sattr, 0, priority, 80, 80);
 #ifndef POSIX_SPAWN_SETSID
 #define POSIX_SPAWN_SETSID 0x400
 #endif

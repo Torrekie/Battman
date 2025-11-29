@@ -229,19 +229,23 @@ final:
 
 - (void)setLPM:(UISwitch *)cswitch {
     NSError *err = nil;
-    NSString *bundle_name = nil;
-    if (@available(iOS 16.0, macOS 13.0, *)) {
-        bundle_name = @"LowPowerMode.framework";
-    } else {
-        bundle_name = @"CoreDuet.framework";
-    }
-
-    NSBundle *bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:@"/System/Library/PrivateFrameworks/%@", bundle_name]];
-    if (![bundle loadAndReturnError:&err]) {
-        NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), bundle_name, L_ERR, [err localizedDescription]];
-        show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-        return;
-    }
+	NSString *bundleID = nil;
+	if (@available(iOS 16.0, macOS 13.0, *)) {
+		bundleID = @"com.apple.powerd.LowPowerMode";
+	} else {
+		bundleID = @"com.apple.CoreDuet";
+	}
+	
+	NSBundle *bundle = [NSBundle bundleWithIdentifier:bundleID];
+	if (!bundle) {
+		show_alert(L_FAILED, [NSString stringWithFormat:_("Current device has no builtin LowPowerMode framework (%@)."), bundleID].UTF8String, L_OK);
+		return;
+	}
+	if (![bundle loadAndReturnError:&err]) {
+		NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), bundleID, L_ERR, [err localizedDescription]];
+		show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
+		return;
+	}
 
     BOOL val = NO;
     if (cswitch) {
@@ -380,7 +384,7 @@ final:
 	if (indexPath.section == CM_SECT_SMART_CHARGING) {
 		if (indexPath.row == 2) {
 			NSError *err = nil;
-			NSBundle *powerUIBundle = [NSBundle bundleWithPath:@"/System/Library/PrivateFrameworks/PowerUI.framework"];
+			NSBundle *powerUIBundle = [NSBundle bundleWithIdentifier:@"com.apple.PowerUI"];
 			if (![powerUIBundle loadAndReturnError:&err]) {
 				NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), @"PowerUI.framework", L_ERR, [err localizedDescription]];
 				show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
@@ -516,7 +520,7 @@ tvend:
             selector = @selector(setLPM:);
         } else if (indexPath.row == 1) {
             cell.textLabel.text = _("Disable on A/C");
-            if (batterysaver) {
+            if (batterysaver || is_simulator()) {
                 id state = [batterysaver valueForKey:@"autoDisableWhenPluggedIn"];
                 if (state)
                     cswitch.on = [state boolValue];
@@ -530,7 +534,7 @@ tvend:
             selector = @selector(setLPMAutoDisable:);
         } else if (indexPath.row == 2) {
             cell.textLabel.text = _("Disable When Exceeds");
-            if (batterysaver) {
+            if (batterysaver || is_simulator()) {
                 id value = [batterysaver valueForKey:@"autoDisableThreshold"];
                 lpm_thr = [value floatValue];
                 cswitch.on = (value) ? YES : NO;
@@ -555,7 +559,7 @@ tvend:
             cell_s.userInteractionEnabled = cell_s.slider.enabled;
 
             cell_s.slider.value = (lpm_thr) ? lpm_thr : 80;
-            cell_s.textField.text = (lpm_thr) ? [NSString stringWithFormat:@"%.4g", lpm_thr] : @"80.00";
+            cell_s.textField.text = (lpm_thr) ? [NSString stringWithFormat:@"%d", (int)lpm_thr] : @"80";
 
             /* Set delegate */
             cell_s.delegate = self;
@@ -577,16 +581,21 @@ tvend:
 #pragma mark - SliderTableViewCell Delegate
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didChangeValue:(float)value {
-    DBGLOG(@"Slider changed at row %ld: %f", (long) [self.tableView indexPathForCell:cell].row, value);
+    int rounded = (int)lroundf(value);
+    cell.slider.value = rounded;
+    cell.textField.text = [NSString stringWithFormat:@"%d", rounded];
+    DBGLOG(@"Slider changed at row %ld: %d", (long) [self.tableView indexPathForCell:cell].row, rounded);
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didEndChangingValue:(float)value {
 	if ([cell.reuseIdentifier isEqualToString:@"LPM_THR"]) {
-		lpm_thr = value;
-		if (batterysaver)
-			[batterysaver setFloat:value forKey:@"autoDisableThreshold"];
+		int rounded = (int)lroundf(value);
+		float roundedFloat = (float)rounded;
+		lpm_thr = roundedFloat;
+		if (batterysaver || is_simulator())
+			[batterysaver setFloat:roundedFloat forKey:@"autoDisableThreshold"];
 		else
-			battman_worker_call(3, (void *)&value, 4);
+			battman_worker_call(3, (void *)&roundedFloat, 4);
 		notify_post(batterysaver_notif);
 	}
 }
