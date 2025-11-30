@@ -98,7 +98,7 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 
 	self.iconImageView = [[UIImageView alloc] init];
 	self.iconImageView.translatesAutoresizingMaskIntoConstraints = NO;
-	self.iconImageView.contentMode = UIViewContentModeScaleAspectFit;
+	self.iconImageView.contentMode = UIViewContentModeCenter;
 	self.iconImageView.tintColor = [UIColor compatGrayColor];
 	CGImageRef baseCGImage = NULL;
 
@@ -122,15 +122,37 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	}
 
 	if (baseCGImage) {
-		UIImage *baseImage = [UIImage imageWithCGImage:baseCGImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
-		CGSize intrinsicSize = baseImage.size;
-		CGFloat maxSide = 32.0;
-		CGFloat scale = maxSide / MAX(intrinsicSize.width, intrinsicSize.height);
-		if (scale > 1.0)
-			scale = 1.0;
-		CGSize iconTargetSize = CGSizeMake(intrinsicSize.width * scale, intrinsicSize.height * scale);
-		UIImage *tinted = redrawUIImage(baseImage, self.iconImageView.tintColor, iconTargetSize);
-		self.iconImageView.image = tinted ?: baseImage;
+		CGFloat displayScale = self.traitCollection.displayScale > 0 ? self.traitCollection.displayScale : 2.0;
+		// Create image at exact display pixel dimensions (32 points * display scale)
+		CGSize pixelSize = CGSizeMake(32.0 * displayScale, 32.0 * displayScale);
+		
+		UIGraphicsBeginImageContextWithOptions(CGSizeMake(32.0, 32.0), NO, displayScale);
+		CGContextRef context = UIGraphicsGetCurrentContext();
+		
+		// Get the original CGImage dimensions
+		CGFloat originalWidth = CGImageGetWidth(baseCGImage);
+		CGFloat originalHeight = CGImageGetHeight(baseCGImage);
+		
+		// Calculate scale to fit within 32x32 while preserving aspect ratio
+		CGFloat scale = MIN(pixelSize.width / originalWidth, pixelSize.height / originalHeight);
+		CGFloat scaledWidth = originalWidth * scale;
+		CGFloat scaledHeight = originalHeight * scale;
+		
+		// Center the image
+		CGFloat x = (pixelSize.width - scaledWidth) / 2.0;
+		CGFloat y = (pixelSize.height - scaledHeight) / 2.0;
+		
+		// Set tint color and draw
+		CGContextSetFillColorWithColor(context, self.iconImageView.tintColor.CGColor);
+		CGContextTranslateCTM(context, x / displayScale, y / displayScale);
+		CGContextScaleCTM(context, scale / displayScale, scale / displayScale);
+		CGContextClipToMask(context, CGRectMake(0, 0, originalWidth, originalHeight), baseCGImage);
+		CGContextFillRect(context, CGRectMake(0, 0, originalWidth, originalHeight));
+		
+		UIImage *finalImage = UIGraphicsGetImageFromCurrentImageContext();
+		UIGraphicsEndImageContext();
+		
+		self.iconImageView.image = finalImage;
 	}
 	[self.iconBackgroundView addSubview:self.iconImageView];
 	

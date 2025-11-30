@@ -662,7 +662,7 @@ id redrawUIImage(id image, UIColor *color, CGSize size) {
 		if (CGSizeEqualToSize(targetSize, ocall_t(CGSize, image, size))) {
 			return image;
 		} else {
-			UIGraphicsBeginImageContextWithOptions(targetSize, NO, 0.0);
+			UIGraphicsBeginImageContextWithOptions(targetSize, NO, ocall_t(CGFloat, image, scale));
 			ocall_t(void, image, drawInRect:, CGRectMake(0, 0, targetSize.width, targetSize.height));
 			id resized = UIGraphicsGetImageFromCurrentImageContext();
 			UIGraphicsEndImageContext();
@@ -670,7 +670,7 @@ id redrawUIImage(id image, UIColor *color, CGSize size) {
 		}
 	}
 	
-	UIGraphicsBeginImageContextWithOptions(targetSize, NO, 0.0);
+	UIGraphicsBeginImageContextWithOptions(targetSize, NO, ocall_t(CGFloat, image, scale));
 	CGContextRef ctx = UIGraphicsGetCurrentContext();
 	// UIKit drawing is flipped appropriately for UIImage drawing functions, but
 	// we use CoreGraphics clipping to mask so no extra transform is needed.
