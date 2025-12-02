@@ -114,13 +114,11 @@ struct battery_info_section;
 struct battery_info_section_context {
 	uint64_t custom_identifier;
 	void (*update)(struct battery_info_section *);
-	bool destroying; // Flag to indicate if section is being destroyed
 };
 
 struct accessory_info_section_context {
 	uint64_t identifier;
 	void (*update)(struct battery_info_section *);
-	bool destroying; // Flag to indicate if section is being destroyed
 	int primary_port;
 	io_service_t connect;
 };
@@ -179,6 +177,6 @@ struct battery_info_section *battery_info_get_section(struct battery_info_sectio
 //void battery_info_update_iokit_with_data(struct battery_info_node *head, const void *info, bool inDetail);
 //void battery_info_update_iokit(struct battery_info_node *head, bool inDetail);
 void battery_info_init(struct battery_info_section **);
-void battery_info_remove_section(struct battery_info_section *sect);
+int battery_info_remove_section(struct battery_info_section *sect);
 
 __END_DECLS

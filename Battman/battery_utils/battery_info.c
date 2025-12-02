@@ -273,7 +273,7 @@ struct battery_info_section *bi_make_section(const char *name, uint64_t context_
 	section->self_ref                    = NULL;
 	memcpy(&section->data, section_begin, size);
 	*(char **)((uint64_t)section + size + 24) = NULL;
-	section->context                          = (struct battery_info_section_context *)((uint64_t)section + size + 32);
+	section->context=(struct battery_info_section_context *)((uint64_t)section + size + 32);
 	// Initialize context fields
 	memset(section->context, 0, context_size);
 	return section;
@@ -283,14 +283,7 @@ void bi_destroy_section(struct battery_info_section *sect) {
 	if (!sect || !sect->context)
 		return;
 	
-	// Mark section as being destroyed
-	sect->context->destroying = true;
-	
-	if (sect->self_ref)
-		battery_info_remove_section(sect);
 	sect->data[0].name = NULL;   // This is to tell update() that the section is being destroyed
-	sect->context->update(sect); // update() will have to release resources
-	free(sect);
 }
 
 void bi_node_change_content_value(struct battery_info_node *node,
@@ -477,15 +470,18 @@ void battery_info_insert_section(struct battery_info_section *sect, struct batte
 	}
 }
 
-void battery_info_remove_section(struct battery_info_section *sect) {
+int battery_info_remove_section(struct battery_info_section *sect) {
 	if (sect->self_ref) {
-		*(sect->self_ref) = sect->next;
+		if(!__atomic_compare_exchange(sect->self_ref,&sect,&sect->next,true,__ATOMIC_ACQUIRE,__ATOMIC_RELAXED))
+			return 0;
+		//*(sect->self_ref) = sect->next;
 		if (sect->next) {
 			sect->next->self_ref = sect->self_ref;
 		}
-		sect->self_ref    = NULL;
+		sect->self_ref=NULL;
 	}
-	sect->next        = NULL;
+	sect->next=NULL;
+	return 1;
 }
 
 static int battery_info_has(struct battery_info_section *head, uint64_t identifier) {
@@ -535,33 +531,23 @@ void battery_info_poll(struct battery_info_section **head) {
 	}
 }
 
-// Non-recursive update to avoid use-after-free when sections are destroyed during update
-static void _battery_info_update(struct battery_info_section *head) {
-	struct battery_info_section *current = head;
-	
-	// First pass: collect all sections to update
-	struct battery_info_section *sections_to_update[32]; // Reasonable limit
-	int section_count = 0;
-	
-	while (current && section_count < 32) {
-		sections_to_update[section_count++] = current;
-		current = current->next;
-	}
-	
-	// Second pass: update sections in reverse order (as the original recursive version did)
-	for (int i = section_count - 1; i >= 0; i--) {
-		struct battery_info_section *sect = sections_to_update[i];
-		// Check if section is still valid (not destroyed or being destroyed)
-		if (sect->context && sect->context->update && sect->data[0].name && !sect->context->destroying) {
-			sect->context->update(sect);
-		}
-	}
-}
-
 void battery_info_update(struct battery_info_section **head) {
 	battery_info_poll(head);
-	if (*head)
-		_battery_info_update(*head);
+	int retry=1;
+	while(*head&&retry) {
+		retry=0;
+		for(struct battery_info_section *i=*head;i;i=i->next) {
+			if(!i->data[0].name) {
+				retry=1;
+				if(battery_info_remove_section(i)) {
+					i->context->update(i);
+					free(i);
+				}
+				break;
+			}
+			i->context->update(i);
+		}
+	}
 }
 
 struct battery_info_section *battery_info_get_section(struct battery_info_section *head, long n) {
