@@ -95,6 +95,7 @@ else
 fi
 
 locale_files=`ls Localizations/*.po`
+base_locale="Localizations/en.po"
 for fn in $locale_files; do
 	declare -A cur="(`read_po ${fn}`)"
 	for i in "${!lkeys[@]}"; do
@@ -102,7 +103,11 @@ for fn in $locale_files; do
 		lcs["$fn"]="${lcs[$fn]}\t{(\"$curval\"),CFSTR(\"$curval\")},\n"
 	done
 done
+localize_code="${localize_code}${lcs[${base_locale}]}"
 for i in $locale_files; do
+	if [ "$i" = "$base_locale" ]; then
+		continue
+	fi
 	localize_code="${localize_code}${lcs[${i}]}"
 done
 echo "#include <CoreFoundation/CFString.h>"
