@@ -5,7 +5,7 @@
 ; current version only works for arm64 iOS :(
 ; Licensing code and some utilities
 
-#define USE_UIWEBVIEW 0
+#define USE_UIWEBVIEW 1
 
 #ifdef DEBUG
 #if USE_UIWEBVIEW
@@ -559,11 +559,7 @@ show_license.pcb:
 	mov x21,x0
 	adrp x0,licenseStr@PAGE
 	add x0,x0,licenseStr@PAGEOFF
-#if 0
-	bl ___CFStringMakeConstantString
-#else
-    bl _cond_localize
-#endif
+	bl _cond_localize
 	mov x2,x0
 	mov x0,x21
 	adrp x1,sel.setTitle@PAGE
@@ -620,45 +616,14 @@ show_license.pcb:
 	bl _objc_msgSend
 	add sp,sp,#32
 	str x0,[sp,#8]
-#if 0
-	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
-	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
-	adrp x1,sel.1new@PAGE
-	ldr x1,[x1,sel.1new@PAGEOFF]
-	bl _objc_msgSend
-	;str x0,[sp,#8]
-	mov x21,x0
-	;str x21,[sp,#16]
-	;ldr x21,[sp,#8]
-	/*mov x0,x20
-	 adrp x1,sel.frame@PAGE
-	 ldr x1,[x1,sel.frame@PAGEOFF]
-	 bl _objc_msgSend
-	 adrp x1,sel.setFrame@PAGE
-	 ldr x1,[x1,sel.setFrame@PAGEOFF]
-	 mov x2,x0
-	 mov x0,x21
-	 bl _objc_msgSend*/
-#else
 	; Create WebView with proper frame and configuration
 	mov x0,x20
-	adrp x1,sel.bounds@PAGE
-	ldr x1,[x1,sel.bounds@PAGEOFF]
-	bl _objc_msgSend
-	; x0-x3 now contain CGRect (origin.x, origin.y, size.width, size.height)
 
 #ifdef USE_UIWEBVIEW
-	adrp x0,UIWebView_str@PAGE
-	add x0,x0,UIWebView_str@PAGEOFF
-	bl _objc_getRequiredClass
-	cbz x0,wv_simple
-	adrp x1,allocSel@PAGE
-	ldr x1,[x1,allocSel@PAGEOFF]
-	bl _objc_msgSend
-	cbz x0,wv_simple
-	; Frame data is already in d0-d3
-	adrp x1,sel.initWithFrame@PAGE
-	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
+	adrp x0,_OBJC_CLASS_$_UIWebView@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_UIWebView@GOTPAGEOFF]
+	adrp x1,sel.1new@PAGE
+	ldr x1,[x1,sel.1new@PAGEOFF]
 	bl _objc_msgSend
 	mov x21,x0
 	mov x0,x21
@@ -695,85 +660,87 @@ wv_b:
 	ldr x1,[x1,sel.setBackgroundColor@PAGEOFF]
 	bl _objc_msgSend
 #else
-	sub sp,sp,#64
-	stp d0,d1,[sp]
-	stp d2,d3,[sp,#16]
-	adrp x0,WKWebViewConfiguration_str@PAGE
-	add x0,x0,WKWebViewConfiguration_str@PAGEOFF
-	bl _objc_getRequiredClass
-	cbz x0,wv_simple
+	sub sp,sp,#32
+	adrp x0,_OBJC_CLASS_$_WKWebViewConfiguration@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_WKWebViewConfiguration@GOTPAGEOFF]
 	adrp x1,sel.1new@PAGE
 	ldr x1,[x1,sel.1new@PAGEOFF]
 	bl _objc_msgSend
 	cbz x0,wv_simple
-	str x0,[sp,#32]
-	adrp x0,WKUserScript_str@PAGE
-	add x0,x0,WKUserScript_str@PAGEOFF
-	bl _objc_getRequiredClass
+	str x0,[sp]
+	adrp x0,_OBJC_CLASS_$_WKUserScript@GOTPAGE
+	ldr x0,[x0,_OBJC_CLASS_$_WKUserScript@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#40]
+	str x0,[sp,#8]
 	adrp x0,js_disable_sharedworker@PAGE
 	add x0,x0,js_disable_sharedworker@PAGEOFF
 	bl ___CFStringMakeConstantString
-	str x0,[sp,#48]
-	ldr x0,[sp,#40]     ; WKUserScript instance
+	str x0,[sp,#16]
+	ldr x0,[sp,#8]
 	adrp x1,sel.initWithSourceInjectionTime@PAGE
 	ldr x1,[x1,sel.initWithSourceInjectionTime@PAGEOFF]
-	ldr x2,[sp,#48]
-	mov x3,#0
-	mov x4,#0
+	ldr x2,[sp,#16]
+	mov x3,xzr
+	mov x4,xzr
 	bl _objc_msgSend
-	str x0,[sp,#40]
+	str x0,[sp,#8]
 	; Get userContentController from configuration
-	ldr x0,[sp,#32]     ; WKWebViewConfiguration
+	ldr x0,[sp]
 	adrp x1,sel.userContentController@PAGE
 	ldr x1,[x1,sel.userContentController@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#56]
-	ldr x0,[sp,#56]
+	str x0,[sp,#24]
+	ldr x0,[sp,#24]
 	adrp x1,sel.addUserScript@PAGE
 	ldr x1,[x1,sel.addUserScript@PAGEOFF]
-	ldr x2,[sp,#40]
+	ldr x2,[sp,#8]
 	bl _objc_msgSend
 	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
+	str x0,[sp,#8]
+	mov x0,x20
+	adrp x1,sel.bounds@PAGE
+	ldr x1,[x1,sel.bounds@PAGEOFF]
+	bl _objc_msgSend
 	cbz x0,wv_simple
 	adrp x1,sel.initWithFrameConfiguration@PAGE
 	ldr x1,[x1,sel.initWithFrameConfiguration@PAGEOFF]
-	ldp d0,d1,[sp]      ; Frame origin (x, y)
-	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
-	ldr x2,[sp,#32]     ; WKWebViewConfiguration
+	ldr x2,[sp]
 	bl _objc_msgSend
 	cbz x0,wv_simple
-	add sp,sp,#64
+	add sp,sp,#32
 	mov x21,x0
 	b wv_done
 #endif
 
 wv_simple:
 #ifndef USE_UIWEBVIEW
-	ldp d0,d1,[sp]      ; Frame origin (x, y)
-	ldp d2,d3,[sp,#16]  ; Frame size (width, height)
-	add sp,sp,#64  ; Clean up stack
 	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	; Frame data is already in d0-d3
+	str x0,[sp]
+	; ~~Frame data is already in d0-d3~~
+	; bruh no way they are still there
+	mov x0,x20
+	adrp x1,sel.bounds@PAGE
+	ldr x1,[x1,sel.bounds@PAGEOFF]
+	bl _objc_msgSend
+	ldr x0,[sp]
 	adrp x1,sel.initWithFrame@PAGE
 	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
 	bl _objc_msgSend
+	add sp,sp,#32
 	mov x21,x0
 #endif
 
 wv_done:
-#endif
 	mov x0,x20
 	mov x2,x21
 	adrp x1,sel.addSubview@PAGE
@@ -1293,12 +1260,6 @@ UIWindow_str:
 .asciz "UIWindow"
 UISceneDelegate_str:
 .asciz "UISceneDelegate"
-WKWebViewConfiguration_str:
-.asciz "WKWebViewConfiguration"
-WKUserScript_str:
-.asciz "WKUserScript"
-UIWebView_str:
-.asciz "UIWebView"
 uiresponderclass:
 .asciz "SceneDelegateBase"
 curDevStr:
