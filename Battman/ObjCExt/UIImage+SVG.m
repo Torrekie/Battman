@@ -26,7 +26,10 @@
 	CGSize size = svg.size;
 	if (CGSizeEqualToSize(size, CGSizeZero)) return nil;
 
-	if (scale <= 0.0) scale = UIScreen.autoScreen.scale;
+	if (scale <= 0.0) {
+		UIScreen *screen = UIScreen.autoScreen;
+		scale = screen ? screen.scale : 2.0;
+	}
 
 	UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
 	format.scale = scale;
@@ -54,7 +57,8 @@
 		sCache.countLimit = 16; // tune as needed
 	});
 
-	CGFloat scale = UIScreen.autoScreen.scale;
+	UIScreen *screen = UIScreen.autoScreen;
+	CGFloat scale = screen ? screen.scale : 2.0;
 	NSString *cacheKey = [NSString stringWithFormat:@"%@@%.2f", name, scale];
 	UIImage *cached = [sCache objectForKey:cacheKey];
 	if (cached) return cached;

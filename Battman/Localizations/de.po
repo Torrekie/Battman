@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3\n"
+"Project-Id-Version: Battman 1.0.3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-29 17:22+0800\n"
+"POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-10-11 17:32+0800\n"
 "Last-Translator: therealhoodboy\n"
 "Language-Team: German\n"
@@ -245,6 +245,14 @@ msgstr "Laden fehlgeschlagen"
 
 msgid "Unable to set Low Power Mode."
 msgstr "Stromsparmodus konnte nicht aktiviert werden."
+
+#, objc-format
+msgid "This device does not allow setting notify register '%s'."
+msgstr "Dieses Gerät erlaubt nicht, das Notify-Register '%s' zu setzen."
+
+#, objc-format
+msgid "This device does not seem to be using notify register '%s'."
+msgstr "Dieses Gerät scheint das Notify-Register '%s' nicht zu verwenden."
 
 msgid "Failed to enable Smart Charging."
 msgstr "Intelligentes Laden konnte nicht aktiviert werden."
@@ -1115,6 +1123,9 @@ msgstr "Bildschirmhelligkeit-Backend"
 msgid "Standard"
 msgstr "Standard"
 
+msgid "ID"
+msgstr ""
+
 msgid "Ambient Light Sensor"
 msgstr "Umgebungslichtsensor"
 
@@ -1126,6 +1137,12 @@ msgstr "Farbtiefe"
 
 msgid "Bits"
 msgstr "Bits"
+
+msgid "Unusual Panel ID"
+msgstr "Ungewöhnliche Panel-ID"
+
+msgid "Current part might not be genuine."
+msgstr "Das aktuelle Bauteil könnte nicht echt sein."
 
 msgid ""
 "No value returned from sensor, device should be checked by service "

@@ -126,7 +126,8 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedLinearITUR_2020);
     _metalLayer.framebufferOnly = NO;  // Allow blit operations to drawable texture
     
     // Match scale
-    _metalLayer.contentsScale = [UIScreen autoScreen].scale;
+    UIScreen *screen = [UIScreen autoScreen];
+    _metalLayer.contentsScale = screen ? screen.scale : 2.0;
     _metalLayer.frame = self.bounds;
     
 #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
@@ -239,6 +240,11 @@ BOOL metal_hdr_available(id<MTLDevice> device) {
 	if ([device supportsTextureSampleCount:1] && hasRequiredGPU) {
 		// Check if the display supports extended dynamic range
 		UIScreen *screen = [UIScreen autoScreen];
+		
+		if (!screen) {
+			DBGLOG(@"UIScreen not available, HDR check deferred");
+			return NO;
+		}
 		
 		// Check for EDR headroom (iOS 16+)
 		if (@available(iOS 16.0, *)) {
@@ -573,10 +579,12 @@ skip_hdr_check:
 }
 
 - (void)appWillEnterForeground:(NSNotification *)notification {
-    // Recreate gradient texture when returning from background
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self createGradientTexture];
-        [self render];
+    // Recreate gradient texture when returning from background with a slight delay
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (self.window) {  // Only render if view is still in a window
+            [self createGradientTexture];
+            [self render];
+        }
     });
     
     DBGLOG(@"GradientHDRView: App entering foreground - resources restored");

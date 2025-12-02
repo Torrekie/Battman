@@ -46,7 +46,8 @@ static void _loadAppSupportBundle(void) {
 	}
 
 	CFErrorRef  err    = NULL;
-	NSString   *size   = [NSString stringWithFormat:@"BattmanIcons@%dx", [UIScreen autoScreen].scale < 3.0 ? 2 : 3];
+	UIScreen *screen = [UIScreen autoScreen];
+	NSString   *size   = [NSString stringWithFormat:@"BattmanIcons@%dx", (screen && screen.scale >= 3.0) ? 3 : 2];
 	CFStringRef cfPath = (__bridge CFStringRef)[[NSBundle mainBundle] pathForResource:size ofType:@"artwork"];
 	CFPropertyListRef names = NULL;
 	CFArrayRef images = CPBitmapCreateImagesFromPath(cfPath, &names, 0, &err);
@@ -93,7 +94,10 @@ enum sections_batteryinfo {
 	BI_SECT_COUNT
 };
 
-@implementation BatteryInfoViewController
+@implementation BatteryInfoViewController {
+	CGFloat _cachedIconCornerRadius;
+	BOOL _cachedIconCornerRadiusValid;
+}
 
 - (NSString *)title {
     return _("Battman");
@@ -106,7 +110,7 @@ enum sections_batteryinfo {
 		// Never mode - don't update automatically
 		return;
 	}
-	
+	NSLog(@"batteryStatusDidUpdate: interval: %f", interval);
 	// Only call super (which calls updateTableView) in auto mode
 	// In timer mode, the timer handles calling updateTableView directly
 	if (interval == 0.0f) {
@@ -119,6 +123,11 @@ enum sections_batteryinfo {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+	
+	// Register cell classes for reuse - cells now support initWithStyle:reuseIdentifier:
+	[self.tableView registerClass:[BatteryInfoTableViewCell class] forCellReuseIdentifier:@"BTTVC-cell"];
+	[self.tableView registerClass:[TemperatureInfoTableViewCell class] forCellReuseIdentifier:@"TITVC-ri"];
+	[self.tableView registerClass:[BrightnessInfoTableViewCell class] forCellReuseIdentifier:@"BITVC-ri"];
 
     UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
     [refreshControl addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
@@ -170,6 +179,11 @@ enum sections_batteryinfo {
 }
 
 - (instancetype)init {
+#ifdef DEBUG
+	CFAbsoluteTime initStart = CFAbsoluteTimeGetCurrent();
+	DBGLOG(@"[PERF] BatteryInfoViewController init START");
+#endif
+	
     UITabBarItem *tabbarItem = [UITabBarItem new];
     tabbarItem.title = _("Battery");
     if (@available(iOS 13.0, *)) {
@@ -185,10 +199,26 @@ enum sections_batteryinfo {
     }
     tabbarItem.tag = 0;
     self.tabBarItem = tabbarItem;
+#ifdef DEBUG
+	DBGLOG(@"[PERF]   After tab bar item setup: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
+#endif
+	
     battery_info_init(&batteryInfo);
+#ifdef DEBUG
+	DBGLOG(@"[PERF]   After battery_info_init: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
+#endif
+	
 	[UPSMonitor startWatchingUPS];
+#ifdef DEBUG
+	DBGLOG(@"[PERF]   After UPSMonitor start: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
+#endif
 
 	_loadAppSupportBundle();
+#ifdef DEBUG
+	DBGLOG(@"[PERF]   After _loadAppSupportBundle: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
+	DBGLOG(@"[PERF] BatteryInfoViewController init DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
+#endif
+	
 	if (@available(iOS 13.0, *))
 		return [super initWithStyle:UITableViewStyleInsetGrouped];
 	else
@@ -196,9 +226,22 @@ enum sections_batteryinfo {
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+#ifdef DEBUG
+	CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
+	DBGLOG(@"[PERF] BatteryInfoViewController viewWillAppear START");
+#endif
+	
 	[super viewWillAppear:animated];
+#ifdef DEBUG
+	DBGLOG(@"[PERF] After super viewWillAppear: %.3fms", (CFAbsoluteTimeGetCurrent() - start) * 1000);
+#endif
+	
 	// Update refresh mode based on current preferences
 	BSVCRefreshModeDidUpdate(self);
+#ifdef DEBUG
+	DBGLOG(@"[PERF] After BSVCRefreshModeDidUpdate: %.3fms", (CFAbsoluteTimeGetCurrent() - start) * 1000);
+	DBGLOG(@"[PERF] BatteryInfoViewController viewWillAppear DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - start) * 1000);
+#endif
 }
 
 - (void)refreshModeDidUpdate {
@@ -217,18 +260,34 @@ enum sections_batteryinfo {
 }
 
 - (NSString *)tableView:(id)t titleForHeaderInSection:(NSInteger)sect {
+#ifdef DEBUG
+	CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
+	DBGLOG(@"[PERF] titleForHeaderInSection:%ld START", (long)sect);
+#endif
+	
+	NSString *title = nil;
 	switch(sect) {
         case BI_SECT_BATTERY_INFO:
-            return _("Battery Info");
+            title = _("Battery Info");
+			break;
         case BI_SECT_HW_TEMP:
-            return _("Hardware Temperature");
+            title = _("Hardware Temperature");
+			break;
 		case BI_SECT_BRIGHTNESS:
-			return _("Brightness");
+			title = _("Brightness");
+			break;
         case BI_SECT_MANAGE:
-            return _("Manage");
+            title = _("Manage");
+			break;
         default:
-            return nil;
-	};
+            title = nil;
+			break;
+	}
+	
+#ifdef DEBUG
+	DBGLOG(@"[PERF] titleForHeaderInSection:%ld DONE: %.3fms", (long)sect, (CFAbsoluteTimeGetCurrent() - start) * 1000);
+#endif
+	return title;
 }
 
 - (NSString *)tableView:(id)tv titleForFooterInSection:(NSInteger)section {
@@ -267,28 +326,71 @@ enum sections_batteryinfo {
 
 - (UITableViewCell *)tableView:(UITableView *)tv
          cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+#ifdef DEBUG
+	CFAbsoluteTime cellStart = CFAbsoluteTimeGetCurrent();
+	DBGLOG(@"[PERF] cellForRowAtIndexPath section:%ld row:%ld START", (long)indexPath.section, (long)indexPath.row);
+#endif
+	
     if (indexPath.section == BI_SECT_BATTERY_INFO) {
         BatteryInfoTableViewCell *cell = [tv dequeueReusableCellWithIdentifier:@"BTTVC-cell"];
-        if (!cell)
+#ifdef DEBUG
+		DBGLOG(@"[PERF]   After dequeue: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+        if (!cell) {
         	cell = [BatteryInfoTableViewCell new];
+#ifdef DEBUG
+			DBGLOG(@"[PERF]   After new cell: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+		}
         cell.batteryInfo = &batteryInfo;
-        // battery_info_update shall be called within cell impl.
-        [cell updateBatteryInfo];
+        // Defer expensive update to avoid blocking main thread during cell creation
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [cell updateBatteryInfo];
+        });
 		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+#ifdef DEBUG
+		DBGLOG(@"[PERF] cellForRowAtIndexPath BATTERY DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
         return cell;
     } else if (indexPath.section == BI_SECT_HW_TEMP) {
         TemperatureInfoTableViewCell *cell = [tv dequeueReusableCellWithIdentifier:@"TITVC-ri"];
-        if (!cell)
+#ifdef DEBUG
+		DBGLOG(@"[PERF]   After dequeue: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+        if (!cell) {
         	cell = [TemperatureInfoTableViewCell new];
-		[cell updateTemperatureInfo];
+#ifdef DEBUG
+			DBGLOG(@"[PERF]   After new cell: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+		}
+        // Defer expensive SMC/IOKit calls to avoid blocking main thread
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [cell updateTemperatureInfo];
+        });
 		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+#ifdef DEBUG
+		DBGLOG(@"[PERF] cellForRowAtIndexPath TEMP DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
         return cell;
 	} else if (indexPath.section == BI_SECT_BRIGHTNESS) {
 		BrightnessInfoTableViewCell *cell = [tv dequeueReusableCellWithIdentifier:@"BITVC-ri"];
-		if (!cell)
+#ifdef DEBUG
+		DBGLOG(@"[PERF]   After dequeue: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+		if (!cell) {
 			cell = [BrightnessInfoTableViewCell new];
-		[cell updateBrightnessInfo];
+#ifdef DEBUG
+			DBGLOG(@"[PERF]   After new cell: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
+		}
+        // Defer expensive brightness I/O to avoid blocking main thread
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [cell updateBrightnessInfo];
+        });
 		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+#ifdef DEBUG
+		DBGLOG(@"[PERF] cellForRowAtIndexPath BRIGHTNESS DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - cellStart) * 1000);
+#endif
 		return cell;
     } else if (indexPath.section == BI_SECT_MANAGE) {
 		// XXX: Try make this section "InsetGrouped"
@@ -297,7 +399,8 @@ enum sections_batteryinfo {
 		NSArray *rows = @[_("Charging Management"), _("Charging Limit"), _("Thermal Tunes")];
 		if (artwork_avail) {
 			NSArray *icns = @[@"LowPowerUsage", @"ChargeLimit", @"Thermometer"];
-			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf((__bridge CFStringRef)icns[indexPath.row]) scale:[UIScreen autoScreen].scale orientation:UIImageOrientationUp];
+			UIScreen *screen = [UIScreen autoScreen];
+			cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf((__bridge CFStringRef)icns[indexPath.row]) scale:(screen ? screen.scale : 2.0) orientation:UIImageOrientationUp];
 		}
 		cell.textLabel.text = rows[indexPath.row];
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
@@ -309,13 +412,18 @@ enum sections_batteryinfo {
 
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
 	// Smooth corners for icons
-	// U think im goin to use the bundle icon huh? No, we are just lookin for default size
-	UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:[UIScreen autoScreen].scale];
 	if (cell.imageView.image != nil) {
-		[cell.imageView.layer setCornerRadius:tmp.size.width * 0.225f];
+		// Cache the corner radius calculation to avoid expensive _applicationIconImageForBundleIdentifier calls
+		if (!_cachedIconCornerRadiusValid) {
+			UIScreen *screen = [UIScreen autoScreen];
+			UIImage *tmp = [UIImage _applicationIconImageForBundleIdentifier:[NSBundle.mainBundle bundleIdentifier] format:0 scale:(screen ? screen.scale : 2.0)];
+			_cachedIconCornerRadius = tmp.size.width * 0.225f;
+			_cachedIconCornerRadiusValid = YES;
+		}
+		[cell.imageView.layer setCornerRadius:_cachedIconCornerRadius];
 		[cell.imageView.layer setSmoothCorners:YES];
+		cell.imageView.clipsToBounds = YES;
 	}
-	cell.imageView.clipsToBounds = YES;
 }
 
 - (CGFloat)tableView:(id)tv heightForRowAtIndexPath:(NSIndexPath *)indexPath {

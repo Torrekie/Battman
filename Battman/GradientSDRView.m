@@ -52,7 +52,8 @@
 	// Layer setup: we will draw into an image and set layer.contents
 	self.layer.masksToBounds = YES;
 	self.layer.contentsGravity = kCAGravityResizeAspectFill;
-	self.layer.contentsScale = [UIScreen autoScreen].scale;
+	UIScreen *screen = [UIScreen autoScreen];
+	self.layer.contentsScale = screen ? screen.scale : 2.0;
 	
 	// initial parameters (match original)
 	_gradientRadius = 0.4f;
@@ -139,7 +140,11 @@
 
 /// Returns pixel size for current layer bounds & contentsScale
 - (CGSize)pixelSizeForCurrentBounds {
-	CGFloat scale = self.layer.contentsScale > 0 ? self.layer.contentsScale : [UIScreen autoScreen].scale;
+	CGFloat scale = self.layer.contentsScale;
+	if (scale <= 0) {
+		UIScreen *screen = [UIScreen autoScreen];
+		scale = screen ? screen.scale : 2.0;
+	}
 	CGSize s = self.bounds.size;
 	if (s.width <= 0 || s.height <= 0) return CGSizeZero;
 	return CGSizeMake(ceil(s.width * scale), ceil(s.height * scale));
@@ -178,7 +183,8 @@
 		// Set layer.contents on main thread
 		dispatch_async(dispatch_get_main_queue(), ^{
 			// Set contentsScale to match
-			self.layer.contentsScale = [UIScreen autoScreen].scale;
+			UIScreen *screen = [UIScreen autoScreen];
+			self.layer.contentsScale = screen ? screen.scale : 2.0;
 			self.layer.contents = (__bridge id)img;
 			CFRelease(img);
 		});
@@ -277,9 +283,11 @@
 }
 
 - (void)appWillEnterForeground:(NSNotification *)notification {
-	// Re-render on foreground
-	dispatch_async(dispatch_get_main_queue(), ^{
-		[self renderAsyncIfNeededForce:YES];
+	// Re-render on foreground with a slight delay to ensure scene is fully active
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+		if (self.window) {  // Only render if view is still in a window
+			[self renderAsyncIfNeededForce:YES];
+		}
 	});
 	DBGLOG(@"GradientSDRView: App entering foreground - resources restored");
 }

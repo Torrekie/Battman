@@ -5,6 +5,7 @@
 #include "common.h"
 #include "intlextern.h"
 
+#import "ObjCExt/NSBundle+Auto.h"
 #import "ObjCExt/UIColor+compat.h"
 
 #include <notify.h>
@@ -55,6 +56,15 @@ extern void battman_worker_oneshot(char cmd, char arg);
         batterysaver_state = @"com.apple.coreduetd.batterysaver.state";
         system_lpm_notif = "com.apple.system.batterysavermode";
     }
+
+	// Only test UI on Simulators
+	if (batterysaver == nil && is_simulator()) {
+		if (@available(iOS 15.0, macOS 12.0, *))
+			batterysaver = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.powerd.lowpowermode"];
+		else
+			batterysaver = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.coreduetd.batterysaver"];
+	}
+
     if (!springboard)
         springboard = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.springboard"];
 	//self.tableView.allowsSelection=NO;
@@ -229,22 +239,25 @@ final:
 
 - (void)setLPM:(UISwitch *)cswitch {
     NSError *err = nil;
-	NSString *bundleID = nil;
+	NSBundle *bundle = nil;
+	NSString *bundle_name = nil;
+	BOOL use_notif = NO;
 	if (@available(iOS 16.0, macOS 13.0, *)) {
-		bundleID = @"com.apple.powerd.LowPowerMode";
+		bundle_name = @"powerd.LowPowerMode";
+		bundle = [NSBundle systemBundleWithName:bundle_name fallbackExecutable:@"LowPowerMode"];
 	} else {
-		bundleID = @"com.apple.CoreDuet";
+		bundle_name = @"CoreDuet";
+		bundle = [NSBundle systemBundleWithName:bundle_name];
 	}
 	
-	NSBundle *bundle = [NSBundle bundleWithIdentifier:bundleID];
 	if (!bundle) {
-		show_alert(L_FAILED, [NSString stringWithFormat:_("Current device has no builtin LowPowerMode framework (%@)."), bundleID].UTF8String, L_OK);
-		return;
+		show_alert(L_FAILED, [NSString stringWithFormat:_("Current device has no builtin LowPowerMode framework (%@)."), bundle_name].UTF8String, L_OK);
+		use_notif = YES;
 	}
-	if (![bundle loadAndReturnError:&err]) {
-		NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), bundleID, L_ERR, [err localizedDescription]];
+	if (!use_notif && ![bundle loadAndReturnError:&err]) {
+		NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), bundle_name, L_ERR, [err localizedDescription]];
 		show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-		return;
+		use_notif = YES;
 	}
 
     BOOL val = NO;
@@ -258,7 +271,7 @@ final:
     bool get_notif = false;
     if (@available(iOS 16.0, macOS 13.0, *)) {
         get_notif = true;
-    } else {
+    } else if (!use_notif) {
         LPMClass = [bundle classNamed:@"_CDBatterySaver"];
         LPMObject = [LPMClass batterySaver];
         if (@available(iOS 15.0, macOS 12.0, *)) {
@@ -269,7 +282,9 @@ final:
             // Need someone to confirm if it was available for older OS
             lpm_on = [LPMObject getPowerMode] & 1;
         }
-    }
+	} else {
+		get_notif = true;
+	}
 
     if (get_notif) {
         int token;
@@ -284,31 +299,51 @@ final:
     }
 
     if (cswitch) {
-        if (@available(iOS 16.0, macOS 13.0, *)) {
-            LPMClass = [bundle classNamed:@"_PMLowPowerMode"];
-            LPMObject = [LPMClass sharedInstance];
-            [LPMObject setPowerMode:val fromSource:@"com.torrekie.Battman" withCompletion:^(BOOL success, NSError *error) {
-                DBGLOG(@"Switching %@ LPM. Success=%d error: %@", val ? @"into" : @"out of", success, error);
-                if (success) self->lpm_on = val;
-            }];
-        } else {
-            /* 0 = Normal, 1 = LPM */
-            [LPMObject setPowerMode:val error:&err];
-            lpm_on = [LPMObject getPowerMode] & 1;
-            if (lpm_on != val) {
-                NSString *errorMessage = [NSString stringWithFormat:@"%@\n\n%@: %@", _("Unable to set Low Power Mode."), _("Error"), [err localizedDescription]];
-                show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-            } else {
-                NSLog(@"[batterySaver getPowerMode] = %lld", [LPMObject getPowerMode]);
-            }
-        }
-		/* FIXME: The correct way of setting LPM is set & push com.apple.system.lowpowermode */
+		__block BOOL fallback = NO;
+		// We prefers _PMLowPowerMode/_CDBatterySaver because it logs the date
+		if (!use_notif) {
+			if (@available(iOS 16.0, macOS 13.0, *)) {
+				LPMClass = [bundle classNamed:@"_PMLowPowerMode"];
+				LPMObject = [LPMClass sharedInstance];
+				[LPMObject setPowerMode:val fromSource:@"com.torrekie.Battman" withCompletion:^(BOOL success, NSError *error) {
+					DBGLOG(@"Switching %@ LPM. Success=%d error: %@", val ? @"into" : @"out of", success, error);
+					if (success) self->lpm_on = val;
+					else fallback = YES;
+				}];
+			} else {
+				/* 0 = Normal, 1 = LPM */
+				[LPMObject setPowerMode:val error:&err];
+				lpm_on = [LPMObject getPowerMode] & 1;
+				if (lpm_on != val) {
+					NSString *errorMessage = [NSString stringWithFormat:@"%@\n\n%@: %@", _("Unable to set Low Power Mode."), _("Error"), [err localizedDescription]];
+					//show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
+					NSLog(@"%@", errorMessage);
+					fallback = YES;
+				} else {
+					NSLog(@"[batterySaver getPowerMode] = %lld", [LPMObject getPowerMode]);
+				}
+			}
+		}
+		if (use_notif || fallback) {
+			uint64_t state = (uint64_t)val;
+			int      token = 0;
+			if (notify_register_check(system_lpm_notif, &token) == NOTIFY_STATUS_OK) {
+				if (notify_set_state(token, state) == NOTIFY_STATUS_OK)
+					notify_post(system_lpm_notif);
+				else
+					show_alert(L_FAILED, [NSString stringWithFormat:_("This device does not allow setting notify register '%s'."), system_lpm_notif].UTF8String, L_OK);
+			} else
+				show_alert(L_FAILED, [NSString stringWithFormat:_("This device does not seem to be using notify register '%s'."), system_lpm_notif].UTF8String, L_OK);
+			if (notify_get_state(token, &state) == NOTIFY_STATUS_OK)
+				lpm_on = state;
+			notify_cancel(token);
+		}
         cswitch.on = lpm_on;
     }
 }
 
 - (void)setLPMAutoDisable:(UISwitch *)cswitch {
-	if (batterysaver) {
+	if (batterysaver || is_simulator()) {
 		[batterysaver setBool:cswitch.on forKey:@"autoDisableWhenPluggedIn"];
 	} else {
 		battman_worker_oneshot(1, cswitch.on);
@@ -318,7 +353,7 @@ final:
 
 - (void)setAllowThr:(UISwitch *)cswitch {
 	if (!cswitch.on) {
-		if (batterysaver) {
+		if (batterysaver || is_simulator()) {
 			[batterysaver removeObjectForKey:@"autoDisableThreshold"];
 		} else {
 			battman_worker_oneshot(2, 0);
@@ -326,7 +361,7 @@ final:
 		lpm_thr = 0;
 	} else {
 		lpm_thr = 80;
-		if (batterysaver) {
+		if (batterysaver || is_simulator()) {
 			[batterysaver setFloat:lpm_thr forKey:@"autoDisableThreshold"];
 		} else {
 			battman_worker_oneshot(2, 1);
@@ -384,7 +419,7 @@ final:
 	if (indexPath.section == CM_SECT_SMART_CHARGING) {
 		if (indexPath.row == 2) {
 			NSError *err = nil;
-			NSBundle *powerUIBundle = [NSBundle bundleWithIdentifier:@"com.apple.PowerUI"];
+			NSBundle *powerUIBundle = [NSBundle systemBundleWithName:@"PowerUI"];
 			if (![powerUIBundle loadAndReturnError:&err]) {
 				NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), @"PowerUI.framework", L_ERR, [err localizedDescription]];
 				show_alert(L_FAILED, [errorMessage UTF8String], L_OK);

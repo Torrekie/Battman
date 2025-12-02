@@ -18,6 +18,9 @@
 
 @interface BrightnessCellView ()
 @property (nonatomic, strong) UIView *gradientView;
+@property (nonatomic, strong) UIView *brightnessView;
+@property (nonatomic, assign) CGFloat initialPercentage;
+@property (nonatomic, assign) BOOL gradientSetupComplete;
 @end
 
 @implementation BrightnessCellView
@@ -29,19 +32,31 @@
 	[brightnessView.layer setSmoothCorners:YES];
 	brightnessView.layer.masksToBounds = YES;
 
-	{
-		// Check if Metal is disabled by user config
-		BOOL metalDisabled = ([BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_BRIGHT_UI_HDR] == 2);
-		self.gradientView = [[(metalDisabled ? [GradientSDRView class] : [GradientHDRView class]) alloc] initWithFrame:brightnessView.bounds];
-		self.gradientView.center = brightnessView.center;
-		[brightnessView addSubview:self.gradientView];
-		[(GradientHDRView *)self.gradientView setBrightness:percentage animated:YES];
-	}
+	self.brightnessView = brightnessView;
+	self.initialPercentage = percentage;
+	self.gradientSetupComplete = NO;
+	
+	// Defer expensive Metal setup to avoid blocking tab switch animation
+	dispatch_async(dispatch_get_main_queue(), ^{
+		if (!self.gradientSetupComplete && self.window) {  // Only if still in window
+			// Check if Metal is disabled by user config
+			BOOL metalDisabled = ([BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_BRIGHT_UI_HDR] == 2);
+			self.gradientView = [[(metalDisabled ? [GradientSDRView class] : [GradientHDRView class]) alloc] initWithFrame:self.brightnessView.bounds];
+			self.gradientView.center = self.brightnessView.center;
+			[self.brightnessView addSubview:self.gradientView];
+			[(GradientHDRView *)self.gradientView setBrightness:self.initialPercentage animated:NO];
+			self.gradientSetupComplete = YES;
+		}
+	});
+	
 	[self addSubview:brightnessView];
 	return self;
 }
 
 - (void)updateBrightness:(CGFloat)percentage {
+	// Update the stored value in case gradient isn't set up yet
+	self.initialPercentage = percentage;
+	
 	if ([self.gradientView respondsToSelector:@selector(setBrightness:animated:)]) {
 		int percentInt = (int)round(percentage);
 		if ([self.gradientView isKindOfClass:[GradientHDRView class]]) {
@@ -50,14 +65,14 @@
 			[(GradientSDRView *)self.gradientView setBrightness:percentInt animated:YES];
 		}
 	}
+	// If gradientView not set up yet, the deferred block will use the updated initialPercentage
 }
 
 @end
 
 @implementation BrightnessInfoTableViewCell
 
-- (instancetype)init {
-	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"BITVC-ri"];
+- (void)setupCellUI {
 	BrightnessCellView *brightnessCell = [[BrightnessCellView alloc] initWithFrame:CGRectMake(0, 0, 80, 80) percentage:0.0];
 	brightnessCell.translatesAutoresizingMaskIntoConstraints = NO;
 	[self.contentView addSubview:brightnessCell];
@@ -78,6 +93,21 @@
 
 	_brightnessCell = brightnessCell;
 	_brightnessLabel = brightnessLabel;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+	self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+	if (self) {
+		[self setupCellUI];
+	}
+	return self;
+}
+
+- (instancetype)init {
+	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"BITVC-ri"];
+	if (self) {
+		[self setupCellUI];
+	}
 	return self;
 }
 

@@ -54,6 +54,8 @@ typedef enum {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+	// No plans yet
+	self.tableView.allowsSelection = NO;
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"BA_REDUCT"];
 }
 

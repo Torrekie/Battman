@@ -5,13 +5,18 @@
 //  Created by Torrekie on 2025/10/15.
 //
 
+#import "ObjCExt/UIColor+compat.h"
+
 #import "common.h"
+#import "intlextern.h"
+#import <CoreText/CoreText.h>
 #import "brightness/libbrightness.h"
 #import "hw/IOMFB_interaction.h"
 #import "EXTERNAL_HEADERS/CADisplay.h"
 #import "BrightnessDetailsViewController.h"
 #import "BrightnessCardCell.h"
 #import "VirtBriCardCell.h"
+#import "WarnAccessoryView.h"
 #import "BrightnessAdvancedViewController.h"
 
 @interface BrightnessDetailsViewController ()
@@ -51,6 +56,7 @@ typedef enum {
 
 typedef enum {
 	B_ROW_SPECS_BACKEND,
+	B_ROW_SPECS_PANEL_ID,
 	B_ROW_SPECS_ALS,
 	B_ROW_SPECS_REFRESH_RATE,
 	B_ROW_SPECS_BITDEPTH,
@@ -81,6 +87,8 @@ typedef enum {
 	[self _reloadBrightnessCaches];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_brightnessDidChange:) name:UIScreenBrightnessDidChangeNotification object:nil];
 	self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:_("Advanced") style:UIBarButtonItemStylePlain target:self action:@selector(showAdvanced)];
+	// No plans yet
+	self.tableView.allowsSelection = NO;
 }
 
 - (void)showAdvanced {
@@ -249,6 +257,39 @@ typedef enum {
 					cell.textLabel.text = _("Brightness Backend");
 					cell.detailTextLabel.text = self.dcpBacklightCached ? @"DCP" : _("Standard");
 					break;
+				case B_ROW_SPECS_PANEL_ID: {
+					cell.textLabel.text = _("ID");
+					BOOL possibly_malformed = NO;
+					const char *panel_id = iomfb_primary_screen_panel_id();
+					if (panel_id == NULL) {
+						cell.detailTextLabel.text = is_simulator() ? _("Simulator") : _("Unknown");
+						possibly_malformed = !is_simulator();
+					} else {
+						cell.detailTextLabel.text = [NSString stringWithUTF8String:panel_id];
+						for (int i = 0; i < strlen(panel_id); i++) {
+							if (!isalpha(panel_id[i]) && !isdigit(panel_id[i])) {
+								possibly_malformed = YES;
+								break;
+							}
+						}
+					}
+
+					if (possibly_malformed) {
+						WarnAccessoryView *button = [WarnAccessoryView warnAccessoryView];
+						[cell setAccessoryType:UITableViewCellAccessoryNone];
+						[cell setAccessoryView:button];
+						[button addTarget:self action:@selector(warnForWeirdPanelID) forControlEvents:UIControlEventTouchUpInside];
+						cell.detailTextLabel.textColor = [UIColor compatRedColor];
+					}
+
+					CTFontDescriptorRef desc = CTFontDescriptorCreateCopyWithFeature((__bridge CTFontDescriptorRef)cell.detailTextLabel.font.fontDescriptor, (__bridge CFNumberRef)@(kStylisticAlternativesType), (__bridge CFNumberRef)@(kStylisticAltSixOnSelector));
+					CTFontRef font = CTFontCreateWithFontDescriptor(desc, cell.detailTextLabel.font.pointSize, NULL);
+					[cell.detailTextLabel setFont:(__bridge UIFont *)font];
+					if (desc) CFRelease(desc);
+					if (font) CFRelease(font);
+
+					break;
+				}
 				case B_ROW_SPECS_ALS:
 					cell.textLabel.text = _("Ambient Light Sensor");
 					cell.detailTextLabel.text = self.alsSupportedCached ? _("True") : _("False");
@@ -269,6 +310,10 @@ typedef enum {
 		case B_SECT_COUNT: break;
 	}
 	return cell;
+}
+
+- (void)warnForWeirdPanelID {
+	show_alert(_C("Unusual Panel ID"), _C("Current part might not be genuine."), L_OK);
 }
 
 - (void)dealloc {

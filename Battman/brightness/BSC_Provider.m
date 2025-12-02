@@ -5,6 +5,7 @@
 //  Created by Torrekie on 2025/11/3.
 //
 
+#import "../ObjCExt/NSBundle+Auto.h"
 #import "libbrightness.h"
 #import "../common.h"
 
@@ -15,7 +16,7 @@ id<BrightnessSystemClientProtocol> BrightnessSystemClient_sharedClient(void) {
 	static id<BrightnessSystemClientProtocol> BSC = nil;
 	if (once != -1) {
 		dispatch_once(&once, ^{
-			NSBundle *cb = [NSBundle bundleWithIdentifier:@"com.apple.corebrightness"];
+			NSBundle *cb = [NSBundle systemBundleWithName:@"corebrightness" fallbackExecutable:@"CoreBrightness"];
 			NSError *err = nil;
 			if (![cb loadAndReturnError:&err]) {
 				DBGLOG(@"Failed to load CoreBrightness: %@", err.localizedDescription);

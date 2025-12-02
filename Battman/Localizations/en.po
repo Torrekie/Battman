@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3\n"
+"Project-Id-Version: Battman 1.0.3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-29 17:22+0800\n"
+"POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -240,6 +240,14 @@ msgstr "Failed to load"
 
 msgid "Unable to set Low Power Mode."
 msgstr "Unable to set Low Power Mode."
+
+#, objc-format
+msgid "This device does not allow setting notify register '%s'."
+msgstr "This device does not allow setting notify register '%s'."
+
+#, objc-format
+msgid "This device does not seem to be using notify register '%s'."
+msgstr "This device does not seem to be using notify register '%s'."
 
 msgid "Failed to enable Smart Charging."
 msgstr "Failed to enable Smart Charging."
@@ -1093,6 +1101,9 @@ msgstr "Brightness Backend"
 msgid "Standard"
 msgstr "Standard"
 
+msgid "ID"
+msgstr "ID"
+
 msgid "Ambient Light Sensor"
 msgstr "Ambient Light Sensor"
 
@@ -1104,6 +1115,12 @@ msgstr "Color Depth"
 
 msgid "Bits"
 msgstr "Bits"
+
+msgid "Unusual Panel ID"
+msgstr "Unusual Panel ID"
+
+msgid "Current part might not be genuine."
+msgstr "Current part might not be genuine."
 
 msgid ""
 "No value returned from sensor, device should be checked by service "
@@ -2129,6 +2146,3 @@ msgstr "LPM Brightness Reduction"
 
 msgid "Reduce the screen brightness when Low Power Mode is enabled."
 msgstr "Reduce the screen brightness when Low Power Mode is enabled."
-
-#~ msgid "Brightness Limits"
-#~ msgstr "Brightness Limits"

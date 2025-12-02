@@ -1323,7 +1323,7 @@ done:
 }
 
 bool set_badge(const char *text) {
-	id sbs = ocall(oclass(NSBundle), bundleWithIdentifier:, CFSTR("com.apple.SpringBoardServices"));
+	id sbs = ocall(oclass(NSBundle), systemBundleWithName:, CFSTR("SpringBoardServices"));
 	if (sbs == nil || !ocall_t(bool, sbs, load))
 		return false;
 	Class SBSHomeScreenService = ocall(sbs, classNamed:, CFSTR("SBSHomeScreenService"));

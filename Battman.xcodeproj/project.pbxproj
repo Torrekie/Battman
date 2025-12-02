@@ -373,6 +373,14 @@
 		68C0C7442E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
 		68C0C7452E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
 		68C0C7462E93BA3C006F73EA /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
+		68C4FA752EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
+		68C4FA762EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
+		68C4FA772EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
+		68C4FA782EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
+		68C4FA802EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
+		68C4FA812EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
+		68C4FA822EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
+		68C4FA832EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
@@ -2003,6 +2011,10 @@
 		68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+SVG.m"; sourceTree = "<group>"; };
 		68C0C7422E93BA3C006F73EA /* SVG.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVG.m; sourceTree = "<group>"; };
 		68C0C7432E93BA3C006F73EA /* SVG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVG.h; sourceTree = "<group>"; };
+		68C4FA732EDEB58C005F6542 /* NSBundle+Auto.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSBundle+Auto.h"; sourceTree = "<group>"; };
+		68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSBundle+Auto.m"; sourceTree = "<group>"; };
+		68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrashLogger.m; sourceTree = "<group>"; };
+		68C4FA7F2EDEDF38005F6542 /* CrashLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrashLogger.h; sourceTree = "<group>"; };
 		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
 		68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libbrightness.h; sourceTree = "<group>"; };
 		68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BSC_Provider.m; sourceTree = "<group>"; };
@@ -14217,6 +14229,8 @@
 				68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */,
 				68CFB5ED2EBA02C3007ECAC8 /* UIColor+compat.h */,
 				68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */,
+				68C4FA732EDEB58C005F6542 /* NSBundle+Auto.h */,
+				68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */,
 			);
 			path = ObjCExt;
 			sourceTree = "<group>";
@@ -14321,6 +14335,8 @@
 		68C0C7392E93B4FF006F73EA /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				68C4FA7F2EDEDF38005F6542 /* CrashLogger.h */,
+				68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */,
 				68336E482E9F9F5700E9F180 /* brightness */,
 				684114D42E57BCAC001B76B6 /* Havoc */,
 				68B751382E2A423B003C94BC /* scprefs */,
@@ -15000,6 +15016,7 @@
 				684114922E5323E2001B76B6 /* BattmanVectorIcon.m in Sources */,
 				684114932E5323E2001B76B6 /* DonationPrompter.m in Sources */,
 				684114942E5323E2001B76B6 /* hid.m in Sources */,
+				68C4FA762EDEB58C005F6542 /* NSBundle+Auto.m in Sources */,
 				68336E382E9F7F7A00E9F180 /* BrightnessDetailsViewController.m in Sources */,
 				684972EA2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				68C0C7402E93B93E006F73EA /* UIImage+SVG.m in Sources */,
@@ -15043,6 +15060,7 @@
 				684114AD2E5323E2001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
 				68D800BB2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				684114AE2E5323E2001B76B6 /* licensing.S in Sources */,
+				68C4FA812EDEDF38005F6542 /* CrashLogger.m in Sources */,
 				68336E452E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7452E93BA3C006F73EA /* SVG.m in Sources */,
 				68CFB5EA2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
@@ -15097,6 +15115,7 @@
 				684114E82E57BDE7001B76B6 /* BattmanVectorIcon.m in Sources */,
 				684114E92E57BDE7001B76B6 /* DonationPrompter.m in Sources */,
 				684114EA2E57BDE7001B76B6 /* hid.m in Sources */,
+				68C4FA772EDEB58C005F6542 /* NSBundle+Auto.m in Sources */,
 				68336E392E9F7F7A00E9F180 /* BrightnessDetailsViewController.m in Sources */,
 				684972EB2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				68C0C7412E93B93E006F73EA /* UIImage+SVG.m in Sources */,
@@ -15140,6 +15159,7 @@
 				684115022E57BDE7001B76B6 /* GradientArcView.m in Sources */,
 				68D800BC2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				684115032E57BDE7001B76B6 /* BatterySubscriberViewControllerBase.c in Sources */,
+				68C4FA822EDEDF38005F6542 /* CrashLogger.m in Sources */,
 				68336E462E9F8A8000E9F180 /* GradientHDRView.m in Sources */,
 				68C0C7462E93BA3C006F73EA /* SVG.m in Sources */,
 				68CFB5EB2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
@@ -15202,6 +15222,7 @@
 				6849727B2EACB71B00C9C58A /* DonationPrompter.m in Sources */,
 				6849727C2EACB71B00C9C58A /* hid.m in Sources */,
 				6849727D2EACB71B00C9C58A /* BrightnessDetailsViewController.m in Sources */,
+				68C4FA782EDEB58C005F6542 /* NSBundle+Auto.m in Sources */,
 				6849727E2EACB71B00C9C58A /* UIImage+SVG.m in Sources */,
 				6849727F2EACB71B00C9C58A /* wrapper.c in Sources */,
 				684972802EACB71B00C9C58A /* NSData+HexString.m in Sources */,
@@ -15245,6 +15266,7 @@
 				6849729E2EACB71B00C9C58A /* GradientArcView.m in Sources */,
 				68D800BD2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
 				6849729F2EACB71B00C9C58A /* BatterySubscriberViewControllerBase.c in Sources */,
+				68C4FA832EDEDF38005F6542 /* CrashLogger.m in Sources */,
 				684972A02EACB71B00C9C58A /* GradientHDRView.m in Sources */,
 				684972A12EACB71B00C9C58A /* SVG.m in Sources */,
 				684972A22EACB71B00C9C58A /* ThermalTunesViewContoller.m in Sources */,
@@ -15313,6 +15335,7 @@
 				686AECD52D3B93CD0059ECD0 /* main.m in Sources */,
 				68E674A62ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
 				68E6749E2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
+				68C4FA802EDEDF38005F6542 /* CrashLogger.m in Sources */,
 				68AE40BC2D8EB8870023D7B0 /* StackViewGestureHandler.m in Sources */,
 				68FBDCE82DE1A1D40057870A /* protect.S in Sources */,
 				68B5FF302D85617400919BC2 /* TemperatureInfoTableViewCell.m in Sources */,
@@ -15358,6 +15381,7 @@
 				68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				68D800842EC5B8140012B84A /* dcp.c in Sources */,
 				68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */,
+				68C4FA752EDEB58C005F6542 /* NSBundle+Auto.m in Sources */,
 				68E674962ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
 				683B2D0B2E6C361200FECDF5 /* UPSMonitor.m in Sources */,
 				68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */,

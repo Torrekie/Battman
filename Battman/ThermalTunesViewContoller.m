@@ -350,6 +350,7 @@ extern UITableViewCell *find_cell(UIView *view);
 			}
 			case TT_ROW_SUNLIGHT_STATUS: {
 				UITableViewCell *altcell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				altcell.selectionStyle = UITableViewCellSelectionStyleNone;
 				altcell.textLabel.text = _("Status");
 				altcell.detailTextLabel.text = [NSString stringWithFormat:@"%d", thermal_solar_state()];
 				return altcell;
@@ -363,6 +364,7 @@ extern UITableViewCell *find_cell(UIView *view);
 				thermal_pressure_t pressure = thermal_pressure();
 				if (pressure == kBattmanThermalPressureLevelError) {
 					cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+					cell.selectionStyle = UITableViewCellSelectionStyleNone;
 					cell.textLabel.text = _("Pressure");
 					cell.detailTextLabel.text = _("Unavailable");
 					break;
@@ -409,6 +411,7 @@ extern UITableViewCell *find_cell(UIView *view);
 			}
 			case TT_ROW_LEVEL_NOTIF: {
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				cell.selectionStyle = UITableViewCellSelectionStyleNone;
 				thermal_notif_level_t notif = thermal_notif_level();
 				cell.textLabel.text = _("Notification");
 				if (notif == kBattmanThermalNotificationLevelAny) {

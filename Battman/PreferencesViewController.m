@@ -14,6 +14,7 @@
 #import "UITextFieldStepper.h"
 #import "FooterHyperlinkView.h"
 
+#import "ObjCExt/NSBundle+Auto.h"
 #import "ObjCExt/UIColor+compat.h"
 
 static BOOL languageHasChanged = NO;
@@ -643,7 +644,7 @@ extern UITableViewCell *find_cell(UIView *view);
 	BOOL exist = NO;
 	NSError *err = nil;
 	NSString *path = [NSString stringWithCString:battman_config_dir() encoding:NSUTF8StringEncoding];
-	NSBundle *bundle = [NSBundle bundleWithIdentifier:@"com.apple.MobileContainerManager"];
+	NSBundle *bundle = [NSBundle systemBundleWithName:@"MobileContainerManager"];
 	if (bundle && [bundle load]) {
 		MCMContainer *container = [[bundle classNamed:@"MCMContainer"] containerWithIdentifier:NSBundle.mainBundle.bundleIdentifier createIfNecessary:NO existed:&exist error:&err];
 		if (container.url)

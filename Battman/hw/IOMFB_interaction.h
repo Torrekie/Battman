@@ -14,12 +14,13 @@
 #if __has_include(<IOKit/graphics/IOMobileFramebufferTypes.h>)
 #include <IOKit/graphics/IOMobileFramebufferTypes.h>
 #else
-typedef struct __IOMobileFramebuffer *IOMobileFramebuffer;
+typedef struct __IOMobileFramebuffer *IOMobileFramebufferRef;
 #endif
 
 __BEGIN_DECLS
 
 double iomfb_primary_screen_temperature(void);
+const char *iomfb_primary_screen_panel_id(void);
 
 __END_DECLS
 

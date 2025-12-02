@@ -202,7 +202,13 @@
 
 - (void)_updateLayoutForOrientation {
 	UIWindow *window = self.window ?: self.contentView.window;
-	CGFloat width = window ? window.bounds.size.width : [UIScreen autoScreen].bounds.size.width;
+	CGFloat width = 0;
+	if (window) {
+		width = window.bounds.size.width;
+	} else {
+		UIScreen *screen = [UIScreen autoScreen];
+		width = screen ? screen.bounds.size.width : 375.0; // Default to iPhone width if screen unavailable
+	}
 	BOOL wideRegular = (width >= 700.0 && self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular);
 	BOOL isLandscape = (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) || wideRegular;
 

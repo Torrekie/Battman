@@ -142,12 +142,18 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 		CGFloat x = (pixelSize.width - scaledWidth) / 2.0;
 		CGFloat y = (pixelSize.height - scaledHeight) / 2.0;
 		
-		// Set tint color and draw
+		// Set tint color and draw with proper coordinate system flip
 		CGContextSetFillColorWithColor(context, self.iconImageView.tintColor.CGColor);
-		CGContextTranslateCTM(context, x / displayScale, y / displayScale);
-		CGContextScaleCTM(context, scale / displayScale, scale / displayScale);
+		CGContextSaveGState(context);
+		
+		// Translate to position and flip Y-axis for CoreGraphics coordinate system
+		CGContextTranslateCTM(context, x / displayScale, (y + scaledHeight) / displayScale);
+		CGContextScaleCTM(context, scale / displayScale, -scale / displayScale);
+		
 		CGContextClipToMask(context, CGRectMake(0, 0, originalWidth, originalHeight), baseCGImage);
 		CGContextFillRect(context, CGRectMake(0, 0, originalWidth, originalHeight));
+		
+		CGContextRestoreGState(context);
 		
 		UIImage *finalImage = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();
@@ -313,7 +319,13 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 
 - (BOOL)_isLandscapeLayout {
 	UIWindow *window = self.window ?: self.contentView.window;
-	CGFloat width = window ? window.bounds.size.width : [UIScreen autoScreen].bounds.size.width;
+	CGFloat width = 0;
+	if (window) {
+		width = window.bounds.size.width;
+	} else {
+		UIScreen *screen = [UIScreen autoScreen];
+		width = screen ? screen.bounds.size.width : 375.0; // Default to iPhone width if screen unavailable
+	}
 	BOOL wideRegular = (width >= 700.0 && self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular);
 	return (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) || wideRegular;
 }

@@ -13,10 +13,10 @@
 #include <dispatch/dispatch.h>
 
 static CFArrayRef (*IOMobileFramebufferCreateDisplayList)(CFAllocatorRef);
-static IOReturn (*IOMobileFramebufferGetMainDisplay)(IOMobileFramebuffer *fb);
-static IOReturn (*IOMobileFramebufferOpenByName)(CFStringRef name, IOMobileFramebuffer *fb);
-static io_service_t (*IOMobileFramebufferGetServiceObject)(IOMobileFramebuffer fb);
-static IOReturn (*IOMobileFramebufferGetBlock)(IOMobileFramebuffer fb, int targetBlock, void *output, ssize_t outputSize, void *input, ssize_t inputSize);
+static IOReturn (*IOMobileFramebufferGetMainDisplay)(IOMobileFramebufferRef *fb);
+static IOReturn (*IOMobileFramebufferOpenByName)(CFStringRef name, IOMobileFramebufferRef *fb);
+static io_service_t (*IOMobileFramebufferGetServiceObject)(IOMobileFramebufferRef fb);
+static IOReturn (*IOMobileFramebufferGetBlock)(IOMobileFramebufferRef fb, int targetBlock, void *output, ssize_t outputSize, void *input, ssize_t inputSize);
 
 static bool iomfb_capable = false;
 
@@ -45,7 +45,7 @@ double iomfb_primary_screen_temperature(void) {
 
 	IOReturn ret;
 	double temp = -1;
-	IOMobileFramebuffer fb;
+	IOMobileFramebufferRef fb;
 
 	ret = IOMobileFramebufferGetMainDisplay(&fb);
 	if (ret != kIOReturnSuccess)
@@ -74,4 +74,131 @@ double iomfb_primary_screen_temperature(void) {
 	}
 
 	return temp;
+}
+
+const char *iomfb_primary_screen_panel_id(void) {
+	IOMFB_INIT_CHK(NULL);
+	
+	IOReturn ret;
+	io_service_t service = MACH_PORT_NULL;
+	IOMobileFramebufferRef fb;
+	static char panel_id[512] = {0};
+
+	if (panel_id[0] != 0) {
+		os_log_debug(gLog, "Panel_ID cached: %s", panel_id);
+		return (const char *)panel_id;
+	}
+
+	ret = IOMobileFramebufferGetMainDisplay(&fb);
+	if (ret != kIOReturnSuccess) {
+		os_log_error(gLog, "IOMobileFramebufferGetMainDisplay failed: 0x%x", ret);
+		return NULL;
+	}
+	
+	if (!fb) {
+		os_log_error(gLog, "IOMobileFramebufferRef is NULL");
+		return NULL;
+	}
+	
+	os_log_debug(gLog, "Got IOMobileFramebufferRef: %p", fb);
+	
+	service = IOMobileFramebufferGetServiceObject(fb);
+	if (!service) {
+		os_log_error(gLog, "IOMobileFramebufferGetServiceObject returned NULL service");
+		return NULL;
+	}
+	
+	os_log_debug(gLog, "Got service object: 0x%x", service);
+
+	CFTypeRef buffer = IORegistryEntryCreateCFProperty(service, CFSTR("Panel_ID"), kCFAllocatorDefault, 0);
+	if (!buffer) {
+		os_log_error(gLog, "IORegistryEntryCreateCFProperty for Panel_ID returned NULL");
+		return NULL;
+	}
+	
+	CFTypeID typeID = CFGetTypeID(buffer);
+	os_log_debug(gLog, "Panel_ID property type: %lu (CFString=%lu, CFData=%lu)", 
+		typeID, CFStringGetTypeID(), CFDataGetTypeID());
+	
+	const char *result = NULL;
+	if (typeID == CFStringGetTypeID()) {
+		CFStringRef strRef = (CFStringRef)buffer;
+		CFIndex length = CFStringGetLength(strRef);
+		os_log_debug(gLog, "CFString length: %ld characters", length);
+		
+		// Try to get raw description
+		CFStringRef description = CFCopyDescription(strRef);
+		if (description) {
+			char desc[512] = {0};
+			if (CFStringGetCString(description, desc, sizeof(desc), kCFStringEncodingUTF8)) {
+				os_log_debug(gLog, "CFString description: %s", desc);
+			}
+			CFRelease(description);
+		}
+		
+		// Try UTF-8 first
+		if (CFStringGetCString(strRef, panel_id, sizeof(panel_id), kCFStringEncodingUTF8)) {
+			os_log_debug(gLog, "Panel_ID string retrieved (UTF-8), length: %zu", strlen(panel_id));
+			if (strlen(panel_id) != 0) {
+				os_log_info(gLog, "Panel_ID: %s", panel_id);
+				result = panel_id;
+			} else {
+				os_log_error(gLog, "Panel_ID string is empty");
+			}
+		} else {
+			os_log_error(gLog, "CFStringGetCString failed with UTF-8, trying ASCII...");
+			
+			// Try ASCII encoding
+			if (CFStringGetCString(strRef, panel_id, sizeof(panel_id), kCFStringEncodingASCII)) {
+				os_log_info(gLog, "Panel_ID retrieved with ASCII: %s", panel_id);
+				result = panel_id;
+			} else {
+				os_log_error(gLog, "ASCII encoding also failed, trying raw bytes...");
+				
+				// Try to get raw bytes as hex
+				const char *cstr = CFStringGetCStringPtr(strRef, kCFStringEncodingUTF8);
+				if (cstr) {
+					os_log_info(gLog, "Got C string pointer: %s", cstr);
+					strncpy(panel_id, cstr, sizeof(panel_id) - 1);
+					result = panel_id;
+				} else {
+					// Last resort: get as external representation (UTF-8 data)
+					CFDataRef data = CFStringCreateExternalRepresentation(kCFAllocatorDefault, strRef, kCFStringEncodingUTF8, 0);
+					if (data) {
+						CFIndex dataLen = CFDataGetLength(data);
+						os_log_debug(gLog, "External representation length: %ld bytes", dataLen);
+						if (dataLen > 0 && dataLen < sizeof(panel_id)) {
+							const UInt8 *bytes = CFDataGetBytePtr(data);
+							memcpy(panel_id, bytes, dataLen);
+							panel_id[dataLen] = '\0';
+							
+							// Log first 32 bytes as hex for debugging
+							char hexbuf[128] = {0};
+							CFIndex hexLen = dataLen < 32 ? dataLen : 32;
+							for (CFIndex i = 0; i < hexLen; i++) {
+								snprintf(hexbuf + (i * 3), sizeof(hexbuf) - (i * 3), "%02x ", bytes[i]);
+							}
+							os_log_debug(gLog, "Panel_ID hex (first %ld bytes): %s", hexLen, hexbuf);
+							
+							// Store as UTF-8 string (supports Unicode like U+02C7 ˇ)
+							os_log_info(gLog, "Panel_ID retrieved (%ld UTF-8 bytes): %s", dataLen, panel_id);
+							result = panel_id;
+						} else {
+							os_log_error(gLog, "Panel_ID data too large (%ld bytes) for buffer (%zu bytes)", dataLen, sizeof(panel_id));
+						}
+						CFRelease(data);
+					} else {
+						os_log_error(gLog, "All string extraction methods failed");
+					}
+				}
+			}
+		}
+	} else if (typeID == CFDataGetTypeID()) {
+		os_log_error(gLog, "Panel_ID is CFData type, not CFString. Data length: %ld", CFDataGetLength((CFDataRef)buffer));
+	} else {
+		os_log_error(gLog, "Panel_ID has unexpected type");
+	}
+	
+	CFRelease(buffer);
+	return result;
 }

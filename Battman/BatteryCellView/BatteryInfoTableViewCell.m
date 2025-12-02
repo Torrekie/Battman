@@ -7,9 +7,7 @@
 
 @implementation BatteryInfoTableViewCell
 
-- (instancetype)init {
-	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"BTTVC-cell"];
-	// self.frame=CGRectMake(0,0,1000,100);
+- (void)setupCellUI {
 	BatteryCellView *batteryCell = [[BatteryCellView alloc] initWithFrame:CGRectMake(0, 0, 80, 80) foregroundPercentage:0 backgroundPercentage:0];
 	batteryCell.translatesAutoresizingMaskIntoConstraints = NO;
 	[self.contentView addSubview:batteryCell];
@@ -28,7 +26,21 @@
 	batteryRemainingLabel.translatesAutoresizingMaskIntoConstraints = 0;
 	_batteryLabel = batteryRemainingLabel;
 	_batteryCell = batteryCell;
-	//_batteryInfo = NULL;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+	self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+	if (self) {
+		[self setupCellUI];
+	}
+	return self;
+}
+
+- (instancetype)init {
+	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"BTTVC-cell"];
+	if (self) {
+		[self setupCellUI];
+	}
 	return self;
 }
 

@@ -274,10 +274,18 @@ struct battery_info_section *bi_make_section(const char *name, uint64_t context_
 	memcpy(&section->data, section_begin, size);
 	*(char **)((uint64_t)section + size + 24) = NULL;
 	section->context                          = (struct battery_info_section_context *)((uint64_t)section + size + 32);
+	// Initialize context fields
+	memset(section->context, 0, context_size);
 	return section;
 }
 
 void bi_destroy_section(struct battery_info_section *sect) {
+	if (!sect || !sect->context)
+		return;
+	
+	// Mark section as being destroyed
+	sect->context->destroying = true;
+	
 	if (sect->self_ref)
 		battery_info_remove_section(sect);
 	sect->data[0].name = NULL;   // This is to tell update() that the section is being destroyed
@@ -527,11 +535,27 @@ void battery_info_poll(struct battery_info_section **head) {
 	}
 }
 
-// Recursive call is used to support section removal while updating
-static void _battery_info_update(struct battery_info_section *node) {
-	if (node->next)
-		_battery_info_update(node->next);
-	node->context->update(node);
+// Non-recursive update to avoid use-after-free when sections are destroyed during update
+static void _battery_info_update(struct battery_info_section *head) {
+	struct battery_info_section *current = head;
+	
+	// First pass: collect all sections to update
+	struct battery_info_section *sections_to_update[32]; // Reasonable limit
+	int section_count = 0;
+	
+	while (current && section_count < 32) {
+		sections_to_update[section_count++] = current;
+		current = current->next;
+	}
+	
+	// Second pass: update sections in reverse order (as the original recursive version did)
+	for (int i = section_count - 1; i >= 0; i--) {
+		struct battery_info_section *sect = sections_to_update[i];
+		// Check if section is still valid (not destroyed or being destroyed)
+		if (sect->context && sect->context->update && sect->data && sect->data[0].name && !sect->context->destroying) {
+			sect->context->update(sect);
+		}
+	}
 }
 
 void battery_info_update(struct battery_info_section **head) {

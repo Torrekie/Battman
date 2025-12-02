@@ -10,25 +10,27 @@
 @implementation UIScreen (Auto)
 
 + (UIScreen *)autoScreen {
+	UIScreen *screen = nil;
+	
 	// iOS 15+: Try UIWindowScene.keyWindow first (most accurate for multi-window)
 	if (@available(iOS 15.0, *)) {
-		UIScreen *sceneKeyWindowScreen = [self _screenFromSceneKeyWindow];
-		if (sceneKeyWindowScreen) return sceneKeyWindowScreen;
+		screen = [self _screenFromSceneKeyWindow];
+		if (screen) return screen;
 	}
 	
 	// iOS 13+: Try UIWindowScene.windows (scene-based approach)
 	if (@available(iOS 13.0, *)) {
-		UIScreen *sceneWindowsScreen = [self _screenFromSceneWindows];
-		if (sceneWindowsScreen) return sceneWindowsScreen;
+		screen = [self _screenFromSceneWindows];
+		if (screen) return screen;
 	}
 	
 	// iOS 12+: Try UIApplication.keyWindow (deprecated in iOS 13)
-	UIScreen *keyWindowScreen = [self _screenFromApplicationKeyWindow];
-	if (keyWindowScreen) return keyWindowScreen;
+	screen = [self _screenFromApplicationKeyWindow];
+	if (screen) return screen;
 	
 	// iOS 12+: Try UIApplication.windows (deprecated in iOS 15)
-	UIScreen *appWindowsScreen = [self _screenFromApplicationWindows];
-	if (appWindowsScreen) return appWindowsScreen;
+	screen = [self _screenFromApplicationWindows];
+	if (screen) return screen;
 	
 	// fallback
 	return UIScreen.mainScreen;
@@ -71,23 +73,34 @@
 			Class windowSceneClass = NSClassFromString(@"UIWindowScene");
 			if (!windowSceneClass) return nil;
 
+			// Single pass: prioritize active scenes, but collect inactive as fallback
+			UIWindow *fallbackKeyWindow = nil;
 			for (id scene in [scenesSet allObjects]) {
 				if ([scene isKindOfClass:windowSceneClass]) {
-					// Check if scene is active
+					BOOL isActive = YES;
 					if ([scene respondsToSelector:NSSelectorFromString(@"activationState")]) {
 						NSInteger state = [[scene valueForKey:@"activationState"] integerValue];
-						// UISceneActivationStateForegroundActive = 0
-						if (state != 0) continue;
+						isActive = (state == 0); // UISceneActivationStateForegroundActive
+						if (state > 1) continue; // Skip background scenes
 					}
 
 					// Get keyWindow from scene (iOS 15+)
 					if ([scene respondsToSelector:NSSelectorFromString(@"keyWindow")]) {
 						UIWindow *keyWindow = [scene valueForKey:@"keyWindow"];
 						if (keyWindow && keyWindow.screen) {
-							return keyWindow.screen;
+							if (isActive) {
+								return keyWindow.screen; // Immediately return active scene
+							} else if (!fallbackKeyWindow) {
+								fallbackKeyWindow = keyWindow; // Save as fallback
+							}
 						}
 					}
 				}
+			}
+			
+			// Use fallback if no active scene found
+			if (fallbackKeyWindow && fallbackKeyWindow.screen) {
+				return fallbackKeyWindow.screen;
 			}
 		}
 	}
@@ -115,13 +128,17 @@
 			Class windowSceneClass = NSClassFromString(@"UIWindowScene");
 			if (!windowSceneClass) return nil;
 
+			// Single pass: prioritize active scenes, but collect inactive as fallback
+			UIWindow *fallbackKeyWindow = nil;
+			UIWindow *fallbackFirstWindow = nil;
+			
 			for (id scene in [scenesSet allObjects]) {
 				if ([scene isKindOfClass:windowSceneClass]) {
-					// Check if scene is active
+					BOOL isActive = YES;
 					if ([scene respondsToSelector:NSSelectorFromString(@"activationState")]) {
 						NSInteger state = [[scene valueForKey:@"activationState"] integerValue];
-						// UISceneActivationStateForegroundActive = 0
-						if (state != 0) continue;
+						isActive = (state == 0); // UISceneActivationStateForegroundActive
+						if (state > 1) continue; // Skip background scenes
 					}
 
 					// Get windows from scene
@@ -131,17 +148,33 @@
 							// Look for key window first
 							for (UIWindow *window in windows) {
 								if (window.isKeyWindow && window.screen) {
-									return window.screen;
+									if (isActive) {
+										return window.screen; // Immediately return from active scene
+									} else if (!fallbackKeyWindow) {
+										fallbackKeyWindow = window; // Save as fallback
+									}
 								}
 							}
-							// Fallback to first window
+							// Check first window
 							UIWindow *firstWindow = [windows firstObject];
 							if (firstWindow && firstWindow.screen) {
-								return firstWindow.screen;
+								if (isActive) {
+									return firstWindow.screen; // Immediately return from active scene
+								} else if (!fallbackFirstWindow) {
+									fallbackFirstWindow = firstWindow; // Save as fallback
+								}
 							}
 						}
 					}
 				}
+			}
+			
+			// Use fallback if no active scene found
+			if (fallbackKeyWindow && fallbackKeyWindow.screen) {
+				return fallbackKeyWindow.screen;
+			}
+			if (fallbackFirstWindow && fallbackFirstWindow.screen) {
+				return fallbackFirstWindow.screen;
 			}
 		}
 	}

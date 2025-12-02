@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#import "ObjCExt/NSBundle+Auto.h"
+
 #pragma mark - CoreSVG function pointer typedefs
 
 typedef CGSVGDocument *CGSVGDocumentRef;
@@ -18,7 +20,7 @@ static void *CoreSVGHandle = NULL;
 static void loadCoreSVGIfNeeded(void) {
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		NSBundle *bundle = [NSBundle bundleWithIdentifier:@"com.apple.CoreSVG"];
+		NSBundle *bundle = [NSBundle systemBundleWithName:@"CoreSVG"];
 		if (bundle)
 			CoreSVGHandle = dlopen(bundle.executablePath.UTF8String, RTLD_NOW);
 		else

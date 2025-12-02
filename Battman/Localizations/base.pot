@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3\n"
+"Project-Id-Version: Battman 1.0.3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-29 17:22+0800\n"
+"POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -228,6 +228,14 @@ msgid "Failed to load"
 msgstr ""
 
 msgid "Unable to set Low Power Mode."
+msgstr ""
+
+#, objc-format
+msgid "This device does not allow setting notify register '%s'."
+msgstr ""
+
+#, objc-format
+msgid "This device does not seem to be using notify register '%s'."
 msgstr ""
 
 msgid "Failed to enable Smart Charging."
@@ -1029,6 +1037,9 @@ msgstr ""
 msgid "Standard"
 msgstr ""
 
+msgid "ID"
+msgstr ""
+
 msgid "Ambient Light Sensor"
 msgstr ""
 
@@ -1039,6 +1050,12 @@ msgid "Color Depth"
 msgstr ""
 
 msgid "Bits"
+msgstr ""
+
+msgid "Unusual Panel ID"
+msgstr ""
+
+msgid "Current part might not be genuine."
 msgstr ""
 
 msgid ""

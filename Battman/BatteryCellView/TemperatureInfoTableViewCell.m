@@ -121,8 +121,7 @@
 
 @implementation TemperatureInfoTableViewCell
 
-- (instancetype)init {
-	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TITVC-ri"];
+- (void)setupCellUI {
 	TemperatureCellView *temperatureCell =
 		[[TemperatureCellView alloc] initWithFrame:CGRectMake(0, 0, 80, 80) percentage:0.0];
 	temperatureCell.translatesAutoresizingMaskIntoConstraints = NO;
@@ -144,6 +143,21 @@
 
 	_temperatureCell = temperatureCell;
 	_temperatureLabel = temperatureLabel;
+}
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+	self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+	if (self) {
+		[self setupCellUI];
+	}
+	return self;
+}
+
+- (instancetype)init {
+	self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TITVC-ri"];
+	if (self) {
+		[self setupCellUI];
+	}
 	return self;
 }
 
