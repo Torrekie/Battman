@@ -552,7 +552,7 @@ static void _battery_info_update(struct battery_info_section *head) {
 	for (int i = section_count - 1; i >= 0; i--) {
 		struct battery_info_section *sect = sections_to_update[i];
 		// Check if section is still valid (not destroyed or being destroyed)
-		if (sect->context && sect->context->update && sect->data && sect->data[0].name && !sect->context->destroying) {
+		if (sect->context && sect->context->update && sect->data[0].name && !sect->context->destroying) {
 			sect->context->update(sect);
 		}
 	}
