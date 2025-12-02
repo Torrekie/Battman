@@ -5,7 +5,7 @@
 ; current version only works for arm64 iOS :(
 ; Licensing code and some utilities
 
-#define USE_UIWEBVIEW 1
+#define USE_UIWEBVIEW 0
 
 #ifdef DEBUG
 #if USE_UIWEBVIEW
@@ -51,54 +51,40 @@ L.battman.bootstrap.checkdone.1:
 	mov x2,x20
 L.battman.bootstrap.checkdone.2:
 	bl _objc_msgSend
-	;mov x2,x0
-	;adrp x1,sel.setWindow@PAGE
-	;ldr x1,[x1,sel.setWindow@PAGEOFF]
-	;mov x0,x19
 	mov x19,x0
 	adrp x3,_gWindow@PAGE
 	str x0,[x3,_gWindow@PAGEOFF]
-	;bl _objc_msgSend
 	adrp x1,sel.1new@PAGE
 	ldr x1,[x1,sel.1new@PAGEOFF]
 	adrp x0,_OBJC_CLASS_$_UITabBarController@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_UITabBarController@GOTPAGEOFF]
 	bl _objc_msgSend
 	str x0,[sp,#24]
+	mov x20,sp
 	adrp x0,_OBJC_CLASS_$_BatteryInfoViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_BatteryInfoViewController@PAGEOFF
-	mov x1,sp
+	mov x1,x20
 	bl .createNC
+	add x20,x20,#8
 #ifdef DEBUG
 #warning remember to finalize this block when releasing AnalyticsViewController
 	adrp x0,_OBJC_CLASS_$_AnalyticsViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_AnalyticsViewController@PAGEOFF
-	add x1,sp,#8
+	mov x1,x20
 	bl .createNC
-	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
-	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
-	add x1,sp,#16
-	bl .createNC
-#else
-	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
-	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
-	add x1,sp,#8
-	bl .createNC
+	add x20,x20,#8
 #endif
-	;adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
-	;ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
-	;adrp x1,.sel.arrwobjs@PAGE
-	;ldr x1,[x1,.sel.arrwobjs@PAGEOFF]
+	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
+	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
+	mov x1,x20
+	bl .createNC
+	add x20,x20,#8
 	bl show_license
 	cbz x0,.createNC
 	mov x0,x19
 	mov x2,sp
-#ifdef DEBUG
-#warning remember to finalize this block when releasing AnalyticsViewController
-	mov x3,#3
-#else
-	mov x3,#2
-#endif
+	mov x3,sp
+	sub x3,x20,x3
 	bl _objc_msgSend
 	adrp x1,.sel.setRootVCs@PAGE
 	ldr x1,[x1,.sel.setRootVCs@PAGEOFF]
@@ -462,17 +448,12 @@ makeBarButtonItem:
 	stp x29,x30,[sp,#48]
 	str x1,[sp,#16]
 	str x2,[sp,#32]
-#if 0
-	bl ___CFStringMakeConstantString
-	mov x24,x0
-#else
-    mov x1, x0
-    mov x0, xzr
-    movz x2, #0x0100
-    movk x2, #0x0800, lsl #16 ; kCFStringEncodingUTF8
-    bl _CFStringCreateWithCString
-    mov x24, x0
-#endif
+	mov x1, x0
+	mov x0, xzr
+	movz x2, #0x0100
+	movk x2, #0x0800, lsl #16 ; kCFStringEncodingUTF8
+	bl _CFStringCreateWithCString
+	mov x24, x0
 	adrp x0,__NSConcreteStackBlock@GOTPAGE
 	ldr x0,[x0,__NSConcreteStackBlock@GOTPAGEOFF]
 	mov x1,#0x60000000
@@ -552,9 +533,6 @@ show_license.pcb:
 	adrp x1,sel.navItem@PAGE
 	ldr x1,[x1,sel.navItem@PAGEOFF]
 	bl _objc_msgSend
-	;adrp x1,sel.topItem@PAGE
-	;ldr x1,[x1,sel.topItem@PAGEOFF]
-	;bl _objc_msgSend
 	str x21,[sp,#16]
 	mov x21,x0
 	adrp x0,licenseStr@PAGE
@@ -578,7 +556,7 @@ show_license.pcb:
 	adrp x0,agreeStr@PAGE
 	add x0,x0,agreeStr@PAGEOFF
 #ifdef USE_GETTEXT
-    bl _cond_localize_c
+	bl _cond_localize_c
 #endif
 	mov x2,#0
 	adrp x1,show_license.a@PAGE
@@ -588,7 +566,7 @@ show_license.pcb:
 	adrp x0,declineStr@PAGE
 	add x0,x0,declineStr@PAGEOFF
 #ifdef USE_GETTEXT
-    bl _cond_localize_c
+	bl _cond_localize_c
 #endif
 	adrp x1,show_license.susp@PAGE
 	add x1,x1,show_license.susp@PAGEOFF
@@ -660,14 +638,15 @@ wv_b:
 	ldr x1,[x1,sel.setBackgroundColor@PAGEOFF]
 	bl _objc_msgSend
 #else
-	sub sp,sp,#32
+	sub sp,sp,#16
+	stp x22,x23,[sp]
 	adrp x0,_OBJC_CLASS_$_WKWebViewConfiguration@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebViewConfiguration@GOTPAGEOFF]
 	adrp x1,sel.1new@PAGE
 	ldr x1,[x1,sel.1new@PAGEOFF]
 	bl _objc_msgSend
 	cbz x0,wv_simple
-	str x0,[sp]
+	mov x22,x0
 	adrp x0,_OBJC_CLASS_$_WKUserScript@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKUserScript@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
@@ -685,35 +664,31 @@ wv_b:
 	mov x3,xzr
 	mov x4,xzr
 	bl _objc_msgSend
-	str x0,[sp,#8]
-	; Get userContentController from configuration
+	mov x23,x0
 	ldr x0,[sp]
 	adrp x1,sel.userContentController@PAGE
 	ldr x1,[x1,sel.userContentController@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#24]
-	ldr x0,[sp,#24]
 	adrp x1,sel.addUserScript@PAGE
 	ldr x1,[x1,sel.addUserScript@PAGEOFF]
-	ldr x2,[sp,#8]
+	mov x2,x23
 	bl _objc_msgSend
 	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#8]
+	mov x23,x0
 	mov x0,x20
 	adrp x1,sel.bounds@PAGE
 	ldr x1,[x1,sel.bounds@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,wv_simple
 	adrp x1,sel.initWithFrameConfiguration@PAGE
 	ldr x1,[x1,sel.initWithFrameConfiguration@PAGEOFF]
-	ldr x2,[sp]
+	mov x2,x22
 	bl _objc_msgSend
-	cbz x0,wv_simple
-	add sp,sp,#32
+	ldp x22,x23,[sp]
+	add sp,sp,#16
 	mov x21,x0
 	b wv_done
 #endif
@@ -842,7 +817,6 @@ wv_done:
 	b.eq load_local_html
 
 load_from_url:
-	; I've decided to fallback to URL, but this does not seems safe enough
 	bl _showCompletionAlert
 
 load_local_html:
@@ -880,11 +854,9 @@ load_local_html:
 	ldr x2,[sp,#8]
 	mov x0,x20
 #ifdef USE_UIWEBVIEW
-	; UIWebView uses loadHTMLString:baseURL: method
 	adrp x1,sel.loadHTMLStringBaseURL@PAGE
 	ldr x1,[x1,sel.loadHTMLStringBaseURL@PAGEOFF]
 #else
-	; WKWebView uses loadHTMLString:baseURL: method
 	adrp x1,sel.loadHTMLString@PAGE
 	ldr x1,[x1,sel.loadHTMLString@PAGEOFF]
 #endif
@@ -998,7 +970,7 @@ show_license.1.svc:
 	bl _objc_msgSend
 	adrp x9,.osSupportsUIScene@PAGE
 	ldr x9,[x9,.osSupportsUIScene@PAGEOFF]
-	tbz x9,#0,show_license.1.noscene
+	cbz x9,show_license.1.noscene
 	mov x0,x20
 	adrp x1,sel.connectedScenes@PAGE
 	ldr x1,[x1,sel.connectedScenes@PAGEOFF]
