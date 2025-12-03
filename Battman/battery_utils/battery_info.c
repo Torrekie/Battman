@@ -546,6 +546,11 @@ void battery_info_update(struct battery_info_section **head) {
 				break;
 			}
 			i->context->update(i);
+			if(!i->data[0].name) {
+				// just removed
+				retry=1;
+				break;
+			}
 		}
 	}
 }
