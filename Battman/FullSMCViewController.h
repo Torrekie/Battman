@@ -11,5 +11,6 @@ struct smc_key {
 	int numKeys;
 	struct smc_key *allkeys;
 	int mode; // 0=little endian; 1=big endian
+	NSString *_searchValue;
 }
 @end
