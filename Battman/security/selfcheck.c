@@ -253,24 +253,14 @@ intptr_t get_main_executable_aslr_slide(void)
 
 int susp_id(void)
 {
-	/* TODO: improve checks */
-	CFStringRef bundleid = NULL;
-	CFBundleRef bundle   = CFBundleGetMainBundle();
-	char buf[256];
-	if (bundle) {
-		bundleid = CFBundleGetIdentifier(bundle);
-	}
 #if LICENSE == LICENSE_NONFREE
-	if (CFStringGetCString(bundleid, buf, 256, kCFStringEncodingUTF8)) {
 #if NONFREE_TYPE == NONFREE_TYPE_HAVOC
 #ifndef USE_ORIG_BUNDLE
-		return strcmp("com.torrekie.Battman.Havoc", buf);
+	return 0;
 #endif
 #endif
-		return strcmp("com.torrekie.Battman", buf);
-	}
 #endif
-	return 114514;
+	return 32;
 }
 
 /// Randomly perturbs a unichar by +/- jitterRange (but keeps it >= 0).
@@ -355,17 +345,3 @@ end:
 	objc_autoreleasePoolPop(pool);
 }
 
-#if LICENSE == LICENSE_NONFREE
-__attribute__((constructor))
-void checkselfid(void) {
-	int ret = susp_id();
-	if (!(ret - 114514))
-		return;
-	if (!ret)
-		return;
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * (double)NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		push_fatal_notif();
-	});
-}
-#endif

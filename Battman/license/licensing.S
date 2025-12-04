@@ -616,22 +616,22 @@ show_license.pcb:
 	adrp x2,sel.systemBackgroundColor@PAGE
 	ldr x2,[x2,sel.systemBackgroundColor@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,wv_b_w
+	cbz x0,Lwv_b_w
 	adrp x0,_OBJC_CLASS_$_UIColor@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_UIColor@GOTPAGEOFF]
 	adrp x1,sel.systemBackgroundColor@PAGE
 	ldr x1,[x1,sel.systemBackgroundColor@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,wv_b_w
-	b wv_b
-wv_b_w:
+	cbz x0,Lwv_b_w
+	b Lwv_b
+Lwv_b_w:
 	adrp x0,_OBJC_CLASS_$_UIColor@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_UIColor@GOTPAGEOFF]
 	adrp x1,sel.whiteColor@PAGE
 	ldr x1,[x1,sel.whiteColor@PAGEOFF]
 	bl _objc_msgSend
-	cbz x0,wv_done
-wv_b:
+	cbz x0,Lwv_done
+Lwv_b:
 	mov x2,x0
 	mov x0,x21
 	adrp x1,sel.setBackgroundColor@PAGE
@@ -665,7 +665,7 @@ wv_b:
 	mov x4,xzr
 	bl _objc_msgSend
 	mov x23,x0
-	ldr x0,[sp]
+	mov x0,x22
 	adrp x1,sel.userContentController@PAGE
 	ldr x1,[x1,sel.userContentController@PAGEOFF]
 	bl _objc_msgSend
@@ -678,44 +678,21 @@ wv_b:
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	mov x23,x0
-	mov x0,x20
-	adrp x1,sel.bounds@PAGE
-	ldr x1,[x1,sel.bounds@PAGEOFF]
-	bl _objc_msgSend
 	adrp x1,sel.initWithFrameConfiguration@PAGE
 	ldr x1,[x1,sel.initWithFrameConfiguration@PAGEOFF]
 	mov x2,x22
+	mov d0,#0
+	mov d1,#0
+	mov d2,#0
+	mov d3,#0
 	bl _objc_msgSend
 	ldp x22,x23,[sp]
 	add sp,sp,#16
 	mov x21,x0
-	b wv_done
+	b Lwv_done
 #endif
-
-wv_simple:
-#ifndef USE_UIWEBVIEW
-	adrp x0,_OBJC_CLASS_$_WKWebView@GOTPAGE
-	ldr x0,[x0,_OBJC_CLASS_$_WKWebView@GOTPAGEOFF]
-	adrp x1,allocSel@PAGE
-	ldr x1,[x1,allocSel@PAGEOFF]
-	bl _objc_msgSend
-	str x0,[sp]
-	; ~~Frame data is already in d0-d3~~
-	; bruh no way they are still there
-	mov x0,x20
-	adrp x1,sel.bounds@PAGE
-	ldr x1,[x1,sel.bounds@PAGEOFF]
-	bl _objc_msgSend
-	ldr x0,[sp]
-	adrp x1,sel.initWithFrame@PAGE
-	ldr x1,[x1,sel.initWithFrame@PAGEOFF]
-	bl _objc_msgSend
-	add sp,sp,#32
-	mov x21,x0
-#endif
-
-wv_done:
+Lwv_simple:
+Lwv_done:
 	mov x0,x20
 	mov x2,x21
 	adrp x1,sel.addSubview@PAGE
@@ -795,8 +772,8 @@ wv_done:
 	adrp x10,.lfd.1@PAGE
 	ldr x1,[x10,.lfd.1@PAGEOFF]
 	; Check if we have valid content
-	cbz x1,load_from_url
-	cbz x2,load_from_url
+	cbz x1,Load_from_url
+	cbz x2,Load_from_url
 	sub sp,sp,#64
 	mov x0,x1
 	mov x1,x2
@@ -814,12 +791,8 @@ wv_done:
 	umov w0,v0.b[0]
 	add sp,sp,#64
 	cmp w0,#0xFF
-	b.eq load_local_html
-
-load_from_url:
-	bl _showCompletionAlert
-
-load_local_html:
+Load_from_url:
+Load_local_html:
 	; Load local HTML content
 	mov x0,#0
 	adrp x3,.lfd.s@PAGE
@@ -861,7 +834,7 @@ load_local_html:
 	ldr x1,[x1,sel.loadHTMLString@PAGEOFF]
 #endif
 	bl _objc_msgSend
-continue_setup:
+
 	mov x0,x19
 	ldr x2,[sp]
 	adrp x1,s.setRootVC@PAGE
@@ -910,11 +883,48 @@ show_license:
 	bl _memcpy
 	mov x0,x20
 	bl _IOObjectRelease
-	mov x0,sp
-	mov x1,#64
 	sub sp,sp,#32
+	mov x1,xzr
+	movk x1,#0x7272,LSL #48
+	movk x1,#28532,LSL #32
+	str x1,[sp]
+	mov w1,#0x6f63
+	movk w1,#0xf36d,LSL #16
+	str w1,[sp]
+	mov w1,#0x2e0
+	lsr w1,w1,#4
+	strb w1,[sp,#3]
+	mov x1,#0x6b65
+	movk x1,#0x6569,LSL #16
+	movk x1,#0x7461,LSL #48
+	str x1,[sp,#8]
+	mov x2,#0x422e
+	movk x2,#0x6d74,LSL #16
+	movk x2,#0x6e61,LSL #32
+	strh w2,[sp,#12]
+	lsr x1,x2,#16
+	str w1,[sp,#16]
+	mov x3,#0x482e
+	movk x3,#0x7661,LSL #16
+	movk x3,#0x636f,LSL #32
+	bl _susp_id
+	lsr x3,x3,x0
+	lsl x3,x3,x0
+	str w3,[sp,#20]
+	lsr x3,x3,#32
+	str w3,[sp,#24]
+	bl _CFBundleGetMainBundle
+	bl _CFBundleGetIdentifier
+	mov x1,#0x0100
+	movk x1,#0x0800,LSL #16
+	bl _CFStringGetCStringPtr
+	mov x1,sp
+	bl _strcmp
+	cbnz x0,show_license.1.svc
 	;sub x2,x0,sp
+	mov x1,#64
 	mov x2,sp
+	add x0,x2,#32
 	bl _CC_SHA256
 	bl _battman_config_dir
 	mov x20,x0
@@ -1037,11 +1047,10 @@ show_license.3:
 	ldr x1,[x1,.sel.arrwobjs@PAGEOFF]
 	adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
+	mov x3,#2
 #ifdef DEBUG
 #warning remember to finalize this block when releasing AnalyticsViewController
-	mov x3,#3
-#else
-	mov x3,#2
+	add x3,x3,#1
 #endif
 	bl _objc_msgSend
 	mov x2,x0
