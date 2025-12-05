@@ -652,15 +652,14 @@ Lwv_b:
 	adrp x1,allocSel@PAGE
 	ldr x1,[x1,allocSel@PAGEOFF]
 	bl _objc_msgSend
-	str x0,[sp,#8]
+	mov x23,x0
 	adrp x0,js_disable_sharedworker@PAGE
 	add x0,x0,js_disable_sharedworker@PAGEOFF
 	bl ___CFStringMakeConstantString
-	str x0,[sp,#16]
-	ldr x0,[sp,#8]
+	mov x2,x0
+	mov x0,x23
 	adrp x1,sel.initWithSourceInjectionTime@PAGE
 	ldr x1,[x1,sel.initWithSourceInjectionTime@PAGEOFF]
-	ldr x2,[sp,#16]
 	mov x3,xzr
 	mov x4,xzr
 	bl _objc_msgSend
@@ -920,11 +919,11 @@ show_license:
 	bl _CFStringGetCStringPtr
 	mov x1,sp
 	bl _strcmp
-	cbnz x0,show_license.1.svc
 	;sub x2,x0,sp
 	mov x1,#64
 	mov x2,sp
-	add x0,x2,#32
+	add x0,x2,x0
+	add x0,x0,#32
 	bl _CC_SHA256
 	bl _battman_config_dir
 	mov x20,x0
