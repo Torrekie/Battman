@@ -1,0 +1,130 @@
+name: Abuse Detection and Prevention
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+
+jobs:
+  detect-abuse:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Check for abuse and handle
+        env:
+          DAEMON_API_URL: ${{ secrets.DAEMON_API_URL }}
+          DAEMON_API_KEY: ${{ secrets.DAEMON_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import json
+          import urllib.request
+          import urllib.parse
+          
+          # Get event data
+          event_type = os.environ.get('GITHUB_EVENT_NAME', '')
+          repository = os.environ.get('GITHUB_REPOSITORY', '')
+          
+          # Read GitHub event JSON (GitHub Actions provides this)
+          # GITHUB_EVENT_PATH is set by GitHub Actions
+          event_path = os.environ.get('GITHUB_EVENT_PATH')
+          if not event_path:
+              # Fallback: try common locations
+              for path in ['/github/workflow/event.json', '/home/runner/work/_temp/_github_workflow/event.json']:
+                  if os.path.exists(path):
+                      event_path = path
+                      break
+          
+          event_data = {}
+          if event_path and os.path.exists(event_path):
+              try:
+                  with open(event_path, 'r') as f:
+                      event_data = json.load(f)
+              except Exception as e:
+                  print(f"Warning: Could not read event file: {e}")
+          
+          # Extract data based on event type
+          if event_type == 'issues':
+              title = event_data.get('issue', {}).get('title', '')
+              body = event_data.get('issue', {}).get('body', '')
+              author = event_data.get('issue', {}).get('user', {}).get('login', '')
+              issue_number = str(event_data.get('issue', {}).get('number', ''))
+              comment_id = ''
+          elif event_type == 'pull_request':
+              title = event_data.get('pull_request', {}).get('title', '')
+              body = event_data.get('pull_request', {}).get('body', '')
+              author = event_data.get('pull_request', {}).get('user', {}).get('login', '')
+              issue_number = str(event_data.get('pull_request', {}).get('number', ''))
+              comment_id = ''
+          elif event_type == 'issue_comment':
+              title = ''
+              body = event_data.get('comment', {}).get('body', '')
+              author = event_data.get('comment', {}).get('user', {}).get('login', '')
+              issue_number = str(event_data.get('issue', {}).get('number', ''))
+              comment_id = str(event_data.get('comment', {}).get('id', ''))
+          elif event_type == 'pull_request_review_comment':
+              title = ''
+              body = event_data.get('comment', {}).get('body', '')
+              author = event_data.get('comment', {}).get('user', {}).get('login', '')
+              issue_number = str(event_data.get('pull_request', {}).get('number', ''))
+              comment_id = str(event_data.get('comment', {}).get('id', ''))
+          else:
+              title = body = author = issue_number = comment_id = ''
+          
+          # Prepare request
+          payload = {
+              'event_type': event_type,
+              'title': title,
+              'body': body,
+              'author': author,
+              'repository': repository,
+              'issue_number': issue_number,
+              'comment_id': comment_id
+          }
+          
+          daemon_url = os.environ.get('DAEMON_API_URL')
+          daemon_key = os.environ.get('DAEMON_API_KEY')
+          
+          if not daemon_url or not daemon_key:
+              print("Error: DAEMON_API_URL or DAEMON_API_KEY not set")
+              exit(1)
+          
+          # Send to daemon
+          req = urllib.request.Request(
+              f"{daemon_url}/api/check-content",
+              data=json.dumps(payload).encode('utf-8'),
+              headers={
+                  'Authorization': f'Bearer {daemon_key}',
+                  'Content-Type': 'application/json'
+              }
+          )
+          
+          try:
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  result = json.loads(response.read().decode('utf-8'))
+                  print(f"Status: {result.get('status', 'unknown')}")
+                  if result.get('status') == 'success':
+                      print(f"✓ {result.get('message', 'Abuse handled')}")
+                  elif result.get('status') == 'skipped':
+                      print(f"⚠ {result.get('message', 'Skipped')}")
+                  else:
+                      print(f"ℹ {result.get('message', 'No action needed')}")
+          except urllib.error.HTTPError as e:
+              error_body = e.read().decode('utf-8')
+              print(f"Error: {e.code} - {error_body}")
+              exit(1)
+          except Exception as e:
+              print(f"Error: {e}")
+              exit(1)
+          EOF
