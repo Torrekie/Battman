@@ -147,7 +147,7 @@ A newly created PO file has such headers (`eo.po` in this example):
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3.1\n"
+"Project-Id-Version: Battman 1.0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-12-02 18:25+0800\n"

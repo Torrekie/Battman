@@ -25,12 +25,12 @@ If you don't have TrollStore on your device, follow guides at [ios.cfw.guide](ht
 
 ## Jailbroken Install (rooted, iOS 12+)
 1. Open your package manager (Cydia, Sileo, Zebra, etc.) and install `libintl8` from your bootstrap source (Elucubratus or Procursus)
-2. Download latest `com.torrekie.battman_<version>_iphoneos-arm.deb` from our [Releases](https://github.com/Torrekie/Battman/releases/latest) page. Where `<version>` is the version number of Battman, please make sure you are downloading the one with `iphoneos-arm` but not `iphoneos-arm64`. Current latest version is [1.0.3.1 (click to download)](https://github.com/Torrekie/Battman/releases/v1.0.3.1/com.torrekie.battman_1.0.3.1_iphoneos-arm.deb).
+2. Download latest `com.torrekie.battman_<version>_iphoneos-arm.deb` from our [Releases](https://github.com/Torrekie/Battman/releases/latest) page. Where `<version>` is the version number of Battman, please make sure you are downloading the one with `iphoneos-arm` but not `iphoneos-arm64`. Current latest version is [1.0.3.2 (click to download)](https://github.com/Torrekie/Battman/releases/v1.0.3.2/com.torrekie.battman_1.0.3.2_iphoneos-arm.deb).
 3. Long hold the downloaded deb package, tap "Share", and choose your package manager (or Filza) to proceed installation. (or any method you preferred to install debs)
 
 ## Jailbroken Install (rootless, iOS 15+)
 1. Open your package manager (Cydia, Sileo, Zebra, etc.) and install `libintl8` from your bootstrap source (Elucubratus or Procursus)
-2. Download latest `com.torrekie.battman_<version>_iphoneos-arm.deb` from our [Releases](https://github.com/Torrekie/Battman/releases/latest) page. Where `<version>` is the version number of Battman, please make sure you are downloading the one with `iphoneos-arm` but not `iphoneos-arm64`. Current latest version is [1.0.3.1 (click to download)](https://github.com/Torrekie/Battman/releases/v1.0.3.1/com.torrekie.battman_1.0.3.1_iphoneos-arm64.deb).
+2. Download latest `com.torrekie.battman_<version>_iphoneos-arm.deb` from our [Releases](https://github.com/Torrekie/Battman/releases/latest) page. Where `<version>` is the version number of Battman, please make sure you are downloading the one with `iphoneos-arm` but not `iphoneos-arm64`. Current latest version is [1.0.3.2 (click to download)](https://github.com/Torrekie/Battman/releases/v1.0.3.2/com.torrekie.battman_1.0.3.2_iphoneos-arm64.deb).
 3. Long hold the downloaded deb package, tap "Share", and choose your package manager (or Filza) to proceed installation. (or any method you preferred to install debs)
 
 ## Next steps
