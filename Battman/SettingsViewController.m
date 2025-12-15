@@ -551,7 +551,7 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("GitHub")) scale:(screen ? screen.scale : 2.0) orientation:UIImageOrientationUp];
 			}
 		} else if (indexPath.row == 2) {
-			cell.textLabel.text = _("Battman Wiki & User Manual");
+			cell.textLabel.text = _("Battman User Manual");
 			if (artwork_avail) {
 				UIScreen *screen = [UIScreen autoScreen];
 				cell.imageView.image = [UIImage imageWithCGImage:getArtworkImageOf(CFSTR("Hint")) scale:(screen ? screen.scale : 2.0) orientation:UIImageOrientationUp];

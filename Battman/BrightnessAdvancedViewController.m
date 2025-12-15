@@ -82,7 +82,7 @@ typedef enum {
 }
 
 - (void)openDocumentationURL {
-	open_url(BATTMAN_DOC_URL);
+	open_url(BATTMAN_DOC_URL "/metrics/brightness/");
 }
 
 - (void)viewDidLoad {

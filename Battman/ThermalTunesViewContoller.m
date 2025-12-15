@@ -189,7 +189,7 @@ extern UITableViewCell *find_cell(UIView *view);
 }
 
 - (void)openDocumentationURL {
-	open_url(BATTMAN_DOC_URL);
+	open_url(BATTMAN_DOC_URL "/controls/thermal-tunes/");
 }
 
 - (void)viewDidLoad {

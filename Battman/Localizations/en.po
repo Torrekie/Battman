@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-02 18:25+0800\n"
+"POT-Creation-Date: 2025-12-15 14:59+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -124,8 +124,8 @@ msgstr "Credit"
 msgid "Source Code"
 msgstr "Source Code"
 
-msgid "Battman Wiki & User Manual"
-msgstr "Battman Wiki & User Manual"
+msgid "Battman User Manual"
+msgstr "Battman User Manual"
 
 msgid "Support Us"
 msgstr "Support Us"
@@ -183,13 +183,8 @@ msgid ""
 msgstr ""
 "These values can’t be overridden when the Charging Limit daemon is running."
 
-#, objc-format
-msgid ""
-"Block Charging suspends battery charging and allows the battery to discharge "
-"while maintaining power source operation. %@"
-msgstr ""
-"Block Charging suspends battery charging and allows the battery to discharge "
-"while maintaining power source operation. %@"
+msgid "Certain values may not be overridable when no wired A/C connected."
+msgstr "Certain values may not be overridable when no wired A/C connected."
 
 msgid ""
 "Certain values may not be overridable when Optimized Battery Charging is "
@@ -197,6 +192,14 @@ msgid ""
 msgstr ""
 "Certain values may not be overridable when Optimized Battery Charging is "
 "enabled."
+
+#, objc-format
+msgid ""
+"Block Charging suspends battery charging and allows the battery to discharge "
+"while maintaining power source operation. %@"
+msgstr ""
+"Block Charging suspends battery charging and allows the battery to discharge "
+"while maintaining power source operation. %@"
 
 msgid ""
 "Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
@@ -978,6 +981,14 @@ msgid "Wipe All Battman Data"
 msgstr "Wipe All Battman Data"
 
 #, objc-format
+msgid ""
+"This will wipe all data under:\n"
+"%@"
+msgstr ""
+"This will wipe all data under:\n"
+"%@"
+
+#, objc-format
 msgid "This will wipe all data under %@"
 msgstr "This will wipe all data under %@"
 
@@ -1122,6 +1133,9 @@ msgstr "Unusual Panel ID"
 msgid "Current part might not be genuine."
 msgstr "Current part might not be genuine."
 
+msgid "Copied!"
+msgstr "Copied!"
+
 msgid ""
 "No value returned from sensor, device should be checked by service "
 "technician."
@@ -1159,9 +1173,6 @@ msgstr "Wrong Data"
 
 msgid "Internal Battery"
 msgstr "Internal Battery"
-
-msgid "Copied!"
-msgstr "Copied!"
 
 msgid "Type"
 msgstr "Type"
@@ -2144,5 +2155,24 @@ msgstr "Not Enough Data Points"
 msgid "LPM Brightness Reduction"
 msgstr "LPM Brightness Reduction"
 
+msgid "Dim & Lock"
+msgstr "Dim & Lock"
+
 msgid "Reduce the screen brightness when Low Power Mode is enabled."
 msgstr "Reduce the screen brightness when Low Power Mode is enabled."
+
+msgid "Auto Dim"
+msgstr "Auto Dim"
+
+msgid "Auto Dim/Lock on A/C"
+msgstr "Auto Dim/Lock on A/C"
+
+msgid "Notice"
+msgstr "Notice"
+
+msgid ""
+"Turning this off will keep the display from dimming and may shorten battery "
+"life."
+msgstr ""
+"Turning this off will keep the display from dimming and may shorten battery "
+"life."

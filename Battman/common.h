@@ -128,7 +128,7 @@ typedef enum {
 } battman_type_t;
 
 #ifndef BATTMAN_DOC_URL
-#define BATTMAN_DOC_URL "https://github.com/Torrekie/Battman/wiki"
+#define BATTMAN_DOC_URL "https://battman-docs.torrekie.com"
 #endif
 
 __BEGIN_DECLS

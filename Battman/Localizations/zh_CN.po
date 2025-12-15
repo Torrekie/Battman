@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-02 18:25+0800\n"
+"POT-Creation-Date: 2025-12-15 14:59+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Torrekie <me@torrekie.dev>\n"
 "Language-Team: none\n"
@@ -124,8 +124,8 @@ msgstr "致谢"
 msgid "Source Code"
 msgstr "源代码"
 
-msgid "Battman Wiki & User Manual"
-msgstr "Battman Wiki & 用户手册"
+msgid "Battman User Manual"
+msgstr "Battman 用户手册"
 
 msgid "Support Us"
 msgstr "赞助我们"
@@ -182,16 +182,19 @@ msgid ""
 "These values can’t be overridden when the Charging Limit daemon is running."
 msgstr "当“充电限制”值守进程正在运行时，这些数值将无法更改。"
 
-#, objc-format
-msgid ""
-"Block Charging suspends battery charging and allows the battery to discharge "
-"while maintaining power source operation. %@"
-msgstr "“阻止充电”将暂停电池充电并允许电池放电，但仍保持电源供电。%@"
+msgid "Certain values may not be overridable when no wired A/C connected."
+msgstr "在未连接有线电源时，部分数值可能无法更改。"
 
 msgid ""
 "Certain values may not be overridable when Optimized Battery Charging is "
 "enabled."
 msgstr "当“优化电池充电”功能启用时，某些数值可能无法被覆盖。"
+
+#, objc-format
+msgid ""
+"Block Charging suspends battery charging and allows the battery to discharge "
+"while maintaining power source operation. %@"
+msgstr "“阻止充电”将暂停电池充电并允许电池放电，但仍保持电源供电。%@"
 
 msgid ""
 "Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
@@ -952,6 +955,14 @@ msgid "Wipe All Battman Data"
 msgstr "抹除全部 Battman 数据"
 
 #, objc-format
+msgid ""
+"This will wipe all data under:\n"
+"%@"
+msgstr ""
+"这将移除以下路径中的全部数据：\n"
+"%@"
+
+#, objc-format
 msgid "This will wipe all data under %@"
 msgstr "这将移除位于 %@ 的全部数据"
 
@@ -1090,6 +1101,9 @@ msgstr "异常的面板ID"
 msgid "Current part might not be genuine."
 msgstr "当前部件可能不是正品。"
 
+msgid "Copied!"
+msgstr "已复制"
+
 msgid ""
 "No value returned from sensor, device should be checked by service "
 "technician."
@@ -1123,9 +1137,6 @@ msgstr "有问题的数据"
 
 msgid "Internal Battery"
 msgstr "设备电池"
-
-msgid "Copied!"
-msgstr "已复制"
 
 msgid "Type"
 msgstr "类型"
@@ -2076,5 +2087,22 @@ msgstr "数据点不足"
 msgid "LPM Brightness Reduction"
 msgstr "低电量模式亮度减弱"
 
+msgid "Dim & Lock"
+msgstr "调暗与锁定"
+
 msgid "Reduce the screen brightness when Low Power Mode is enabled."
 msgstr "启用低电量模式时降低屏幕亮度。"
+
+msgid "Auto Dim"
+msgstr "自动调暗"
+
+msgid "Auto Dim/Lock on A/C"
+msgstr "接入电源时自动调暗/锁定"
+
+msgid "Notice"
+msgstr "提示"
+
+msgid ""
+"Turning this off will keep the display from dimming and may shorten battery "
+"life."
+msgstr "关闭此选项后，屏幕将不会变暗，可能会缩短电池续航。"
