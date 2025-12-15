@@ -1,7 +1,8 @@
 .PHONY: all publish_mounted_site publish_local_site publish_none clean
 
 # Please make sure this is synced with xcodeproj
-BATTMAN_VERSION := 1.0.2
+# Pull version from repo root VERSION file to avoid drift.
+BATTMAN_VERSION := $(shell cat ../VERSION)
 
 SED = sed
 
