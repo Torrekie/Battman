@@ -207,7 +207,17 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	if (drfd != -1) {
 		int pid;
 		if (read(drfd, &pid, 4) == 4) {
-			if (kill(pid, 0) == 0 || errno != ESRCH) {
+			// Check if the process actually exists
+			// kill(pid, 0) returns 0 if process exists, -1 if not
+			// errno is ESRCH if process doesn't exist
+			if (kill(pid, 0) == 0) {
+				daemon_pid = pid;
+			} else if (errno == ESRCH) {
+				// Process doesn't exist, clean up stale PID file
+				NSLog(@"Found stale daemon PID file for PID %d, cleaning up", pid);
+				unlink(buf);
+			} else {
+				// Other error (EPERM, etc.), assume process exists for safety
 				daemon_pid = pid;
 			}
 		}

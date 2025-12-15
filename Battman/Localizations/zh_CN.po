@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-15 14:59+0800\n"
+"POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Torrekie <me@torrekie.dev>\n"
 "Language-Team: none\n"
@@ -581,7 +581,6 @@ msgstr "您确定要将项目“%.4s”解释为类型“%.4s”吗？这可能�
 msgid "Proceed"
 msgstr "继续"
 
-#, c-format
 msgid "Are you 100% sure?"
 msgstr "你是否百分百确定？"
 
@@ -1945,6 +1944,18 @@ msgstr "静默"
 
 msgid "Published Type"
 msgstr "已配置类型"
+
+msgid "Charging Limit Unavailable"
+msgstr "充电限制不可用"
+
+msgid "Wireless Charging Detected"
+msgstr "检测到无线充电"
+
+msgid ""
+"Charging limit controls are not supported with wireless charging. Use a wired "
+"connection for reliable functionality."
+msgstr ""
+"无线充电不支持充电限制控制。请使用有线连接以确保功能正常。"
 
 msgid "Accelerometer"
 msgstr "加速计"

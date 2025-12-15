@@ -4,7 +4,7 @@ title: Flags
 
 # Flags
 
-Battman shows the raw gas‑gauge flags reported by the battery fuel‑gauge IC. These bits come directly from Texas Instruments gauges (bq274xx, bq275xx, bq20zxx) and are rendered in the **Flags** row of the Battery Info table as two bytes (High and Low).
+Battman shows the raw gas‑gauge flags reported by the battery gas‑gauge IC. These bits come directly from Texas Instruments gauges (bq274xx, bq275xx, bq20zxx) and are rendered in the **Flags** row of the Battery Info table as two bytes (High and Low).
 
 ## What you see in the app
 

@@ -26,13 +26,13 @@ Battman 目前仅提供 TrollStore 版本和越狱版。其他安装方式不受
 ## 越狱安装（rooted，iOS 12+）
 
 1. 打开包管理器（Cydia、Sileo、Zebra 等），从 bootstrap 源（Elucubratus 或 Procursus）安装 `libintl8`。
-2. 从 [Releases](https://github.com/Torrekie/Battman/releases/latest) 页面下载最新的 `com.torrekie.battman_<version>_iphoneos-arm.deb`，请务必选择 `iphoneos-arm` 版本。当前最新版本为 [1.0.3.1（点击下载）](https://github.com/Torrekie/Battman/releases/v1.0.3.1/com.torrekie.battman_1.0.3.1_iphoneos-arm.deb)。
+2. 从 [Releases](https://github.com/Torrekie/Battman/releases/latest) 页面下载最新的 `com.torrekie.battman_<version>_iphoneos-arm.deb`，请务必选择 `iphoneos-arm` 版本。当前最新版本为 [1.0.3.2（点击下载）](https://github.com/Torrekie/Battman/releases/v1.0.3.2/com.torrekie.battman_1.0.3.2_iphoneos-arm.deb)。
 3. 长按下载的 deb，点击“共享”，选择包管理器（或 Filza）进行安装（或使用你偏好的 deb 安装方式）。
 
 ## 越狱安装（rootless，iOS 15+）
 
 1. 打开包管理器（Cydia、Sileo、Zebra 等），从 bootstrap 源（Elucubratus 或 Procursus）安装 `libintl8`。
-2. 从 [Releases](https://github.com/Torrekie/Battman/releases/latest) 页面下载最新的 `com.torrekie.battman_<version>_iphoneos-arm.deb`，请务必选择 `iphoneos-arm64` 版本。当前最新版本为 [1.0.3.1（点击下载）](https://github.com/Torrekie/Battman/releases/v1.0.3.1/com.torrekie.battman_1.0.3.1_iphoneos-arm64.deb)。
+2. 从 [Releases](https://github.com/Torrekie/Battman/releases/latest) 页面下载最新的 `com.torrekie.battman_<version>_iphoneos-arm.deb`，请务必选择 `iphoneos-arm64` 版本。当前最新版本为 [1.0.3.2（点击下载）](https://github.com/Torrekie/Battman/releases/v1.0.3.2/com.torrekie.battman_1.0.3.2_iphoneos-arm64.deb)。
 3. 长按下载的 deb，点击“共享”，选择包管理器（或 Filza）进行安装（或使用你偏好的 deb 安装方式）。
 
 ## 后续步骤

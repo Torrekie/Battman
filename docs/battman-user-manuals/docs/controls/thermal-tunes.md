@@ -16,8 +16,8 @@ The **Thermal Tunes** screen exposes mid‑level thermal‑management switches t
 
 ## How the toggles work
 
-- **Lock (padlock icon):** prevents `thermalmonitord` from resetting the setting back to its default. Use this when you want your chosen value to persist across reboots and system changes.
-- **Checkmark:** the actual on/off state of the feature. Toggle it to enable or disable the behavior itself.
+- **Lock (🔒 icon):** prevents `thermalmonitord` from resetting the setting back to its default. Use this when you want your chosen value to persist across reboots and system changes.
+- **Checkmark (✅ icon):** the actual on/off state of the feature. Toggle it to enable or disable the behavior itself.
 
 ## Safety notes
 
@@ -25,6 +25,8 @@ Changing these settings can:
 
 - Increase device and battery temperatures.
 - Affect charging, backlight, flashlight and media behaviors.
+
+Only use this page when you fully understand the risks.
 
 ## Notice
 
