@@ -1,0 +1,105 @@
+site_name: Battman User Manual
+ 
+nav:
+  - Home: index.md
+  - Installation:
+      - iOS: installation/index.md
+      - macOS: installation/macos.md
+  - Metrics:
+      - Battery Info: metrics/battery-info.md
+      - Hardware Temperature: metrics/hardware-temperature.md
+      - Brightness: metrics/brightness.md
+  - Controls:
+      - Charging Managements: controls/charging-managements.md
+      - Charging Limits: controls/charging-limits.md
+      - Thermal Tunes: controls/thermal-tunes.md
+  - Troubleshooting:
+      - Battery Info:
+          - Warning Conditions: troubleshooting/battery-info/warning-conditions.md
+          - Flags: troubleshooting/battery-info/flags.md
+          - Not Charging Reason: troubleshooting/battery-info/not-charging-reason.md
+          - Family Codes: troubleshooting/battery-info/family-keys.md
+      - Thermals:
+          - "'Unknown' Screen Temperature": troubleshooting/thermals/unknown-screen-temperature.md
+          - Thermal Notification Levels: troubleshooting/thermals/thermal-notification-levels.md
+      - Screen & Brightness:
+          - Nits & Percentages: troubleshooting/screen-brightness/nits-and-percentages.md
+          - Brightness Backends: troubleshooting/screen-brightness/brightness-backends.md
+  - Preferences:
+      - Preferred Languages: preferences/preferred-languages.md
+      - Wiping Data: preferences/wiping-data.md
+  - Uninstallation: uninstallation.md
+  - Contributing:
+      - Locales: contributing/locales.md
+      - Codes: contributing/codes.md
+  - Updating:
+      - iOS: updating/ios.md
+      - macOS: updating/macos.md
+#  - Theme Test: theme-test.md
+ 
+theme:
+  name: null
+  custom_dir: custom_theme
+
+extra_css:
+  - stylesheets/apple-theme.css
+
+extra_javascript:
+  - javascripts/apple-theme.js
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - footnotes
+  - tables
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: zh
+          name: Simplified Chinese
+          build: true
+          nav_translations:
+            Home: 首页
+            Installation: 安装
+            iOS: iOS
+            macOS: macOS
+            Metrics: 数据
+            Battery Info: 电池信息
+            Hardware Temperature: 硬件温度
+            Brightness: 亮度
+            Controls: 控制
+            Charging Managements: 充电管理
+            Charging Limits: 充电限制
+            Thermal Tunes: 温控调校
+            Troubleshooting: 故障排除
+            Warning Conditions: 警告条件
+            Flags: 标示位
+            Not Charging Reason: 未充电原因
+            Family Codes: 类型代码
+            Thermals: 温控
+            "'Unknown' Screen Temperature": "「未知」屏幕温度"
+            Thermal Notification Levels: 温控通知等级
+            Screen & Brightness: 屏幕与亮度
+            Nits & Percentages: Nit 与百分比
+            Brightness Backends: 亮度后端
+            Preferences: 设置
+            Preferred Languages: 首选语言
+            Wiping Data: 清除数据
+            Uninstallation: 卸载
+            Contributing: 参与贡献
+            Locales: 本地化
+            Codes: 代码
+            Updating: 更新
+#            Theme Test: 主题测试
+  - fix_search
+

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+{# Derive language: prefer page/lang metadata; fallback to URL prefix (i18n suffix build) #}
+{# Normalize URLs to detect /zh/ prefix #}
+{% set page_url = (page.url if page else '') | trim %}
+{% set abs_url = (page.abs_url if page else '') | trim %}
+{% set normalized_url = page_url.lstrip('/') %}
+
+{# Detect language from multiple sources: plugin lang, page meta, URL prefix #}
+{# For search.html, we need to detect from the current file path since page.url might be empty #}
+{% set url_lang = 'en' %}
+
+{# Try to detect from config - i18n plugin might set this #}
+{% if config.extra and config.extra.i18n and config.extra.i18n.current_language %}
+  {% set url_lang = config.extra.i18n.current_language %}
+{% endif %}
+
+{# Detect from absolute URL path (most reliable for /zh/search.html) #}
+{% if abs_url %}
+  {# Check if /zh/ is in the absolute URL #}
+  {% if '/zh/' in abs_url or abs_url.startswith('/zh') or abs_url.startswith('zh/') %}
+    {% set url_lang = 'zh' %}
+  {% endif %}
+{% endif %}
+
+{# Also check normalized URL #}
+{% if normalized_url.startswith('zh/') or normalized_url.startswith('zh') %}
+  {% set url_lang = 'zh' %}
+{% endif %}
+
+{# Check page file language attribute #}
+{% if page and page.file and page.file.lang %}
+  {% set url_lang = page.file.lang %}
+{% endif %}
+
+{# Check page metadata #}
+{% if page and page.meta and page.meta.lang %}
+  {% set url_lang = page.meta.lang %}
+{% endif %}
+
+{# Check page.lang directly #}
+{% if page and page.lang %}
+  {% set url_lang = page.lang %}
+{% endif %}
+
+{# Check if we're in a language subdirectory by examining the output path #}
+{# When search.html is in /zh/, the base_url or page.url should reflect this #}
+{% if base_url %}
+  {# base_url might be '../' for /zh/search.html or '.' for /search.html #}
+  {% if base_url == '../' or '/zh' in base_url %}
+    {% set url_lang = 'zh' %}
+  {% endif %}
+{% endif %}
+
+{# Final language determination - prioritize detected language #}
+{% set lang = url_lang or (page.lang if page else None) or (page.meta.lang if page and page.meta else None) or config.site_language or 'en' %}
+
+{# Debug: Uncomment to see detected language
+{{ '<!-- Detected lang: ' ~ lang ~ ', url_lang: ' ~ url_lang ~ ', abs_url: ' ~ abs_url ~ ' -->' }}
+#}
+
+{# Localized strings #}
+{% set site_label = config.site_name %}
+{% set search_placeholder = "Search" %}
+{% set search_title = "Search Results" %}
+{% set search_no_results = "No results found" %}
+{% if lang == 'zh' %}
+  {% set site_label = "Battman 用户手册" %}
+  {% set search_placeholder = "搜索" %}
+  {% set search_title = "搜索结果" %}
+  {% set search_no_results = "未找到结果" %}
+{% endif %}
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ search_title }} - {{ config.site_name }}</title>
+    {%- for path in config.extra_css %}
+    <link href="{{ path | url }}" rel="stylesheet">
+    {%- endfor %}
+    {% if 'search' in config.plugins %}
+    <script>var base_url = {{ base_url | tojson }};</script>
+    {% endif %}
+  </head>
+  <body class="bm-body">
+    <header class="bm-header bm-squircle">
+      <div class="bm-header-left">
+        <div class="bm-logo">
+          <img src="{{ 'images/Battman.svg' | url }}" alt="Battman" />
+        </div>
+        <div class="bm-title-block">
+          <div class="bm-site-name">{{ site_label }}</div>
+          <div class="bm-page-title">{{ search_title }}</div>
+        </div>
+      </div>
+      <div class="bm-header-right">
+        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% else %}Menu{% endif %}</button>
+        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% else %}Theme{% endif %}</button>
+        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% else %}Language{% endif %}">
+          <option value="en">English</option>
+          <option value="zh">简体中文</option>
+        </select>
+        {% if 'search' in config.plugins %}
+        {% set search_url = 'search.html' | url %}
+        {% if search_url.endswith('/') %}
+          {% set search_url = search_url[:-1] %}
+        {% endif %}
+        <form class="bm-search" action="{{ search_url }}" method="get" onsubmit="var form = this; var action = form.action; if (action.endsWith('/')) { form.action = action.slice(0, -1); } return true;">
+          <input id="mkdocs-search-query" type="search" name="q" placeholder="{{ search_placeholder }}" autocomplete="off" />
+        </form>
+        {% endif %}
+      </div>
+    </header>
+
+    <div id="bm-nav-overlay" class="bm-nav-overlay"></div>
+
+    <main class="bm-main">
+      <aside class="bm-sidebar bm-squircle">
+        <nav class="bm-nav">
+          <ul class="bm-nav-list">
+            {%- macro render_nav_item(item) -%}
+            <li class="bm-nav-item{% if item.active %} bm-nav-item--active{% endif %}">
+              {% if item.is_section %}
+                <div class="bm-nav-section">{{ item.title }}</div>
+                {% if item.children %}
+                <ul class="bm-nav-children">
+                  {% for child in item.children %}
+                  {{ render_nav_item(child) }}
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              {% elif item.is_page %}
+                {# Fix URL generation for language subdirectories #}
+                {# When in /zh/search.html, item.url is "zh/metrics/..." but we need "metrics/..." #}
+                {# Always check and strip language prefixes regardless of lang variable #}
+                {% set nav_url = item.url %}
+                {# Check for common language prefixes and strip them #}
+                {% if nav_url.startswith('zh/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('fr/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('de/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('es/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('ja/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('ko/') %}
+                  {% set nav_url = nav_url[3:] %}
+                {% endif %}
+                <a href="{{ nav_url }}" class="bm-nav-link{% if item.active %} bm-nav-link--active{% endif %}">{{ item.title }}</a>
+              {% elif item.is_link %}
+                <a href="{{ item.url }}" class="bm-nav-link" target="_blank" rel="noopener">{{ item.title }}</a>
+              {% endif %}
+            </li>
+            {%- endmacro -%}
+
+            {% for item in nav %}
+              {{ render_nav_item(item) }}
+            {% endfor %}
+          </ul>
+        </nav>
+      </aside>
+
+      <article class="bm-content bm-squircle">
+        <h1>{{ search_title }}</h1>
+        <div id="mkdocs-search-results" class="bm-search-results">
+          <p class="bm-search-no-results">{{ search_no_results }}</p>
+        </div>
+      </article>
+    </main>
+
+    <footer class="bm-footer">
+      <div class="bm-footer-inner">
+        <span>© {{ config.site_name }}</span>
+      </div>
+    </footer>
+
+    {% if 'search' in config.plugins %}
+    {# Use relative path - search directory is copied to each language subdirectory #}
+    {# main.js will load search_index.json automatically #}
+    <script src="{{ 'search/main.js' | url }}"></script>
+    {# Ensure base_url is correctly set for search functionality and translate UI #}
+    <script>
+      (function() {
+        // Detect locale from current path and update base_url if needed
+        var path = window.location.pathname;
+        var pathParts = path.split('/').filter(function(p) { return p; });
+        var currentLang = 'en';
+        
+        // Check if we're in a language subdirectory (e.g., /zh/search.html)
+        if (pathParts.length >= 1) {
+          var firstPart = pathParts[0];
+          var knownLangs = ['zh', 'fr', 'de', 'es', 'ja', 'ko'];
+          
+          if (knownLangs.indexOf(firstPart) !== -1) {
+            currentLang = firstPart;
+            // We're in a language subdirectory
+            if (typeof base_url !== 'undefined') {
+              // Update base_url to point to the language directory
+              base_url = '/' + firstPart + '/';
+            }
+          }
+        }
+        
+        // Translate UI elements based on detected language
+        // Use DOMContentLoaded to ensure elements exist, or run immediately if DOM is ready
+        function translateUI() {
+          if (currentLang === 'zh') {
+            // Update page title in header
+            var pageTitle = document.querySelector('.bm-page-title');
+            if (pageTitle && pageTitle.textContent.trim() === 'Search Results') {
+              pageTitle.textContent = '搜索结果';
+            }
+            
+            // Update main heading
+            var mainHeading = document.querySelector('article h1');
+            if (mainHeading && mainHeading.textContent.trim() === 'Search Results') {
+              mainHeading.textContent = '搜索结果';
+            }
+            
+            // Update page title in document
+            if (document.title && document.title.includes('Search Results')) {
+              document.title = document.title.replace('Search Results', '搜索结果');
+            }
+            
+            // Update "No results found" message
+            var noResults = document.querySelector('.bm-search-no-results');
+            if (noResults && noResults.textContent.trim() === 'No results found') {
+              noResults.textContent = '未找到结果';
+            }
+          }
+        }
+        
+        // Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', translateUI);
+        } else {
+          translateUI();
+        }
+        
+        // Also run after a short delay to catch any dynamically loaded content
+        setTimeout(translateUI, 100);
+      })();
+    </script>
+    {% endif %}
+    {%- for script in config.extra_javascript %}
+    {{ script | script_tag }}
+    {%- endfor %}
+  </body>
+</html>

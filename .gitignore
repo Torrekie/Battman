@@ -19,3 +19,13 @@ build
 Battman/havoc-defs.h
 Battman/nonfree-defs.h
 Battman/nonfree-havoc.m
+# Build outputs
+docs/battman-user-manuals/site/
+docs/battman-user-manuals/__pycache__/
+docs/battman-user-manuals/*.egg-info/
+docs/battman-user-manuals/.deploy_temp/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+{# Derive language: prefer page/lang metadata; fallback to URL prefix (i18n suffix build) #}
+{# Normalize URLs to detect /zh/ prefix #}
+{% set page_url = (page.url or '') | trim %}
+{% set abs_url = (page.abs_url or '') | trim %}
+{% set normalized_url = page_url.lstrip('/') %}
+
+{# Detect language from multiple sources: plugin lang, page meta, URL prefix #}
+{% set url_lang = 'en' %}
+{% if page and page.file and page.file.lang %}
+  {% set url_lang = page.file.lang %}
+{% elif normalized_url.startswith('zh/') %}
+  {% set url_lang = 'zh' %}
+{% elif '/zh/' in abs_url %}
+  {% set url_lang = 'zh' %}
+{% endif %}
+
+{% set lang = page.lang or page.meta.lang or url_lang or config.site_language or 'en' %}
+
+{# Localized strings #}
+{% set site_label = config.site_name %}
+{% set search_placeholder = "Search" %}
+{% set toc_label = "On this page" %}
+{% set footer_label = "© " ~ config.site_name %}
+{% if lang == 'zh' %}
+  {% set site_label = "Battman 用户手册" %}
+  {% set search_placeholder = "搜索" %}
+  {% set toc_label = "本页内容" %}
+  {% set footer_label = "© Battman 用户手册" %}
+{% endif %}
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if page.title %}{{ page.title }} - {% endif %}{{ config.site_name }}</title>
+    {%- for path in config.extra_css %}
+    <link href="{{ path | url }}" rel="stylesheet">
+    {%- endfor %}
+    {% if 'search' in config.plugins %}
+    <script>var base_url = {{ base_url | tojson }};</script>
+    {% endif %}
+  </head>
+  <body class="bm-body">
+    <header class="bm-header bm-squircle">
+      <div class="bm-header-left">
+        <div class="bm-logo">
+          <img src="{{ 'images/Battman.svg' | url }}" alt="Battman" />
+        </div>
+        <div class="bm-title-block">
+          <div class="bm-site-name">{{ site_label }}</div>
+          {% if page.title %}<div class="bm-page-title">{{ page.title }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="bm-header-right">
+        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% else %}Menu{% endif %}</button>
+        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% else %}Theme{% endif %}</button>
+        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% else %}Language{% endif %}">
+          <option value="en">English</option>
+          <option value="zh">简体中文</option>
+        </select>
+        {% if 'search' in config.plugins %}
+        <form class="bm-search" action="{{ 'search.html' | url }}">
+          <input id="mkdocs-search-query" type="search" name="q" placeholder="{{ search_placeholder }}" />
+        </form>
+        {% endif %}
+      </div>
+    </header>
+
+    <div id="bm-nav-overlay" class="bm-nav-overlay"></div>
+
+    <main class="bm-main">
+      <aside class="bm-sidebar bm-squircle">
+        <nav class="bm-nav">
+          <ul class="bm-nav-list">
+            {%- macro render_nav_item(item) -%}
+            <li class="bm-nav-item{% if item.active %} bm-nav-item--active{% endif %}">
+              {% if item.is_section %}
+                <div class="bm-nav-section">{{ item.title }}</div>
+                {% if item.children %}
+                <ul class="bm-nav-children">
+                  {% for child in item.children %}
+                  {{ render_nav_item(child) }}
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              {% elif item.is_page %}
+                <a href="{{ item.url | url }}" class="bm-nav-link{% if item.active %} bm-nav-link--active{% endif %}">{{ item.title }}</a>
+              {% elif item.is_link %}
+                <a href="{{ item.url }}" class="bm-nav-link" target="_blank" rel="noopener">{{ item.title }}</a>
+              {% endif %}
+            </li>
+            {%- endmacro -%}
+
+            {% for item in nav %}
+              {{ render_nav_item(item) }}
+            {% endfor %}
+          </ul>
+        </nav>
+      </aside>
+
+      <article class="bm-content bm-squircle">
+        {{ page.content }}
+      </article>
+
+      {% if page.toc %}
+      <aside class="bm-toc bm-squircle">
+        <div class="bm-toc-title">{{ toc_label }}</div>
+        <ul class="bm-toc-list">
+          {% for toc_item in page.toc %}
+          <li class="bm-toc-item">
+            <a href="{{ toc_item.url }}">{{ toc_item.title }}</a>
+            {% if toc_item.children %}
+            <ul class="bm-toc-sublist">
+              {% for sub in toc_item.children %}
+              <li class="bm-toc-subitem"><a href="{{ sub.url }}">{{ sub.title }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </aside>
+      {% endif %}
+    </main>
+
+    <footer class="bm-footer">
+      <div class="bm-footer-inner">
+        <span>{{ footer_label }}</span>
+      </div>
+    </footer>
+
+    {%- for script in config.extra_javascript %}
+    {{ script | script_tag }}
+    {%- endfor %}
+  </body>
+</html>
