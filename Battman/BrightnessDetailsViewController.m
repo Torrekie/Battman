@@ -18,6 +18,7 @@
 #import "VirtBriCardCell.h"
 #import "WarnAccessoryView.h"
 #import "BrightnessAdvancedViewController.h"
+#import "ScrollableDetailCell.h"
 
 @interface BrightnessDetailsViewController ()
  
@@ -87,8 +88,8 @@ typedef enum {
 	[self _reloadBrightnessCaches];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_brightnessDidChange:) name:UIScreenBrightnessDidChangeNotification object:nil];
 	self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:_("Advanced") style:UIBarButtonItemStylePlain target:self action:@selector(showAdvanced)];
-	// No plans yet
-	self.tableView.allowsSelection = NO;
+	// Allow selection for long-press copy menu
+	self.tableView.allowsSelection = YES;
 }
 
 - (void)showAdvanced {
@@ -258,6 +259,7 @@ typedef enum {
 					cell.detailTextLabel.text = self.dcpBacklightCached ? @"DCP" : _("Standard");
 					break;
 				case B_ROW_SPECS_PANEL_ID: {
+					cell = (UITableViewCell *)[[ScrollableDetailCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuse];
 					cell.textLabel.text = _("ID");
 					BOOL possibly_malformed = NO;
 					const char *panel_id = iomfb_primary_screen_panel_id();
@@ -267,7 +269,7 @@ typedef enum {
 					} else {
 						cell.detailTextLabel.text = [NSString stringWithUTF8String:panel_id];
 						for (int i = 0; i < strlen(panel_id); i++) {
-							if (!isalpha(panel_id[i]) && !isdigit(panel_id[i])) {
+							if (!isalpha(panel_id[i]) && !isdigit(panel_id[i]) && !(panel_id[i] == '+')) {
 								possibly_malformed = YES;
 								break;
 							}
@@ -309,11 +311,43 @@ typedef enum {
 		}
 		case B_SECT_COUNT: break;
 	}
+
+	cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	return cell;
 }
 
 - (void)warnForWeirdPanelID {
 	show_alert(_C("Unusual Panel ID"), _C("Current part might not be genuine."), L_OK);
+}
+
+- (BOOL)tableView:(UITableView *)tableView shouldShowMenuForRowAtIndexPath:(NSIndexPath *)indexPath {
+	// Only enable copy menu for the "ID" row
+	return (indexPath.section == B_SECT_SPECS && indexPath.row == B_ROW_SPECS_PANEL_ID);
+}
+
+- (BOOL)tableView:(UITableView *)tableView canPerformAction:(SEL)action forRowAtIndexPath:(NSIndexPath *)indexPath withSender:(id)sender {
+	// Only enable copy menu for the "ID" row
+	if (indexPath.section == B_SECT_SPECS && indexPath.row == B_ROW_SPECS_PANEL_ID) {
+		return action == @selector(copy:);
+	}
+	return NO;
+}
+
+- (void)tableView:(UITableView *)tableView performAction:(SEL)action forRowAtIndexPath:(NSIndexPath *)indexPath withSender:(id)sender {
+	if (action == @selector(copy:)) {
+		UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+		NSString *textToCopy = cell.detailTextLabel.text;
+		
+		if (textToCopy && textToCopy.length > 0) {
+			UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+			[pasteboard setString:textToCopy];
+			show_alert(_C("Copied!"), [textToCopy UTF8String], L_OK);
+		}
+	}
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 - (void)dealloc {

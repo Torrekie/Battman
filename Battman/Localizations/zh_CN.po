@@ -6,7 +6,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3.1\n"
+"Project-Id-Version: Battman 1.0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
@@ -1163,14 +1163,14 @@ msgid "Time to Empty"
 msgstr "耗尽时间"
 
 msgid "Unusual Time to Empty, a non-genuine battery component may be in use."
-msgstr "电池耗尽时间异常，使用的可能是未经认证的电池部件"
+msgstr "电池耗尽时间异常，使用的可能是未经认证的电池部件。"
 
 msgid "Depth of Discharge"
 msgstr "放电深度"
 
 msgid ""
 "Unusual Depth of Discharge, a non-genuine battery component may be in use."
-msgstr "电池化学放电深度异常，使用的可能是未经认证的电池部件"
+msgstr "电池化学放电深度异常，使用的可能是未经认证的电池部件。"
 
 msgid "Not HVC"
 msgstr "非高压充电"

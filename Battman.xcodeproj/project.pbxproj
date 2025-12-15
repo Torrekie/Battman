@@ -381,6 +381,10 @@
 		68C4FA812EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68C4FA822EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68C4FA832EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
+		68C4FA8C2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
+		68C4FA8D2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
+		68C4FA8E2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
+		68C4FA8F2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
 		68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
@@ -2015,6 +2019,8 @@
 		68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSBundle+Auto.m"; sourceTree = "<group>"; };
 		68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrashLogger.m; sourceTree = "<group>"; };
 		68C4FA7F2EDEDF38005F6542 /* CrashLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrashLogger.h; sourceTree = "<group>"; };
+		68C4FA8A2EE01584005F6542 /* ScrollableDetailCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ScrollableDetailCell.h; sourceTree = "<group>"; };
+		68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScrollableDetailCell.m; sourceTree = "<group>"; };
 		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
 		68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libbrightness.h; sourceTree = "<group>"; };
 		68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BSC_Provider.m; sourceTree = "<group>"; };
@@ -14190,6 +14196,8 @@
 				68336E812EA3891900E9F180 /* SegmentedTextField.m */,
 				68D800B82EC9CB250012B84A /* BrightnessCardCell.h */,
 				68D800B92EC9CB250012B84A /* BrightnessCardCell.m */,
+				68C4FA8A2EE01584005F6542 /* ScrollableDetailCell.h */,
+				68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */,
 			);
 			name = CustomUIElements;
 			sourceTree = "<group>";
@@ -14994,6 +15002,7 @@
 				684114852E5323E2001B76B6 /* iokit_connection.c in Sources */,
 				684114862E5323E2001B76B6 /* thermal.c in Sources */,
 				684114872E5323E2001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68C4FA8D2EE01584005F6542 /* ScrollableDetailCell.m in Sources */,
 				68D800802EC5A5490012B84A /* backlight-control.c in Sources */,
 				68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				68D800C32EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
@@ -15093,6 +15102,7 @@
 				684114DB2E57BDE7001B76B6 /* iokit_connection.c in Sources */,
 				684114DC2E57BDE7001B76B6 /* thermal.c in Sources */,
 				684114DD2E57BDE7001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
+				68C4FA8E2EE01584005F6542 /* ScrollableDetailCell.m in Sources */,
 				68D800812EC5A5490012B84A /* backlight-control.c in Sources */,
 				68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
 				68D800C42EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
@@ -15200,6 +15210,7 @@
 				6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */,
 				6849726C2EACB71B00C9C58A /* thermal.c in Sources */,
 				68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */,
+				68C4FA8F2EE01584005F6542 /* ScrollableDetailCell.m in Sources */,
 				68D800822EC5A5490012B84A /* backlight-control.c in Sources */,
 				6849726D2EACB71B00C9C58A /* UILabel+SFSymbolsOverride.m in Sources */,
 				68D800C52EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
@@ -15341,6 +15352,7 @@
 				68B5FF302D85617400919BC2 /* TemperatureInfoTableViewCell.m in Sources */,
 				68FBDD182DE30A8E0057870A /* CreditViewController.c in Sources */,
 				68FBDCF02DE30A5E0057870A /* worker.c in Sources */,
+				68C4FA8C2EE01584005F6542 /* ScrollableDetailCell.m in Sources */,
 				683425502D7D6A240070CE6F /* MultilineViewCell.m in Sources */,
 				68336E4B2EA0CF3400E9F180 /* PreferencesViewController.m in Sources */,
 				68AE40BB2D8EB8870023D7B0 /* UIView+Fill.m in Sources */,
@@ -15467,6 +15479,7 @@
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"DEBUG=1",
 					"USE_GETTEXT=1",
+					"DISABLE_PROTECT=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
@@ -15521,6 +15534,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"USE_GETTEXT=1",
+					"DISABLE_PROTECT=1",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
@@ -15578,6 +15592,7 @@
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"DEBUG=1",
 					"USE_GETTEXT=1",
+					"DISABLE_PROTECT=1",
 				);
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-havoc.plist";
@@ -15633,6 +15648,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"USE_GETTEXT=1",
+					"DISABLE_PROTECT=1",
 				);
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-havoc.plist";
@@ -15714,6 +15730,7 @@
 					"DEBUG=1",
 					"USE_GETTEXT=1",
 					"USE_ORIG_BUNDLE=1",
+					"DISABLE_PROTECT=1",
 				);
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-havoc-tipa-Info.plist";
@@ -15770,6 +15787,7 @@
 					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
 					"USE_GETTEXT=1",
 					"USE_ORIG_BUNDLE=1",
+					"DISABLE_PROTECT=1",
 				);
 				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
 				INFOPLIST_FILE = "Battman-havoc-tipa-Info.plist";

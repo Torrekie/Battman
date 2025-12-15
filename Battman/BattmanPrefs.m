@@ -4,12 +4,18 @@
 //
 //  Created by Torrekie on 2025/10/19.
 //
+#import "ObjCExt/NSBundle+Auto.h"
 
 #import "PreferencesViewController.h"
 #import "ThermAniTestViewController.h"
 #import "BattmanPrefs.h"
 #include "common.h"
 #import <UIKit/UIKit.h>
+
+@interface MCMContainer : NSObject
++ (instancetype)containerWithIdentifier:(NSString *)identifier createIfNecessary:(BOOL)createIfNecessary existed:(BOOL *)existed error:(NSError **)error;
+- (NSURL *)url;
+@end
 
 @interface BattmanPrefs ()
 @property (nonatomic, strong) NSMutableDictionary<NSString*, id> *backing;
@@ -514,6 +520,41 @@ BOOL BattmanPrefsSynchronize(void) {
 
 - (void)wipeAllData:(BOOL)dryRun {
 	DBGLOG(@"BattmanPrefs: %@ wipe all data operation", dryRun ? @"DRY RUN -" : @"Starting");
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	
+	// Helper to delete all children inside a directory (not the directory itself)
+	void (^wipeDirectoryContents)(NSURL *dirURL, NSString *label) = ^(NSURL *dirURL, NSString *label) {
+		if (!dirURL.path.length) {
+			return;
+		}
+		
+		NSError *error = nil;
+		NSArray *contents = [fileManager contentsOfDirectoryAtURL:dirURL includingPropertiesForKeys:nil options:0 error:&error];
+		if (error) {
+			NSLog(@"BattmanPrefs: Error reading %@ (%@): %@", label, dirURL.path, error.localizedDescription);
+			return;
+		}
+		
+		if (dryRun) {
+#ifdef DEBUG
+			DBGLOG(@"BattmanPrefs: [DRY RUN] Would delete %lu items from %@ (%@):", (unsigned long)contents.count, label, dirURL.path);
+			for (NSURL *fileURL in contents) {
+				DBGLOG(@"BattmanPrefs: [DRY RUN]   - %@", fileURL.path);
+			}
+#endif
+			return;
+		}
+		
+		DBGLOG(@"BattmanPrefs: Deleting %lu items from %@", (unsigned long)contents.count, label);
+		for (NSURL *fileURL in contents) {
+			NSError *deleteError = nil;
+			if ([fileManager removeItemAtURL:fileURL error:&deleteError]) {
+				DBGLOG(@"BattmanPrefs: Deleted %@", fileURL.path);
+			} else {
+				DBGLOG(@"BattmanPrefs: Failed to delete %@: %@", fileURL.path, deleteError.localizedDescription);
+			}
+		}
+	};
 	
 	// Clear the backing store
 	if (dryRun) {
@@ -553,37 +594,36 @@ BOOL BattmanPrefsSynchronize(void) {
 	}
 	
 	// Clear Battman config directory only
-	NSFileManager *fileManager = [NSFileManager defaultManager];
 	const char *configDirPath = battman_config_dir();
+	NSString *configDirString = nil;
+	NSURL *configURL = nil;
 	if (configDirPath) {
-		NSString *configDirString = [NSString stringWithUTF8String:configDirPath];
-		NSURL *configURL = [NSURL fileURLWithPath:configDirString];
-		NSError *error = nil;
-		NSArray *contents = [fileManager contentsOfDirectoryAtURL:configURL includingPropertiesForKeys:nil options:0 error:&error];
-		if (!error) {
-			if (dryRun) {
-#ifdef DEBUG
-				DBGLOG(@"BattmanPrefs: [DRY RUN] Would delete %lu items from Battman config directory (%@):", (unsigned long)contents.count, configDirString);
-				for (NSURL *fileURL in contents) {
-					DBGLOG(@"BattmanPrefs: [DRY RUN]   - %@", fileURL.path);
-				}
-#endif
-			} else {
-				DBGLOG(@"BattmanPrefs: Deleting %lu items from Battman config directory", (unsigned long)contents.count);
-				for (NSURL *fileURL in contents) {
-					NSError *deleteError = nil;
-					if ([fileManager removeItemAtURL:fileURL error:&deleteError]) {
-						DBGLOG(@"BattmanPrefs: Deleted %@", fileURL.path);
-					} else {
-						DBGLOG(@"BattmanPrefs: Failed to delete %@: %@", fileURL.path, deleteError.localizedDescription);
-					}
-				}
-			}
-		} else {
-			NSLog(@"BattmanPrefs: Error reading Battman config directory (%@): %@", configDirString, error.localizedDescription);
-		}
+		configDirString = [NSString stringWithUTF8String:configDirPath];
+		configURL = [NSURL fileURLWithPath:configDirString];
+		wipeDirectoryContents(configURL, @"Battman config directory");
 	} else {
 		NSLog(@"BattmanPrefs: Warning - battman_config_dir() returned NULL, cannot clean config directory");
+	}
+	
+	// Clear MobileContainerManager AppData container if it differs from config dir
+	NSURL *containerURL = nil;
+	NSBundle *mcmBundle = [NSBundle systemBundleWithName:@"MobileContainerManager"];
+	if (mcmBundle && [mcmBundle load]) {
+		BOOL existed = NO;
+		NSError *error = nil;
+		MCMContainer *container = [[mcmBundle classNamed:@"MCMAppDataContainer"] containerWithIdentifier:bundleIdentifier createIfNecessary:NO existed:&existed error:&error];
+		if (container && [container respondsToSelector:@selector(url)]) {
+			containerURL = [container url];
+		} else if (error) {
+			DBGLOG(@"BattmanPrefs: Unable to get AppData container: %@", error.localizedDescription);
+		}
+	}
+	
+	if (containerURL.path.length) {
+		BOOL isSamePath = (configURL && [configURL.path isEqualToString:containerURL.path]);
+		if (!isSamePath) {
+			wipeDirectoryContents(containerURL, @"AppData container");
+		}
 	}
 
 	NSLog(@"BattmanPrefs: %@ wipe all data operation completed", dryRun ? @"DRY RUN -" : @"");

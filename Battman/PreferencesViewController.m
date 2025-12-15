@@ -643,15 +643,83 @@ extern UITableViewCell *find_cell(UIView *view);
 - (void)showWipeAllConfirmation {
 	BOOL exist = NO;
 	NSError *err = nil;
-	NSString *path = [NSString stringWithCString:battman_config_dir() encoding:NSUTF8StringEncoding];
+	const char *configDir = battman_config_dir();
+	NSString *configPath = (configDir != NULL) ? [NSString stringWithUTF8String:configDir] : nil;
+	if (configPath.length == 0) {
+		configPath = nil;
+	}
+	NSString *path = configPath;
+	
 	NSBundle *bundle = [NSBundle systemBundleWithName:@"MobileContainerManager"];
+	NSString *containerPath = nil;
 	if (bundle && [bundle load]) {
-		MCMContainer *container = [[bundle classNamed:@"MCMContainer"] containerWithIdentifier:NSBundle.mainBundle.bundleIdentifier createIfNecessary:NO existed:&exist error:&err];
-		if (container.url)
-			path = container.url.path;
+		// We don't own data other than AppData, so this is enough
+		MCMContainer *container = [[bundle classNamed:@"MCMAppDataContainer"] containerWithIdentifier:NSBundle.mainBundle.bundleIdentifier createIfNecessary:NO existed:&exist error:&err];
+		if (container.url.path.length > 0) {
+			containerPath = container.url.path;
+			path = containerPath; // preserve previous behavior when only one path is shown
+		}
 	}
 
-	UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("Wipe All Battman Data") message:[NSString stringWithFormat:_("This will wipe all data under %@"), path] preferredStyle:UIAlertControllerStyleActionSheet];
+	// Build alert message listing both paths if they are distinct and not nested
+	NSString *(^standardize)(NSString *) = ^NSString *(NSString *p) {
+		return p ? p.stringByStandardizingPath : nil;
+	};
+	BOOL (^isSubpath)(NSString *, NSString *) = ^BOOL(NSString *child, NSString *parent) {
+		NSString *stdChild = standardize(child);
+		NSString *stdParent = standardize(parent);
+		if (stdChild.length == 0 || stdParent.length == 0) {
+			return NO;
+		}
+		if (![stdChild hasPrefix:stdParent]) {
+			return NO;
+		}
+		// Ensure boundary so "/abc/def" is subpath of "/abc" but "/abcd" is not
+		if (stdChild.length == stdParent.length) return YES;
+		unichar separator = [stdChild characterAtIndex:stdParent.length];
+		return separator == '/';
+	};
+	
+	NSMutableArray<NSString *> *pathsForAlert = [NSMutableArray array];
+	if (configPath.length > 0) {
+		[pathsForAlert addObject:configPath];
+	}
+	if (containerPath.length > 0) {
+		BOOL same = (configPath && [standardize(configPath) isEqualToString:standardize(containerPath)]);
+		BOOL configInsideContainer = isSubpath(configPath, containerPath);
+		BOOL containerInsideConfig = isSubpath(containerPath, configPath);
+		if (same) {
+			[pathsForAlert removeAllObjects];
+			[pathsForAlert addObject:containerPath];
+		} else if (configInsideContainer) {
+			// Only show container to avoid redundancy
+			[pathsForAlert removeAllObjects];
+			[pathsForAlert addObject:containerPath];
+		} else if (containerInsideConfig) {
+			// configPath already added; leave as-is
+		} else {
+			// Distinct and not nested: show both
+			[pathsForAlert addObject:containerPath];
+		}
+	}
+	
+	NSString *alertMessage = nil;
+	if (pathsForAlert.count > 1) {
+		alertMessage = [NSString stringWithFormat:_("This will wipe all data under:\n%@"), [pathsForAlert componentsJoinedByString:@"\n"]];
+	} else if (pathsForAlert.count == 1) {
+		alertMessage = [NSString stringWithFormat:_("This will wipe all data under %@"), pathsForAlert.firstObject];
+	} else {
+		alertMessage = [NSString stringWithFormat:_("This will wipe all data under %@"), path];
+	}
+	
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("Wipe All Battman Data") message:alertMessage preferredStyle:UIAlertControllerStyleActionSheet];
+	// iPad needs a popover anchor for action sheets
+	UIPopoverPresentationController *popover = alert.popoverPresentationController;
+	if (popover) {
+		popover.sourceView = self.view;
+		popover.sourceRect = self.view.bounds;
+		popover.permittedArrowDirections = 0;
+	}
 	
 	UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:_("Cancel") style:UIAlertActionStyleCancel handler:nil];
 	
@@ -685,18 +753,23 @@ extern UITableViewCell *find_cell(UIView *view);
 	
 	UIAlertController *progressAlert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
 	
+	__weak typeof(self) weakSelf = self;
 	[self presentViewController:progressAlert animated:YES completion:^{
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 			// Perform the wipe operation on background queue
 			[[BattmanPrefs sharedPrefs] wipeAllData:dryRun];
 
 			dispatch_async(dispatch_get_main_queue(), ^{
+				__strong typeof(weakSelf) strongSelf = weakSelf;
 				[progressAlert dismissViewControllerAnimated:YES completion:^{
+					if (!strongSelf) {
+						return;
+					}
 					if (dryRun) {
 						UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Dry Run Complete") message:_("Analysis complete. Check the console/logs to see what would be deleted. No data was actually removed.") preferredStyle:UIAlertControllerStyleAlert];
 						UIAlertAction *okAction = [UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:nil];
 						[completionAlert addAction:okAction];
-						[self presentViewController:completionAlert animated:YES completion:nil];
+						[strongSelf presentViewController:completionAlert animated:YES completion:nil];
 					} else {
 						// Show completion alert for actual wipe
 						UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Data Wiped") message:_("All Battman data has been successfully deleted. The app will now exit.") preferredStyle:UIAlertControllerStyleAlert];
@@ -704,7 +777,7 @@ extern UITableViewCell *find_cell(UIView *view);
 							app_exit();
 						}];
 						[completionAlert addAction:okAction];
-						[self presentViewController:completionAlert animated:YES completion:nil];
+						[strongSelf presentViewController:completionAlert animated:YES completion:nil];
 					}
 				}];
 			});

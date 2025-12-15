@@ -2,6 +2,7 @@
 #import "FullSMCViewController.h"
 #import "MultilineViewCell.h"
 #import "SegmentedViewCell.h"
+#import "ScrollableDetailCell.h"
 #import "WarnAccessoryView.h"
 #import "BattmanPrefs.h"
 #include "battery_utils/iokit_connection.h"
@@ -43,12 +44,36 @@ UILabel *equipCellTitle(UITableViewCell *cell, NSString *text) {
 }
 
 void equipCellHighLegit(UILabel *label) {
-	CTFontDescriptorRef desc = CTFontDescriptorCreateCopyWithFeature((__bridge CTFontDescriptorRef)label.font.fontDescriptor, (__bridge CFNumberRef)@(kStylisticAlternativesType), (__bridge CFNumberRef)@(kStylisticAltSixOnSelector));
-	CTFontRef font = CTFontCreateWithFontDescriptor(desc, label.font.pointSize, NULL);
-	[label setFont:(__bridge UIFont *)font];
-
-	if (desc) CFRelease(desc);
-	if (font) CFRelease(font);
+	static NSMutableDictionary<NSNumber *, UIFont *> *fontCache = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		fontCache = [NSMutableDictionary dictionary];
+	});
+	
+	CGFloat pointSize = label.font.pointSize;
+	NSNumber *sizeKey = @(pointSize);
+	UIFont *cachedFont = fontCache[sizeKey];
+	
+	if (!cachedFont) {
+		// Create font with high legibility alternative glyph (stylistic alternative 6)
+		CTFontDescriptorRef desc = CTFontDescriptorCreateCopyWithFeature(
+			(__bridge CTFontDescriptorRef)label.font.fontDescriptor,
+			(__bridge CFNumberRef)@(kStylisticAlternativesType),
+			(__bridge CFNumberRef)@(kStylisticAltSixOnSelector));
+		CTFontRef font = CTFontCreateWithFontDescriptor(desc, pointSize, NULL);
+		cachedFont = (__bridge_transfer UIFont *)font;
+		
+		if (desc) CFRelease(desc);
+		
+		// Cache the font for reuse
+		if (cachedFont) {
+			fontCache[sizeKey] = cachedFont;
+		}
+	}
+	
+	if (cachedFont) {
+		[label setFont:cachedFont];
+	}
 }
 
 void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
@@ -315,12 +340,52 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	DBGLOG(@"BDVC: updateTableView");
 	[self.refreshControl beginRefreshing];
 	
-	// Move heavy SMC operations to background queue to avoid blocking main thread
+	// Move heavy SMC operations to background queue to avoid blocking main thread during view transition
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
 		battery_info_update(self->batteryInfo);
+		
+		// Update HVC data in background to avoid blocking scrolling
+		device_info_t adapter_info;
+		is_charging(NULL, &adapter_info);
+		
+		hvc_menu_t *new_hvc_menu = NULL;
+		size_t new_hvc_menu_size = 0;
+		int8_t new_hvc_index = 0;
+		bool new_hvc_soft = false;
+		
+		/* Parse HVC Modes if have any */
+		if (adapter_info.hvc_menu[27] != 0xFF) {
+			new_hvc_menu = hvc_menu_parse(adapter_info.hvc_menu, &new_hvc_menu_size);
+			new_hvc_index = adapter_info.hvc_index;
+			new_hvc_soft = false;
+		} else {
+			new_hvc_soft = true;
+			/* Avoid IOKit includes, we only use this one */
+			extern CFDictionaryRef IOPSCopyExternalPowerAdapterDetails(void);
+			new_hvc_menu = convert_hvc(IOPSCopyExternalPowerAdapterDetails(), &new_hvc_menu_size, &new_hvc_index);
+		}
+#if TARGET_OS_SIMULATOR
+		/* Simulator builds cannot use IOPSCopyExternalPowerAdapterDetails() */
+		/* We fake some hvc to test the UI instead */
+		static hvc_menu_t fake_hvc[2];
+		memset(fake_hvc, 0, sizeof(fake_hvc));
+		fake_hvc[0].voltage = 114;
+		fake_hvc[0].current = 514;
+		fake_hvc[1].voltage = 1919;
+		fake_hvc[1].current = 810;
+		new_hvc_index = 1;
+		new_hvc_menu = fake_hvc;
+		new_hvc_menu_size = 2;
+#endif
 
 		// Update UI on main thread
 		dispatch_async(dispatch_get_main_queue(), ^{
+			// Update cached HVC data
+			self->hvc_menu = new_hvc_menu;
+			self->hvc_menu_size = new_hvc_menu_size;
+			self->hvc_index = new_hvc_index;
+			self->hvc_soft = new_hvc_soft;
+			
 			[self.tableView reloadData];
 			[self.refreshControl endRefreshing];
 		});
@@ -426,7 +491,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
 	NSString *ident      = @"bdvc:sect0";
-	id        cell_class = [UITableViewCell class];
+	id        cell_class = [ScrollableDetailCell class];
 	if (ip.section != 0) {
 		ident      = @"bdvc:addt";
 		cell_class = [MultilineViewCell class];
@@ -468,119 +533,127 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	equipDetailCell(cell, pending_bi);
 	
 	// Workaround for too-long texts in section 0
-	if (ip.section == 0 && cell.detailTextLabel.text.length > 25) {
-		cell.detailTextLabel.numberOfLines = 0;
-		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-	}
-	/* Warning conditions */
+//	if (ip.section == 0 && cell.detailTextLabel.text.length > 25) {
+//		cell.detailTextLabel.numberOfLines = 0;
+//		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+//	}
+	/* Warning conditions - Only evaluate for specific cells to reduce overhead during scrolling */
 	if (bi_section->context->custom_identifier == BI_GAS_GAUGE_SECTION_ID) {
-		equipWarningCondition_b(cell, _("Remaining Capacity"), ^warn_condition_t(const char **str) {
-			warn_condition_t code = WARN_NONE;
-			uint16_t         remain_cap, full_cap, design_cap;
-			get_capacity(&remain_cap, &full_cap, &design_cap);
-			if (remain_cap > full_cap) {
-				code = WARN_UNUSUAL;
-				static char errmsg[256];
-				// some Shenzhen battries is spoofing this data to affect internal battery health calculations
-				// But they still had to report a real SoC so that indicating actual conditions.
-				sprintf(errmsg, "%s\n%s: %ld", _C("Unusual Remaining Capacity, a non-genuine battery component may be in use."), _C("Estimated Remaining"), lrintf((float)full_cap * gGauge.StateOfCharge / 100.0f));
-				*str = errmsg;
-			} else if ((gGauge.TrueRemainingCapacity != 0) && (gGauge.RemainingCapacity - 10) > gGauge.TrueRemainingCapacity) {
-				// Battery is lying
-				// TrueRemainingCapacity is calculated by device, not GGIC
-				// So the diff would not exceed 1 normally, we generously allowing 10 here
-				code = WARN_UNUSUAL;
-				*str = _C("Unusual Remaining Capacity, a non-genuine battery component may be in use.");
-			} else if (remain_cap == 0) {
-				code = WARN_EMPTYVAL;
-				*str = _C("Remaining Capacity not detected.");
-			}
-			return code;
-		});
-		equipWarningCondition_b(cell, _("Cycle Count"), ^warn_condition_t(const char **str) {
-			warn_condition_t code = WARN_NONE;
-			int              count, design;
-			count  = gGauge.CycleCount;
-			design = gGauge.DesignCycleCount;
-
-			if (gGauge.DesignCycleCount == 0) {
-				// according to https://www.apple.com/batteries/service-and-recycling
-				// Pre-iPhone15,3: 500, otherwise 1000
-				// Watch*,* iPad*,*: 1000
-				// iPod*,*: 400
-				// MacBook**,*: 1000
-				// AppleTV/Watch/AudioAccessory has no battery so ignored
-				size_t size = 0;
-				char   machine[256];
-				// Do not use uname()
-				if (sysctlbyname("hw.machine", NULL, &size, NULL, 0) != 0) {
-					DBGLOG(@"sysctlbyname(hw.machine) failed");
-					return code;
+		NSString *cellLabel = cell.textLabel.text;
+		
+		// Only call warning condition check for cells that actually need it
+		if ([cellLabel isEqualToString:_("Remaining Capacity")]) {
+			equipWarningCondition_b(cell, _("Remaining Capacity"), ^warn_condition_t(const char **str) {
+				warn_condition_t code = WARN_NONE;
+				uint16_t         remain_cap, full_cap, design_cap;
+				get_capacity(&remain_cap, &full_cap, &design_cap);
+				if (remain_cap > full_cap) {
+					code = WARN_UNUSUAL;
+					static char errmsg[256];
+					// some Shenzhen battries is spoofing this data to affect internal battery health calculations
+					// But they still had to report a real SoC so that indicating actual conditions.
+					sprintf(errmsg, "%s\n%s: %ld", _C("Unusual Remaining Capacity, a non-genuine battery component may be in use."), _C("Estimated Remaining"), lrintf((float)full_cap * gGauge.StateOfCharge / 100.0f));
+					*str = errmsg;
+				} else if ((gGauge.TrueRemainingCapacity != 0) && (gGauge.RemainingCapacity - 10) > gGauge.TrueRemainingCapacity) {
+					// Battery is lying
+					// TrueRemainingCapacity is calculated by device, not GGIC
+					// So the diff would not exceed 1 normally, we generously allowing 10 here
+					code = WARN_UNUSUAL;
+					*str = _C("Unusual Remaining Capacity, a non-genuine battery component may be in use.");
+				} else if (remain_cap == 0) {
+					code = WARN_EMPTYVAL;
+					*str = _C("Remaining Capacity not detected.");
 				}
-				if (sysctlbyname("hw.machine", &machine, &size, NULL, 0) != 0) {
-					DBGLOG(@"sysctlbyname(&machine) failed");
-					return code;
-				}
-				if (match_regex(machine,
-				        "^(iPhone|iPad|iPod|MacBook.*)[0-9]+,[0-9]+$")) {
-					if (strncmp(machine, "iPhone", 6) == 0) {
-						int major = 0, minor = 0;
-						if (sscanf(machine + 6, "%d,%d", &major, &minor) != 2) {
-							DBGLOG(@"Unexpected iPhone model: %s", machine);
-							return code;
-						}
-						if (major < 15 || (major == 15 && minor < 4)) {
-							design = 500;
-						} else {
-							design = 1000;
-						}
-					} else if (strncmp(machine, "iPad", 4) || strncmp(machine, "Watch", 5) || strncmp(machine, "MacBook", 7))
-						design = 1000;
-					else if (strncmp(machine, "iPod", 4))
-						design = 400;
-				}
-				if (design == 0)
-					return code;
-			}
-			if (count > design) {
-				code = WARN_EXCEEDED;
-				*str = _C("Cycle Count exceeded designed cycle count, consider replacing with a genuine battery.");
-			}
-			return code;
-		});
-		equipWarningCondition_b(cell, _("Time to Empty"), ^warn_condition_t(const char **str) {
-			warn_condition_t code = WARN_NONE;
-			uint16_t         remain_cap, full_cap, design_cap;
-			int              tte = get_time_to_empty();
-			get_capacity(&remain_cap, &full_cap, &design_cap);
-			/* The most ideal TTE is TTE (Hour) = Capacity (mAh) / Current (mA),
-			 * some user reported their non-genuine battries
-			 * reporting a significant huge number of TTE */
-
-			/* Battery charging, skip */
-			if (gGauge.AverageCurrent > 0)
 				return code;
+			});
+		} else if ([cellLabel isEqualToString:_("Cycle Count")]) {
+			equipWarningCondition_b(cell, _("Cycle Count"), ^warn_condition_t(const char **str) {
+				warn_condition_t code = WARN_NONE;
+				int              count, design;
+				count  = gGauge.CycleCount;
+				design = gGauge.DesignCycleCount;
 
-			int ideal = (remain_cap / abs(gGauge.AverageCurrent)) * 60;
-			/* Normally, TI's GG IC would not emulate its TTE bigger than ideal */
-			/* for ensurence, we check if TTE is bigger than 1.5*ideal */
-			if (tte > (ideal * 1.5)) {
-				code = WARN_UNUSUAL;
-				*str = _C("Unusual Time to Empty, a non-genuine battery component may be in use.");
-			}
-			return code;
-		});
-		equipWarningCondition_b(cell, _("Depth of Discharge"), ^warn_condition_t(const char **str) {
-			warn_condition_t code = WARN_NONE;
-			/* Non-genuine batteries are likely spoofing some unremarkable data */
-			/* DOD0 is not going to bigger than Qmax normally, but sometimes it do
-			 * exceeds when discharging/charging with adapter attached */
-			if (gGauge.DOD0 > (gGauge.Qmax * 3)) {
-				code = WARN_UNUSUAL;
-				*str = _C("Unusual Depth of Discharge, a non-genuine battery component may be in use.");
-			}
-			return code;
-		});
+				if (gGauge.DesignCycleCount == 0) {
+					// according to https://www.apple.com/batteries/service-and-recycling
+					// Pre-iPhone15,3: 500, otherwise 1000
+					// Watch*,* iPad*,*: 1000
+					// iPod*,*: 400
+					// MacBook**,*: 1000
+					// AppleTV/Watch/AudioAccessory has no battery so ignored
+					size_t size = 0;
+					char   machine[256];
+					// Do not use uname()
+					if (sysctlbyname("hw.machine", NULL, &size, NULL, 0) != 0) {
+						DBGLOG(@"sysctlbyname(hw.machine) failed");
+						return code;
+					}
+					if (sysctlbyname("hw.machine", &machine, &size, NULL, 0) != 0) {
+						DBGLOG(@"sysctlbyname(&machine) failed");
+						return code;
+					}
+					if (match_regex(machine,
+					        "^(iPhone|iPad|iPod|MacBook.*)[0-9]+,[0-9]+$")) {
+						if (strncmp(machine, "iPhone", 6) == 0) {
+							int major = 0, minor = 0;
+							if (sscanf(machine + 6, "%d,%d", &major, &minor) != 2) {
+								DBGLOG(@"Unexpected iPhone model: %s", machine);
+								return code;
+							}
+							if (major < 15 || (major == 15 && minor < 4)) {
+								design = 500;
+							} else {
+								design = 1000;
+							}
+						} else if (strncmp(machine, "iPad", 4) || strncmp(machine, "Watch", 5) || strncmp(machine, "MacBook", 7))
+							design = 1000;
+						else if (strncmp(machine, "iPod", 4))
+							design = 400;
+					}
+					if (design == 0)
+						return code;
+				}
+				if (count > design) {
+					code = WARN_EXCEEDED;
+					*str = _C("Cycle Count exceeded designed cycle count, consider replacing with a genuine battery.");
+				}
+				return code;
+			});
+		} else if ([cellLabel isEqualToString:_("Time to Empty")]) {
+			equipWarningCondition_b(cell, _("Time to Empty"), ^warn_condition_t(const char **str) {
+				warn_condition_t code = WARN_NONE;
+				uint16_t         remain_cap, full_cap, design_cap;
+				int              tte = get_time_to_empty();
+				get_capacity(&remain_cap, &full_cap, &design_cap);
+				/* The most ideal TTE is TTE (Hour) = Capacity (mAh) / Current (mA),
+				 * some user reported their non-genuine battries
+				 * reporting a significant huge number of TTE */
+
+				/* Battery charging, skip */
+				if (gGauge.AverageCurrent > 0)
+					return code;
+
+				int ideal = (remain_cap / abs(gGauge.AverageCurrent)) * 60;
+				/* Normally, TI's GG IC would not emulate its TTE bigger than ideal */
+				/* for ensurence, we check if TTE is bigger than 1.5*ideal */
+				if (tte > (ideal * 1.5)) {
+					code = WARN_UNUSUAL;
+					*str = _C("Unusual Time to Empty, a non-genuine battery component may be in use.");
+				}
+				return code;
+			});
+		} else if ([cellLabel isEqualToString:_("Depth of Discharge")]) {
+			equipWarningCondition_b(cell, _("Depth of Discharge"), ^warn_condition_t(const char **str) {
+				warn_condition_t code = WARN_NONE;
+				/* Non-genuine batteries are likely spoofing some unremarkable data */
+				/* DOD0 is not going to bigger than Qmax normally, but sometimes it do
+				 * exceeds when discharging/charging with adapter attached */
+				if (gGauge.DOD0 > (gGauge.Qmax * 3)) {
+					code = WARN_UNUSUAL;
+					*str = _C("Unusual Depth of Discharge, a non-genuine battery component may be in use.");
+				}
+				return code;
+			});
+		}
 	}
 
 	WarnAccessoryView *button = (WarnAccessoryView *)[cell accessoryView];
@@ -597,40 +670,9 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 #pragma clang diagnostic ignored "-Wstring-compare"
 	if (pending_bi->name == "HVC Mode") {
 #pragma clang diagnostic pop
-		device_info_t adapter_info;
-		is_charging(NULL, &adapter_info);
-		/* Parse HVC Modes if have any */
-		if (adapter_info.hvc_menu[27] != 0xFF) {
-#ifdef DEBUG
-			NSString *bits = [[NSString alloc] init];
-			for (int i = 0; i < 27; i++) {
-				[bits stringByAppendingFormat:@"%x ", adapter_info.hvc_menu[i]];
-			}
-			DBGLOG(@"HVC Menu Bits: %@", bits);
-#endif
-			hvc_menu  = hvc_menu_parse(adapter_info.hvc_menu, &hvc_menu_size);
-			hvc_index = adapter_info.hvc_index;
-			hvc_soft  = false;
-		} else {
-			hvc_soft = true;
-			/* Avoid IOKit includes, we only use this one */
-			extern CFDictionaryRef IOPSCopyExternalPowerAdapterDetails(void);
-			hvc_menu = convert_hvc(IOPSCopyExternalPowerAdapterDetails(), &hvc_menu_size, &hvc_index);
-		}
-#if TARGET_OS_SIMULATOR
-		/* Simulator builds cannot use IOPSCopyExternalPowerAdapterDetails() */
-		/* We fake some hvc to test the UI instead */
-		static hvc_menu_t fake_hvc[2];
-		memset(fake_hvc, 0, sizeof(fake_hvc));
-		fake_hvc[0].voltage = 114;
-		fake_hvc[0].current = 514;
-		fake_hvc[1].voltage = 1919;
-		fake_hvc[1].current = 810;
-		hvc_index           = 1;
-		hvc_menu            = fake_hvc;
-		hvc_menu_size       = 2;
-#endif
-
+		// Use cached HVC data instead of fetching during cell configuration
+		// This prevents blocking the main thread during scrolling
+		
 		/* Only use SegmentedHVCViewCell when HVC exists */
 		if (hvc_menu != NULL && hvc_menu_size != 0) {
 			SegmentedHVCViewCell *cell_seg = [tv dequeueReusableCellWithIdentifier:@"HVC"];

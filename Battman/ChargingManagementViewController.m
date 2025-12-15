@@ -113,11 +113,21 @@ extern void battman_worker_oneshot(char cmd, char arg);
     if (sect == CM_SECT_GENERAL) {
 		if (daemon_pid)
 			return _("These values can’t be overridden when the Charging Limit daemon is running.");
-		BOOL obc = NO;
+		uint8_t obc = NO;
+		BOOL has_pwr = NO;
 		smc_read_n('CH0C', &obc, 1);
-		if (!obc)
+		if (!(obc & 2))
 			smc_read_n('CH0I', &obc, 1);
-		return [NSString stringWithFormat:_("Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation. %@"), obc ? _("Certain values may not be overridable when Optimized Battery Charging is enabled.") : @""];
+		smc_read_n('CHCC', &has_pwr, 1);
+		if (!has_pwr)
+			smc_read_n('CHCE', &has_pwr, 1);
+
+		NSString *append = @"";
+		if (!has_pwr)
+			append = _("Certain values may not be overridable when no wired A/C connected.");
+		else if (obc & 2)
+			append = _("Certain values may not be overridable when Optimized Battery Charging is enabled.");
+		return [NSString stringWithFormat:_("Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation. %@"), append];
     } else if (sect == CM_SECT_SMART_CHARGING) {
 		return _("Smart Charging will start 900 seconds (15 minutes) after power is plugged-in, or the date you scheduled, whichever one comes first.");
     } else if (sect == CM_SECT_LOW_POWER_MODE) {
