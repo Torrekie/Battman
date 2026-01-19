@@ -2,13 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>allow-softwareupdated</key>
+	<true/>
 	<key>application-identifier</key>
 	<string>com.torrekie.Battman</string>
-	<!-- Do we really need this?
+	<key>com.apple.developer.team-identifier</key>
+	<string>HJN7NN4K32</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>com.torrekie.Battman</string>
-	</array>-->
+	</array>
 	<key>com.apple.CommCenter.fine-grained</key>
 	<array>
 		<string>internal</string>
