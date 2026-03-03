@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #include <CoreFoundation/CFArray.h>
@@ -27,6 +28,20 @@ const char *bin_unit_strings[] = {
 	_C("℃"), _C("%"), _C("mA"), _C("mAh"), _C("mV"), _C("mW"), _C("min"),
 	_C("Hr") // Do not modify, thats how Texas Instruments documented
 };
+
+static pthread_rwlock_t gBatteryInfoLock = PTHREAD_RWLOCK_INITIALIZER;
+
+void battery_info_read_lock(void) {
+	pthread_rwlock_rdlock(&gBatteryInfoLock);
+}
+
+void battery_info_write_lock(void) {
+	pthread_rwlock_wrlock(&gBatteryInfoLock);
+}
+
+void battery_info_unlock(void) {
+	pthread_rwlock_unlock(&gBatteryInfoLock);
+}
 
 struct battery_info_node main_battery_template[] = {
 	{ _C("Gas Gauge (Basic)"), _C("All Gas Gauge metrics are dynamically retrieved from the onboard sensor array in real time. Should anomalies be detected in specific readings, this may indicate the presence of unauthorized components or require diagnostics through Apple Authorised Service Provider."), DEFINE_SECTION(10000) },
@@ -532,6 +547,7 @@ void battery_info_poll(struct battery_info_section **head) {
 }
 
 void battery_info_update(struct battery_info_section **head) {
+	battery_info_write_lock();
 	battery_info_poll(head);
 	int retry=1;
 	while(*head&&retry) {
@@ -553,6 +569,7 @@ void battery_info_update(struct battery_info_section **head) {
 			}
 		}
 	}
+	battery_info_unlock();
 }
 
 struct battery_info_section *battery_info_get_section(struct battery_info_section *head, long n) {
