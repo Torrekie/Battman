@@ -97,6 +97,9 @@ enum sections_batteryinfo {
 @implementation BatteryInfoViewController {
 	CGFloat _cachedIconCornerRadius;
 	BOOL _cachedIconCornerRadiusValid;
+	dispatch_queue_t _refreshQueue;
+	BOOL _refreshInFlight;
+	BOOL _refreshPending;
 }
 
 - (NSString *)title {
@@ -110,7 +113,6 @@ enum sections_batteryinfo {
 		// Never mode - don't update automatically
 		return;
 	}
-	NSLog(@"batteryStatusDidUpdate: interval: %f", interval);
 	// Only call super (which calls updateTableView) in auto mode
 	// In timer mode, the timer handles calling updateTableView directly
 	if (interval == 0.0f) {
@@ -119,6 +121,36 @@ enum sections_batteryinfo {
 		DBGLOG(@"BIVC: batteryStatusDidUpdate");
 		[super batteryStatusDidUpdate];
 	}
+}
+
+- (void)_startQueuedRefresh {
+	if (_refreshInFlight) {
+		_refreshPending = YES;
+		return;
+	}
+
+	if (!self.refreshControl.refreshing) {
+		[self.refreshControl beginRefreshing];
+	}
+	_refreshInFlight = YES;
+	dispatch_async(_refreshQueue, ^{
+		battery_info_update(&self->batteryInfo);
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self->_refreshInFlight = NO;
+			if ([self isViewLoaded] && self.view.window) {
+				[self.tableView reloadData];
+			}
+			[self.refreshControl endRefreshing];
+
+			if (self->_refreshPending) {
+				if (!(self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking)) {
+					self->_refreshPending = NO;
+					[self _startQueuedRefresh];
+				}
+			}
+		});
+	});
 }
 
 - (void)viewDidLoad {
@@ -219,6 +251,10 @@ enum sections_batteryinfo {
 	DBGLOG(@"[PERF] BatteryInfoViewController init DONE: %.3fms", (CFAbsoluteTimeGetCurrent() - initStart) * 1000);
 #endif
 	
+	_refreshQueue = dispatch_queue_create("com.torrekie.Battman.BIVCRefresh", DISPATCH_QUEUE_SERIAL);
+	_refreshInFlight = NO;
+	_refreshPending = NO;
+
 	if (@available(iOS 13.0, *))
 		return [super initWithStyle:UITableViewStyleInsetGrouped];
 	else
@@ -441,17 +477,33 @@ enum sections_batteryinfo {
 }
 
 - (void)updateTableView {
-	DBGLOG(@"BIVC: updateTableView");
-	[self.refreshControl beginRefreshing];
-
-	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-	      battery_info_update(&self->batteryInfo);
-
+	if (![NSThread isMainThread]) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-	      	[self.tableView reloadData];
-			[self.refreshControl endRefreshing];
+			[self updateTableView];
 		});
-	});
+		return;
+	}
+
+	DBGLOG(@"BIVC: updateTableView");
+	if (self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking) {
+		_refreshPending = YES;
+		return;
+	}
+	[self _startQueuedRefresh];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	if (_refreshPending && !_refreshInFlight) {
+		_refreshPending = NO;
+		[self _startQueuedRefresh];
+	}
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+	if (!decelerate && _refreshPending && !_refreshInFlight) {
+		_refreshPending = NO;
+		[self _startQueuedRefresh];
+	}
 }
 
 - (void)dealloc {

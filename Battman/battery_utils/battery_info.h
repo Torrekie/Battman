@@ -171,6 +171,9 @@ char *bi_node_ensure_string(struct battery_info_node *node, int identifier,
                             uint64_t length);
 char *bi_node_get_string(struct battery_info_node *node);
 void bi_node_free_string(struct battery_info_node *node);
+void battery_info_read_lock(void);
+void battery_info_write_lock(void);
+void battery_info_unlock(void);
 void battery_info_update(struct battery_info_section **head);
 int battery_info_get_section_count(struct battery_info_section *head);
 struct battery_info_section *battery_info_get_section(struct battery_info_section *head, long section);
