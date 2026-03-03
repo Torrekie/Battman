@@ -298,10 +298,32 @@ os_log_t gLog;
 os_log_t gLogDaemon;
 battman_type_t gAppType = BATTMAN_SUBPROCESS;
 
+static CrashLoggerProcessMode crash_logger_detect_process_mode(int argc, char *argv[]) {
+	if (argc == 3 && strcmp(argv[1], "--worker") == 0)
+		return CrashLoggerProcessModeWorker;
+	if (argc == 2 && strcmp(argv[1], "--daemon") == 0)
+		return CrashLoggerProcessModeDaemon;
+	return CrashLoggerProcessModeApp;
+}
+
+static const char *crash_logger_process_mode_name(CrashLoggerProcessMode mode) {
+	switch (mode) {
+		case CrashLoggerProcessModeApp:
+			return "app";
+		case CrashLoggerProcessModeDaemon:
+			return "daemon";
+		case CrashLoggerProcessModeWorker:
+			return "worker";
+		default:
+			return "unknown";
+	}
+}
+
 int main(int argc, char * argv[]) {
-	// Install crash handlers early
+	CrashLoggerProcessMode processMode = crash_logger_detect_process_mode(argc, argv);
+	[CrashLogger configureForProcessMode:processMode];
 	[CrashLogger installCrashHandlers];
-	[CrashLogger logMessage:@"=== App Started ==="];
+	[CrashLogger logMessage:[NSString stringWithFormat:@"=== Process Started (%s) ===", crash_logger_process_mode_name(processMode)]];
 	
 	gLog = os_log_create("com.torrekie.Battman", "default");
 	if (gLog == NULL) {
@@ -310,11 +332,11 @@ int main(int argc, char * argv[]) {
 
 	pull_fatal_notif();
     // FIXME: use getopt()
-	if (argc == 3 && strcmp(argv[1], "--worker") == 0) {
+	if (processMode == CrashLoggerProcessModeWorker) {
 		extern void battman_run_worker(const char *);
 		battman_run_worker(argv[2]);
 		return 0;
-	} else if (argc == 2 && strcmp(argv[1], "--daemon") == 0) {
+	} else if (processMode == CrashLoggerProcessModeDaemon) {
 		gLogDaemon = os_log_create("com.torrekie.Battman", "Daemon");
 		if (gLogDaemon == NULL) {
 			os_log_error(OS_LOG_DEFAULT, "Couldn't create daemon os log object");
