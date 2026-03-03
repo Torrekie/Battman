@@ -1,6 +1,8 @@
 #include "cobjc/cobjc.h"
 #include "common.h"
 #include "BattmanPrefs.h"
+#include <pthread.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Extern UIApplication notification names as CFStringRef
@@ -133,17 +135,53 @@ static void BSVCBatteryStatusCallback1(void **userInfo) {
 	}
 }
 
+typedef struct {
+	void *observer;
+	CFDictionaryRef userInfo;
+} BSVCBatteryStatusPayload;
+
+static void BSVCBatteryStatusCallbackMain(void *ctx) {
+	BSVCBatteryStatusPayload *payload = (BSVCBatteryStatusPayload *)ctx;
+	if (!payload) return;
+
+	void *observerAndUserInfo[2] = {
+		payload->observer,
+		(void *)payload->userInfo
+	};
+	BSVCBatteryStatusCallback1(observerAndUserInfo);
+
+	if (payload->userInfo) {
+		CFRelease(payload->userInfo);
+	}
+	free(payload);
+}
+
 static void BSVCBatteryStatusCallback(CFNotificationCenterRef center, void *observer, CFNotificationName name, const void *object, CFDictionaryRef userInfo) {
 	if (gNotificationsPaused) {
 		return;
 	}
 
-	void *observerAndUserInfo[2] = {
-		observer,
-		(void *)userInfo
-	};
-	dispatch_sync_f(dispatch_get_main_queue(), observerAndUserInfo, (void (*)(void *))BSVCBatteryStatusCallback1);
-	// stack variable is ok bc it waits until execution finishes
+	if (pthread_main_np()) {
+		void *observerAndUserInfo[2] = {
+			observer,
+			(void *)userInfo
+		};
+		BSVCBatteryStatusCallback1(observerAndUserInfo);
+	} else {
+		BSVCBatteryStatusPayload *payload = calloc(1, sizeof(BSVCBatteryStatusPayload));
+		if (!payload) {
+			void *observerAndUserInfo[2] = {
+				observer,
+				(void *)userInfo
+			};
+			dispatch_sync_f(dispatch_get_main_queue(), observerAndUserInfo, (void (*)(void *))BSVCBatteryStatusCallback1);
+			return;
+		}
+
+		payload->observer = observer;
+		payload->userInfo = userInfo ? (CFDictionaryRef)CFRetain(userInfo) : NULL;
+		dispatch_async_f(dispatch_get_main_queue(), payload, BSVCBatteryStatusCallbackMain);
+	}
 }
 
 // CFNotificationCenter callback for app lifecycle events
