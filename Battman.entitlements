@@ -104,11 +104,6 @@
         <true/>
 
 	<!-- Security exceptions -->
-	<key>com.apple.security.system-groups</key>
-	<array>
-		<string>systemgroup.com.apple.powerlog</string>
-		<string>systemgroup.com.apple.osanalytics</string>
-	</array>
 	<key>com.apple.security.exception.shared-preference.read-write</key>
 	<array>
 		<string>com.apple.springboard</string>
