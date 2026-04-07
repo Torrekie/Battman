@@ -13,6 +13,7 @@
 #import "ObjCExt/UIColor+compat.h"
 
 #import <CoreText/CoreText.h>
+#include <string.h>
 #include <sys/sysctl.h>
 
 /* Desc */
@@ -21,6 +22,10 @@
 	int8_t      hvc_index;
 	size_t      hvc_menu_size;
 	bool        hvc_soft;
+	bool        hvc_menu_owned;
+	dispatch_queue_t refreshQueue;
+	BOOL        refreshInFlight;
+	BOOL        refreshPending;
 }
 @end
 
@@ -231,15 +236,89 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	[super viewWillAppear:animated];
 	// Update refresh mode based on current preferences
 	BSVCRefreshModeDidUpdate(self);
-	// Defer battery update to avoid blocking main thread during view transition
-	dispatch_async(dispatch_get_main_queue(), ^{
-		[self updateTableView];
-	});
+	[self updateTableView];
 }
 
 - (void)refreshModeDidUpdate {
 	// Called when preferences change
 	BSVCRefreshModeDidUpdate(self);
+}
+
+- (void)_startQueuedRefresh {
+	if (refreshInFlight) {
+		refreshPending = YES;
+		return;
+	}
+
+	if (!self.refreshControl.refreshing) {
+		[self.refreshControl beginRefreshing];
+	}
+	refreshInFlight = YES;
+	dispatch_async(refreshQueue, ^{
+		battery_info_update(self->batteryInfo);
+
+		device_info_t adapter_info;
+		is_charging(NULL, &adapter_info);
+
+		hvc_menu_t *new_hvc_menu = NULL;
+		size_t new_hvc_menu_size = 0;
+		int8_t new_hvc_index = 0;
+		bool new_hvc_soft = false;
+		bool new_hvc_owned = false;
+
+		/* Parse HVC Modes if have any */
+		if (adapter_info.hvc_menu[27] != 0xFF) {
+			new_hvc_menu = hvc_menu_parse(adapter_info.hvc_menu, &new_hvc_menu_size);
+			new_hvc_index = adapter_info.hvc_index;
+			new_hvc_soft = false;
+			new_hvc_owned = (new_hvc_menu != NULL);
+		} else {
+			new_hvc_soft = true;
+			/* Avoid IOKit includes, we only use this one */
+			extern CFDictionaryRef IOPSCopyExternalPowerAdapterDetails(void);
+			new_hvc_menu = convert_hvc(IOPSCopyExternalPowerAdapterDetails(), &new_hvc_menu_size, &new_hvc_index);
+			new_hvc_owned = (new_hvc_menu != NULL);
+		}
+#if TARGET_OS_SIMULATOR
+		/* Simulator builds cannot use IOPSCopyExternalPowerAdapterDetails() */
+		/* We fake some hvc to test the UI instead */
+		static hvc_menu_t fake_hvc[2];
+		memset(fake_hvc, 0, sizeof(fake_hvc));
+		fake_hvc[0].voltage = 114;
+		fake_hvc[0].current = 514;
+		fake_hvc[1].voltage = 1919;
+		fake_hvc[1].current = 810;
+		new_hvc_index = 1;
+		new_hvc_menu = fake_hvc;
+		new_hvc_menu_size = 2;
+		new_hvc_owned = false;
+#endif
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self->refreshInFlight = NO;
+
+			if (self->hvc_menu_owned && self->hvc_menu && self->hvc_menu != new_hvc_menu) {
+				free(self->hvc_menu);
+			}
+			self->hvc_menu = new_hvc_menu;
+			self->hvc_menu_size = new_hvc_menu_size;
+			self->hvc_index = new_hvc_index;
+			self->hvc_soft = new_hvc_soft;
+			self->hvc_menu_owned = new_hvc_owned;
+
+			if ([self isViewLoaded] && self.view.window) {
+				[self.tableView reloadData];
+			}
+			[self.refreshControl endRefreshing];
+
+			if (self->refreshPending) {
+				if (!(self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking)) {
+					self->refreshPending = NO;
+					[self _startQueuedRefresh];
+				}
+			}
+		});
+	});
 }
 
 - (void)batteryStatusDidUpdate:(NSDictionary *)info {
@@ -319,8 +398,15 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	}
 
 	self.tableView.allowsSelection = YES;
-	battery_info_update(bi);
 	batteryInfo = bi;
+	refreshQueue = dispatch_queue_create("com.torrekie.Battman.BDVCRefresh", DISPATCH_QUEUE_SERIAL);
+	refreshInFlight = NO;
+	refreshPending = NO;
+	hvc_menu_owned = false;
+	hvc_menu = NULL;
+	hvc_menu_size = 0;
+	hvc_index = -1;
+	hvc_soft = false;
 	for (int i = 0; i < BI_MAX_SECTION_NUM; i++)
 		pendingLoadOffsets[i] = malloc(BI_APPROX_ROWS);
 	if (!hasSMC)
@@ -334,62 +420,40 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	//int section_num = battery_info_get_section_count(*batteryInfo);
 	for (int i = 0; i < BI_MAX_SECTION_NUM; i++)
 		free(pendingLoadOffsets[i]);
+	if (hvc_menu_owned && hvc_menu) {
+		free(hvc_menu);
+		hvc_menu = NULL;
+	}
 }
 
 - (void)updateTableView {
-	DBGLOG(@"BDVC: updateTableView");
-	[self.refreshControl beginRefreshing];
-	
-	// Move heavy SMC operations to background queue to avoid blocking main thread during view transition
-	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-		battery_info_update(self->batteryInfo);
-		
-		// Update HVC data in background to avoid blocking scrolling
-		device_info_t adapter_info;
-		is_charging(NULL, &adapter_info);
-		
-		hvc_menu_t *new_hvc_menu = NULL;
-		size_t new_hvc_menu_size = 0;
-		int8_t new_hvc_index = 0;
-		bool new_hvc_soft = false;
-		
-		/* Parse HVC Modes if have any */
-		if (adapter_info.hvc_menu[27] != 0xFF) {
-			new_hvc_menu = hvc_menu_parse(adapter_info.hvc_menu, &new_hvc_menu_size);
-			new_hvc_index = adapter_info.hvc_index;
-			new_hvc_soft = false;
-		} else {
-			new_hvc_soft = true;
-			/* Avoid IOKit includes, we only use this one */
-			extern CFDictionaryRef IOPSCopyExternalPowerAdapterDetails(void);
-			new_hvc_menu = convert_hvc(IOPSCopyExternalPowerAdapterDetails(), &new_hvc_menu_size, &new_hvc_index);
-		}
-#if TARGET_OS_SIMULATOR
-		/* Simulator builds cannot use IOPSCopyExternalPowerAdapterDetails() */
-		/* We fake some hvc to test the UI instead */
-		static hvc_menu_t fake_hvc[2];
-		memset(fake_hvc, 0, sizeof(fake_hvc));
-		fake_hvc[0].voltage = 114;
-		fake_hvc[0].current = 514;
-		fake_hvc[1].voltage = 1919;
-		fake_hvc[1].current = 810;
-		new_hvc_index = 1;
-		new_hvc_menu = fake_hvc;
-		new_hvc_menu_size = 2;
-#endif
-
-		// Update UI on main thread
+	if (![NSThread isMainThread]) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-			// Update cached HVC data
-			self->hvc_menu = new_hvc_menu;
-			self->hvc_menu_size = new_hvc_menu_size;
-			self->hvc_index = new_hvc_index;
-			self->hvc_soft = new_hvc_soft;
-			
-			[self.tableView reloadData];
-			[self.refreshControl endRefreshing];
+			[self updateTableView];
 		});
-	});
+		return;
+	}
+
+	DBGLOG(@"BDVC: updateTableView");
+	if (self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking) {
+		refreshPending = YES;
+		return;
+	}
+	[self _startQueuedRefresh];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	if (refreshPending && !refreshInFlight) {
+		refreshPending = NO;
+		[self _startQueuedRefresh];
+	}
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+	if (!decelerate && refreshPending && !refreshInFlight) {
+		refreshPending = NO;
+		[self _startQueuedRefresh];
+	}
 }
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath {
@@ -410,7 +474,21 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		titleLabel = cell.textLabel.text;
 	}
 
-	show_alert([titleLabel UTF8String], _C(battery_info_get_section(*batteryInfo, (int)indexPath.section)->data[indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row]].desc), L_OK);
+	char *desc_copy = NULL;
+	battery_info_read_lock();
+	struct battery_info_section *section = battery_info_get_section(*batteryInfo, (int)indexPath.section);
+	if (section) {
+		struct battery_info_node *node = section->data + indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row];
+		if (node && node->desc) {
+			desc_copy = strdup(node->desc);
+		}
+	}
+	battery_info_unlock();
+
+	show_alert([titleLabel UTF8String], desc_copy ? _C(desc_copy) : "", L_OK);
+	if (desc_copy) {
+		free(desc_copy);
+	}
 	return;
 	// TODO: Implement this
 #if 0
@@ -462,16 +540,34 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
 	UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-	header.textLabel.text               = _(battery_info_get_section(*batteryInfo, section)->data[0].name);
+	NSString *title = nil;
+	battery_info_read_lock();
+	struct battery_info_section *sect = battery_info_get_section(*batteryInfo, section);
+	if (sect && sect->data[0].name) {
+		title = _(sect->data[0].name);
+	}
+	battery_info_unlock();
+	header.textLabel.text = title ?: @"";
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+	NSString *footer = nil;
+	battery_info_read_lock();
 	struct battery_info_section *cur = battery_info_get_section(*batteryInfo, section);
-	return cur->data[0].desc ? _(cur->data[0].desc) : nil;
+	if (cur && cur->data[0].desc) {
+		footer = _(cur->data[0].desc);
+	}
+	battery_info_unlock();
+	return footer;
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
+	battery_info_read_lock();
 	struct battery_info_section *sect = battery_info_get_section(*batteryInfo, section);
+	if (!sect) {
+		battery_info_unlock();
+		return 0;
+	}
 	int                          rows = 0;
 	for (struct battery_info_node *i = sect->data + 1; i->name /*&& (i->content & BIN_SECTION) != BIN_SECTION*/; i++) {
 		if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED || (i->content && !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
@@ -482,11 +578,15 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		}
 	}
 	pendingLoadOffsets[section][rows] = 255;
+	battery_info_unlock();
 	return rows;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(id)tv {
-	return battery_info_get_section_count(*batteryInfo);
+	battery_info_read_lock();
+	int count = battery_info_get_section_count(*batteryInfo);
+	battery_info_unlock();
+	return count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
@@ -505,7 +605,12 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		cell = [[cell_class alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:ident];
 	}
 	
+	battery_info_read_lock();
 	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, ip.section);
+	if (!bi_section) {
+		battery_info_unlock();
+		return cell;
+	}
 	struct battery_info_node    *pending_bi = bi_section->data + ip.row + pendingLoadOffsets[ip.section][ip.row];
 	/* Flags special handler */
 #pragma clang diagnostic push
@@ -520,13 +625,14 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		cellf.titleLabel.text      = _(pending_bi->name);
 		cellf.detailTextLabel.text = _(bi_node_get_string(pending_bi));
 		[cellf selectByFlags:gGauge.Flags];
-		if (strlen(gGauge.DeviceName)) {
-			[cellf setBitSetByModel:[NSString stringWithFormat:@"%s", gGauge.DeviceName]];
-		} else {
-			[cellf setBitSetByTargetName];
+			if (strlen(gGauge.DeviceName)) {
+				[cellf setBitSetByModel:[NSString stringWithFormat:@"%s", gGauge.DeviceName]];
+			} else {
+				[cellf setBitSetByTargetName];
+			}
+			battery_info_unlock();
+			return cellf;
 		}
-		return cellf;
-	}
 #pragma clang diagnostic pop
 
 #pragma mark - Warn Conditions
@@ -699,9 +805,9 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 			}
 
 			/* Content */
-			if (!hvc_soft && (hvc_index > hvc_menu_size)) {
-				cell_seg.detailTextLabel.text    = [NSString stringWithFormat:@"%d (%@)", hvc_index, _("Not HVC")];
-				cell_seg.subTitleLabel.text  = @" ";
+				if (!hvc_soft && (hvc_index > hvc_menu_size)) {
+					cell_seg.detailTextLabel.text    = [NSString stringWithFormat:@"%d (%@)", hvc_index, _("Not HVC")];
+					cell_seg.subTitleLabel.text  = @" ";
 				cell_seg.subDetailLabel.text = @" ";
 			} else if (hvc_soft == true) {
 				cell_seg.detailTextLabel.text = [NSString stringWithFormat:@"%d (%@)", hvc_index, _("Software Controlled")];
@@ -718,15 +824,17 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 				[cell_seg.segmentedControl setSelectedSegmentIndex:hvc_index];
 				/* Why its not refreshing label after setSelectedSegmentIndex? */
 				cell_seg.subTitleLabel.text  = [NSString stringWithFormat:@"%d %s", hvc_menu[hvc_index].voltage, L_MV];
-				cell_seg.subDetailLabel.text = [NSString stringWithFormat:@"%d %s", hvc_menu[hvc_index].current, L_MA];
-			}
+					cell_seg.subDetailLabel.text = [NSString stringWithFormat:@"%d %s", hvc_menu[hvc_index].current, L_MA];
+				}
 
-			return cell_seg;
-		} else {
-			cell.detailTextLabel.text = _("None");
+				battery_info_unlock();
+				return cell_seg;
+			} else {
+				cell.detailTextLabel.text = _("None");
+			}
 		}
-	}
-	//        [cell layoutIfNeeded];
+		//        [cell layoutIfNeeded];
+	battery_info_unlock();
 	return cell;
 }
 
@@ -752,10 +860,17 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	battery_info_write_lock();
 	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, indexPath.section);
-	struct battery_info_node    *pending_bi = bi_section->data + indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row];
-	if(!(pending_bi->content&BIN_HAS_SUBCELLS))
+	if (!bi_section) {
+		battery_info_unlock();
 		return;
+	}
+	struct battery_info_node    *pending_bi = bi_section->data + indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row];
+	if(!(pending_bi->content&BIN_HAS_SUBCELLS)) {
+		battery_info_unlock();
+		return;
+	}
 	int rows=0;
 	int is_hidden=0;
 	NSMutableArray *indexPaths=[NSMutableArray array];
@@ -766,8 +881,11 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		rows++;
 		[indexPaths addObject:[NSIndexPath indexPathForRow:indexPath.row+rows inSection:indexPath.section]];
 	}
-	if(!rows)
+	if(!rows) {
+		battery_info_unlock();
 		return;
+	}
+	battery_info_unlock();
 	if(is_hidden) {
 		[tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
 	}else{
