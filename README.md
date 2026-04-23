@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=Torrekie&project=Battman&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # Battman
 Strayers' modern battery manager for their good old iOS devices.
 
