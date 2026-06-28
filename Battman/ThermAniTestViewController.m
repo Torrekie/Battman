@@ -335,11 +335,11 @@ float get_current_temp_percentage(void) {
 		}
 		case TAT_SECT_THERM_PREVIEW: {
 			ThermAniRowPreview row = (ThermAniRowPreview)indexPath.row;
-			switch (row) {
-				case TAT_ROW_THERM_PREVIEW: {
-					_temperatureCell = [[ThermAniTestCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
-					_temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%@ ℃", [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_THERM_UI_MIN]];
-					_temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%@ ℃", [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_THERM_UI_MAX]];
+				switch (row) {
+					case TAT_ROW_THERM_PREVIEW: {
+						_temperatureCell = [[ThermAniTestCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+						_temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature([BattmanPrefs.sharedPrefs doubleForKey:@kBattmanPrefs_THERM_UI_MIN]), battman_display_temperature_unit_string()];
+						_temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature([BattmanPrefs.sharedPrefs doubleForKey:@kBattmanPrefs_THERM_UI_MAX]), battman_display_temperature_unit_string()];
 					[_temperatureCell.arcView rotatePointerToPercentage:get_current_temp_percentage()];
 					cell = (UITableViewCell *)_temperatureCell;
 					break;
@@ -392,11 +392,11 @@ float get_current_temp_percentage(void) {
 	[BattmanPrefs.sharedPrefs setValue:@(sender.value) forTableView:self.tableView indexPath:indexPath];
 	[BattmanPrefs.sharedPrefs synchronize];
 	dispatch_async(dispatch_get_main_queue(), ^{
-		// XXX: consider use NSRange instead
-		NSInteger minTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MIN];
-		NSInteger maxTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MAX];
-		self.temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%ld ℃", (long)minTemp];
-		self.temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%ld ℃", (long)maxTemp];
+			// XXX: consider use NSRange instead
+			NSInteger minTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MIN];
+			NSInteger maxTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MAX];
+			self.temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature(minTemp), battman_display_temperature_unit_string()];
+			self.temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature(maxTemp), battman_display_temperature_unit_string()];
 	});
 	[self.temperatureCell.arcView rotatePointerToPercentage:get_current_temp_percentage()];
 

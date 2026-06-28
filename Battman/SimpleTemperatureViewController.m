@@ -275,7 +275,7 @@ static NSMutableDictionary *thermalBasics;
 			cell = [tv dequeueReusableCellWithIdentifier:@"maxtherm"];
 			if (!cell)
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"maxtherm"];
-			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
+			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature([dict[dict.allKeys[ip.row]] floatValue]), battman_display_temperature_unit_string()];
 			cell.accessoryType = UITableViewCellAccessoryDetailButton;
 		} else if ([label isEqualToString:@"Pressure"]) {
 			cell = [tv dequeueReusableCellWithIdentifier:@"thermpressure"];
@@ -359,7 +359,7 @@ static NSMutableDictionary *thermalBasics;
 		label = dict.allKeys[ip.row];
 	}
 	cell.textLabel.text       = label;
-	cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
+	cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature([dict[dict.allKeys[ip.row]] floatValue]), battman_display_temperature_unit_string()];
 
 	/* TODO: thermtune */
 	return cell;

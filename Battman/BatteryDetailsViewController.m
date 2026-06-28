@@ -107,6 +107,7 @@ void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
 
 	if ((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL) {
 		int16_t value = i->content >> 16;
+		uint32_t degreeUnit = (BIN_UNIT_DEGREE_C & BIN_UNIT_BITMASK) >> 6;
 
 		if ((i->content & BIN_IS_BOOLEAN) == BIN_IS_BOOLEAN) {
 			if (value) {
@@ -115,7 +116,11 @@ void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
 				final_str = _("False");
 			}
 		} else if ((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
-			final_str = [NSString stringWithFormat:@"%.4g", bi_node_load_float(i)];
+			double displayValue = bi_node_load_float(i);
+			if ((i->content & BIN_HAS_UNIT) && ((i->content & BIN_UNIT_BITMASK) >> 6) == degreeUnit) {
+				displayValue = battman_display_temperature(displayValue);
+			}
+			final_str = [NSString stringWithFormat:@"%.4g", displayValue];
 		} else {
 			final_str = [NSString stringWithFormat:@"%d", value];
 		}
@@ -130,7 +135,8 @@ void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
 				fmt.zeroFormattingBehavior     = NSDateComponentsFormatterZeroFormattingBehaviorDropAll;
 				final_str                      = [fmt stringFromTimeInterval:value * 60];
 			} else {
-				final_str                      = [NSString stringWithFormat:@"%@ %@", final_str, _(bin_unit_strings[unit])];
+				NSString *unit_str             = unit == degreeUnit ? battman_display_temperature_unit_string() : _(bin_unit_strings[unit]);
+				final_str                      = [NSString stringWithFormat:@"%@ %@", final_str, unit_str];
 			}
 		}
 	} else {

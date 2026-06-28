@@ -122,6 +122,28 @@
 
 #define SFPRO "SFProDisplay-Regular"
 
+bool battman_display_temperature_uses_fahrenheit(void);
+
+static inline double battman_display_temperature(double celsius) {
+	if (battman_display_temperature_uses_fahrenheit()) {
+		return celsius * 9.0 / 5.0 + 32.0;
+	}
+	return celsius;
+}
+
+static inline const char *battman_display_temperature_unit(void) {
+	return battman_display_temperature_uses_fahrenheit()
+	           ? "\xC2\xB0"
+	             "F"
+	           : "\xE2\x84\x83";
+}
+
+#ifdef __OBJC__
+static inline NSString *battman_display_temperature_unit_string(void) {
+	return [NSString stringWithUTF8String:battman_display_temperature_unit()];
+}
+#endif
+
 typedef enum {
 	BATTMAN_APP,
 	BATTMAN_SUBPROCESS,

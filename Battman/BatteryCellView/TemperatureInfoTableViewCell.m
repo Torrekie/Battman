@@ -179,7 +179,7 @@
 		for (int i = 0; i < num; i++) {
 			total += btemps[i];
 		}
-		finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Battery Avg."), total / num];
+		finalText = [NSString stringWithFormat:@"%@: %.4g %@", _("Battery Avg."), battman_display_temperature(total / num), battman_display_temperature_unit_string()];
 		// Embedded designed operating temp: 0º to 35º C
 		batttemp = total / num;
 		free(btemps);
@@ -187,25 +187,25 @@
 
 	extern float getSensorAvgTemperature(void);
 	float snsrtemp = getSensorAvgTemperature();
-	if (snsrtemp != -1) {
-		got_temp |= TEMP_SNSR;
-		if (finalText.length > 0) {
-			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
-		} else {
-			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
-		}
+		if (snsrtemp != -1) {
+			got_temp |= TEMP_SNSR;
+			if (finalText.length > 0) {
+				finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g %@", _("Sensors Avg."), battman_display_temperature(snsrtemp), battman_display_temperature_unit_string()];
+			} else {
+				finalText = [NSString stringWithFormat:@"%@: %.4g %@", _("Sensors Avg."), battman_display_temperature(snsrtemp), battman_display_temperature_unit_string()];
+			}
 	}
 
 	// I've seen a broken screen that not reporting this, so this could also be a way to check screen sanity
 	extern double iomfb_primary_screen_temperature(void);
 	double scrntemp = iomfb_primary_screen_temperature();
-	if (scrntemp != -1) {
-		got_temp |= TEMP_SCRN;
-		if (finalText.length > 0) {
-			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Main Screen"), scrntemp];
-		} else {
-			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Main Screen"), scrntemp];
-		}
+		if (scrntemp != -1) {
+			got_temp |= TEMP_SCRN;
+			if (finalText.length > 0) {
+				finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g %@", _("Main Screen"), battman_display_temperature(scrntemp), battman_display_temperature_unit_string()];
+			} else {
+				finalText = [NSString stringWithFormat:@"%@: %.4g %@", _("Main Screen"), battman_display_temperature(scrntemp), battman_display_temperature_unit_string()];
+			}
 	}
 
 	float minVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MIN];

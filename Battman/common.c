@@ -18,6 +18,10 @@
 #include "intlextern.h"
 #include "iokitextern.h"
 
+bool battman_display_temperature_uses_fahrenheit(void) {
+	return BattmanPrefsGetBool(kBattmanPrefs_TEMPERATURE_UNIT_FAHRENHEIT);
+}
+
 #if __has_include(<libproc.h>)
 #include <libproc.h>
 #else

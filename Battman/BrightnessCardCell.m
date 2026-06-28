@@ -468,7 +468,7 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	if (_unknownTemperature) {
 		self.temperatureValueLabel.text = _("Unknown");
 	} else {
-		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g ℃", temperatureCelsius];
+		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature(temperatureCelsius), battman_display_temperature_unit_string()];
 	}
 }
 
@@ -477,7 +477,7 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	if (unknownTemperature) {
 		self.temperatureValueLabel.text = _("Unknown");
 	} else {
-		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g ℃", _temperatureCelsius];
+		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g %@", battman_display_temperature(_temperatureCelsius), battman_display_temperature_unit_string()];
 	}
 }
 

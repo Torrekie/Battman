@@ -54,6 +54,8 @@
 		for (struct battery_info_node *i = sect->data; i->name != NULL; i++) {
 			if (i->content & BIN_IS_SPECIAL) {
 				uint32_t value = i->content >> 16;
+				uint32_t unit = (i->content & BIN_UNIT_BITMASK) >> 6;
+				uint32_t degreeUnit = (BIN_UNIT_DEGREE_C & BIN_UNIT_BITMASK) >> 6;
 				if ((i->content & BIN_IS_FOREGROUND) == BIN_IS_FOREGROUND) {
 					[_batteryCell updateForegroundPercentage:bi_node_load_float(i)];
 				} else if ((i->content & BIN_IS_BACKGROUND) == BIN_IS_BACKGROUND) {
@@ -66,12 +68,17 @@
 					final_str = [NSString
 					    stringWithFormat:@"%@\n%@", final_str, _(i->name)];
 				} else if ((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
+					double displayValue = bi_node_load_float(i);
+					if ((i->content & BIN_HAS_UNIT) && unit == degreeUnit) {
+						displayValue = battman_display_temperature(displayValue);
+					}
 					final_str =
-					    [NSString stringWithFormat:@"%@\n%@: %.4g", final_str, _(i->name), bi_node_load_float(i)];
+					    [NSString stringWithFormat:@"%@\n%@: %.4g", final_str, _(i->name), displayValue];
 				}
 				if (i->content & BIN_HAS_UNIT) {
-					uint32_t  unit     = (i->content & BIN_UNIT_BITMASK) >> 6;
-					NSString *unit_str = _(bin_unit_strings[unit]);
+					NSString *unit_str = unit == degreeUnit
+					                         ? battman_display_temperature_unit_string()
+					                         : _(bin_unit_strings[unit]);
 					final_str =
 					    [NSString stringWithFormat:@"%@ %@", final_str, unit_str];
 				}
