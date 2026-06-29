@@ -7,7 +7,6 @@
 	// There should be strictly ONE (1) head pointer stored
 	// (which is left in BatteryInfoViewController)
 	struct battery_info_section **batteryInfo;
-	unsigned char *pendingLoadOffsets[BI_MAX_SECTION_NUM];
 
 	int last_charging;
 }
