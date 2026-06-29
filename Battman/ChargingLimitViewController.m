@@ -242,9 +242,9 @@ int connect_to_daemon(bool show_alerts) {
 		char errstr[1024];
 		snprintf(errstr, sizeof(errstr), "%s\n%s\n%s: %s", _C("Failed to connect to daemon at"), sockaddr.sun_path, L_ERR, strerror(errno));
 		show_alert(L_ERR, errstr, L_OK);
-		close(sock);
 		 */
 		// No alert bc we need to retry
+		close(sock);
 		return 0;
 	}
 	

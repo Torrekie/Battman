@@ -81,10 +81,9 @@ static void daemon_control_thread(int fd) {
 	while (1) {
 		char cmd;
 		if (read(fd, &cmd, 1) <= 0) {
-			NSLog(CFSTR("Daemon: Closing bc %s"), strerror(errno));
+			NSLog(CFSTR("Daemon: Control client disconnected: %s"), strerror(errno));
 			close(fd);
-			set_badge(NULL);
-			cleanup_daemon_files();
+			// Client loss during respring is not daemon shutdown; keep files so UI can reconnect.
 			return;
 		}
 		NSLog(CFSTR("Daemon: READ cmd %d"), (int)cmd);
@@ -103,7 +102,6 @@ static void daemon_control_thread(int fd) {
 			update_power_level(last_power_level);
 		} else if (cmd == 5) {
 			close(fd);
-			set_badge(NULL);
 			pthread_exit(NULL);
 		} else if (cmd == 6) {
 			// Redirect logs
