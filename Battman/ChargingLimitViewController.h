@@ -7,7 +7,7 @@
 	int daemon_fd;
 	char *vals;
 	
-	const char *load_graph;
+	const char *powerlog_db_path;
 #if 0
 	Class PSGraphViewTableCell;
 #endif

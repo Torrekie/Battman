@@ -1,6 +1,7 @@
 #import "ChargingLimitViewController.h"
 #import "SliderTableViewCell.h"
 #import "PickerAccessoryView.h"
+#import "BattmanPrefs.h"
 #if __has_include("PLGraphViewTableCell.h")
 #import "PLGraphViewTableCell.h"
 #endif
@@ -12,6 +13,7 @@
 #include <sqlite3.h>
 #include <sys/errno.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -160,7 +162,75 @@ static int _cl_sql_pt_cb(void *arr_ref, int cnt, char **texts, char **names) {
 - (void)setLabelColor:(UIColor *)color;
 - (UIView *)graphView;
 @end
-extern const char *container_system_group_path_for_identifier(int, const char *, BOOL *);
+
+static NSString *CLPowerlogDatabasePathInContainer(NSString *containerPath) {
+	if (!containerPath.length)
+		return nil;
+	return [containerPath stringByAppendingPathComponent:@"Library/BatteryLife/CurrentPowerlog.PLSQL"];
+}
+
+static BOOL CLPathIsReadableFile(NSString *path) {
+	if (!path.length)
+		return NO;
+	struct stat st;
+	if (stat(path.fileSystemRepresentation, &st) != 0)
+		return NO;
+	return S_ISREG(st.st_mode) && access(path.fileSystemRepresentation, R_OK) == 0;
+}
+
+static NSString *CLPowerlogContainerPathForMetadata(NSString *containerPath) {
+	NSString *metadataPath = [containerPath stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
+	NSDictionary *metadata = [NSDictionary dictionaryWithContentsOfFile:metadataPath];
+	if (![metadata isKindOfClass:[NSDictionary class]])
+		return nil;
+	if (![metadata[@"MCMMetadataIdentifier"] isEqualToString:@"systemgroup.com.apple.powerlog"])
+		return nil;
+	NSString *dbPath = CLPowerlogDatabasePathInContainer(containerPath);
+	return CLPathIsReadableFile(dbPath) ? containerPath : nil;
+}
+
+static NSString *CLResolvePowerlogDatabasePath(void) {
+	NSString *cachedContainerPath = [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_POWERLOG_SYSTEMGROUP_PATH];
+	NSString *cachedDBPath = CLPowerlogDatabasePathInContainer(cachedContainerPath);
+	if (CLPathIsReadableFile(cachedDBPath))
+		return cachedDBPath;
+	if (cachedContainerPath.length) {
+		[BattmanPrefs.sharedPrefs removeObjectForKey:@kBattmanPrefs_POWERLOG_SYSTEMGROUP_PATH];
+		[BattmanPrefs.sharedPrefs synchronize];
+	}
+
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	NSArray<NSString *> *searchRoots = @[
+		@"/var/containers/Shared/SystemGroup",
+		@"/private/var/containers/Shared/SystemGroup",
+	];
+	for (NSString *searchRoot in searchRoots) {
+		NSArray<NSString *> *containerNames = [fileManager contentsOfDirectoryAtPath:searchRoot error:nil];
+		for (NSString *containerName in containerNames) {
+			NSString *containerPath = [searchRoot stringByAppendingPathComponent:containerName];
+			NSString *powerlogContainerPath = CLPowerlogContainerPathForMetadata(containerPath);
+			if (!powerlogContainerPath)
+				continue;
+
+			if (![powerlogContainerPath isEqualToString:cachedContainerPath]) {
+				[BattmanPrefs.sharedPrefs setString:powerlogContainerPath forKey:@kBattmanPrefs_POWERLOG_SYSTEMGROUP_PATH];
+				[BattmanPrefs.sharedPrefs synchronize];
+			}
+			return CLPowerlogDatabasePathInContainer(powerlogContainerPath);
+		}
+	}
+
+	NSArray<NSString *> *legacyPaths = @[
+		@"/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL",
+		@"/private/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL",
+	];
+	for (NSString *legacyPath in legacyPaths) {
+		if (CLPathIsReadableFile(legacyPath))
+			return legacyPath;
+	}
+
+	return nil;
+}
 
 @interface ChargingLimitViewController ()
 @property (nonatomic, copy) NSArray *drainModes;
@@ -183,13 +253,18 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	if (PLBundle) {
 		// TODO: Implement our own GraphView
 		PSGraphViewTableCell = [PLBundle classNamed:@"PSGraphViewTableCell"];
-		if (PSGraphViewTableCell)
-			load_graph = container_system_group_path_for_identifier(0, "systemgroup.com.apple.powerlog", NULL);
+		if (PSGraphViewTableCell) {
+			NSString *resolvedPath = CLResolvePowerlogDatabasePath();
+			if (resolvedPath)
+				powerlog_db_path = strdup(resolvedPath.fileSystemRepresentation);
+		}
 	}
 #elif __has_include("PLGraphViewTableCell.h")
 	// We have implemented a clone of Apple's legacy PSGraphViewTableCell without 'PS'
 	// Also fixed some bugs where iOS 16 users met ig
-	load_graph = container_system_group_path_for_identifier(0, "systemgroup.com.apple.powerlog", NULL);
+	NSString *resolvedPath = CLResolvePowerlogDatabasePath();
+	if (resolvedPath)
+		powerlog_db_path = strdup(resolvedPath.fileSystemRepresentation);
 #endif
 
 	self.drainModes = @[
@@ -269,7 +344,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	CLSect section = (CLSect)sect;
 	switch (section) {
 		case CL_SECTION_GRAPH:
-			return load_graph ? _("7-Day Battery Level") : nil;
+			return powerlog_db_path ? _("7-Day Battery Level") : nil;
 		case CL_SECTION_MAIN:
 			return _("Charging Limit (Experimental)");
 		default:
@@ -282,7 +357,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	CLSect section = (CLSect)sect;
 	switch (section) {
 		case CL_SECTION_GRAPH:
-			return load_graph ? _("The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly.") : nil;
+			return powerlog_db_path ? _("The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly.") : nil;
 		case CL_SECTION_MAIN:
 			return _("Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior.");
 		default:
@@ -292,14 +367,14 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 - (void)dealloc {
-	if (!vals)
-		return;
 	const char endconnectioncmd = 5;
 	if (daemon_fd) {
 		write(daemon_fd, &endconnectioncmd, 1);
 		close(daemon_fd);
 	}
-	munmap(vals, 3);
+	if (vals)
+		munmap(vals, 3);
+	free((void *)powerlog_db_path);
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)sect {
@@ -377,7 +452,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-	if (load_graph && indexPath.section == CL_SECTION_GRAPH) {
+	if (powerlog_db_path && indexPath.section == CL_SECTION_GRAPH) {
 		return 150;
 	}
 	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
@@ -393,7 +468,7 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 // Only do this when we are using Apple provided legacy Graph
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
-	if (load_graph) {
+	if (powerlog_db_path) {
 		NSIndexPath *ip = [NSIndexPath indexPathForRow:CL_GRAPH_ROW inSection:CL_SECTION_GRAPH];
 		UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:ip];
 		if ([cell isKindOfClass:[PSGraphViewTableCell class]]) {
@@ -422,27 +497,18 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 	cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	switch (section) {
 		case CL_SECTION_GRAPH: {
-			if (!load_graph) {
+			if (!powerlog_db_path) {
 				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
 				cell.textLabel.text       = _("7-Day Battery Level");
 				cell.detailTextLabel.text = _("Unavailable");
 				return cell;
 			}
-			const char *pl_container_path = load_graph;
-			char        sqlpath[PATH_MAX];
-			sprintf(sqlpath, "%s/Library/BatteryLife/CurrentPowerlog.PLSQL", pl_container_path);
 			sqlite3 *p_db = NULL;
 			int      err = SQLITE_CANTOPEN;
 			
-			if (access(sqlpath, R_OK) == 0) {
+			if (access(powerlog_db_path, R_OK) == 0) {
 				// Use FULLMUTEX for thread safety and allow concurrent reads
-				err = sqlite3_open_v2(sqlpath, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
-			} else {
-				// Try macOS/Simulator path if primary path doesn't exist
-				const char *fallback_path = "/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL";
-				if (access(fallback_path, R_OK) == 0) {
-					err = sqlite3_open_v2(fallback_path, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
-				}
+				err = sqlite3_open_v2(powerlog_db_path, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
 			}
 			
 			if (err == SQLITE_OK) {
@@ -465,14 +531,15 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 			}
 			double start_time = (double)(cur_time - 3600 * 24 * 7);
 			double end_time = (double)cur_time;
-			snprintf(sqlpath, sizeof(sqlpath), "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %lld AND %lld ORDER BY timestamp", (long long)start_time, (long long)end_time);
+			char query[256];
+			snprintf(query, sizeof(query), "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %lld AND %lld ORDER BY timestamp", (long long)start_time, (long long)end_time);
 			char           *errmsg = NULL;
 			NSMutableArray *arr = [NSMutableArray array];
 
 			int retry_count = 0;
 			const int max_retries = 3;
 			do {
-				err = sqlite3_exec(p_db, sqlpath, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
+				err = sqlite3_exec(p_db, query, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
 				if (err == SQLITE_OK || err != SQLITE_BUSY) {
 					break;
 				}
@@ -736,4 +803,3 @@ extern const char *container_system_group_path_for_identifier(int, const char *,
 }
 
 @end
-
