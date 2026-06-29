@@ -153,6 +153,9 @@ static void BSVCBatteryStatusCallbackMain(void *ctx) {
 	if (payload->userInfo) {
 		CFRelease(payload->userInfo);
 	}
+	if (payload->observer) {
+		NSObjectRelease((id)payload->observer);
+	}
 	free(payload);
 }
 
@@ -170,15 +173,19 @@ static void BSVCBatteryStatusCallback(CFNotificationCenterRef center, void *obse
 	} else {
 		BSVCBatteryStatusPayload *payload = calloc(1, sizeof(BSVCBatteryStatusPayload));
 		if (!payload) {
+			id retainedObserver = observer ? NSObjectRetain((id)observer) : NULL;
 			void *observerAndUserInfo[2] = {
-				observer,
+				retainedObserver,
 				(void *)userInfo
 			};
 			dispatch_sync_f(dispatch_get_main_queue(), observerAndUserInfo, (void (*)(void *))BSVCBatteryStatusCallback1);
+			if (retainedObserver) {
+				NSObjectRelease(retainedObserver);
+			}
 			return;
 		}
 
-		payload->observer = observer;
+		payload->observer = observer ? NSObjectRetain((id)observer) : NULL;
 		payload->userInfo = userInfo ? (CFDictionaryRef)CFRetain(userInfo) : NULL;
 		dispatch_async_f(dispatch_get_main_queue(), payload, BSVCBatteryStatusCallbackMain);
 	}
