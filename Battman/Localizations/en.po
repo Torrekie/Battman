@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.4\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
 "Last-Translator: Automatically generated\n"

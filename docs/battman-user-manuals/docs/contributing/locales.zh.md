@@ -78,6 +78,7 @@ xgettext -v \
     --copyright-holder="Torrekie <me@torrekie.dev>" \
     --package-name="Battman" \
     --package-version="$(cat ./VERSION)" \
+    --msgid-bugs-address="https://github.com/Torrekie/Battman/issues" \
     --output=./Localizations/base.pot \
     --from-code=UTF-8 \
     $(find ./ -name "*.m" -or -name "*.c" -or -name "*.h")
@@ -149,7 +150,7 @@ $ tree ./Battman/Localizations/
 msgid ""
 msgstr ""
 "Project-Id-Version: Battman 1.0.4\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-12-02 18:25+0800\n"
 "Last-Translator: Automatically generated\n"
