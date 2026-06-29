@@ -16,6 +16,40 @@
 #include <string.h>
 #include <sys/sysctl.h>
 
+@class BDVCBatteryInfoTableSnapshot;
+
+@interface BDVCBatteryInfoNodeSnapshot : NSObject
+@property(nonatomic, copy) NSString *name;
+@property(nonatomic, copy) NSString *stringValue;
+@property(nonatomic, copy) NSString *desc;
+@property(nonatomic, assign) uint32_t content;
+@property(nonatomic, assign) NSUInteger sourceIndex;
+@end
+
+@implementation BDVCBatteryInfoNodeSnapshot
+@end
+
+@interface BDVCBatteryInfoSectionSnapshot : NSObject
+@property(nonatomic, copy) NSString *title;
+@property(nonatomic, copy) NSString *footer;
+@property(nonatomic, strong) NSArray<BDVCBatteryInfoNodeSnapshot *> *rows;
+@property(nonatomic, assign) uint64_t customIdentifier;
+@end
+
+@implementation BDVCBatteryInfoSectionSnapshot
+@end
+
+@interface BDVCBatteryInfoTableSnapshot : NSObject {
+@public
+	gas_gauge_t gauge;
+	int timeToEmpty;
+}
+@property(nonatomic, strong) NSArray<BDVCBatteryInfoSectionSnapshot *> *sections;
+@end
+
+@implementation BDVCBatteryInfoTableSnapshot
+@end
+
 /* Desc */
 @interface BatteryDetailsViewController () {
 	hvc_menu_t *hvc_menu;
@@ -26,6 +60,7 @@
 	dispatch_queue_t refreshQueue;
 	BOOL        refreshInFlight;
 	BOOL        refreshPending;
+	BDVCBatteryInfoTableSnapshot *batteryInfoSnapshot;
 }
 @end
 
@@ -79,6 +114,110 @@ void equipCellHighLegit(UILabel *label) {
 	if (cachedFont) {
 		[label setFont:cachedFont];
 	}
+}
+
+static NSString *BDVCStringFromUTF8(const char *str) {
+	return str ? [NSString stringWithUTF8String:str] : nil;
+}
+
+static float BDVCLoadFloatFromContent(uint32_t content) {
+	struct battery_info_node node = {0};
+	node.content = content;
+	return bi_node_load_float(&node);
+}
+
+static NSString *BDVCFormattedValueForContent(uint32_t content, NSString *stringValue) {
+	NSString *final_str;
+	if ((content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL) {
+		int16_t value = content >> 16;
+
+		if ((content & BIN_IS_BOOLEAN) == BIN_IS_BOOLEAN) {
+			final_str = value ? _("True") : _("False");
+		} else if ((content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
+			final_str = [NSString stringWithFormat:@"%.4g", BDVCLoadFloatFromContent(content)];
+		} else {
+			final_str = [NSString stringWithFormat:@"%d", value];
+		}
+		if (content & BIN_HAS_UNIT) {
+			uint32_t unit = (content & BIN_UNIT_BITMASK) >> 6;
+			if (unit == (BIN_UNIT_MIN & BIN_UNIT_BITMASK) >> 6) {
+				NSDateComponentsFormatter *fmt = [[NSDateComponentsFormatter alloc] init];
+				fmt.calendar.locale            = [NSLocale localeWithLocaleIdentifier:[NSString stringWithUTF8String:preferred_language()]];
+				fmt.allowedUnits               = NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute;
+				fmt.unitsStyle                 = NSDateComponentsFormatterUnitsStyleShort;
+				fmt.zeroFormattingBehavior     = NSDateComponentsFormatterZeroFormattingBehaviorDropAll;
+				final_str                      = [fmt stringFromTimeInterval:value * 60];
+			} else {
+				final_str                      = [NSString stringWithFormat:@"%@ %@", final_str, _(bin_unit_strings[unit])];
+			}
+		}
+	} else {
+		final_str = stringValue ?: @"";
+	}
+	return final_str ?: @"";
+}
+
+static void BDVCEquipDetailCellWithSnapshot(UITableViewCell *cell, BDVCBatteryInfoNodeSnapshot *node) {
+	NSString *name = node.name ?: @"";
+	equipCellTitle(cell, _(name.UTF8String));
+	if (node.desc) {
+		if (@available(iOS 13.0, *)) {
+			cell.accessoryType = UITableViewCellAccessoryDetailButton;
+		} else {
+			WarnAccessoryView *button = [WarnAccessoryView altAccessoryView];
+			[cell setAccessoryType:UITableViewCellAccessoryNone];
+			[cell setAccessoryView:button];
+		}
+	} else {
+		cell.accessoryType = UITableViewCellAccessoryNone;
+	}
+
+	cell.detailTextLabel.text = BDVCFormattedValueForContent(node.content, node.stringValue);
+	if ([name containsString:@"No."] || [name containsString:@"ID"]) {
+		equipCellHighLegit(cell.detailTextLabel);
+	}
+	cell.detailTextLabel.textColor = [UIColor compatSecondaryLabelColor];
+}
+
+static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(struct battery_info_section **batteryInfo) {
+	BDVCBatteryInfoTableSnapshot *snapshot = [BDVCBatteryInfoTableSnapshot new];
+	NSMutableArray<BDVCBatteryInfoSectionSnapshot *> *sections = [NSMutableArray array];
+
+	battery_info_read_lock();
+	snapshot->gauge = gGauge;
+	snapshot->timeToEmpty = 0;
+	for (struct battery_info_section *sect = batteryInfo ? *batteryInfo : NULL; sect; sect = sect->next) {
+		BDVCBatteryInfoSectionSnapshot *sectionSnapshot = [BDVCBatteryInfoSectionSnapshot new];
+		sectionSnapshot.title = BDVCStringFromUTF8(sect->data[0].name);
+		sectionSnapshot.footer = BDVCStringFromUTF8(sect->data[0].desc);
+		sectionSnapshot.customIdentifier = sect->context ? sect->context->custom_identifier : 0;
+
+		NSMutableArray<BDVCBatteryInfoNodeSnapshot *> *rows = [NSMutableArray array];
+		for (struct battery_info_node *i = sect->data + 1; i->name; i++) {
+			if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED || (i->content && !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
+				if ((i->content & 1) != 1 || (i->content & (1 << 5)) != (1 << 5)) {
+					BDVCBatteryInfoNodeSnapshot *nodeSnapshot = [BDVCBatteryInfoNodeSnapshot new];
+					nodeSnapshot.name = BDVCStringFromUTF8(i->name);
+					nodeSnapshot.desc = BDVCStringFromUTF8(i->desc);
+					nodeSnapshot.content = i->content;
+					nodeSnapshot.sourceIndex = (NSUInteger)(i - sect->data);
+					if (!((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL) && i->content) {
+						nodeSnapshot.stringValue = BDVCStringFromUTF8(bi_node_get_string(i));
+					}
+					if (strcmp(i->name, "Time to Empty") == 0 && !((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT)) {
+						snapshot->timeToEmpty = (int16_t)(i->content >> 16);
+					}
+					[rows addObject:nodeSnapshot];
+				}
+			}
+		}
+		sectionSnapshot.rows = rows;
+		[sections addObject:sectionSnapshot];
+	}
+	battery_info_unlock();
+
+	snapshot.sections = sections;
+	return snapshot;
 }
 
 void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
@@ -294,8 +433,10 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		new_hvc_owned = false;
 #endif
 
+		BDVCBatteryInfoTableSnapshot *newSnapshot = BDVCCopyBatteryInfoSnapshot(self->batteryInfo);
 		dispatch_async(dispatch_get_main_queue(), ^{
 			self->refreshInFlight = NO;
+			self->batteryInfoSnapshot = newSnapshot;
 
 			if (self->hvc_menu_owned && self->hvc_menu && self->hvc_menu != new_hvc_menu) {
 				free(self->hvc_menu);
@@ -399,6 +540,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 	self.tableView.allowsSelection = YES;
 	batteryInfo = bi;
+	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(bi);
 	refreshQueue = dispatch_queue_create("com.torrekie.Battman.BDVCRefresh", DISPATCH_QUEUE_SERIAL);
 	refreshInFlight = NO;
 	refreshPending = NO;
@@ -474,21 +616,16 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		titleLabel = cell.textLabel.text;
 	}
 
-	char *desc_copy = NULL;
-	battery_info_read_lock();
-	struct battery_info_section *section = battery_info_get_section(*batteryInfo, (int)indexPath.section);
-	if (section) {
-		struct battery_info_node *node = section->data + indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row];
-		if (node && node->desc) {
-			desc_copy = strdup(node->desc);
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	NSString *desc = nil;
+	if (indexPath.section >= 0 && (NSUInteger)indexPath.section < snapshot.sections.count) {
+		BDVCBatteryInfoSectionSnapshot *section = snapshot.sections[(NSUInteger)indexPath.section];
+		if (indexPath.row >= 0 && (NSUInteger)indexPath.row < section.rows.count) {
+			desc = section.rows[(NSUInteger)indexPath.row].desc;
 		}
 	}
-	battery_info_unlock();
 
-	show_alert([titleLabel UTF8String], desc_copy ? _C(desc_copy) : "", L_OK);
-	if (desc_copy) {
-		free(desc_copy);
-	}
+	show_alert([titleLabel UTF8String], desc ? _C(desc.UTF8String) : "", L_OK);
 	return;
 	// TODO: Implement this
 #if 0
@@ -540,53 +677,39 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
 	UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-	NSString *title = nil;
-	battery_info_read_lock();
-	struct battery_info_section *sect = battery_info_get_section(*batteryInfo, section);
-	if (sect && sect->data[0].name) {
-		title = _(sect->data[0].name);
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	NSString *title = @"";
+	if (section >= 0 && (NSUInteger)section < snapshot.sections.count) {
+		NSString *rawTitle = snapshot.sections[(NSUInteger)section].title;
+		if (rawTitle) {
+			title = _(rawTitle.UTF8String);
+		}
 	}
-	battery_info_unlock();
-	header.textLabel.text = title ?: @"";
+	header.textLabel.text = title;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-	NSString *footer = nil;
-	battery_info_read_lock();
-	struct battery_info_section *cur = battery_info_get_section(*batteryInfo, section);
-	if (cur && cur->data[0].desc) {
-		footer = _(cur->data[0].desc);
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	if (section < 0 || (NSUInteger)section >= snapshot.sections.count) {
+		return nil;
 	}
-	battery_info_unlock();
-	return footer;
+	NSString *footer = snapshot.sections[(NSUInteger)section].footer;
+	if (!footer) {
+		return nil;
+	}
+	return _(footer.UTF8String);
 }
 
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
-	battery_info_read_lock();
-	struct battery_info_section *sect = battery_info_get_section(*batteryInfo, section);
-	if (!sect) {
-		battery_info_unlock();
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	if (section < 0 || (NSUInteger)section >= snapshot.sections.count) {
 		return 0;
 	}
-	int                          rows = 0;
-	for (struct battery_info_node *i = sect->data + 1; i->name /*&& (i->content & BIN_SECTION) != BIN_SECTION*/; i++) {
-		if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED || (i->content && !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
-			if ((i->content & 1) != 1 || (i->content & (1 << 5)) != 1 << 5) {
-				pendingLoadOffsets[section][rows] = (unsigned char)((i - sect->data) - rows);
-				rows++;
-			}
-		}
-	}
-	pendingLoadOffsets[section][rows] = 255;
-	battery_info_unlock();
-	return rows;
+	return snapshot.sections[(NSUInteger)section].rows.count;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(id)tv {
-	battery_info_read_lock();
-	int count = battery_info_get_section_count(*batteryInfo);
-	battery_info_unlock();
-	return count;
+	return batteryInfoSnapshot.sections.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
@@ -605,38 +728,38 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		cell = [[cell_class alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:ident];
 	}
 	
-	battery_info_read_lock();
-	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, ip.section);
-	if (!bi_section) {
-		battery_info_unlock();
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	if (ip.section < 0 || (NSUInteger)ip.section >= snapshot.sections.count) {
 		return cell;
 	}
-	struct battery_info_node    *pending_bi = bi_section->data + ip.row + pendingLoadOffsets[ip.section][ip.row];
+	BDVCBatteryInfoSectionSnapshot *sectionSnapshot = snapshot.sections[(NSUInteger)ip.section];
+	if (ip.row < 0 || (NSUInteger)ip.row >= sectionSnapshot.rows.count) {
+		return cell;
+	}
+	BDVCBatteryInfoNodeSnapshot *pending_bi = sectionSnapshot.rows[(NSUInteger)ip.row];
+
 	/* Flags special handler */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wstring-compare"
-	// ^ We are comparing the pointers, not string contents.
-	if (pending_bi->name == "Flags") {
+	if ([pending_bi.name isEqualToString:@"Flags"]) {
 		SegmentedFlagViewCell *cellf = [tv dequeueReusableCellWithIdentifier:@"FLAGS"];
 		if (!cellf)
 			cellf = [[SegmentedFlagViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"FLAGS"];
 
-		cellf.textLabel.text       = _(pending_bi->name);
-		cellf.titleLabel.text      = _(pending_bi->name);
-		cellf.detailTextLabel.text = _(bi_node_get_string(pending_bi));
-		[cellf selectByFlags:gGauge.Flags];
-			if (strlen(gGauge.DeviceName)) {
-				[cellf setBitSetByModel:[NSString stringWithFormat:@"%s", gGauge.DeviceName]];
-			} else {
-				[cellf setBitSetByTargetName];
-			}
-			battery_info_unlock();
-			return cellf;
+		NSString *name = pending_bi.name ?: @"";
+		NSString *detail = BDVCFormattedValueForContent(pending_bi.content, pending_bi.stringValue);
+		cellf.textLabel.text       = _(name.UTF8String);
+		cellf.titleLabel.text      = _(name.UTF8String);
+		cellf.detailTextLabel.text = detail.length ? _(detail.UTF8String) : @"";
+		[cellf selectByFlags:snapshot->gauge.Flags];
+		if (strlen(snapshot->gauge.DeviceName)) {
+			[cellf setBitSetByModel:[NSString stringWithFormat:@"%s", snapshot->gauge.DeviceName]];
+		} else {
+			[cellf setBitSetByTargetName];
 		}
-#pragma clang diagnostic pop
+		return cellf;
+	}
 
 #pragma mark - Warn Conditions
-	equipDetailCell(cell, pending_bi);
+	BDVCEquipDetailCellWithSnapshot(cell, pending_bi);
 	
 	// Workaround for too-long texts in section 0
 //	if (ip.section == 0 && cell.detailTextLabel.text.length > 25) {
@@ -644,23 +767,24 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 //		cell.detailTextLabel.lineBreakMode = NSLineBreakByTruncatingTail;
 //	}
 	/* Warning conditions - Only evaluate for specific cells to reduce overhead during scrolling */
-	if (bi_section->context->custom_identifier == BI_GAS_GAUGE_SECTION_ID) {
+	if (sectionSnapshot.customIdentifier == BI_GAS_GAUGE_SECTION_ID) {
 		NSString *cellLabel = cell.textLabel.text;
+		gas_gauge_t gauge = snapshot->gauge;
+		uint16_t remain_cap = gauge.RemainingCapacity;
+		uint16_t full_cap = gauge.FullChargeCapacity;
 		
 		// Only call warning condition check for cells that actually need it
 		if ([cellLabel isEqualToString:_("Remaining Capacity")]) {
 			equipWarningCondition_b(cell, _("Remaining Capacity"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
-				uint16_t         remain_cap, full_cap, design_cap;
-				get_capacity(&remain_cap, &full_cap, &design_cap);
 				if (remain_cap > full_cap) {
 					code = WARN_UNUSUAL;
 					static char errmsg[256];
 					// some Shenzhen battries is spoofing this data to affect internal battery health calculations
 					// But they still had to report a real SoC so that indicating actual conditions.
-					sprintf(errmsg, "%s\n%s: %ld", _C("Unusual Remaining Capacity, a non-genuine battery component may be in use."), _C("Estimated Remaining"), lrintf((float)full_cap * gGauge.StateOfCharge / 100.0f));
+					sprintf(errmsg, "%s\n%s: %ld", _C("Unusual Remaining Capacity, a non-genuine battery component may be in use."), _C("Estimated Remaining"), lrintf((float)full_cap * gauge.StateOfCharge / 100.0f));
 					*str = errmsg;
-				} else if ((gGauge.TrueRemainingCapacity != 0) && (gGauge.RemainingCapacity - 10) > gGauge.TrueRemainingCapacity) {
+				} else if ((gauge.TrueRemainingCapacity != 0) && gauge.RemainingCapacity > (gauge.TrueRemainingCapacity + 10)) {
 					// Battery is lying
 					// TrueRemainingCapacity is calculated by device, not GGIC
 					// So the diff would not exceed 1 normally, we generously allowing 10 here
@@ -676,10 +800,10 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 			equipWarningCondition_b(cell, _("Cycle Count"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
 				int              count, design;
-				count  = gGauge.CycleCount;
-				design = gGauge.DesignCycleCount;
+				count  = gauge.CycleCount;
+				design = gauge.DesignCycleCount;
 
-				if (gGauge.DesignCycleCount == 0) {
+				if (gauge.DesignCycleCount == 0) {
 					// according to https://www.apple.com/batteries/service-and-recycling
 					// Pre-iPhone15,3: 500, otherwise 1000
 					// Watch*,* iPad*,*: 1000
@@ -727,18 +851,16 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		} else if ([cellLabel isEqualToString:_("Time to Empty")]) {
 			equipWarningCondition_b(cell, _("Time to Empty"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
-				uint16_t         remain_cap, full_cap, design_cap;
-				int              tte = get_time_to_empty();
-				get_capacity(&remain_cap, &full_cap, &design_cap);
+				int              tte = snapshot->timeToEmpty ?: gauge.TimeToEmpty;
 				/* The most ideal TTE is TTE (Hour) = Capacity (mAh) / Current (mA),
 				 * some user reported their non-genuine battries
 				 * reporting a significant huge number of TTE */
 
 				/* Battery charging, skip */
-				if (gGauge.AverageCurrent > 0)
+				if (gauge.AverageCurrent >= 0)
 					return code;
 
-				int ideal = (remain_cap / abs(gGauge.AverageCurrent)) * 60;
+				int ideal = ((int)remain_cap / abs(gauge.AverageCurrent)) * 60;
 				/* Normally, TI's GG IC would not emulate its TTE bigger than ideal */
 				/* for ensurence, we check if TTE is bigger than 1.5*ideal */
 				if (tte > (ideal * 1.5)) {
@@ -753,7 +875,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 				/* Non-genuine batteries are likely spoofing some unremarkable data */
 				/* DOD0 is not going to bigger than Qmax normally, but sometimes it do
 				 * exceeds when discharging/charging with adapter attached */
-				if (gGauge.DOD0 > (gGauge.Qmax * 3)) {
+				if (gauge.DOD0 > (gauge.Qmax * 3)) {
 					code = WARN_UNUSUAL;
 					*str = _C("Unusual Depth of Discharge, a non-genuine battery component may be in use.");
 				}
@@ -772,10 +894,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	}
 	/* TODO: record 1st-read capacity data in defaults in order to observe battery problems */
 	/* HVC Mode special handler */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wstring-compare"
-	if (pending_bi->name == "HVC Mode") {
-#pragma clang diagnostic pop
+	if ([pending_bi.name isEqualToString:@"HVC Mode"]) {
 		// Use cached HVC data instead of fetching during cell configuration
 		// This prevents blocking the main thread during scrolling
 		
@@ -827,14 +946,12 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 					cell_seg.subDetailLabel.text = [NSString stringWithFormat:@"%d %s", hvc_menu[hvc_index].current, L_MA];
 				}
 
-				battery_info_unlock();
 				return cell_seg;
 			} else {
 				cell.detailTextLabel.text = _("None");
 			}
 		}
 		//        [cell layoutIfNeeded];
-	battery_info_unlock();
 	return cell;
 }
 
@@ -860,38 +977,49 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	BDVCBatteryInfoTableSnapshot *snapshot = batteryInfoSnapshot;
+	if (indexPath.section < 0 || (NSUInteger)indexPath.section >= snapshot.sections.count) {
+		return;
+	}
+	BDVCBatteryInfoSectionSnapshot *sectionSnapshot = snapshot.sections[(NSUInteger)indexPath.section];
+	if (indexPath.row < 0 || (NSUInteger)indexPath.row >= sectionSnapshot.rows.count) {
+		return;
+	}
+	BDVCBatteryInfoNodeSnapshot *selectedNode = sectionSnapshot.rows[(NSUInteger)indexPath.row];
+
 	battery_info_write_lock();
-	struct battery_info_section *bi_section = battery_info_get_section(*batteryInfo, indexPath.section);
+	struct battery_info_section *bi_section = batteryInfo ? *batteryInfo : NULL;
+	for (NSInteger section = 0; bi_section && section < indexPath.section; section++) {
+		bi_section = bi_section->next;
+	}
 	if (!bi_section) {
 		battery_info_unlock();
 		return;
 	}
-	struct battery_info_node    *pending_bi = bi_section->data + indexPath.row + pendingLoadOffsets[indexPath.section][indexPath.row];
+	struct battery_info_node    *pending_bi = bi_section->data;
+	for (NSUInteger row = 0; pending_bi->name && row < selectedNode.sourceIndex; row++) {
+		pending_bi++;
+	}
+	if (!pending_bi->name) {
+		battery_info_unlock();
+		return;
+	}
 	if(!(pending_bi->content&BIN_HAS_SUBCELLS)) {
 		battery_info_unlock();
 		return;
 	}
 	int rows=0;
-	int is_hidden=0;
-	NSMutableArray *indexPaths=[NSMutableArray array];
 	for(struct battery_info_node *node=pending_bi+1;node->name&&(node->content&BIN_IS_SUBCELL);node++) {
-		if(node->content&(1<<5))
-			is_hidden=1;
 		node->content^=(1<<5);
 		rows++;
-		[indexPaths addObject:[NSIndexPath indexPathForRow:indexPath.row+rows inSection:indexPath.section]];
 	}
 	if(!rows) {
 		battery_info_unlock();
 		return;
 	}
 	battery_info_unlock();
-	if(is_hidden) {
-		[tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
-	}else{
-		[tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
-	}
-	//[self updateTableView];
+	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(batteryInfo);
+	[tableView reloadData];
 }
 
 @end
