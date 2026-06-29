@@ -401,6 +401,7 @@
 		68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
+		68D438C62FF2D52800AE907E /* zh_TW.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D438C22FF2D52800AE907E /* zh_TW.po */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
 		68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		68D8007F2EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
@@ -2031,6 +2032,7 @@
 		68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "CALayer+smoothCorners.m"; sourceTree = "<group>"; };
 		68CFB5ED2EBA02C3007ECAC8 /* UIColor+compat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIColor+compat.h"; sourceTree = "<group>"; };
 		68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIColor+compat.m"; sourceTree = "<group>"; };
+		68D438C22FF2D52800AE907E /* zh_TW.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = zh_TW.po; sourceTree = "<group>"; };
 		68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SegmentedViewCell.m; sourceTree = "<group>"; };
 		68D6DEBF2D745DCB00E129A0 /* SegmentedViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SegmentedViewCell.h; sourceTree = "<group>"; };
 		68D6DEC02D77071300E129A0 /* not_charging_reason.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = not_charging_reason.h; sourceTree = "<group>"; };
@@ -2043,7 +2045,6 @@
 		68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NightShiftVectorIcon.m; sourceTree = "<group>"; };
 		68D800C02EC9CD700012B84A /* NightShiftVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NightShiftVectorIcon.h; sourceTree = "<group>"; };
 		68D800C12EC9CD700012B84A /* TrueToneVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrueToneVectorIcon.h; sourceTree = "<group>"; };
-		68D800CA2ECB200E0012B84A /* vi.po */ = {isa = PBXFileReference; lastKnownFileType = text; path = vi.po; sourceTree = "<group>"; };
 		68DCA5602D3D0AC5004D0104 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 		68DCA5AA2D3F935E004D0104 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		68DCA5AB2D3F9A10004D0104 /* gtkextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtkextern.h; sourceTree = "<group>"; };
@@ -14422,7 +14423,7 @@
 		68DCA5B42D40EDE8004D0104 /* Localizations */ = {
 			isa = PBXGroup;
 			children = (
-				68D800CA2ECB200E0012B84A /* vi.po */,
+				68D438C22FF2D52800AE907E /* zh_TW.po */,
 				684972EC2EAF482500C9C58A /* de.po */,
 				68DCA5BD2D40FDE3004D0104 /* en.po */,
 				68DCA5BE2D40FDE3004D0104 /* zh_CN.po */,
@@ -14754,6 +14755,7 @@
 				6845759C2E3CBFEB00618DFD /* BattmanIcons@2x.artwork in Resources */,
 				6845759A2E3CBD2B00618DFD /* BattmanIcons@3x.artwork in Resources */,
 				6838BF6A2DB8D06B007EB66C /* license.html in Resources */,
+				68D438C62FF2D52800AE907E /* zh_TW.po in Resources */,
 				687742B62D43838500375A2C /* locales in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

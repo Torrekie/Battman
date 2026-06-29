@@ -767,7 +767,7 @@ msgid "Thermal Tuning failed with error"
 msgstr "溫控調校發生錯誤"
 
 msgid "locale_name"
-msgstr "中文"
+msgstr "繁體中文"
 
 msgid "Unregistered Locale"
 msgstr "未註冊的本地化"
