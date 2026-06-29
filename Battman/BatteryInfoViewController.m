@@ -100,10 +100,17 @@ enum sections_batteryinfo {
 	dispatch_queue_t _refreshQueue;
 	BOOL _refreshInFlight;
 	BOOL _refreshPending;
+	BOOL _refreshSuspended;
+	NSUInteger _refreshGeneration;
+	NSUInteger _refreshInFlightGeneration;
 }
 
 - (NSString *)title {
-    return _("Battman");
+	return _("Battman");
+}
+
+- (BOOL)_canScheduleRefresh {
+	return !_refreshSuspended && [UIApplication sharedApplication].applicationState != UIApplicationStateBackground;
 }
 
 - (void)batteryStatusDidUpdate:(NSDictionary *)info {
@@ -124,8 +131,16 @@ enum sections_batteryinfo {
 }
 
 - (void)_startQueuedRefresh {
+	if (![self _canScheduleRefresh]) {
+		_refreshPending = NO;
+		[self.refreshControl endRefreshing];
+		return;
+	}
+
 	if (_refreshInFlight) {
-		_refreshPending = YES;
+		if (_refreshInFlightGeneration != _refreshGeneration) {
+			_refreshPending = YES;
+		}
 		return;
 	}
 
@@ -133,11 +148,24 @@ enum sections_batteryinfo {
 		[self.refreshControl beginRefreshing];
 	}
 	_refreshInFlight = YES;
+	NSUInteger generation = _refreshGeneration;
+	_refreshInFlightGeneration = generation;
 	dispatch_async(_refreshQueue, ^{
 		battery_info_update(&self->batteryInfo);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			self->_refreshInFlight = NO;
+			if (generation != self->_refreshGeneration || ![self _canScheduleRefresh]) {
+				BOOL shouldRestart = self->_refreshPending && [self _canScheduleRefresh] &&
+					!(self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking);
+				self->_refreshPending = NO;
+				[self.refreshControl endRefreshing];
+				if (shouldRestart) {
+					[self _startQueuedRefresh];
+				}
+				return;
+			}
+
 			if ([self isViewLoaded] && self.view.window) {
 				[self.tableView reloadData];
 			}
@@ -153,6 +181,20 @@ enum sections_batteryinfo {
 	});
 }
 
+- (void)applicationDidEnterBackground:(NSNotification *)notification {
+	_refreshSuspended = YES;
+	_refreshPending = NO;
+	_refreshGeneration++;
+	if (!_refreshInFlight) {
+		[self.refreshControl endRefreshing];
+	}
+}
+
+- (void)applicationWillEnterForeground:(NSNotification *)notification {
+	_refreshSuspended = NO;
+	_refreshGeneration++;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 	
@@ -164,6 +206,10 @@ enum sections_batteryinfo {
     UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
     [refreshControl addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
     self.refreshControl = refreshControl;
+
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	[center addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+	[center addObserver:self selector:@selector(applicationWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
 
     // Copyright text
     UILabel *copyright;
@@ -254,6 +300,9 @@ enum sections_batteryinfo {
 	_refreshQueue = dispatch_queue_create("com.torrekie.Battman.BIVCRefresh", DISPATCH_QUEUE_SERIAL);
 	_refreshInFlight = NO;
 	_refreshPending = NO;
+	_refreshSuspended = [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+	_refreshGeneration = 0;
+	_refreshInFlightGeneration = 0;
 
 	if (@available(iOS 13.0, *))
 		return [super initWithStyle:UITableViewStyleInsetGrouped];
@@ -485,6 +534,12 @@ enum sections_batteryinfo {
 	}
 
 	DBGLOG(@"BIVC: updateTableView");
+	if (![self _canScheduleRefresh]) {
+		_refreshPending = NO;
+		[self.refreshControl endRefreshing];
+		return;
+	}
+
 	if (self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking) {
 		_refreshPending = YES;
 		return;
@@ -507,6 +562,7 @@ enum sections_batteryinfo {
 }
 
 - (void)dealloc {
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	for(struct battery_info_section *sect=batteryInfo;sect;) {
 		struct battery_info_section *next=sect->next;
 		for (struct battery_info_node *i = sect->data; i->name; i++) {

@@ -60,6 +60,9 @@
 	dispatch_queue_t refreshQueue;
 	BOOL        refreshInFlight;
 	BOOL        refreshPending;
+	BOOL        refreshSuspended;
+	NSUInteger  refreshGeneration;
+	NSUInteger  refreshInFlightGeneration;
 	BDVCBatteryInfoTableSnapshot *batteryInfoSnapshot;
 }
 @end
@@ -367,6 +370,10 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 @implementation BatteryDetailsViewController
 
+- (BOOL)_canScheduleRefresh {
+	return !refreshSuspended && [UIApplication sharedApplication].applicationState != UIApplicationStateBackground;
+}
+
 - (NSString *)title {
 	return _("Internal Battery");
 }
@@ -384,8 +391,16 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 }
 
 - (void)_startQueuedRefresh {
+	if (![self _canScheduleRefresh]) {
+		refreshPending = NO;
+		[self.refreshControl endRefreshing];
+		return;
+	}
+
 	if (refreshInFlight) {
-		refreshPending = YES;
+		if (refreshInFlightGeneration != refreshGeneration) {
+			refreshPending = YES;
+		}
 		return;
 	}
 
@@ -393,6 +408,8 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		[self.refreshControl beginRefreshing];
 	}
 	refreshInFlight = YES;
+	NSUInteger generation = refreshGeneration;
+	refreshInFlightGeneration = generation;
 	dispatch_async(refreshQueue, ^{
 		battery_info_update(self->batteryInfo);
 
@@ -436,6 +453,20 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		BDVCBatteryInfoTableSnapshot *newSnapshot = BDVCCopyBatteryInfoSnapshot(self->batteryInfo);
 		dispatch_async(dispatch_get_main_queue(), ^{
 			self->refreshInFlight = NO;
+			if (generation != self->refreshGeneration || ![self _canScheduleRefresh]) {
+				BOOL shouldRestart = self->refreshPending && [self _canScheduleRefresh] &&
+					!(self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking);
+				self->refreshPending = NO;
+				if (new_hvc_owned && new_hvc_menu) {
+					free(new_hvc_menu);
+				}
+				[self.refreshControl endRefreshing];
+				if (shouldRestart) {
+					[self _startQueuedRefresh];
+				}
+				return;
+			}
+
 			self->batteryInfoSnapshot = newSnapshot;
 
 			if (self->hvc_menu_owned && self->hvc_menu && self->hvc_menu != new_hvc_menu) {
@@ -489,11 +520,29 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 #endif
 }
 
+- (void)applicationDidEnterBackground:(NSNotification *)notification {
+	refreshSuspended = YES;
+	refreshPending = NO;
+	refreshGeneration++;
+	if (!refreshInFlight) {
+		[self.refreshControl endRefreshing];
+	}
+}
+
+- (void)applicationWillEnterForeground:(NSNotification *)notification {
+	refreshSuspended = NO;
+	refreshGeneration++;
+}
+
 - (void)viewDidLoad {
 	[super viewDidLoad];
 	UIRefreshControl *puller = [[UIRefreshControl alloc] init];
 	[puller addTarget:self action:@selector(updateTableView) forControlEvents:UIControlEventValueChanged];
 	self.refreshControl = puller;
+
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	[center addObserver:self selector:@selector(applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+	[center addObserver:self selector:@selector(applicationWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
 
 	// FIXME: use preferred_language() for "Copy"
 	[[UIMenuController sharedMenuController] update];
@@ -539,6 +588,9 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	}
 
 	self.tableView.allowsSelection = YES;
+	refreshSuspended = [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+	refreshGeneration = 0;
+	refreshInFlightGeneration = 0;
 	batteryInfo = bi;
 	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(bi);
 	refreshQueue = dispatch_queue_create("com.torrekie.Battman.BDVCRefresh", DISPATCH_QUEUE_SERIAL);
@@ -557,6 +609,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 }
 
 - (void)dealloc {
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	if (hvc_menu_owned && hvc_menu) {
 		free(hvc_menu);
 		hvc_menu = NULL;
@@ -572,6 +625,12 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	}
 
 	DBGLOG(@"BDVC: updateTableView");
+	if (![self _canScheduleRefresh]) {
+		refreshPending = NO;
+		[self.refreshControl endRefreshing];
+		return;
+	}
+
 	if (self.tableView.dragging || self.tableView.decelerating || self.tableView.tracking) {
 		refreshPending = YES;
 		return;
