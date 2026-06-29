@@ -22,9 +22,19 @@
 #include "../common.h"
 #include "../intlextern.h"
 
+#if __has_include(<spawn_private.h>)
+#include <spawn_private.h>
+#else
 extern int posix_spawnattr_set_persona_np(const posix_spawnattr_t *__restrict, uid_t, uint32_t);
 extern int posix_spawnattr_set_persona_uid_np(const posix_spawnattr_t *__restrict, uid_t);
-extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t *__restrict, uid_t);
+extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t *__restrict, gid_t);
+#endif
+
+#ifndef POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE
+#define POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE 0x1
+#endif
+
+#define BATTMAN_ROOT_PERSONA_ID 99
 
 extern char **environ;
 
@@ -251,40 +261,92 @@ void battman_run_worker(const char *pipedata) {
 static void battman_spawn_worker() {
 	// posix_spawn_file_actions_t file_actions;
 	// posix_spawn_file_actions_init(&file_actions);
-	int outfdg[2];
-	pipe(outfdg);
-	pipe(worker_pipefd);
+	int outfdg[2] = {-1, -1};
+	worker_pipefd[0] = -1;
+	worker_pipefd[1] = -1;
+	posix_spawnattr_t spawnattr = NULL;
+	int spawnattr_initialized = 0;
+	int err = 0;
+	const char *failed_step = NULL;
+
+	if (pipe(outfdg) != 0) {
+		err = errno;
+		failed_step = "pipe";
+		goto fail;
+	}
+	if (pipe(worker_pipefd) != 0) {
+		err = errno;
+		failed_step = "pipe";
+		goto fail;
+	}
 	int tmp = worker_pipefd[1];
 	worker_pipefd[1] = outfdg[1];
 	outfdg[1] = tmp;
 	// posix_spawn_file_actions_adddup2(&file_actions,worker_pipefd[0],0);
 	// posix_spawn_file_actions_adddup2(&file_actions,worker_pipefd[1],2);
-	posix_spawnattr_t spawnattr = NULL;
-	posix_spawnattr_init(&spawnattr);
-	posix_spawnattr_set_persona_np(&spawnattr, 99, 1);
-	posix_spawnattr_set_persona_uid_np(&spawnattr, 0);
-	posix_spawnattr_set_persona_gid_np(&spawnattr, 0);
+	err = posix_spawnattr_init(&spawnattr);
+	if (err != 0) {
+		failed_step = "posix_spawnattr_init";
+		goto fail;
+	}
+	spawnattr_initialized = 1;
+
+#define BATTMAN_SET_SPAWN_ATTR(step, expr) \
+	do { \
+		err = (expr); \
+		if (err != 0) { \
+			failed_step = (step); \
+			goto fail; \
+		} \
+	} while (0)
+
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_np",
+	    posix_spawnattr_set_persona_np(&spawnattr, BATTMAN_ROOT_PERSONA_ID, POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_uid_np",
+	    posix_spawnattr_set_persona_uid_np(&spawnattr, 0));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_gid_np",
+	    posix_spawnattr_set_persona_gid_np(&spawnattr, 0));
+
+#undef BATTMAN_SET_SPAWN_ATTR
+
 	char executable[1024];
 	uint32_t size = 1024;
-	_NSGetExecutablePath(executable, &size);
+	if (_NSGetExecutablePath(executable, &size) != 0) {
+		err = ENAMETOOLONG;
+		failed_step = "_NSGetExecutablePath";
+		goto fail;
+	}
 	char pipedata[16];
 	sprintf(pipedata, "%lld", *(int64_t *)outfdg);
 	char *newargv[] = {executable, "--worker", pipedata, NULL};
-	int err = posix_spawn(&worker_pid, executable, NULL, &spawnattr, (char **)newargv, environ);
+	err = posix_spawn(&worker_pid, executable, NULL, &spawnattr, (char **)newargv, environ);
 	if (err != 0) {
-		NSLog(CFSTR("POSIX spawn failed: %s"), strerror(err));
-		char *str = malloc(1024);
-		sprintf(str, "%s: %s", _C("Helper failed to launch"), strerror(err));
-		//if (is_carbon())
-		//	show_alert(L_FAILED, str, L_OK);
-		free(str);
-		return;
+		failed_step = "posix_spawn";
+		goto fail;
 	}
 	close(outfdg[0]);
 	close(outfdg[1]);
 	posix_spawnattr_destroy(&spawnattr);
 	// posix_spawn_file_actions_destroy(&file_actions);
 	return;
+
+fail:
+	worker_pid = 0;
+	NSLog(CFSTR("Worker: %s failed: %s"), failed_step ? failed_step : "spawn setup", strerror(err));
+	if (outfdg[0] != -1)
+		close(outfdg[0]);
+	if (outfdg[1] != -1)
+		close(outfdg[1]);
+	if (worker_pipefd[0] != -1) {
+		close(worker_pipefd[0]);
+		worker_pipefd[0] = -1;
+	}
+	if (worker_pipefd[1] != -1) {
+		close(worker_pipefd[1]);
+		worker_pipefd[1] = -1;
+	}
+	if (spawnattr_initialized)
+		posix_spawnattr_destroy(&spawnattr);
 }
 
 void worker_test(void) {

@@ -34,10 +34,27 @@
 #else
 extern int posix_spawnattr_set_persona_np(const posix_spawnattr_t *__restrict, uid_t, uint32_t);
 extern int posix_spawnattr_set_persona_uid_np(const posix_spawnattr_t *__restrict, uid_t);
-extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t *__restrict, uid_t);
+extern int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t *__restrict, gid_t);
 extern int posix_spawnattr_setprocesstype_np(posix_spawnattr_t *, int);
-extern int posix_spawnattr_setjetsam_ext(posix_spawnattr_t *, int, int, int, int);
+extern int posix_spawnattr_setjetsam_ext(posix_spawnattr_t *, short, int, int, int);
 #endif
+
+#ifndef POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE
+#define POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE 0x1
+#endif
+
+#ifndef POSIX_SPAWN_PROC_TYPE_DAEMON_STANDARD
+#define POSIX_SPAWN_PROC_TYPE_DAEMON_STANDARD 0x00000300
+#endif
+
+#ifndef POSIX_SPAWN_SETSID
+#define POSIX_SPAWN_SETSID 0x0400
+#endif
+
+#define BATTMAN_ROOT_PERSONA_ID 99
+#define BATTMAN_JETSAM_PRIORITY_IMPORTANT_OLD 18
+#define BATTMAN_JETSAM_PRIORITY_IMPORTANT_NEW 180
+#define BATTMAN_DAEMON_MEMLIMIT_MIB 80
 
 extern char **environ;
 
@@ -57,6 +74,13 @@ static char daemon_settings_path[1024];
 static int8_t last_charging_port = -1; // Track last known charging port to detect transitions
 
 static void update_power_level(int);
+
+static int battman_daemon_jetsam_priority(void) {
+	// XNU 8020/iOS 15 uses the old compact band shape; newer kernels use the scaled shape.
+	if (__builtin_available(iOS 16.0, *))
+		return BATTMAN_JETSAM_PRIORITY_IMPORTANT_NEW;
+	return BATTMAN_JETSAM_PRIORITY_IMPORTANT_OLD;
+}
 
 static void cleanup_daemon_files(void) {
 	char cleanup_path[1024];
@@ -395,36 +419,65 @@ void daemon_main(void) {
 }
 
 int battman_run_daemon(void) {
-	posix_spawnattr_t sattr;
-	posix_spawnattr_init(&sattr);
-	posix_spawnattr_set_persona_np(&sattr, 99, 1); // POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE
-	posix_spawnattr_set_persona_uid_np(&sattr, 0);
-	posix_spawnattr_set_persona_gid_np(&sattr, 0);
-	posix_spawnattr_setprocesstype_np(&sattr, 0x300); // daemon standard
-	// JETSAM_PRIORITY_IMPORTANT(18) or JETSAM_PRIORITY_BACKGROUND(3)?
-	// FIXME: Consider add a toggle for it
-	int priority = 18;
-	if (__builtin_available(iOS 16.0, *)) {
-		priority = 180;
+	posix_spawnattr_t sattr = NULL;
+	pid_t dpid = 0;
+	int err;
+	const char *failed_step = NULL;
+
+	err = posix_spawnattr_init(&sattr);
+	if (err != 0) {
+		failed_step = "posix_spawnattr_init";
+		goto out;
 	}
+
+#define BATTMAN_SET_SPAWN_ATTR(step, expr) \
+	do { \
+		err = (expr); \
+		if (err != 0) { \
+			failed_step = (step); \
+			goto out; \
+		} \
+	} while (0)
+
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_np",
+	    posix_spawnattr_set_persona_np(&sattr, BATTMAN_ROOT_PERSONA_ID, POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_uid_np",
+	    posix_spawnattr_set_persona_uid_np(&sattr, 0));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_set_persona_gid_np",
+	    posix_spawnattr_set_persona_gid_np(&sattr, 0));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_setprocesstype_np",
+	    posix_spawnattr_setprocesstype_np(&sattr, POSIX_SPAWN_PROC_TYPE_DAEMON_STANDARD));
 	// XXX: Consider force to UI role, since this was not a real launchdaemon
 	// posix_spawnattr_set_darwin_role_np(&attr, PRIO_DARWIN_ROLE_UI);
 
-	// Limit 80 MiB
-	posix_spawnattr_setjetsam_ext(&sattr, 0, priority, 80, 80);
-#ifndef POSIX_SPAWN_SETSID
-#define POSIX_SPAWN_SETSID 0x400
-#endif
-	posix_spawnattr_setflags(&sattr, POSIX_SPAWN_SETSID);
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_setjetsam_ext",
+	    posix_spawnattr_setjetsam_ext(&sattr, 0, battman_daemon_jetsam_priority(),
+	    BATTMAN_DAEMON_MEMLIMIT_MIB, BATTMAN_DAEMON_MEMLIMIT_MIB));
+	BATTMAN_SET_SPAWN_ATTR("posix_spawnattr_setflags",
+	    posix_spawnattr_setflags(&sattr, POSIX_SPAWN_SETSID));
+
+#undef BATTMAN_SET_SPAWN_ATTR
+
 	char executable[1024];
 	uint32_t size = 1024;
-	_NSGetExecutablePath(executable, &size);
-	char *newargv[] = {executable, "--daemon", NULL};
-	pid_t dpid;
-	int err = posix_spawn(&dpid, executable, NULL, &sattr, (char **)newargv, environ);
-	if (err != 0) {
-		show_alert(L_ERR, strerror(err), L_OK);
+	if (_NSGetExecutablePath(executable, &size) != 0) {
+		err = ENAMETOOLONG;
+		failed_step = "_NSGetExecutablePath";
+		goto out;
 	}
-	posix_spawnattr_destroy(&sattr);
+	char *newargv[] = {executable, "--daemon", NULL};
+	err = posix_spawn(&dpid, executable, NULL, &sattr, (char **)newargv, environ);
+	if (err != 0) {
+		failed_step = "posix_spawn";
+	}
+
+out:
+	if (err != 0) {
+		NSLog(CFSTR("Daemon: %s failed: %s"), failed_step ? failed_step : "spawn setup", strerror(err));
+		show_alert(L_ERR, strerror(err), L_OK);
+		dpid = 0;
+	}
+	if (sattr != NULL)
+		posix_spawnattr_destroy(&sattr);
 	return dpid;
 }
