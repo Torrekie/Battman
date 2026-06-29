@@ -549,8 +549,6 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	hvc_menu_size = 0;
 	hvc_index = -1;
 	hvc_soft = false;
-	for (int i = 0; i < BI_MAX_SECTION_NUM; i++)
-		pendingLoadOffsets[i] = malloc(BI_APPROX_ROWS);
 	if (!hasSMC)
 		return self;
 	self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:_("Advanced") style:UIBarButtonItemStylePlain target:self action:@selector(showAdvanced)];
@@ -559,9 +557,6 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 }
 
 - (void)dealloc {
-	//int section_num = battery_info_get_section_count(*batteryInfo);
-	for (int i = 0; i < BI_MAX_SECTION_NUM; i++)
-		free(pendingLoadOffsets[i]);
 	if (hvc_menu_owned && hvc_menu) {
 		free(hvc_menu);
 		hvc_menu = NULL;
