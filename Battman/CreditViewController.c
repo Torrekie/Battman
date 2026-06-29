@@ -3,6 +3,38 @@
 
 typedef UIViewController CreditVC;
 
+#ifndef nitems
+#define nitems(x) (sizeof((x)) / sizeof((x)[0]))
+#endif
+
+typedef enum {
+	CREDIT_SECTION_BATTMAN,
+	CREDIT_SECTION_LOCALIZATIONS,
+	CREDIT_SECTION_COUNT,
+} CreditSection;
+
+typedef struct {
+	CFStringRef name;
+	const char *url;
+} CreditContributor;
+
+typedef struct {
+	CFStringRef name;
+	CFStringRef detail;
+	const char *url;
+} CreditLocalizationContributor;
+
+static const CreditContributor battman_contributors[] = {
+	{ CFSTR("Torrekie"), "https://github.com/Torrekie" },
+	{ CFSTR("Ruphane"), "https://github.com/LNSSPsd" },
+	{ CFSTR("Lessica"), "https://github.com/Lessica" },
+};
+
+static const CreditLocalizationContributor localization_contributors[] = {
+	{ CFSTR("therealhoodboy"), CFSTR("Deutsch (de)"), "https://github.com/therealhoodboy" },
+	{ CFSTR("AD-iOS"), CFSTR("繁體中文 (zh_TW)"), "https://github.com/AD-iOS" },
+};
+
 CFStringRef CreditViewControllerGetTitle(void) {
     return _("Credit");
 }
@@ -15,20 +47,20 @@ CreditVC *CreditViewControllerInit(CreditVC *self) {
 }
 
 long CreditViewControllerNumRows(CreditVC *self, void *data, UITableView *tv, NSInteger sect) {
-	if (sect == 0)
-		return 2;
-	if (sect == 1)
-		return 1;
+	if (sect == CREDIT_SECTION_BATTMAN)
+		return nitems(battman_contributors);
+	if (sect == CREDIT_SECTION_LOCALIZATIONS)
+		return nitems(localization_contributors);
 	return 0;
 }
 
 long CreditViewControllerNumSects(CreditVC *self, void *data, UITableView *tv) {
-	return 2;
+	return CREDIT_SECTION_COUNT;
 }
 
 CFStringRef CreditViewControllerTableTitle(CreditVC *self, void *data, UITableView *tv, NSInteger sect) {
-	if (sect == 0) return _("Battman Credit");
-	if (sect == 1) return _("Localizations");
+	if (sect == CREDIT_SECTION_BATTMAN) return _("Battman Credit");
+	if (sect == CREDIT_SECTION_LOCALIZATIONS) return _("Localizations");
 	return nil;
 }
 
@@ -39,16 +71,15 @@ CFStringRef CVGetRef1(id self, SEL sel) {
 	return _(sel_getName(sel));
 }
 
-static const void *contributors[] = {
-	CFSTR("therealhoodboy"), CFSTR("Deutsch (de)"), "https://github.com/therealhoodboy",
-};
-
 void CreditViewControllerDidSelectRow(CreditVC *self, void *data, UITableView *tv, NSIndexPath *indexPath) {
-	if (NSIndexPathGetSection(indexPath) == 0) {
-		open_url(NSIndexPathGetRow(indexPath) ? "https://github.com/LNSSPsd" : "https://github.com/Torrekie");
+	NSInteger section = NSIndexPathGetSection(indexPath);
+	NSInteger row     = NSIndexPathGetRow(indexPath);
+
+	if (section == CREDIT_SECTION_BATTMAN) {
+		open_url(battman_contributors[row].url);
 	}
-	if (NSIndexPathGetSection(indexPath) == 1) {
-		open_url(contributors[NSIndexPathGetRow(indexPath) * 3 + 2]);
+	if (section == CREDIT_SECTION_LOCALIZATIONS) {
+		open_url(localization_contributors[row].url);
 	}
 
 	UITableViewDeselectRow(tv, indexPath, 1);
@@ -56,18 +87,21 @@ void CreditViewControllerDidSelectRow(CreditVC *self, void *data, UITableView *t
 
 UITableViewCell *CreditViewCellForRow(CreditVC *self, void *data, UITableView *tv, NSIndexPath *indexPath) {
 	UITableViewCell *cell;
-	if (NSIndexPathGetSection(indexPath) == 0) {
+	NSInteger        section = NSIndexPathGetSection(indexPath);
+	NSInteger        row     = NSIndexPathGetRow(indexPath);
+
+	if (section == CREDIT_SECTION_BATTMAN) {
 		cell           = NSObjectNew(UITableViewCell);
 		UILabel *label = UITableViewCellGetTextLabel(cell);
-		UILabelSetText(label, NSIndexPathGetRow(indexPath) ? CFSTR("Ruphane") : CFSTR("Torrekie"));
+		UILabelSetText(label, battman_contributors[row].name);
 		UILabelSetTextColor(label, UIColorLinkColor());
 	}
-	if (NSIndexPathGetSection(indexPath) == 1) {
+	if (section == CREDIT_SECTION_LOCALIZATIONS) {
 		cell           = UITableViewCellInit(NSObjectAllocate(UITableViewCell), UITableViewCellStyleSubtitle, nil);
 		UILabel *label = UITableViewCellGetTextLabel(cell);
 		UILabel *sub   = UITableViewCellGetDetailTextLabel(cell);
-		UILabelSetText(label, contributors[NSIndexPathGetRow(indexPath) * 3]);
-		UILabelSetText(sub, contributors[NSIndexPathGetRow(indexPath) * 3 + 1]);
+		UILabelSetText(label, localization_contributors[row].name);
+		UILabelSetText(sub, localization_contributors[row].detail);
 		UILabelSetTextColor(label, UIColorLinkColor());
 	}
 	return (UITableViewCell *)CFAutorelease(cell);
