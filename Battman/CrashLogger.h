@@ -9,13 +9,24 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_ENUM(NSInteger, CrashLoggerProcessMode) {
+	CrashLoggerProcessModeApp = 0,
+	CrashLoggerProcessModeDaemon,
+	CrashLoggerProcessModeWorker,
+	CrashLoggerProcessModeUnknown,
+};
+
 @interface CrashLogger : NSObject
+
+/// Configure crash logging destination for the current process mode.
+/// This must be called before installing handlers.
++ (void)configureForProcessMode:(CrashLoggerProcessMode)mode;
 
 /// Install crash handlers (NSException and signal handlers)
 + (void)installCrashHandlers;
 
 /// Get path to crash log file
-/// Log files are stored at: battman_config_dir()/CrashLogs/BattmanCrash_YYYY_MM_DD_HHMMSS.log
+/// Log files are stored under a crash-specific directory and include process mode in filename.
 /// Each app launch creates a new timestamped log file
 + (NSString *)crashLogPath;
 
