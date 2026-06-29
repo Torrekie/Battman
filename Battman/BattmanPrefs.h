@@ -96,6 +96,7 @@ __END_DECLS
 
 #define BattmanPrefsVersion 1
 #define kBattmanPrefs_Version "Battman_Conf_Version"
+#define kBattmanPrefs_POWERLOG_SYSTEMGROUP_PATH "POWERLOG_SYSTEMGROUP_PATH"
 
 typedef enum {
 	P_SECT_LANGUAGE,
