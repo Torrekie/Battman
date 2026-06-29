@@ -164,6 +164,7 @@ static void write_signal_name(int fd, int sig) {
 		signal(SIGBUS, signalHandler);
 		signal(SIGILL, signalHandler);
 		signal(SIGFPE, signalHandler);
+		signal(SIGTRAP, signalHandler);
 	});
 }
 
