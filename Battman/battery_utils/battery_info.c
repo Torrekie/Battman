@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #include <CoreFoundation/CFArray.h>
@@ -27,6 +28,20 @@ const char *bin_unit_strings[] = {
 	_C("℃"), _C("%"), _C("mA"), _C("mAh"), _C("mV"), _C("mW"), _C("min"),
 	_C("Hr") // Do not modify, thats how Texas Instruments documented
 };
+
+static pthread_rwlock_t gBatteryInfoLock = PTHREAD_RWLOCK_INITIALIZER;
+
+void battery_info_read_lock(void) {
+	pthread_rwlock_rdlock(&gBatteryInfoLock);
+}
+
+void battery_info_write_lock(void) {
+	pthread_rwlock_wrlock(&gBatteryInfoLock);
+}
+
+void battery_info_unlock(void) {
+	pthread_rwlock_unlock(&gBatteryInfoLock);
+}
 
 struct battery_info_node main_battery_template[] = {
 	{ _C("Gas Gauge (Basic)"), _C("All Gas Gauge metrics are dynamically retrieved from the onboard sensor array in real time. Should anomalies be detected in specific readings, this may indicate the presence of unauthorized components or require diagnostics through Apple Authorised Service Provider."), DEFINE_SECTION(10000) },
@@ -359,10 +374,10 @@ char *bi_node_get_string(struct battery_info_node *node) {
 }
 
 void bi_node_free_string(struct battery_info_node *node) {
-	if (!node->content)
+	uint32_t old = __atomic_exchange_n(&node->content, 0, __ATOMIC_ACQ_REL);
+	if (!old)
 		return;
-	vm_deallocate(mach_task_self(), (vm_address_t)bi_node_get_string(node), 256);
-	node->content = 0;
+	vm_deallocate(mach_task_self(), (vm_address_t)(((uint64_t)old)<<3), 256);
 }
 
 static int _impl_set_item_find_item(struct battery_info_node **head, const char *desc) {
@@ -444,29 +459,25 @@ void battery_info_init(struct battery_info_section **ptr) {
 void battery_info_insert_section(struct battery_info_section *sect, struct battery_info_section **ptr) {
 	if (!ptr)
 		return;
-	if (!*ptr) {
-		*ptr           = sect;
-		sect->next     = NULL;
+	struct battery_info_section *head = __atomic_load_n(ptr, __ATOMIC_ACQUIRE);
+	if (!head || SECTION_PRIORITY(sect) > SECTION_PRIORITY(head)) {
+		sect->next = head;
+		if (head)
+			head->self_ref = &sect->next;
 		sect->self_ref = ptr;
+		__atomic_store_n(ptr, sect, __ATOMIC_RELEASE);
 		return;
 	}
-	if (SECTION_PRIORITY(sect) <= SECTION_PRIORITY(*ptr)) {
-		for (;; ptr = &(*ptr)->next) {
-			if (!*ptr || SECTION_PRIORITY(sect) > SECTION_PRIORITY(*ptr)) {
-				sect->next     = *ptr;
-				if(*ptr)
-					sect->next->self_ref=&sect->next;
-				*ptr           = sect;
-				sect->self_ref = ptr;
-				return;
-			}
+	for (;; ptr = &(*ptr)->next) {
+		struct battery_info_section *cur = __atomic_load_n(ptr, __ATOMIC_ACQUIRE);
+		if (!cur || SECTION_PRIORITY(sect) > SECTION_PRIORITY(cur)) {
+			sect->next = cur;
+			if (cur)
+				cur->self_ref = &sect->next;
+			sect->self_ref = ptr;
+			__atomic_store_n(ptr, sect, __ATOMIC_RELEASE);
+			return;
 		}
-	} else {
-		sect->next     = *ptr;
-		if(*ptr)
-			sect->next->self_ref=&sect->next;
-		*ptr           = sect;
-		sect->self_ref = ptr;
 	}
 }
 
@@ -474,13 +485,11 @@ int battery_info_remove_section(struct battery_info_section *sect) {
 	if (sect->self_ref) {
 		if(!__atomic_compare_exchange(sect->self_ref,&sect,&sect->next,true,__ATOMIC_ACQUIRE,__ATOMIC_RELAXED))
 			return 0;
-		//*(sect->self_ref) = sect->next;
-		if (sect->next) {
-			sect->next->self_ref = sect->self_ref;
-		}
-		sect->self_ref=NULL;
+		if(sect->next)
+			__atomic_store_n(&sect->next->self_ref,sect->self_ref,__ATOMIC_RELEASE);
+		__atomic_store_n(&sect->self_ref,NULL,__ATOMIC_RELEASE);
 	}
-	sect->next=NULL;
+	__atomic_store_n(&sect->next,NULL,__ATOMIC_RELAXED);
 	return 1;
 }
 
@@ -532,6 +541,7 @@ void battery_info_poll(struct battery_info_section **head) {
 }
 
 void battery_info_update(struct battery_info_section **head) {
+	battery_info_write_lock();
 	battery_info_poll(head);
 	int retry=1;
 	while(*head&&retry) {
@@ -553,6 +563,7 @@ void battery_info_update(struct battery_info_section **head) {
 			}
 		}
 	}
+	battery_info_unlock();
 }
 
 struct battery_info_section *battery_info_get_section(struct battery_info_section *head, long n) {

@@ -46,6 +46,7 @@
 
 - (void)updateBatteryInfo {
 	NSString *final_str = @"";
+	battery_info_read_lock();
 	// TODO: Arabian? We need Arabian hackers to fix this code
 	for (struct battery_info_section *sect = *_batteryInfo; sect; sect = sect->next) {
 		if (sect->context->custom_identifier != BI_GAS_GAUGE_SECTION_ID)
@@ -79,6 +80,7 @@
 			// Only show in details if is string
 		}
 	}
+	battery_info_unlock();
 	if (!final_str.length)
 		return;
 	_batteryLabel.text = [final_str substringFromIndex:1];
