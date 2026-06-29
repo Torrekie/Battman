@@ -559,13 +559,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
-		68B68F5F2E20F47600431E14 /* CopyFiles */ = {
+		68B68F5F2E20F47600431E14 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -14598,7 +14599,7 @@
 			buildPhases = (
 				68B68F5D2E20F47600431E14 /* Sources */,
 				68B68F5E2E20F47600431E14 /* Frameworks */,
-				68B68F5F2E20F47600431E14 /* CopyFiles */,
+				68B68F5F2E20F47600431E14 /* Copy Files */,
 			);
 			buildRules = (
 			);
@@ -14776,7 +14777,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n";
+			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=${COMMIT_HASH:-`git rev-parse --short HEAD`}\nINFO_PLIST=\"${CODESIGNING_FOLDER_PATH}/Info.plist\"\nif [ -f \"${INFO_PLIST}\" ]; then\n  /usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${INFO_PLIST}\" || /usr/libexec/PlistBuddy -c \"Add :GIT_COMMIT_HASH string $COMMIT_HASH\" \"${INFO_PLIST}\"\nfi\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n";
 		};
 		6838BF6D2DB8D363007EB66C /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14797,7 +14798,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
 		};
 		684114832E5323E2001B76B6 /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14818,7 +14819,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
 		};
 		684114C22E5323E2001B76B6 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14857,7 +14858,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
 		};
 		684115182E57BDE7001B76B6 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14896,7 +14897,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
 		};
 		684972B92EACB71B00C9C58A /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14926,6 +14927,8 @@
 			inputPaths = (
 				"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/zh_CN.po",
 				"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/en.po",
+				"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/zh_TW.po",
+				"${PROJECT_DIR}/${PROJECT_NAME}/Localizations/de.po",
 			);
 			name = "Run Script";
 			outputFileListPaths = (
@@ -14933,10 +14936,12 @@
 			outputPaths = (
 				"${PROJECT_DIR}/${PROJECT_NAME}/locales/en/LC_MESSAGES/battman.mo",
 				"${PROJECT_DIR}/${PROJECT_NAME}/locales/zh_CN/LC_MESSAGES/battman.mo",
+				"${PROJECT_DIR}/${PROJECT_NAME}/locales/zh_TW/LC_MESSAGES/battman.mo",
+				"${PROJECT_DIR}/${PROJECT_NAME}/locales/de/LC_MESSAGES/battman.mo",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nLOC_TGT=\"${PROJECT_DIR}/${PROJECT_NAME}/locales\"\nNAME_LOW=\"$(echo ${PROJECT_NAME} | tr '[:upper:]' '[:lower:]')\"\n\nfor locs in $LOCS; do mkdir -p \"${LOC_TGT}/${locs}/LC_MESSAGES/\" && msgfmt \"${LOC_BASE}/$locs.po\" -o \"${LOC_TGT}/${locs}/LC_MESSAGES/${NAME_LOW}.mo\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN zh_TW en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nLOC_TGT=\"${PROJECT_DIR}/${PROJECT_NAME}/locales\"\nNAME_LOW=\"$(echo ${PROJECT_NAME} | tr '[:upper:]' '[:lower:]')\"\n\nfor locs in $LOCS; do mkdir -p \"${LOC_TGT}/${locs}/LC_MESSAGES/\" && msgfmt \"${LOC_BASE}/$locs.po\" -o \"${LOC_TGT}/${locs}/LC_MESSAGES/${NAME_LOW}.mo\"; done\n";
 		};
 		6877432A2D4CACCC00375A2C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14954,7 +14959,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge --no-location -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN zh_TW en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po.step\" --locale=\"$locs\" && msgmerge --no-location -N \"${LOC_BASE}/$locs.po\" \"${LOC_BASE}/$locs.po.step\" > \"${LOC_BASE}/$locs.po.new\" && mv \"${LOC_BASE}/$locs.po.new\" \"${LOC_BASE}/$locs.po\" && rm \"${LOC_BASE}/$locs.po.step\"; done\n";
 		};
 		68DCA5B32D40EC61004D0104 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14990,7 +14995,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN en de vi\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po\" --locale=\"$locs\" --no-translator; done\n";
+			shellScript = "set -e -x\n\nexport PATH=\"/opt/homebrew/bin:$PATH\"\n\nLOCS=\"zh_CN zh_TW en de\"\nLOC_BASE=\"${PROJECT_DIR}/${PROJECT_NAME}/Localizations\"\nPOT_FILE=\"${LOC_BASE}/base.pot\"\n\nfor locs in $LOCS; do msginit --input=\"${POT_FILE}\" --output-file=\"${LOC_BASE}/$locs.po\" --locale=\"$locs\" --no-translator; done\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -172,6 +172,7 @@ char *preferred_language(void) {
 
 		{ "zh-Hant",    "zh_TW"},
 		{ "zh-Hant-HK", "zh_HK"},
+		{ "zh-Hant-TW", "zh_TW"},
 	};
 	/* Convert script names (ISO 15924) to Unix conventions.
 	   See https://www.unicode.org/iso15924/iso15924-codes.html  */
