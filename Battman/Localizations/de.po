@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.3.3\n"
+"Project-Id-Version: Battman 1.0.4\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-10-11 17:32+0800\n"
@@ -2224,3 +2224,12 @@ msgid ""
 msgstr ""
 "Wenn Sie dies deaktivieren, wird das Display nicht abgedunkelt und die "
 "Akkulaufzeit kann sich verkürzen."
+
+msgid "Powerlog database is unavailable."
+msgstr "Powerlog-Datenbank ist nicht verfügbar."
+
+msgid "Unable to export powerlog database."
+msgstr "Powerlog-Datenbank konnte nicht exportiert werden."
+
+msgid "Export Powerlog"
+msgstr "Powerlog exportieren"

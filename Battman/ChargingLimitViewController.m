@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #import "ObjCExt/UIColor+compat.h"
+#import <objc/runtime.h>
 
 typedef enum {
 	CL_SECTION_GRAPH,
@@ -43,6 +44,175 @@ typedef enum {
 	CL_MAIN_DAEMONSWITCH,
 	CL_MAIN_COUNT,
 } CLRowMain;
+
+/*
+ * Adapted from UIMenuItem-CXAImageSupport's marker-title + UILabel drawing
+ * approach. Keep this local to the powerlog export menu instead of swizzling a
+ * general UIMenuItem API surface for the whole app.
+ */
+static NSString * const CLPowerlogMenuImageMarker = @"\uFEFF\u200B";
+static NSMutableDictionary<NSString *, UIImage *> *CLPowerlogMenuImageTitles;
+static void (*CLOrigMenuImageDrawTextInRect)(UILabel *, SEL, CGRect);
+static void (*CLOrigMenuImageSetFrame)(UILabel *, SEL, CGRect);
+static CGSize (*CLOrigMenuImageSizeWithFont)(NSString *, SEL, UIFont *);
+static CGSize (*CLOrigMenuImageSizeWithAttributes)(NSString *, SEL, NSDictionary *);
+
+static NSMutableDictionary<NSString *, UIImage *> *CLPowerlogMenuImageTitleMap(void) {
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		CLPowerlogMenuImageTitles = [NSMutableDictionary dictionary];
+	});
+	return CLPowerlogMenuImageTitles;
+}
+
+static BOOL CLPowerlogMenuTitleHasImageMarker(NSString *title) {
+	return [title hasPrefix:CLPowerlogMenuImageMarker] && [title hasSuffix:CLPowerlogMenuImageMarker];
+}
+
+static UIImage *CLPowerlogMenuImageForTitle(NSString *title) {
+	if (!CLPowerlogMenuTitleHasImageMarker(title))
+		return nil;
+
+	UIImage *image = nil;
+	NSMutableDictionary *titleMap = CLPowerlogMenuImageTitleMap();
+	@synchronized (titleMap) {
+		image = titleMap[title];
+	}
+	return image;
+}
+
+static NSString *CLPowerlogMenuTitleWithImage(NSString *title, UIImage *image) {
+	if (!image)
+		return title;
+
+	NSString *wrappedTitle = [NSString stringWithFormat:@"%@%@%@", CLPowerlogMenuImageMarker, title, CLPowerlogMenuImageMarker];
+	NSMutableDictionary *titleMap = CLPowerlogMenuImageTitleMap();
+	@synchronized (titleMap) {
+		titleMap[wrappedTitle] = image;
+	}
+	return wrappedTitle;
+}
+
+static UIImage *CLPowerlogImageByTintingMenuImage(UIImage *image, UIColor *tintColor) {
+	CGSize size = image.size;
+	if (size.width <= 0.0 || size.height <= 0.0)
+		return image;
+
+	UIGraphicsBeginImageContextWithOptions(size, NO, image.scale ?: 0.0);
+	CGRect rect = CGRectMake(0.0, 0.0, size.width, size.height);
+	[tintColor ?: [UIColor blackColor] setFill];
+	UIRectFill(rect);
+	[image drawInRect:rect blendMode:kCGBlendModeDestinationIn alpha:1.0];
+	UIImage *tintedImage = UIGraphicsGetImageFromCurrentImageContext();
+	UIGraphicsEndImageContext();
+	return tintedImage ?: image;
+}
+
+static UIImage *CLPowerlogExportMenuImage(void) {
+	UIImage *image = nil;
+	if (@available(iOS 13.0, *)) {
+		UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithPointSize:20.0 weight:UIImageSymbolWeightRegular];
+		image = [UIImage systemImageNamed:@"square.and.arrow.up" withConfiguration:configuration];
+	}
+
+	if (!image) {
+		NSString *glyph = @"􀈂";
+		UIFont *font = [UIFont fontWithName:@SFPRO size:22.0] ?: [UIFont systemFontOfSize:22.0];
+		CGSize imageSize = CGSizeMake(24.0, 24.0);
+		UIGraphicsBeginImageContextWithOptions(imageSize, NO, 0.0);
+		NSDictionary *attrs = @{ NSFontAttributeName: font, NSForegroundColorAttributeName: [UIColor blackColor] };
+		CGSize glyphSize = [glyph sizeWithAttributes:attrs];
+		CGPoint point = CGPointMake(ceil((imageSize.width - glyphSize.width) / 2.0), ceil((imageSize.height - glyphSize.height) / 2.0));
+		[glyph drawAtPoint:point withAttributes:attrs];
+		image = UIGraphicsGetImageFromCurrentImageContext();
+		UIGraphicsEndImageContext();
+	}
+
+	return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+}
+
+static void CLPowerlogMenuImageDrawTextInRect(UILabel *label, SEL _cmd, CGRect rect) {
+	UIImage *image = CLPowerlogMenuImageForTitle(label.text);
+	if (!image || !CLOrigMenuImageDrawTextInRect) {
+		if (CLOrigMenuImageDrawTextInRect)
+			CLOrigMenuImageDrawTextInRect(label, _cmd, rect);
+		return;
+	}
+
+	image = CLPowerlogImageByTintingMenuImage(image, label.textColor ?: label.tintColor);
+	CGSize imageSize = image.size;
+	CGPoint point = CGPointMake(ceil(CGRectGetMidX(label.bounds) - imageSize.width / 2.0),
+	                            ceil(CGRectGetMidY(label.bounds) - imageSize.height / 2.0));
+	[image drawAtPoint:point];
+}
+
+static void CLPowerlogMenuImageSetFrame(UILabel *label, SEL _cmd, CGRect rect) {
+	if (CLPowerlogMenuImageForTitle(label.text) && label.superview)
+		rect = label.superview.bounds;
+
+	if (CLOrigMenuImageSetFrame)
+		CLOrigMenuImageSetFrame(label, _cmd, rect);
+}
+
+static CGSize CLPowerlogMenuImageSizeWithFont(NSString *string, SEL _cmd, UIFont *font) {
+	UIImage *image = CLPowerlogMenuImageForTitle(string);
+	if (image)
+		return image.size;
+
+	if (CLOrigMenuImageSizeWithFont)
+		return CLOrigMenuImageSizeWithFont(string, _cmd, font);
+	return [string sizeWithAttributes:font ? @{ NSFontAttributeName: font } : nil];
+}
+
+static CGSize CLPowerlogMenuImageSizeWithAttributes(NSString *string, SEL _cmd, NSDictionary *attributes) {
+	UIImage *image = CLPowerlogMenuImageForTitle(string);
+	if (image)
+		return image.size;
+
+	if (CLOrigMenuImageSizeWithAttributes)
+		return CLOrigMenuImageSizeWithAttributes(string, _cmd, attributes);
+	return [string boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)
+	                            options:NSStringDrawingUsesLineFragmentOrigin
+	                         attributes:attributes
+	                            context:nil].size;
+}
+
+static void CLPowerlogInstallMenuImageSupport(void) {
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		Method method = class_getInstanceMethod([UILabel class], @selector(drawTextInRect:));
+		if (method) {
+			CLOrigMenuImageDrawTextInRect = (void *)method_getImplementation(method);
+			method_setImplementation(method, (IMP)CLPowerlogMenuImageDrawTextInRect);
+		}
+
+		method = class_getInstanceMethod([UILabel class], @selector(setFrame:));
+		if (method) {
+			CLOrigMenuImageSetFrame = (void *)method_getImplementation(method);
+			method_setImplementation(method, (IMP)CLPowerlogMenuImageSetFrame);
+		}
+
+		method = class_getInstanceMethod([NSString class], NSSelectorFromString(@"sizeWithFont:"));
+		if (method) {
+			CLOrigMenuImageSizeWithFont = (void *)method_getImplementation(method);
+			method_setImplementation(method, (IMP)CLPowerlogMenuImageSizeWithFont);
+		}
+
+		method = class_getInstanceMethod([NSString class], @selector(sizeWithAttributes:));
+		if (method) {
+			CLOrigMenuImageSizeWithAttributes = (void *)method_getImplementation(method);
+			method_setImplementation(method, (IMP)CLPowerlogMenuImageSizeWithAttributes);
+		}
+	});
+}
+
+@implementation UILabel (BattmanPowerlogMenuImageSupport)
+
++ (void)load {
+	CLPowerlogInstallMenuImageSupport();
+}
+
+@end
 
 int connect_to_daemon(bool show_alerts) {
 	struct sockaddr_un sockaddr;
@@ -234,9 +404,164 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 @interface ChargingLimitViewController ()
 @property (nonatomic, copy) NSArray *drainModes;
+@property (nonatomic, weak) UIView *powerlogExportSourceView;
+@property (nonatomic) CGRect powerlogExportSourceRect;
 @end
 
 @implementation ChargingLimitViewController
+
+- (NSURL *)exportPowerlogDatabaseSnapshotWithError:(NSError **)error {
+	if (!powerlog_db_path) {
+		if (error) {
+			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
+			                             code:ENOENT
+			                         userInfo:@{ NSLocalizedDescriptionKey: _("Powerlog database is unavailable.") }];
+		}
+		return nil;
+	}
+
+	sqlite3 *sourceDB = NULL;
+	int err = sqlite3_open_v2(powerlog_db_path, &sourceDB, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
+	if (err != SQLITE_OK) {
+		NSString *message = sourceDB ? [NSString stringWithUTF8String:sqlite3_errmsg(sourceDB)] : [NSString stringWithUTF8String:strerror(errno)];
+		if (sourceDB)
+			sqlite3_close_v2(sourceDB);
+		if (error) {
+			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
+			                             code:err
+			                         userInfo:@{ NSLocalizedDescriptionKey: message ?: _("Unable to export powerlog database.") }];
+		}
+		return nil;
+	}
+	sqlite3_busy_timeout(sourceDB, 5000);
+
+	NSString *exportDir = [NSTemporaryDirectory() stringByAppendingPathComponent:@"BattmanPowerlogExport"];
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	[fileManager removeItemAtPath:exportDir error:nil];
+	if (![fileManager createDirectoryAtPath:exportDir withIntermediateDirectories:YES attributes:nil error:error]) {
+		sqlite3_close_v2(sourceDB);
+		return nil;
+	}
+
+	NSString *exportPath = [exportDir stringByAppendingPathComponent:@"CurrentPowerlog.PLSQL"];
+	sqlite3 *destDB = NULL;
+	err = sqlite3_open_v2(exportPath.fileSystemRepresentation, &destDB, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL);
+	if (err != SQLITE_OK) {
+		NSString *message = destDB ? [NSString stringWithUTF8String:sqlite3_errmsg(destDB)] : [NSString stringWithUTF8String:strerror(errno)];
+		sqlite3_close_v2(sourceDB);
+		if (destDB)
+			sqlite3_close_v2(destDB);
+		if (error) {
+			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
+			                             code:err
+			                         userInfo:@{ NSLocalizedDescriptionKey: message ?: _("Unable to export powerlog database.") }];
+		}
+		return nil;
+	}
+	sqlite3_busy_timeout(destDB, 5000);
+
+	sqlite3_backup *backup = sqlite3_backup_init(destDB, "main", sourceDB, "main");
+	if (!backup) {
+		err = sqlite3_errcode(destDB);
+		NSString *message = [NSString stringWithUTF8String:sqlite3_errmsg(destDB)];
+		sqlite3_close_v2(destDB);
+		sqlite3_close_v2(sourceDB);
+		if (error) {
+			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
+			                             code:err
+			                         userInfo:@{ NSLocalizedDescriptionKey: message ?: _("Unable to export powerlog database.") }];
+		}
+		return nil;
+	}
+
+	int busyRetries = 0;
+	do {
+		err = sqlite3_backup_step(backup, 256);
+		if (err == SQLITE_BUSY || err == SQLITE_LOCKED) {
+			usleep(100 * 1000);
+			busyRetries++;
+		} else {
+			busyRetries = 0;
+		}
+	} while (err == SQLITE_OK || ((err == SQLITE_BUSY || err == SQLITE_LOCKED) && busyRetries < 50));
+
+	sqlite3_backup_finish(backup);
+	if (err == SQLITE_DONE)
+		err = sqlite3_errcode(destDB);
+
+	NSString *message = nil;
+	if (err != SQLITE_OK)
+		message = [NSString stringWithUTF8String:sqlite3_errmsg(destDB)];
+
+	sqlite3_close_v2(destDB);
+	sqlite3_close_v2(sourceDB);
+
+	if (err != SQLITE_OK) {
+		[fileManager removeItemAtPath:exportPath error:nil];
+		if (error) {
+			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
+			                             code:err
+			                         userInfo:@{ NSLocalizedDescriptionKey: message ?: _("Unable to export powerlog database.") }];
+		}
+		return nil;
+	}
+
+	return [NSURL fileURLWithPath:exportPath];
+}
+
+- (void)exportPowerlogFromSourceView:(UIView *)sourceView sourceRect:(CGRect)sourceRect {
+	NSError *error = nil;
+	NSURL *exportURL = [self exportPowerlogDatabaseSnapshotWithError:&error];
+	if (!exportURL) {
+		show_alert(L_FAILED, error.localizedDescription.UTF8String ?: _C("Unable to export powerlog database."), L_OK);
+		return;
+	}
+
+	UIActivityViewController *activityViewController = [[UIActivityViewController alloc] initWithActivityItems:@[ exportURL ] applicationActivities:nil];
+	UIView *presentingView = sourceView ?: self.view;
+	activityViewController.popoverPresentationController.sourceView = presentingView;
+	activityViewController.popoverPresentationController.sourceRect = CGRectIsEmpty(sourceRect) ? presentingView.bounds : sourceRect;
+	[self presentViewController:activityViewController animated:YES completion:nil];
+}
+
+- (void)exportPowerlogMenuPressed:(id)sender {
+	UIView *sourceView = self.powerlogExportSourceView ?: self.view;
+	CGRect sourceRect = CGRectIsEmpty(self.powerlogExportSourceRect) ? sourceView.bounds : self.powerlogExportSourceRect;
+	self.powerlogExportSourceView = nil;
+	self.powerlogExportSourceRect = CGRectZero;
+	[self exportPowerlogFromSourceView:sourceView sourceRect:sourceRect];
+}
+
+- (BOOL)canBecomeFirstResponder {
+	return YES;
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+	if (action == @selector(exportPowerlogMenuPressed:))
+		return powerlog_db_path != NULL;
+	return [super canPerformAction:action withSender:sender];
+}
+
+- (void)graphLongPressed:(UILongPressGestureRecognizer *)gestureRecognizer {
+	if (gestureRecognizer.state != UIGestureRecognizerStateBegan || !powerlog_db_path)
+		return;
+
+	UIView *sourceView = gestureRecognizer.view ?: self.view;
+	if ([sourceView isKindOfClass:[UITableViewCell class]])
+		sourceView = ((UITableViewCell *)sourceView).contentView;
+	CGPoint location = [gestureRecognizer locationInView:sourceView];
+
+	self.powerlogExportSourceView = sourceView;
+	self.powerlogExportSourceRect = CGRectMake(location.x, location.y, 1.0, 1.0);
+
+	NSString *menuTitle = CLPowerlogMenuTitleWithImage(_("Export Powerlog"), CLPowerlogExportMenuImage());
+	UIMenuItem *exportItem = [[UIMenuItem alloc] initWithTitle:menuTitle action:@selector(exportPowerlogMenuPressed:)];
+	UIMenuController *menuController = [UIMenuController sharedMenuController];
+	menuController.menuItems = @[ exportItem ];
+	[self becomeFirstResponder];
+	[menuController setTargetRect:self.powerlogExportSourceRect inView:sourceView];
+	[menuController setMenuVisible:YES animated:YES];
+}
 
 - (NSString *)title {
 	return _("Charging Limit");
@@ -575,6 +900,8 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 #else
 			graphCell.graphArray = arr;
 #endif
+			UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(graphLongPressed:)];
+			[graphCell addGestureRecognizer:longPress];
 			return graphCell;
 		}
 		case CL_SECTION_MAIN: {
