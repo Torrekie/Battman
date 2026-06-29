@@ -410,7 +410,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 			new_hvc_menu = hvc_menu_parse(adapter_info.hvc_menu, &new_hvc_menu_size);
 			new_hvc_index = adapter_info.hvc_index;
 			new_hvc_soft = false;
-			new_hvc_owned = (new_hvc_menu != NULL);
+			new_hvc_owned = false;
 		} else {
 			new_hvc_soft = true;
 			/* Avoid IOKit includes, we only use this one */
