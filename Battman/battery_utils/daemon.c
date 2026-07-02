@@ -130,8 +130,8 @@ static void daemon_control_thread(int fd) {
 		} else if (cmd == 6) {
 			// Redirect logs
 			// Will stop responding to commands
-			const char *connMsg = "Hello from daemon! Log redirection started!\n";
-			write(fd, connMsg, strlen(connMsg));
+			const char connMsg[] = "Hello from daemon! Log redirection started!\n";
+			write(fd, connMsg, sizeof(connMsg));
 			int pipefds[2];
 			pipe(pipefds);
 			dup2(pipefds[1], 1);
