@@ -2126,3 +2126,12 @@ msgstr "無法匯出 Powerlog 資料庫。"
 
 msgid "Export Powerlog"
 msgstr "匯出 Powerlog"
+
+msgid "Temperature Unit"
+msgstr "溫度單位"
+
+msgid "System"
+msgstr "系統"
+
+msgid "°F"
+msgstr "°F"

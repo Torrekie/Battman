@@ -90,6 +90,9 @@ SPECIAL:
 #define BIN_UNIT_MIN                (6 << 6 | BIN_HAS_UNIT)
 #define BIN_UNIT_HOUR               (7 << 6 | BIN_HAS_UNIT)
 
+#define BIN_UNIT_COUNT              8 /* 3-bit field, see BIN_UNIT_BITMASK */
+#define BIN_UNIT_INDEX(content)     (((content) & BIN_UNIT_BITMASK) >> 6)
+
 // max 3 bytes unit, conversion:
 // e.g. degreeC is e2 84 83 in utf8,
 // convert it to little endian, 0x8384e2, and put in the bitmask.

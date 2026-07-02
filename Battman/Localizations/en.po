@@ -2197,3 +2197,12 @@ msgstr "Unable to export powerlog database."
 
 msgid "Export Powerlog"
 msgstr "Export Powerlog"
+
+msgid "Temperature Unit"
+msgstr "Temperature Unit"
+
+msgid "System"
+msgstr "System"
+
+msgid "°F"
+msgstr "°F"

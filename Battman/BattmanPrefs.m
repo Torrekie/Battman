@@ -62,6 +62,7 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 			@(P_SECT_APPEARANCE): @{
 					// No preference key for Thermometer, see ThermAniTestViewControllerKeys
 					// @(P_ROW_APPEARANCE_THERMOMETER): nil,
+					@(P_ROW_APPEARANCE_TEMPERATURE_UNIT): @kBattmanPrefs_TEMPERATURE_UNIT,
 					@(P_ROW_APPEARANCE_BRIGHTNESS_HDR): @kBattmanPrefs_BRIGHT_UI_HDR,
 			},
 			@(P_SECT_WIPEALL): @{
@@ -90,6 +91,7 @@ static NSArray<NSString *> *BattmanGlobalKeys = nil;
 			@kBattmanPrefs_BI_INTERVAL: @(0.0), /* 0:Auto, -1:Never */
 			@kBattmanPrefs_THERM_UI_MIN: @(0.0),
 			@kBattmanPrefs_THERM_UI_MAX: @(45.0),
+			@kBattmanPrefs_TEMPERATURE_UNIT: @(BattmanTempUnitSystem),
 			@kBattmanPrefs_BRIGHT_UI_HDR: @(1),
 		};
 
@@ -235,7 +237,14 @@ id BattmanPrefsGetObject(const char *defaultName) {
 	if ([key isEqualToString:@kBattmanPrefs_BRIGHT_UI_HDR]) {
 		return [value isKindOfClass:[NSNumber class]]; // Should be boolean NSNumber
 	}
-	
+
+	if ([key isEqualToString:@kBattmanPrefs_TEMPERATURE_UNIT]) {
+		if (![value isKindOfClass:[NSNumber class]])
+			return NO;
+		NSInteger unit = [(NSNumber *)value integerValue];
+		return (unit >= BattmanTempUnitSystem && unit <= BattmanTempUnitFahrenheit);
+	}
+
 	return YES;
 }
 

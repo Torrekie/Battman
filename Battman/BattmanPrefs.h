@@ -123,9 +123,16 @@ typedef enum {
 // P_SECT_APPEARANCE
 typedef enum {
 	P_ROW_APPEARANCE_THERMOMETER,
+	P_ROW_APPEARANCE_TEMPERATURE_UNIT,
 	P_ROW_APPEARANCE_BRIGHTNESS_HDR,
 	P_ROW_APPEARANCE_COUNT,
 } PrefsRowAppearance;
+#define kBattmanPrefs_TEMPERATURE_UNIT "TEMPERATURE_UNIT"
+typedef enum {
+	BattmanTempUnitSystem     = 0, /* follow locale, see battman_temp_system_fahrenheit() */
+	BattmanTempUnitCelsius    = 1,
+	BattmanTempUnitFahrenheit = 2,
+} BattmanTempUnitPref;
 #define kBattmanPrefs_BRIGHT_UI_HDR "ENABLE_BRIGHTNESS_UI_HDR"
 
 // P_ROW_APPEARANCE_THERMOMETER -> ThermAniTestViewController

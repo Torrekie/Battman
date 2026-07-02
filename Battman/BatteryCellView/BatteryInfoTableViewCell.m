@@ -1,4 +1,5 @@
 #import "BatteryInfoTableViewCell.h"
+#include "../battery_utils/bin_display.h"
 #include "../common.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -68,13 +69,7 @@
 					    stringWithFormat:@"%@\n%@", final_str, _(i->name)];
 				} else if ((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
 					final_str =
-					    [NSString stringWithFormat:@"%@\n%@: %.4g", final_str, _(i->name), bi_node_load_float(i)];
-				}
-				if (i->content & BIN_HAS_UNIT) {
-					uint32_t  unit     = (i->content & BIN_UNIT_BITMASK) >> 6;
-					NSString *unit_str = _(bin_unit_strings[unit]);
-					final_str =
-					    [NSString stringWithFormat:@"%@ %@", final_str, unit_str];
+					    [NSString stringWithFormat:@"%@\n%@: %@", final_str, _(i->name), bin_format_special(i->content)];
 				}
 			}
 			// Only show in details if is string

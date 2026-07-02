@@ -2233,3 +2233,12 @@ msgstr "Powerlog-Datenbank konnte nicht exportiert werden."
 
 msgid "Export Powerlog"
 msgstr "Powerlog exportieren"
+
+msgid "Temperature Unit"
+msgstr "Temperatureinheit"
+
+msgid "System"
+msgstr "System"
+
+msgid "°F"
+msgstr "°F"

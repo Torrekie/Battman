@@ -9,6 +9,7 @@
 #import "ObjCExt/UIColor+compat.h"
 #import "ObjCExt/CALayer+smoothCorners.h"
 #import "common.h"
+#import "battery_utils/bin_display.h"
 #import "BrightnessCardCell.h"
 #import "CGIconSet/NightShiftVectorIcon.h"
 #import "CGIconSet/TrueToneVectorIcon.h"
@@ -468,7 +469,7 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	if (_unknownTemperature) {
 		self.temperatureValueLabel.text = _("Unknown");
 	} else {
-		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g ℃", temperatureCelsius];
+		self.temperatureValueLabel.text = battman_temp_display_string(temperatureCelsius);
 	}
 }
 
@@ -477,7 +478,7 @@ extern UIImage *redrawUIImage(UIImage *image, UIColor *color, CGSize size);
 	if (unknownTemperature) {
 		self.temperatureValueLabel.text = _("Unknown");
 	} else {
-		self.temperatureValueLabel.text = [NSString stringWithFormat:@"%.4g ℃", _temperatureCelsius];
+		self.temperatureValueLabel.text = battman_temp_display_string(_temperatureCelsius);
 	}
 }
 

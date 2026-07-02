@@ -6,6 +6,7 @@
 #include "ObjCExt/UIColor+compat.h"
 
 #include "scprefs/wrapper.h"
+#include "battery_utils/bin_display.h"
 #include "battery_utils/thermal.h"
 
 // battery_utils/hid.m
@@ -275,7 +276,7 @@ static NSMutableDictionary *thermalBasics;
 			cell = [tv dequeueReusableCellWithIdentifier:@"maxtherm"];
 			if (!cell)
 				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"maxtherm"];
-			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
+			cell.detailTextLabel.text = battman_temp_display_string([dict[dict.allKeys[ip.row]] floatValue]);
 			cell.accessoryType = UITableViewCellAccessoryDetailButton;
 		} else if ([label isEqualToString:@"Pressure"]) {
 			cell = [tv dequeueReusableCellWithIdentifier:@"thermpressure"];
@@ -359,7 +360,7 @@ static NSMutableDictionary *thermalBasics;
 		label = dict.allKeys[ip.row];
 	}
 	cell.textLabel.text       = label;
-	cell.detailTextLabel.text = [NSString stringWithFormat:@"%.4g ℃", [dict[dict.allKeys[ip.row]] floatValue]];
+	cell.detailTextLabel.text = battman_temp_display_string([dict[dict.allKeys[ip.row]] floatValue]);
 
 	/* TODO: thermtune */
 	return cell;

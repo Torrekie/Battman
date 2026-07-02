@@ -7,6 +7,7 @@
 
 #import "common.h"
 #import "BattmanPrefs.h"
+#import "battery_utils/bin_display.h"
 #import "SegmentedTextField.h"
 #import "PreferencesViewController.h"
 #import "LanguageSelectionViewController.h"
@@ -472,6 +473,21 @@ extern UITableViewCell *find_cell(UIView *view);
 					[(UITableViewCell *)cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 					break;
 				}
+				case P_ROW_APPEARANCE_TEMPERATURE_UNIT: {
+					if (!cell)
+						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
+					[(UITableViewCell *)cell textLabel].text = _("Temperature Unit");
+					NSString *systemLabel = [NSString stringWithFormat:@"%@ (%@)", _("System"), battman_temp_system_fahrenheit() ? @"°F" : @"℃"];
+					UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[systemLabel, @"℃", @"°F"]];
+					NSInteger selected = [config_value integerValue];
+					if (selected < BattmanTempUnitSystem || selected > BattmanTempUnitFahrenheit)
+						selected = BattmanTempUnitSystem;
+					[seg setSelectedSegmentIndex:selected];
+					seg.tag = P_ROW_APPEARANCE_TEMPERATURE_UNIT;
+					[seg addTarget:self action:@selector(temperatureUnitValueChanged:) forControlEvents:UIControlEventValueChanged];
+					[(UITableViewCell *)cell setAccessoryView:seg];
+					break;
+				}
 				case P_ROW_APPEARANCE_BRIGHTNESS_HDR: {
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
@@ -634,6 +650,28 @@ extern UITableViewCell *find_cell(UIView *view);
 	}
 	
 	// Save the switch state to preferences
+	[BattmanPrefs.sharedPrefs setValue:@(sender.selectedSegmentIndex) forTableView:self.tableView indexPath:indexPath];
+	[BattmanPrefs.sharedPrefs synchronize];
+}
+
+#pragma mark - Temperature Unit Segment Action
+
+- (void)temperatureUnitValueChanged:(UISegmentedControl *)sender {
+	UITableViewCell *cell = find_cell(sender);
+	NSIndexPath *indexPath = nil;
+	if (cell) {
+		indexPath = [self.tableView indexPathForCell:cell];
+	} else {
+		DBGLOG(@"Cannot find belonging UITableViewCell for temperature unit control %@", sender);
+		return;
+	}
+
+	if (!indexPath || indexPath.section != P_SECT_APPEARANCE || indexPath.row != P_ROW_APPEARANCE_TEMPERATURE_UNIT) {
+		DBGLOG(@"temperatureUnitValueChanged: Wrong Row (%@)", perform_selector2(sel_registerName("_prefsKeyForTableView:indexPath:"), BattmanPrefs.sharedPrefs, self.tableView, indexPath));
+		return;
+	}
+
+	// Segment order matches BattmanTempUnitPref (System/℃/°F)
 	[BattmanPrefs.sharedPrefs setValue:@(sender.selectedSegmentIndex) forTableView:self.tableView indexPath:indexPath];
 	[BattmanPrefs.sharedPrefs synchronize];
 }

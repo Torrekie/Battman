@@ -5,6 +5,7 @@
 #import "../GradientArcView.h"
 #import "../CompatibilityHelper.h"
 
+#include "../battery_utils/bin_display.h"
 #include "../battery_utils/libsmc.h"
 // Temporary ^
 
@@ -179,7 +180,7 @@
 		for (int i = 0; i < num; i++) {
 			total += btemps[i];
 		}
-		finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Battery Avg."), total / num];
+		finalText = [NSString stringWithFormat:@"%@: %@", _("Battery Avg."), battman_temp_display_string(total / num)];
 		// Embedded designed operating temp: 0º to 35º C
 		batttemp = total / num;
 		free(btemps);
@@ -190,9 +191,9 @@
 	if (snsrtemp != -1) {
 		got_temp |= TEMP_SNSR;
 		if (finalText.length > 0) {
-			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
+			finalText = [finalText stringByAppendingFormat:@"\n%@: %@", _("Sensors Avg."), battman_temp_display_string(snsrtemp)];
 		} else {
-			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Sensors Avg."), snsrtemp];
+			finalText = [NSString stringWithFormat:@"%@: %@", _("Sensors Avg."), battman_temp_display_string(snsrtemp)];
 		}
 	}
 
@@ -202,9 +203,9 @@
 	if (scrntemp != -1) {
 		got_temp |= TEMP_SCRN;
 		if (finalText.length > 0) {
-			finalText = [finalText stringByAppendingFormat:@"\n%@: %.4g ℃", _("Main Screen"), scrntemp];
+			finalText = [finalText stringByAppendingFormat:@"\n%@: %@", _("Main Screen"), battman_temp_display_string(scrntemp)];
 		} else {
-			finalText = [NSString stringWithFormat:@"%@: %.4g ℃", _("Main Screen"), scrntemp];
+			finalText = [NSString stringWithFormat:@"%@: %@", _("Main Screen"), battman_temp_display_string(scrntemp)];
 		}
 	}
 

@@ -6,6 +6,7 @@
 //
 
 #import "common.h"
+#import "battery_utils/bin_display.h"
 #import "battery_utils/libsmc.h"
 #import "ObjCExt/UIScreen+Auto.h"
 #import "ObjCExt/CALayer+smoothCorners.h"
@@ -338,8 +339,8 @@ float get_current_temp_percentage(void) {
 			switch (row) {
 				case TAT_ROW_THERM_PREVIEW: {
 					_temperatureCell = [[ThermAniTestCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
-					_temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%@ ℃", [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_THERM_UI_MIN]];
-					_temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%@ ℃", [BattmanPrefs.sharedPrefs stringForKey:@kBattmanPrefs_THERM_UI_MAX]];
+					_temperatureCell.leftLabel.text = battman_temp_display_string([BattmanPrefs.sharedPrefs doubleForKey:@kBattmanPrefs_THERM_UI_MIN]);
+					_temperatureCell.rightLabel.text = battman_temp_display_string([BattmanPrefs.sharedPrefs doubleForKey:@kBattmanPrefs_THERM_UI_MAX]);
 					[_temperatureCell.arcView rotatePointerToPercentage:get_current_temp_percentage()];
 					cell = (UITableViewCell *)_temperatureCell;
 					break;
@@ -395,8 +396,8 @@ float get_current_temp_percentage(void) {
 		// XXX: consider use NSRange instead
 		NSInteger minTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MIN];
 		NSInteger maxTemp = [BattmanPrefs.sharedPrefs integerForKey:@kBattmanPrefs_THERM_UI_MAX];
-		self.temperatureCell.leftLabel.text = [NSString stringWithFormat:@"%ld ℃", (long)minTemp];
-		self.temperatureCell.rightLabel.text = [NSString stringWithFormat:@"%ld ℃", (long)maxTemp];
+		self.temperatureCell.leftLabel.text = battman_temp_display_string(minTemp);
+		self.temperatureCell.rightLabel.text = battman_temp_display_string(maxTemp);
 	});
 	[self.temperatureCell.arcView rotatePointerToPercentage:get_current_temp_percentage()];
 

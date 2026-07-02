@@ -5,6 +5,7 @@
 #import "ScrollableDetailCell.h"
 #import "WarnAccessoryView.h"
 #import "BattmanPrefs.h"
+#include "battery_utils/bin_display.h"
 #include "battery_utils/iokit_connection.h"
 #include "battery_utils/libsmc.h"
 #include "common.h"
@@ -123,41 +124,10 @@ static NSString *BDVCStringFromUTF8(const char *str) {
 	return str ? [NSString stringWithUTF8String:str] : nil;
 }
 
-static float BDVCLoadFloatFromContent(uint32_t content) {
-	struct battery_info_node node = {0};
-	node.content = content;
-	return bi_node_load_float(&node);
-}
-
 static NSString *BDVCFormattedValueForContent(uint32_t content, NSString *stringValue) {
-	NSString *final_str;
-	if ((content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL) {
-		int16_t value = content >> 16;
-
-		if ((content & BIN_IS_BOOLEAN) == BIN_IS_BOOLEAN) {
-			final_str = value ? _("True") : _("False");
-		} else if ((content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
-			final_str = [NSString stringWithFormat:@"%.4g", BDVCLoadFloatFromContent(content)];
-		} else {
-			final_str = [NSString stringWithFormat:@"%d", value];
-		}
-		if (content & BIN_HAS_UNIT) {
-			uint32_t unit = (content & BIN_UNIT_BITMASK) >> 6;
-			if (unit == (BIN_UNIT_MIN & BIN_UNIT_BITMASK) >> 6) {
-				NSDateComponentsFormatter *fmt = [[NSDateComponentsFormatter alloc] init];
-				fmt.calendar.locale            = [NSLocale localeWithLocaleIdentifier:[NSString stringWithUTF8String:preferred_language()]];
-				fmt.allowedUnits               = NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute;
-				fmt.unitsStyle                 = NSDateComponentsFormatterUnitsStyleShort;
-				fmt.zeroFormattingBehavior     = NSDateComponentsFormatterZeroFormattingBehaviorDropAll;
-				final_str                      = [fmt stringFromTimeInterval:value * 60];
-			} else {
-				final_str                      = [NSString stringWithFormat:@"%@ %@", final_str, _(bin_unit_strings[unit])];
-			}
-		}
-	} else {
-		final_str = stringValue ?: @"";
-	}
-	return final_str ?: @"";
+	if ((content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL)
+		return bin_format_special(content) ?: @"";
+	return stringValue ?: @"";
 }
 
 static void BDVCEquipDetailCellWithSnapshot(UITableViewCell *cell, BDVCBatteryInfoNodeSnapshot *node) {
@@ -221,78 +191,6 @@ static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(struct battery_
 
 	snapshot.sections = sections;
 	return snapshot;
-}
-
-void equipDetailCell(UITableViewCell *cell, struct battery_info_node *i) {
-	// PLEASE ENSURE no hidden cell is here when calling
-	/*if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED ||
-	    (i->content &&
-	    !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
-	    cell.hidden = NO;
-	} else {
-	    cell.hidden = YES;
-	    return cell;
-	}
-	if (((i->content & 1) == 1) && (i->content & (1 << 5)) == (1 << 5)) {
-	    cell.hidden = YES;
-	    return cell;
-	}*/
-	NSString *final_str;
-	equipCellTitle(cell, _(i->name));
-	if (i->desc) {
-		// DBGLOG(@"Accessory %@, Desc %@", cell.textLabel.text, components[1]);
-		if (@available(iOS 13.0, *)) {
-			cell.accessoryType = UITableViewCellAccessoryDetailButton;
-		} else {
-			WarnAccessoryView *button = [WarnAccessoryView altAccessoryView];
-			[cell setAccessoryType:UITableViewCellAccessoryNone];
-			[cell setAccessoryView:button];
-		}
-	} else {
-		cell.accessoryType = UITableViewCellAccessoryNone;
-	}
-
-	if ((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL) {
-		int16_t value = i->content >> 16;
-
-		if ((i->content & BIN_IS_BOOLEAN) == BIN_IS_BOOLEAN) {
-			if (value) {
-				final_str = _("True");
-			} else {
-				final_str = _("False");
-			}
-		} else if ((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
-			final_str = [NSString stringWithFormat:@"%.4g", bi_node_load_float(i)];
-		} else {
-			final_str = [NSString stringWithFormat:@"%d", value];
-		}
-		if (i->content & BIN_HAS_UNIT) {
-			uint32_t unit = (i->content & BIN_UNIT_BITMASK) >> 6;
-			if (unit == (BIN_UNIT_MIN & BIN_UNIT_BITMASK) >> 6) {
-				// Special: Convert minutes to localized timer
-				NSDateComponentsFormatter *fmt = [[NSDateComponentsFormatter alloc] init];
-				fmt.calendar.locale            = [NSLocale localeWithLocaleIdentifier:[NSString stringWithUTF8String:preferred_language()]];
-				fmt.allowedUnits               = NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute;
-				fmt.unitsStyle                 = NSDateComponentsFormatterUnitsStyleShort;
-				fmt.zeroFormattingBehavior     = NSDateComponentsFormatterZeroFormattingBehaviorDropAll;
-				final_str                      = [fmt stringFromTimeInterval:value * 60];
-			} else {
-				final_str                      = [NSString stringWithFormat:@"%@ %@", final_str, _(bin_unit_strings[unit])];
-			}
-		}
-	} else {
-		final_str = [NSString stringWithUTF8String:bi_node_get_string(i)];
-	}
-	cell.detailTextLabel.text = final_str;
-
-	// Consider add a "BIN_IS_HIGHLEGIT"
-	if (strstr(i->name, "No.") || strstr(i->name, "ID")) {
-		equipCellHighLegit(cell.detailTextLabel);
-	}
-
-	cell.detailTextLabel.textColor = [UIColor compatSecondaryLabelColor];
-
-	return;
 }
 
 typedef enum {

@@ -2126,3 +2126,12 @@ msgstr "无法导出 Powerlog 数据库。"
 
 msgid "Export Powerlog"
 msgstr "导出 Powerlog"
+
+msgid "Temperature Unit"
+msgstr "温度单位"
+
+msgid "System"
+msgstr "系统"
+
+msgid "°F"
+msgstr "°F"
