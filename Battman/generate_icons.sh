@@ -41,7 +41,7 @@
 #   2. A CFBundleIcons dictionary for post‑iOS7 – under CFBundlePrimaryIcon,
 #      listing all unique post‑iOS7 icon base names.
 #
-# Requirements: inkscape or rsvg-convert (from librsvg) or convert (from ImageMagick)
+# Requirements: qlmanage or sips on macOS, or inkscape, rsvg-convert, or convert.
 #
 SVG="$1"
 OUTDIR="$2"
@@ -58,7 +58,27 @@ mkdir -p "$OUTDIR"
 # ----------------------------------------------------------------
 # Determine available conversion tool and define a helper function.
 # Usage: convert_cmd width height input.svg output.png
-if command -v inkscape >/dev/null 2>&1; then
+if command -v qlmanage >/dev/null 2>&1; then
+    CONVERTER="qlmanage"
+    convert_cmd() {
+      tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/battman-icons.XXXXXX")" || return 1
+      if qlmanage -t -s "$1" -o "$tmpdir" "$3" >/dev/null 2>&1; then
+        tmpout="$tmpdir/$(basename "$3").png"
+        if [ -f "$tmpout" ]; then
+          mv "$tmpout" "$4"
+          rmdir "$tmpdir" 2>/dev/null || true
+          return 0
+        fi
+      fi
+      rm -rf "$tmpdir"
+      return 1
+    }
+elif command -v sips >/dev/null 2>&1; then
+    CONVERTER="sips"
+    convert_cmd() {
+      sips -s format png -z "$2" "$1" "$3" --out "$4" >/dev/null
+    }
+elif command -v inkscape >/dev/null 2>&1; then
     # The reason we put inkscape first is because Battman.svg is made with inkscape
     CONVERTER="inkscape"
     convert_cmd() {
