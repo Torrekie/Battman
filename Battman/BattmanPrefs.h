@@ -129,7 +129,7 @@ typedef enum {
 } PrefsRowAppearance;
 #define kBattmanPrefs_TEMPERATURE_UNIT "TEMPERATURE_UNIT"
 typedef enum {
-	BattmanTempUnitSystem     = 0, /* follow locale, see battman_temp_system_fahrenheit() */
+	BattmanTempUnitSystem     = 0, /* follow system temperature-unit setting */
 	BattmanTempUnitCelsius    = 1,
 	BattmanTempUnitFahrenheit = 2,
 } BattmanTempUnitPref;

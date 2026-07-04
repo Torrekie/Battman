@@ -20,15 +20,14 @@ __BEGIN_DECLS
 
 /* Display-only helpers: preferences, sensor plumbing and any math
  * (thermometer ranges, arc percentages, gradients) stay in Celsius.
- * Convert at the label, never before. */
+ * Foundation converts at the display boundary. */
 bool   battman_temp_display_fahrenheit(void);
-/* Resolved system-locale default, ignoring the user override.
- * Exposed for labeling the "System" choice in preferences. */
+/* Resolved system temperature-unit default, ignoring the user override. */
 bool   battman_temp_system_fahrenheit(void);
 double battman_temp_display_value(double celsius);
 
 #ifdef __OBJC__
-/* "36.5 ℃" / "97.7 °F" per the resolved display unit */
+/* Localized temperature value with the resolved display unit. */
 NSString *battman_temp_display_string(double celsius);
 /* Formatted value (+ unit) for any BIN_IS_SPECIAL battery_info content */
 NSString *bin_format_special(uint32_t content);

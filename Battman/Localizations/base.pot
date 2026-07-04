@@ -1443,9 +1443,6 @@ msgstr ""
 msgid "Ready"
 msgstr ""
 
-msgid "℃"
-msgstr ""
-
 msgid "%"
 msgstr ""
 
@@ -2080,7 +2077,4 @@ msgid "Temperature Unit"
 msgstr ""
 
 msgid "System"
-msgstr ""
-
-msgid "°F"
 msgstr ""

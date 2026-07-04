@@ -477,8 +477,7 @@ extern UITableViewCell *find_cell(UIView *view);
 					if (!cell)
 						cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
 					[(UITableViewCell *)cell textLabel].text = _("Temperature Unit");
-					NSString *systemLabel = [NSString stringWithFormat:@"%@ (%@)", _("System"), battman_temp_system_fahrenheit() ? @"°F" : @"℃"];
-					UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[systemLabel, @"℃", @"°F"]];
+					UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[_("System"), @"℃", @"°F"]];
 					NSInteger selected = [config_value integerValue];
 					if (selected < BattmanTempUnitSystem || selected > BattmanTempUnitFahrenheit)
 						selected = BattmanTempUnitSystem;

@@ -1553,9 +1553,6 @@ msgstr "Neustart des Geräts"
 msgid "Ready"
 msgstr "Bereit"
 
-msgid "℃"
-msgstr "℃"
-
 msgid "%"
 msgstr "%"
 
@@ -2239,6 +2236,3 @@ msgstr "Temperatureinheit"
 
 msgid "System"
 msgstr "System"
-
-msgid "°F"
-msgstr "°F"

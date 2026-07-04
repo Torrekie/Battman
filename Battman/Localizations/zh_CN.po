@@ -1479,9 +1479,6 @@ msgstr "设备重新启动"
 msgid "Ready"
 msgstr "已准备好"
 
-msgid "℃"
-msgstr "℃"
-
 msgid "%"
 msgstr "%"
 
@@ -2132,6 +2129,3 @@ msgstr "温度单位"
 
 msgid "System"
 msgstr "系统"
-
-msgid "°F"
-msgstr "°F"

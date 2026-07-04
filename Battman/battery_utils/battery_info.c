@@ -25,7 +25,7 @@
 // Stub _C definition for gettext, locales are caller processed
 #define _C(x) x
 const char *bin_unit_strings[] = {
-	_C("℃"), _C("%"), _C("mA"), _C("mAh"), _C("mV"), _C("mW"), _C("min"),
+	"℃", _C("%"), _C("mA"), _C("mAh"), _C("mV"), _C("mW"), _C("min"),
 	_C("Hr") // Do not modify, thats how Texas Instruments documented
 };
 

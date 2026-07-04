@@ -1520,9 +1520,6 @@ msgstr "Device Restart"
 msgid "Ready"
 msgstr "Ready"
 
-msgid "℃"
-msgstr "℃"
-
 msgid "%"
 msgstr "%"
 
@@ -2203,6 +2200,3 @@ msgstr "Temperature Unit"
 
 msgid "System"
 msgstr "System"
-
-msgid "°F"
-msgstr "°F"
