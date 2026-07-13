@@ -5,6 +5,7 @@
 #import "ScrollableDetailCell.h"
 #import "WarnAccessoryView.h"
 #import "BattmanPrefs.h"
+#include "battery_utils/battery_diagnostics.h"
 #include "battery_utils/bin_display.h"
 #include "battery_utils/iokit_connection.h"
 #include "battery_utils/libsmc.h"
@@ -14,6 +15,7 @@
 #import "ObjCExt/UIColor+compat.h"
 
 #import <CoreText/CoreText.h>
+#include <math.h>
 #include <string.h>
 #include <sys/sysctl.h>
 
@@ -44,6 +46,7 @@
 @public
 	gas_gauge_t gauge;
 	int timeToEmpty;
+	charging_state_t chargingState;
 }
 @property(nonatomic, strong) NSArray<BDVCBatteryInfoSectionSnapshot *> *sections;
 @end
@@ -152,13 +155,15 @@ static void BDVCEquipDetailCellWithSnapshot(UITableViewCell *cell, BDVCBatteryIn
 	cell.detailTextLabel.textColor = [UIColor compatSecondaryLabelColor];
 }
 
-static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(struct battery_info_section **batteryInfo) {
+static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(
+    struct battery_info_section **batteryInfo, charging_state_t chargingState) {
 	BDVCBatteryInfoTableSnapshot *snapshot = [BDVCBatteryInfoTableSnapshot new];
 	NSMutableArray<BDVCBatteryInfoSectionSnapshot *> *sections = [NSMutableArray array];
 
 	battery_info_read_lock();
 	snapshot->gauge = gGauge;
 	snapshot->timeToEmpty = 0;
+	snapshot->chargingState = chargingState;
 	for (struct battery_info_section *sect = batteryInfo ? *batteryInfo : NULL; sect; sect = sect->next) {
 		BDVCBatteryInfoSectionSnapshot *sectionSnapshot = [BDVCBatteryInfoSectionSnapshot new];
 		sectionSnapshot.title = BDVCStringFromUTF8(sect->data[0].name);
@@ -167,6 +172,9 @@ static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(struct battery_
 
 		NSMutableArray<BDVCBatteryInfoNodeSnapshot *> *rows = [NSMutableArray array];
 		for (struct battery_info_node *i = sect->data + 1; i->name; i++) {
+			if (strcmp(i->name, "Time to Empty") == 0 &&
+			    (chargingState == kIsCharging || (i->content & BIN_IS_HIDDEN)))
+				continue;
 			if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED || (i->content && !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
 				if ((i->content & 1) != 1 || (i->content & (1 << 5)) != (1 << 5)) {
 					BDVCBatteryInfoNodeSnapshot *nodeSnapshot = [BDVCBatteryInfoNodeSnapshot new];
@@ -311,8 +319,8 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	dispatch_async(refreshQueue, ^{
 		battery_info_update(self->batteryInfo);
 
-		device_info_t adapter_info;
-		is_charging(NULL, &adapter_info);
+		device_info_t adapter_info = {0};
+		charging_state_t chargingState = is_charging(NULL, &adapter_info);
 
 		hvc_menu_t *new_hvc_menu = NULL;
 		size_t new_hvc_menu_size = 0;
@@ -348,7 +356,8 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		new_hvc_owned = false;
 #endif
 
-		BDVCBatteryInfoTableSnapshot *newSnapshot = BDVCCopyBatteryInfoSnapshot(self->batteryInfo);
+		BDVCBatteryInfoTableSnapshot *newSnapshot =
+		    BDVCCopyBatteryInfoSnapshot(self->batteryInfo, chargingState);
 		dispatch_async(dispatch_get_main_queue(), ^{
 			self->refreshInFlight = NO;
 			if (generation != self->refreshGeneration || ![self _canScheduleRefresh]) {
@@ -490,7 +499,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 	refreshGeneration = 0;
 	refreshInFlightGeneration = 0;
 	batteryInfo = bi;
-	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(bi);
+	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(bi, kIsUnavail);
 	refreshQueue = dispatch_queue_create("com.torrekie.Battman.BDVCRefresh", DISPATCH_QUEUE_SERIAL);
 	refreshInFlight = NO;
 	refreshPending = NO;
@@ -757,79 +766,56 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 
 				if (gauge.DesignCycleCount == 0) {
 					// according to https://www.apple.com/batteries/service-and-recycling
-					// Pre-iPhone15,3: 500, otherwise 1000
+					// Before iPhone15,4: 500, otherwise 1000
 					// Watch*,* iPad*,*: 1000
 					// iPod*,*: 400
 					// MacBook**,*: 1000
-					// AppleTV/Watch/AudioAccessory has no battery so ignored
-					size_t size = 0;
-					char   machine[256];
+					// AppleTV/AudioAccessory identifiers are ignored
+					char   machine[256] = {0};
+					size_t size = sizeof(machine);
 					// Do not use uname()
-					if (sysctlbyname("hw.machine", NULL, &size, NULL, 0) != 0) {
+					if (sysctlbyname("hw.machine", machine, &size, NULL, 0) != 0) {
 						DBGLOG(@"sysctlbyname(hw.machine) failed");
 						return code;
 					}
-					if (sysctlbyname("hw.machine", &machine, &size, NULL, 0) != 0) {
-						DBGLOG(@"sysctlbyname(&machine) failed");
-						return code;
-					}
-					if (match_regex(machine,
-					        "^(iPhone|iPad|iPod|MacBook.*)[0-9]+,[0-9]+$")) {
-						if (strncmp(machine, "iPhone", 6) == 0) {
-							int major = 0, minor = 0;
-							if (sscanf(machine + 6, "%d,%d", &major, &minor) != 2) {
-								DBGLOG(@"Unexpected iPhone model: %s", machine);
-								return code;
-							}
-							if (major < 15 || (major == 15 && minor < 4)) {
-								design = 500;
-							} else {
-								design = 1000;
-							}
-						} else if (strncmp(machine, "iPad", 4) || strncmp(machine, "Watch", 5) || strncmp(machine, "MacBook", 7))
-							design = 1000;
-						else if (strncmp(machine, "iPod", 4))
-							design = 400;
-					}
+					design = fallback_design_cycle_count(machine);
 					if (design == 0)
 						return code;
 				}
 				if (count > design) {
 					code = WARN_EXCEEDED;
-					*str = _C("Cycle Count exceeded designed cycle count, consider replacing with a genuine battery.");
+					*str = _C("Cycle count exceeds the nominal design target. Available capacity or peak performance may be reduced. Cycle count alone does not indicate battery authenticity.");
 				}
 				return code;
 			});
 		} else if ([cellLabel isEqualToString:_("Time to Empty")]) {
 			equipWarningCondition_b(cell, _("Time to Empty"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
-				int              tte = snapshot->timeToEmpty ?: gauge.TimeToEmpty;
+				int              tte = snapshot->timeToEmpty;
 				/* The most ideal TTE is TTE (Hour) = Capacity (mAh) / Current (mA),
-				 * some user reported their non-genuine battries
-				 * reporting a significant huge number of TTE */
+				 * used only as a coarse consistency check. */
 
-				/* Battery charging, skip */
-				if (gauge.AverageCurrent >= 0)
+				if (snapshot->chargingState == kIsCharging ||
+				    gauge.AverageCurrent >= 0 || !battery_tte_is_valid(tte))
 					return code;
 
-				int ideal = ((int)remain_cap / abs(gauge.AverageCurrent)) * 60;
-				/* Normally, TI's GG IC would not emulate its TTE bigger than ideal */
-				/* for ensurence, we check if TTE is bigger than 1.5*ideal */
-				if (tte > (ideal * 1.5)) {
+				double ideal_minutes =
+				    battery_ideal_tte_minutes(remain_cap, gauge.AverageCurrent);
+				if (!isfinite(ideal_minutes) || ideal_minutes <= 0.0)
+					return code;
+				/* Allow estimator overhead before flagging a telemetry mismatch. */
+				if ((double)tte > (ideal_minutes * 1.5)) {
 					code = WARN_UNUSUAL;
-					*str = _C("Unusual Time to Empty, a non-genuine battery component may be in use.");
+					*str = _C("Time to Empty is inconsistent with the current battery telemetry.");
 				}
 				return code;
 			});
-		} else if ([cellLabel isEqualToString:_("Depth of Discharge")]) {
-			equipWarningCondition_b(cell, _("Depth of Discharge"), ^warn_condition_t(const char **str) {
+		} else if ([cellLabel isEqualToString:_("DOD₀ at Last OCV")]) {
+			equipWarningCondition_b(cell, _("DOD₀ at Last OCV"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
-				/* Non-genuine batteries are likely spoofing some unremarkable data */
-				/* DOD0 is not going to bigger than Qmax normally, but sometimes it do
-				 * exceeds when discharging/charging with adapter attached */
-				if (gauge.DOD0 > (gauge.Qmax * 3)) {
+				if (!ti_dod_raw_is_valid(gauge.DOD0)) {
 					code = WARN_UNUSUAL;
-					*str = _C("Unusual Depth of Discharge, a non-genuine battery component may be in use.");
+					*str = _C("DOD₀ is outside the documented 0–16384 range.");
 				}
 				return code;
 			});
@@ -970,7 +956,10 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 		return;
 	}
 	battery_info_unlock();
-	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(batteryInfo);
+	charging_state_t chargingState = batteryInfoSnapshot
+	    ? batteryInfoSnapshot->chargingState
+	    : kIsUnavail;
+	batteryInfoSnapshot = BDVCCopyBatteryInfoSnapshot(batteryInfo, chargingState);
 	[tableView reloadData];
 }
 

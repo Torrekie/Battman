@@ -16,6 +16,7 @@
  */
 
 #include "libsmc.h"
+#include "battery_diagnostics.h"
 #include "../common.h"
 #include "../iokitextern.h"
 #include "../intlextern.h"
@@ -362,56 +363,25 @@ float *get_temperature_per_cell(void) {
 }
 
 int get_time_to_empty(void) {
-    SMC_INIT_CHK(0);
+    SMC_INIT_CHK(-1);
 
-    uint16_t retval = 0, retval_f = 0, retval_e = 0;
-    uint8_t charging = 0;
+    if (is_charging(NULL, NULL) == kIsCharging)
+        return -1;
 
-    // TODO: Add this to NSUserDefaults to avoid checks every time
-    static SMCKey reliable_TTE = 0;
+    uint16_t retval = 0;
+    result = smc_read_n('B0TE', &retval, 2);
+    if (result == kIOReturnSuccess && battery_tte_is_valid(retval))
+        return retval;
 
 #if TARGET_OS_EMBEDDED && !TARGET_OS_SIMULATOR
-    /* This is weird, why B0TF means TimeToEmpty on Embedded,
-     * but TimeToFullCharge on macOS? */
-    /* Tested on iPhone 12 mini: B0TF does not exist */
-    result = smc_read_n('B0TF', &retval,2);
-    if (result == kIOReturnSuccess)
-        retval_f = retval;
+    /* Some embedded devices expose discharge TTE through B0TF instead. */
+    retval = 0;
+    result = smc_read_n('B0TF', &retval, 2);
+    if (result == kIOReturnSuccess && battery_tte_is_valid(retval))
+        return retval;
 #endif
 
-    result = smc_read_n('B0TE', &retval,2);
-    if (result == kIOReturnSuccess)
-        retval_e = retval;
-
-    result = smc_read_n('CHSC', &charging,1);
-    if (result != kIOReturnSuccess)
-        charging = 0;
-
-    /* Lets do complex condition matching */
-    /* 1. Both B0TE and B0TF exists */
-    if (retval_f && retval_e) {
-        /* Even though B0TE always means TimeToEmpty, we still need to ensure */
-        if ((!charging && retval_e == 65535) || (charging && retval_f == 65535)) {
-            reliable_TTE = 'B0TF';
-            retval = retval_f;
-        }
-        /* Some devices does not set -1 in any scene, how we handle this? */
-        retval = retval_e;
-    }
-    /* 2. Only B0TF but B0TF means TimeToFull */
-    if ((!retval_e && retval_f) && (!charging && retval_f == 65535)) {
-        return -1;
-    }
-    /* 3. Only B0TE but B0TE means TimeToFull */
-    if ((retval_e && !retval_f) && (!charging && retval_e == 65535)) {
-        return -1;
-    }
-    /* 4. Ideal scene, which B0TE actually means TimeToEmpty */
-    if (retval_e) {
-        reliable_TTE = 'B0TE';
-    }
-
-    return retval;
+    return -1;
 }
 
 int estimate_time_to_full() {

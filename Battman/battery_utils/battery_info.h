@@ -60,6 +60,7 @@ SPECIAL:
 #define BIN_IS_BACKGROUND           (0 | BIN_IS_FLOAT | BIN_AFFECTS_BATTERY_CELL)
 #define BIN_IS_HIDDEN               (1 << 1)
 #define BIN_UNIT_BITMASK            (((1 << 3) - 1) << 6)
+#define BIN_FORMAT_FIXED_2          (1 << 9)
 #define BIN_HAS_SUBCELLS (1<<10)
 #define BIN_IS_SUBCELL (1<<11)
 #define BIN_DEF_SUBCELL (BIN_IS_SUBCELL|1<<5)
