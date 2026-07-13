@@ -55,7 +55,7 @@ This section displays the most commonly used Gas Gauge metrics.
 
 | Field | Description |
 | --- | --- |
-| DOD₀ at Last OCV | Chemical depth-of-discharge reference recorded at the most recent qualifying OCV reading while the battery was relaxed. The gauge's raw 0–16384 value is displayed as a percentage and may differ from present depth of discharge. |
+| DOD₀ Reference | Chemical depth-of-discharge reference recorded at the most recent qualifying OCV reading while the battery was at rest. The gauge's raw 0–16384 value is displayed as a percentage and may differ from the current depth of discharge. |
 | Passed Charge | Signed charge in mAh passed through the sense resistor since the last Impedance Track simulation/DOD₀ reference update. It is not lifetime throughput or cycle count. |
 
 #### Electrical Measurements
@@ -83,7 +83,7 @@ This section displays the most commonly used Gas Gauge metrics.
 | Field | Description |
 | --- | --- |
 | Time to Full | Estimated time until the battery reaches full charge. |
-| Time to Empty | Estimated discharge time until the battery is depleted. It is not displayed while the battery is actively charging. |
+| Time to Empty | Estimated time until the battery is depleted. |
 
 #### Cycle Information
 

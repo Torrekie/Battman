@@ -58,8 +58,8 @@ struct battery_info_node main_battery_template[] = {
 	/* FIXME: bmsUptime uses at least 4 bytes (8 bytes in total), current structure only allow 2 */
 	{ _C("Battery Uptime"), _C("The length of time the Battery Management System (BMS) has been up."), /* BIN_UNIT_MIN | BIN_IN_DETAILS */ 0 },
 	{ _C("Qmax"), NULL, BIN_UNIT_MAH | BIN_IN_DETAILS },
-	{ _C("DOD₀ at Last OCV"), _C("Chemical depth of discharge recorded at the most recent qualifying open-circuit-voltage reading while the battery was relaxed. The gas gauge reports DOD₀ on a raw 0–16384 scale; Battman displays it as a percentage. This reference value may not equal the battery's present depth of discharge."), BIN_IS_FLOAT | BIN_FORMAT_FIXED_2 | BIN_UNIT_PERCENT | BIN_IN_DETAILS },
-	{ _C("Passed Charge"), _C("Signed charge passed through the sense resistor since the last Impedance Track simulation/DOD₀ reference update. This is not lifetime charge throughput or the battery cycle count."), BIN_UNIT_MAH | BIN_IN_DETAILS },
+	{ _C("DOD₀ Reference"), _C("Chemical depth of discharge recorded while the battery was last at rest. This value may differ from the current depth of discharge."), BIN_IS_FLOAT | BIN_FORMAT_FIXED_2 | BIN_UNIT_PERCENT | BIN_IN_DETAILS },
+	{ _C("Passed Charge"), _C("Signed charge measured since the battery gauge's last reference update. This value is not lifetime charge or cycle count."), BIN_UNIT_MAH | BIN_IN_DETAILS },
 	{ _C("Voltage"), NULL, BIN_UNIT_MVOLT | BIN_IN_DETAILS },
 	{ _C("Avg. Current"), NULL, BIN_UNIT_MAMP | BIN_IN_DETAILS },
 	{ _C("Avg. Power"), NULL, BIN_UNIT_MWATT | BIN_IN_DETAILS },
@@ -234,7 +234,7 @@ struct iopm_property iopm_items[] = {
 	{ _C("Remaining Capacity"), IPSingleCandidate(CFSTR("AppleRawCurrentCapacity")), kCFNumberSInt16Type, 1, 0 },
 	{ _C("Battery Uptime"), IPSingleCandidate(CFSTR("BatteryData"), CFSTR("LifetimeData"), CFSTR("TotalOperatingTime")), 0, 1, 1.0 / 60.0 },
 	{ _C("Qmax"), IPCandidateGroup(IPCandidate(CFSTR("BatteryData"), CFSTR("Qmax"), (CFStringRef)1), IPCandidate(CFSTR("BatteryData"), CFSTR("QmaxCell0"))), 0, 1, 0 },
-	{ _C("DOD₀ at Last OCV"), IPCandidateGroup(IPCandidate(CFSTR("BatteryData"), CFSTR("DOD0"), (CFStringRef)1), IPCandidate(CFSTR("BatteryFCCData"), CFSTR("DOD0"))), 0, 1, 100.0 / TI_DOD_SCALE },
+	{ _C("DOD₀ Reference"), IPCandidateGroup(IPCandidate(CFSTR("BatteryData"), CFSTR("DOD0"), (CFStringRef)1), IPCandidate(CFSTR("BatteryFCCData"), CFSTR("DOD0"))), 0, 1, 100.0 / TI_DOD_SCALE },
 	{ _C("Passed Charge"), IPCandidateGroup(IPCandidate(CFSTR("BatteryData"), CFSTR("PassedCharge")), IPCandidate(CFSTR("BatteryFCCData"), CFSTR("PassedCharge"))), 0, 1, 0 },
 	{ _C("Voltage"), IPSingleCandidate(CFSTR("BatteryData"), CFSTR("Voltage")), 0, 1, 0 },
 	{ _C("Avg. Current"), IPSingleCandidate(CFSTR("InstantAmperage")), 0, 1, 0 },
@@ -792,7 +792,7 @@ void battery_info_update_smc(struct battery_info_section *section) {
 	// second_to_datefmt is a workaround, the "Battery Uptime" should be numeric type
 	BI_FORMAT_ITEM(_C("Battery Uptime"), "%s", second_to_datefmt(gGauge.bmsUpTime));
 	BI_SET_ITEM(_C("Qmax"), gGauge.Qmax * batt_cell_num());
-	BI_SET_ITEM(_C("DOD₀ at Last OCV"), ti_dod_raw_to_percent(gGauge.DOD0));
+	BI_SET_ITEM(_C("DOD₀ Reference"), ti_dod_raw_to_percent(gGauge.DOD0));
 	BI_SET_ITEM(_C("Passed Charge"), gGauge.PassedCharge);
 	BI_SET_ITEM(_C("Voltage"), gGauge.Voltage);
 	BI_SET_ITEM(_C("Avg. Current"), gGauge.AverageCurrent);

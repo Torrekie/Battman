@@ -1129,21 +1129,20 @@ msgid "Cycle Count"
 msgstr ""
 
 msgid ""
-"Cycle count exceeds the nominal design target. Available capacity or peak "
-"performance may be reduced. Cycle count alone does not indicate battery "
-"authenticity."
+"Cycle count exceeds the battery's design target. Capacity or peak "
+"performance may be reduced."
 msgstr ""
 
 msgid "Time to Empty"
 msgstr ""
 
-msgid "Time to Empty is inconsistent with the current battery telemetry."
+msgid "Time to Empty is inconsistent with current battery data."
 msgstr ""
 
-msgid "DOD₀ at Last OCV"
+msgid "DOD₀ Reference"
 msgstr ""
 
-msgid "DOD₀ is outside the documented 0–16384 range."
+msgid "DOD₀ data is invalid."
 msgstr ""
 
 msgid "Not HVC"
@@ -1501,19 +1500,16 @@ msgid "Qmax"
 msgstr ""
 
 msgid ""
-"Chemical depth of discharge recorded at the most recent qualifying open-"
-"circuit-voltage reading while the battery was relaxed. The gas gauge reports "
-"DOD₀ on a raw 0–16384 scale; Battman displays it as a percentage. This "
-"reference value may not equal the battery's present depth of discharge."
+"Chemical depth of discharge recorded while the battery was last at rest. "
+"This value may differ from the current depth of discharge."
 msgstr ""
 
 msgid "Passed Charge"
 msgstr ""
 
 msgid ""
-"Signed charge passed through the sense resistor since the last Impedance "
-"Track simulation/DOD₀ reference update. This is not lifetime charge "
-"throughput or the battery cycle count."
+"Signed charge measured since the battery gauge's last reference update. "
+"This value is not lifetime charge or cycle count."
 msgstr ""
 
 msgid "Voltage"

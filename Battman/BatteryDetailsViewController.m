@@ -784,7 +784,7 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 				}
 				if (count > design) {
 					code = WARN_EXCEEDED;
-					*str = _C("Cycle count exceeds the nominal design target. Available capacity or peak performance may be reduced. Cycle count alone does not indicate battery authenticity.");
+					*str = _C("Cycle count exceeds the battery's design target. Capacity or peak performance may be reduced.");
 				}
 				return code;
 			});
@@ -806,16 +806,16 @@ void equipWarningCondition_b(UITableViewCell *equippedCell, NSString *textLabel,
 				/* Allow estimator overhead before flagging a telemetry mismatch. */
 				if ((double)tte > (ideal_minutes * 1.5)) {
 					code = WARN_UNUSUAL;
-					*str = _C("Time to Empty is inconsistent with the current battery telemetry.");
+					*str = _C("Time to Empty is inconsistent with current battery data.");
 				}
 				return code;
 			});
-		} else if ([cellLabel isEqualToString:_("DOD₀ at Last OCV")]) {
-			equipWarningCondition_b(cell, _("DOD₀ at Last OCV"), ^warn_condition_t(const char **str) {
+		} else if ([cellLabel isEqualToString:_("DOD₀ Reference")]) {
+			equipWarningCondition_b(cell, _("DOD₀ Reference"), ^warn_condition_t(const char **str) {
 				warn_condition_t code = WARN_NONE;
 				if (!ti_dod_raw_is_valid(gauge.DOD0)) {
 					code = WARN_UNUSUAL;
-					*str = _C("DOD₀ is outside the documented 0–16384 range.");
+					*str = _C("DOD₀ data is invalid.");
 				}
 				return code;
 			});
