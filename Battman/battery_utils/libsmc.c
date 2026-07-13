@@ -362,26 +362,30 @@ float *get_temperature_per_cell(void) {
     return cells;
 }
 
-int get_time_to_empty(void) {
+int get_time_to_empty(charging_state_t charging_state) {
     SMC_INIT_CHK(-1);
 
-    if (is_charging(NULL, NULL) == kIsCharging)
+    if (charging_state == kIsCharging)
         return -1;
 
-    uint16_t retval = 0;
-    result = smc_read_n('B0TE', &retval, 2);
-    if (result == kIOReturnSuccess && battery_tte_is_valid(retval))
-        return retval;
+    battery_tte_reading_t b0te = {0};
+    battery_tte_reading_t b0tf = {0};
+    bool allow_b0tf_fallback = false;
+
+    result = smc_read_n('B0TE', &b0te.minutes, 2);
+    b0te.available = result == kIOReturnSuccess;
 
 #if TARGET_OS_EMBEDDED && !TARGET_OS_SIMULATOR
-    /* Some embedded devices expose discharge TTE through B0TF instead. */
-    retval = 0;
-    result = smc_read_n('B0TF', &retval, 2);
-    if (result == kIOReturnSuccess && battery_tte_is_valid(retval))
-        return retval;
+    /* B0TF is ambiguous, so use it only when B0TE is absent and the device is
+     * clearly discharging. A readable B0TE sentinel remains authoritative. */
+    allow_b0tf_fallback = !b0te.available && charging_state == kIsNotCharging;
+    if (allow_b0tf_fallback) {
+        result = smc_read_n('B0TF', &b0tf.minutes, 2);
+        b0tf.available = result == kIOReturnSuccess;
+    }
 #endif
 
-    return -1;
+    return battery_tte_resolve(b0te, b0tf, allow_b0tf_fallback);
 }
 
 int estimate_time_to_full() {

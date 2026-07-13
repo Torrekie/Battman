@@ -516,7 +516,7 @@ extern board_info_t gBoard;
 const board_info_t *get_board_info(void);
 int get_fan_status(void);
 float get_temperature(void);
-int get_time_to_empty(void);
+int get_time_to_empty(charging_state_t charging_state);
 int estimate_time_to_full(void);
 float get_battery_health(float *design_cap, float *full_cap);
 bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design);

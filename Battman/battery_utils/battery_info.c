@@ -798,7 +798,7 @@ void battery_info_update_smc(struct battery_info_section *section) {
 	BI_SET_ITEM(_C("Avg. Current"), gGauge.AverageCurrent);
 	BI_SET_ITEM(_C("Avg. Power"), gGauge.AveragePower);
 	BI_SET_ITEM(_C("Cell Count"), batt_cell_num());
-	int timeToEmpty = get_time_to_empty();
+	int timeToEmpty = get_time_to_empty(charging_stat);
 	BI_SET_ITEM_IF(charging_stat != kIsCharging && battery_tte_is_valid(timeToEmpty),
 	    _C("Time to Empty"), timeToEmpty);
 	BI_SET_ITEM(_C("Cycle Count"), gGauge.CycleCount);

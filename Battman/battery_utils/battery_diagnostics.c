@@ -68,6 +68,16 @@ bool battery_tte_is_valid(int minutes) {
 	return minutes > 0 && minutes <= INT16_MAX;
 }
 
+int battery_tte_resolve(battery_tte_reading_t b0te,
+    battery_tte_reading_t b0tf, bool allow_b0tf_fallback) {
+	if (b0te.available)
+		return battery_tte_is_valid(b0te.minutes) ? b0te.minutes : -1;
+	if (allow_b0tf_fallback && b0tf.available &&
+	    battery_tte_is_valid(b0tf.minutes))
+		return b0tf.minutes;
+	return -1;
+}
+
 double battery_ideal_tte_minutes(uint16_t remaining_capacity,
     int16_t average_current) {
 	if (average_current == 0)
