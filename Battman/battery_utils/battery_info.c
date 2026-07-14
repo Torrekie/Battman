@@ -888,7 +888,6 @@ void accessory_info_update(struct battery_info_section *section) {
 	
 	// This is temporary, subcells will be implemented to replace this terrible impl.
 	char str_buf[512];
-	char *bufptr=str_buf;
 
 	/* IOAM Part */
 	const char *idstr = acc_id_string(acc_id);
@@ -905,13 +904,7 @@ void accessory_info_update(struct battery_info_section *section) {
 	BI_FORMAT_ITEM_IF(*accinfo.hwVer, _C("Hardware Version"), "%s", accinfo.hwVer);
 	BI_FORMAT_ITEM(_C("Battery Pack"), "%s", get_acc_battery_pack_mode(connect) ? L_TRUE : L_FALSE);
 	
-	bufptr+=sprintf(bufptr,"%s: ",cond_localize_c("Configured Mode"));
-	acc_powermode_string(mode.mode,&bufptr);
-	*(bufptr++)='\n';
-	bufptr+=sprintf(bufptr,"%s: ",cond_localize_c("Active Mode"));
-	acc_powermode_string(mode.active,&bufptr);
-	*(bufptr++)='\n';
-	acc_powermode_string_supported(mode,&bufptr);
+	acc_powermode_details_string(mode, str_buf, sizeof(str_buf));
 	BI_FORMAT_ITEM(_C("Power Mode"), "%s", str_buf);
 	if (sleep.supported) {
 		BI_FORMAT_ITEM(_C("Sleep Power"), "%s\n%s: %d", sleep.enabled ? cond_localize_c("Enabled") : cond_localize_c("Disabled"), cond_localize_c("Limit"), sleep.limit);
