@@ -2,6 +2,7 @@
 #include "../common.h"
 //#include "intlextern.h"
 #include <mach/mach.h>
+#include <stdarg.h>
 
 io_iterator_t gAccessories;
 io_service_t gAccPrimary;
@@ -114,14 +115,37 @@ static const char *acc_inductive_modes[] = {
 extern const char *cond_localize_c(const char *);
 #define _C(x) cond_localize_c(x)
 
-void acc_powermode_string(AccessoryPowermode powermode, char **pbuf) {
-	// IOAM modes are starting form 1
-	if ((powermode - 1) < kIOAMPowermodeCount) {
-		*pbuf=stpcpy(*pbuf,_C(acc_powermodes[powermode - 1]));
+static void acc_append_string(char **pbuf, size_t *remaining,
+    const char *format, ...) {
+	if (!pbuf || !*pbuf || !remaining || *remaining == 0 || !format)
+		return;
+
+	va_list args;
+	va_start(args, format);
+	int written = vsnprintf(*pbuf, *remaining, format, args);
+	va_end(args);
+	if (written < 0) {
+		**pbuf = '\0';
 		return;
 	}
 
-	(*pbuf) +=sprintf(*pbuf, "<%d>", powermode);
+	size_t used = (size_t)written;
+	if (used >= *remaining)
+		used = *remaining - 1;
+	*pbuf += used;
+	*remaining -= used;
+}
+
+void acc_powermode_string(AccessoryPowermode powermode, char **pbuf,
+    size_t *remaining) {
+	// IOAM modes are starting form 1
+	if (powermode >= kIOAMPowermodeOff && powermode <= kIOAMPowermodeCount) {
+		acc_append_string(pbuf, remaining, "%s",
+		    _C(acc_powermodes[powermode - 1]));
+		return;
+	}
+
+	acc_append_string(pbuf, remaining, "<%d>", powermode);
 }
 const char *acc_usb_connstat_string(int usb_connstat) {
 	if (usb_connstat > 5) return _C("Unknown");
@@ -129,18 +153,41 @@ const char *acc_usb_connstat_string(int usb_connstat) {
 	return _C(acc_usb_connstats[usb_connstat]);
 }
 
-void acc_powermode_string_supported(accessory_powermode_t mode, char **pbuf) {
-	if (mode.supported_cnt == 0) {
-		**pbuf=0;
+void acc_powermode_string_supported(accessory_powermode_t mode, char **pbuf,
+    size_t *remaining) {
+	size_t supportedCount = mode.supported_cnt;
+	size_t supportedCapacity = sizeof(mode.supported) / sizeof(mode.supported[0]);
+	if (supportedCount > supportedCapacity)
+		supportedCount = supportedCapacity;
+	if (supportedCount == 0) {
+		if (pbuf && *pbuf && remaining && *remaining)
+			**pbuf = '\0';
 		return;
 	}
 
-	(*pbuf)+=sprintf(*pbuf, "%s: ", _C("Supported List"));
-	for (size_t i = 0; i < mode.supported_cnt; i++) {
-		(*pbuf)+=sprintf(*pbuf, "%s", (i == 0) ? "" : "\n");
-		acc_powermode_string(mode.supported[i],pbuf);
-		(*pbuf)+=sprintf(*pbuf, "<%lu %s>", mode.supported_lim[i], L_MA);
+	acc_append_string(pbuf, remaining, "%s: ", _C("Supported List"));
+	for (size_t i = 0; i < supportedCount; i++) {
+		acc_append_string(pbuf, remaining, "%s", (i == 0) ? "" : "\n");
+		acc_powermode_string(mode.supported[i], pbuf, remaining);
+		acc_append_string(pbuf, remaining, "<%lu %s>",
+		    mode.supported_lim[i], L_MA);
 	}
+}
+
+void acc_powermode_details_string(accessory_powermode_t mode, char *pbuf,
+    size_t capacity) {
+	if (!pbuf || capacity == 0)
+		return;
+
+	char *cursor = pbuf;
+	size_t remaining = capacity;
+	*pbuf = '\0';
+	acc_append_string(&cursor, &remaining, "%s: ", _C("Configured Mode"));
+	acc_powermode_string(mode.mode, &cursor, &remaining);
+	acc_append_string(&cursor, &remaining, "\n%s: ", _C("Active Mode"));
+	acc_powermode_string(mode.active, &cursor, &remaining);
+	acc_append_string(&cursor, &remaining, "\n");
+	acc_powermode_string_supported(mode, &cursor, &remaining);
 }
 
 void acc_usb_ilim_string_multiline(accessory_usb_ilim_t ilim, char *pbuf) {
@@ -173,7 +220,7 @@ const char *acc_port_type_string(int pt) {
 }
 
 void acc_inductive_mode_string(int mode, char *pbuf) {
-	if (mode < 4) {
+	if (mode >= 0 && mode < 4) {
 		strcpy(pbuf,_C(acc_inductive_modes[mode]));
 		return;
 	}
@@ -440,7 +487,6 @@ accessory_info_t get_acc_info(io_connect_t connect) {
 
 accessory_powermode_t get_acc_powermode(io_connect_t connect) {
 	accessory_powermode_t mode;
-	CFArrayRef supported;
 
 	memset(&mode, 0, sizeof(mode));
 
@@ -448,49 +494,74 @@ accessory_powermode_t get_acc_powermode(io_connect_t connect) {
 		mode.mode = IOAccessoryManagerGetPowerMode(connect);
 		mode.active = IOAccessoryManagerGetActivePowerMode(connect);
 	} else {
-		CFNumberRef number;
-		number = (CFNumberRef)IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryPowerMode"), kCFAllocatorDefault, kNilOptions);
-		if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &mode.mode)) {
+		CFTypeRef property = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryPowerMode"), kCFAllocatorDefault, kNilOptions);
+		SInt32 powerMode;
+		if (!property || CFGetTypeID(property) != CFNumberGetTypeID() ||
+		    !CFNumberGetValue((CFNumberRef)property, kCFNumberSInt32Type, &powerMode)) {
 			mode.mode = 0;
+		} else {
+			mode.mode = powerMode;
 		}
-		number = (CFNumberRef)IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryActivePowerMode"), kCFAllocatorDefault, kNilOptions);
-		if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &mode.active)) {
+		if (property) CFRelease(property);
+
+		property = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryActivePowerMode"), kCFAllocatorDefault, kNilOptions);
+		if (!property || CFGetTypeID(property) != CFNumberGetTypeID() ||
+		    !CFNumberGetValue((CFNumberRef)property, kCFNumberSInt32Type, &powerMode)) {
 			mode.active = 0;
+		} else {
+			mode.active = powerMode;
 		}
-		if (number) CFRelease(number);
+		if (property) CFRelease(property);
 	}
 
-	supported = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessorySupportedPowerModes"), kCFAllocatorDefault, kNilOptions);
-	if (supported) {
+	CFTypeRef supportedProperty = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessorySupportedPowerModes"), kCFAllocatorDefault, kNilOptions);
+	if (supportedProperty && CFGetTypeID(supportedProperty) == CFArrayGetTypeID()) {
+		CFArrayRef supported = (CFArrayRef)supportedProperty;
 #if DEBUG
 		printf("Powermodes: ");
 		CFShow(supported);
 #endif
-		mode.supported_cnt = CFArrayGetCount(supported);
-		for (int i = 0; i < mode.supported_cnt; i++) {
-			CFNumberRef value = CFArrayGetValueAtIndex(supported, i);
-			if (CFNumberGetValue(value, kCFNumberSInt32Type, &mode.supported[i])) {
-				if (use_libioam)
-					mode.supported_lim[i] = IOAccessoryManagerPowerModeCurrentLimit(connect, mode.supported[i]);
-				else {
-					CFArrayRef array = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryPowerCurrentLimits"), kCFAllocatorDefault, kNilOptions);
-					if (array) {
-						if (mode.supported[i]) {
-							CFIndex modeIndex = mode.supported[i] - 1;
-							if (CFArrayGetCount(array) > i) {
-								CFNumberRef number = CFArrayGetValueAtIndex(array, modeIndex);
-								if (number)
-									CFNumberGetValue(number, kCFNumberSInt32Type, &mode.supported_lim[i]);
-							}
+		CFTypeRef limitsProperty = NULL;
+		CFArrayRef limits = NULL;
+		if (!use_libioam) {
+			limitsProperty = IORegistryEntryCreateCFProperty(connect, CFSTR("IOAccessoryPowerCurrentLimits"), kCFAllocatorDefault, kNilOptions);
+			if (limitsProperty && CFGetTypeID(limitsProperty) == CFArrayGetTypeID()) {
+				limits = (CFArrayRef)limitsProperty;
+			}
+		}
+
+		const size_t supportedCapacity = sizeof(mode.supported) / sizeof(mode.supported[0]);
+		CFIndex reportedCount = CFArrayGetCount(supported);
+		for (CFIndex i = 0; i < reportedCount && mode.supported_cnt < supportedCapacity; i++) {
+			CFTypeRef value = CFArrayGetValueAtIndex(supported, i);
+			SInt32 powerMode;
+			if (!value || CFGetTypeID(value) != CFNumberGetTypeID() ||
+			    !CFNumberGetValue((CFNumberRef)value, kCFNumberSInt32Type, &powerMode)) {
+				continue;
+			}
+
+			size_t destinationIndex = mode.supported_cnt++;
+			mode.supported[destinationIndex] = powerMode;
+			if (powerMode >= kIOAMPowermodeOff && powerMode <= kIOAMPowermodeCount) {
+				if (use_libioam) {
+					mode.supported_lim[destinationIndex] = IOAccessoryManagerPowerModeCurrentLimit(connect, powerMode);
+				} else if (limits) {
+					CFIndex limitIndex = (CFIndex)powerMode - kIOAMPowermodeOff;
+					if (limitIndex < CFArrayGetCount(limits)) {
+						CFTypeRef limitValue = CFArrayGetValueAtIndex(limits, limitIndex);
+						SInt32 currentLimit;
+						if (limitValue && CFGetTypeID(limitValue) == CFNumberGetTypeID() &&
+						    CFNumberGetValue((CFNumberRef)limitValue, kCFNumberSInt32Type, &currentLimit) &&
+						    currentLimit >= 0) {
+							mode.supported_lim[destinationIndex] = currentLimit;
 						}
-						CFRelease(array);
 					}
 				}
 			}
-			if (value) CFRelease(value);
 		}
+		if (limitsProperty) CFRelease(limitsProperty);
 	}
-	if (supported) CFRelease(supported);
+	if (supportedProperty) CFRelease(supportedProperty);
 
 	return mode;
 }

@@ -5,8 +5,10 @@
 #include "accessory.h"
 #include "libsmc.h"
 #include <assert.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -348,21 +350,25 @@ void bi_node_set_hidden(struct battery_info_node *node, int identifier,
 
 #include <mach/mach.h>
 
+enum { BI_NODE_STRING_CAPACITY = 256 };
+
 char *bi_node_ensure_string(struct battery_info_node *node, int identifier,
     uint64_t length) {
 	node += identifier;
 	assert(!(node->content & BIN_IS_SPECIAL));
+	if (length > BI_NODE_STRING_CAPACITY)
+		return NULL;
 
 	if (!node->content) {
 		void *allocen = (void *)0x10000000;
 		// ^ Preferred addr
 		// Use vm_allocate to prevent possible unexpected heap allocation (it
 		// crashes in current data structure)
-		// TODO: get rid of hardcoded length
-		int   result  = vm_allocate(mach_task_self(), (vm_address_t *)&allocen, 256, VM_FLAGS_ANYWHERE);
+		int   result  = vm_allocate(mach_task_self(), (vm_address_t *)&allocen,
+		    BI_NODE_STRING_CAPACITY, VM_FLAGS_ANYWHERE);
 		if (result != KERN_SUCCESS) {
 			// Fallback to malloc
-			// allocen = malloc(length);
+			// allocen = malloc(BI_NODE_STRING_CAPACITY);
 			allocen = nil;
 		}
 		node->content = (uint32_t)(((uint64_t)allocen) >> 3);
@@ -378,7 +384,8 @@ void bi_node_free_string(struct battery_info_node *node) {
 	uint32_t old = __atomic_exchange_n(&node->content, 0, __ATOMIC_ACQ_REL);
 	if (!old)
 		return;
-	vm_deallocate(mach_task_self(), (vm_address_t)(((uint64_t)old)<<3), 256);
+	vm_deallocate(mach_task_self(), (vm_address_t)(((uint64_t)old)<<3),
+	    BI_NODE_STRING_CAPACITY);
 }
 
 static int _impl_set_item_find_item(struct battery_info_node **head, const char *desc) {
@@ -412,7 +419,7 @@ static char *_impl_set_item(struct battery_info_node **head, const char *desc,
 			}
 			return NULL;
 		}
-		return bi_node_ensure_string(i, 0, 256);
+		return bi_node_ensure_string(i, 0, BI_NODE_STRING_CAPACITY);
 	} else if (options == 1) {
 		bi_node_set_hidden(i, 0, (bool)value);
 	} else if ((i->content & BIN_IS_FLOAT) == BIN_IS_FLOAT) {
@@ -424,13 +431,28 @@ static char *_impl_set_item(struct battery_info_node **head, const char *desc,
 	return NULL;
 }
 
+static void _impl_format_item(struct battery_info_node **head, const char *desc,
+    const char *format, ...) __attribute__((format(printf, 3, 4)));
+
+static void _impl_format_item(struct battery_info_node **head, const char *desc,
+    const char *format, ...) {
+	char *buffer = _impl_set_item(head, desc, 0, 0, 2);
+	if (!buffer || !format)
+		return;
+
+	va_list args;
+	va_start(args, format);
+	(void)vsnprintf(buffer, BI_NODE_STRING_CAPACITY, format, args);
+	va_end(args);
+}
+
 #define BI_SET_ITEM(name, value) \
 	_impl_set_item(head_arr, name, (uint64_t)(value), (float)(value), 0)
 
 #define BI_ENSURE_STR(name) _impl_set_item(head_arr, name, 0, 0, 2)
 
 #define BI_FORMAT_ITEM(name, ...) \
-	sprintf(_impl_set_item(head_arr, name, 0, 0, 2), __VA_ARGS__)
+	_impl_format_item(head_arr, name, __VA_ARGS__)
 
 #define BI_SET_ITEM_IF(cond, name, value)        \
 	if (cond) {                                  \
@@ -847,7 +869,10 @@ void accessory_info_update(struct battery_info_section *section) {
 	accessory_info_t accinfo              = get_acc_info(connect);
 	accessory_powermode_t mode            = get_acc_powermode(connect);
 	accessory_sleeppower_t sleep          = get_acc_sleeppower(connect);
-	iktara_accessory_array_t array;
+	iktara_accessory_array_t array            = {
+		.charging = -1,
+		.capacity = -1,
+	};
 	accessory_usb_connstat_t connstat;
 	accessory_usb_ilim_t ilim;
 	int inductive_fw_mode                 = get_acc_inductive_fw_mode(connect);
@@ -864,7 +889,6 @@ void accessory_info_update(struct battery_info_section *section) {
 	
 	// This is temporary, subcells will be implemented to replace this terrible impl.
 	char str_buf[512];
-	char *bufptr=str_buf;
 
 	/* IOAM Part */
 	const char *idstr = acc_id_string(acc_id);
@@ -881,13 +905,7 @@ void accessory_info_update(struct battery_info_section *section) {
 	BI_FORMAT_ITEM_IF(*accinfo.hwVer, _C("Hardware Version"), "%s", accinfo.hwVer);
 	BI_FORMAT_ITEM(_C("Battery Pack"), "%s", get_acc_battery_pack_mode(connect) ? L_TRUE : L_FALSE);
 	
-	bufptr+=sprintf(bufptr,"%s: ",cond_localize_c("Configured Mode"));
-	acc_powermode_string(mode.mode,&bufptr);
-	*(bufptr++)='\n';
-	bufptr+=sprintf(bufptr,"%s: ",cond_localize_c("Active Mode"));
-	acc_powermode_string(mode.active,&bufptr);
-	*(bufptr++)='\n';
-	acc_powermode_string_supported(mode,&bufptr);
+	acc_powermode_details_string(mode, str_buf, sizeof(str_buf));
 	BI_FORMAT_ITEM(_C("Power Mode"), "%s", str_buf);
 	if (sleep.supported) {
 		BI_FORMAT_ITEM(_C("Sleep Power"), "%s\n%s: %d", sleep.enabled ? cond_localize_c("Enabled") : cond_localize_c("Disabled"), cond_localize_c("Limit"), sleep.limit);
@@ -992,8 +1010,9 @@ void accessory_info_update(struct battery_info_section *section) {
 	} else if (context->primary_port == 257) {
 		/* TODO: Scorpius */
 	}
-	acc_inductive_mode_string(inductive_fw_mode,str_buf);
-	BI_FORMAT_ITEM_IF(inductive_fw_mode != -1, _C("Inductive FW Mode"), "%s", str_buf);
+	if (inductive_fw_mode >= 0)
+		acc_inductive_mode_string(inductive_fw_mode, str_buf);
+	BI_FORMAT_ITEM_IF(inductive_fw_mode >= 0, _C("Inductive FW Mode"), "%s", str_buf);
 	BI_FORMAT_ITEM_IF(inductive_region != -1, _C("Inductive Region Code"), "0x%04x (%c%c)", (uint16_t)inductive_region, (inductive_region & 0xFF00) >> 8, inductive_region & 0xFF);
 	BI_SET_ITEM_IF(inductive_timeout, _C("Inductive Auth Timeout"), inductive_timeout);
 	/* MagSafe Charger: kHIDPage_AppleVendor:17 */
@@ -1006,28 +1025,11 @@ void accessory_info_update(struct battery_info_section *section) {
 	// check UPSMonitor.m
 	// FIXME: kIOAccessoryPortIDSerial added as a workaround of cell init, try fix bi_make_section
 	if (smc_vendor || hid_vendor || context->primary_port == kIOAccessoryPortIDSerial) {
-		UPSDataRef device = UPSDeviceMatchingVendorProduct(vid, pid);
-		ups_batt_t info = {0};
-
-		int cell_count = 0;
-		if (device != NULL) {
-			info = ups_battery_info(device);
-
-			CFIndex caps_count = CFSetGetCount(device->upsCapabilities);
-			for (CFIndex i = 0; i < caps_count; i++) {
-				CFStringRef val = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR("Cell %ld Voltage"), i);
-				if (val && CFSetContainsValue(device->upsCapabilities, val)) {
-					cell_count++;
-					CFRelease(val);
-					continue;
-				} else {
-					if (val) CFRelease(val);
-					break;
-				}
-			}
-		}
+		UPSBatterySnapshot snapshot = {0};
+		UPSCopyBatterySnapshot(vid, pid, &snapshot);
+		ups_batt_t info = snapshot.battery;
 		/* We are not ready to display Cell specs for any batteries (But defined in headers) */
-		BI_SET_ITEM_IF(cell_count != 0, ("Cell Count"), cell_count);
+		BI_SET_ITEM_IF(snapshot.cell_count != 0, ("Cell Count"), snapshot.cell_count);
 		/* Sadly, UPS does not got reports on Designed Capacity */
 		BI_SET_ITEM_IF(info.current_capacity != 0, _C("Current Capacity"), info.current_capacity);
 		BI_SET_ITEM_IF(info.max_capacity != 0, _C("Max Capacity"), info.max_capacity);

@@ -57,8 +57,12 @@ const char *acc_id_string(int accid);
 const char *acc_port_type_string(int pt);
 const char *manf_id_string(int manf);
 const char *apple_prod_id_string(int prod);
-void acc_powermode_string(AccessoryPowermode powermode,char**);
-void acc_powermode_string_supported(accessory_powermode_t mode,char**);
+void acc_powermode_string(AccessoryPowermode powermode, char **pbuf,
+    size_t *remaining);
+void acc_powermode_string_supported(accessory_powermode_t mode, char **pbuf,
+    size_t *remaining);
+void acc_powermode_details_string(accessory_powermode_t mode, char *pbuf,
+    size_t capacity);
 void acc_usb_ilim_string_multiline(accessory_usb_ilim_t ilim,char*);
 const char *acc_usb_connstat_string(int usb_connstat);
 void acc_inductive_mode_string(int mode,char*);

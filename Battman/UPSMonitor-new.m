@@ -9,7 +9,7 @@
 #import "UPSMonitor.h"
 
 #include <pthread/pthread.h>
-#include <syslog.h>
+#include <unistd.h>
 #import <UIKit/UIKit.h>
 
 UPSDeviceSet *gAllUPSDevices = NULL;
@@ -19,25 +19,25 @@ UPSDeviceSet *gAllUPSDevices = NULL;
 // ---------------------------------------------------------------------------
 
 static bool UPSWatching = false;
-
-static dispatch_queue_t gDevicesQueue;        // serial queue to protect gAllUPSDevices
-
 static pthread_t gUPSWatchThread = 0;         // watch thread (joinable)
+static bool gWatchThreadExited = false;
+static bool gWatchThreadStarting = false;
+static bool gWatchThreadReady = false;
 static CFRunLoopRef gBackgroundRunLoop = NULL;
 static IONotificationPortRef gNotifyPort = NULL;
 static io_iterator_t gAddedIter = MACH_PORT_NULL;
 
 static bool gTerminationInProgress = false;
-
-// queue used for teardown work (so we do not block main thread)
-static dispatch_queue_t gTeardownQueue;
+static bool gNotificationsPaused = false;
 
 // (Full file content, with modifications and added helper functions)
 
 // --- additions at top of file (new global lock & helper prototypes) ---
 static pthread_mutex_t gAllUPSDevicesLock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t gWatchLifecycleLock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t gWatchStateCondition = PTHREAD_COND_INITIALIZER;
 
-static bool UPSDeviceSetContainsByID(UPSDeviceSet *set, uint64_t regID);
+static bool AllUPSDevicesContainsByID(uint64_t regID);
 static void SetupPluginAndEventSourceForDevice(UPSDataRef upsDataRef, io_service_t upsDevice);
 static void TeardownDeviceRuntime(UPSDataRef upsDataRef); // remove sources/timers/notification/plugin but keep CF properties
 static void RecreateMonitoringForExistingDevices(void); // run on background runloop to reattach existing devices
@@ -57,6 +57,10 @@ static UPSDeviceSet *UPSDeviceSetCreate(void) {
 	if (!set) return NULL;
 	set->capacity = 1;
 	set->items    = calloc(set->capacity, sizeof(UPSDataRef));
+	if (!set->items) {
+		free(set);
+		return NULL;
+	}
 	return set;
 }
 
@@ -66,196 +70,264 @@ static void UPSDeviceSetDestroy(UPSDeviceSet *set) {
 	free(set->items);
 	free(set);
 }
-
-// Returns true if already present
-static bool UPSDeviceSetContains(UPSDeviceSet *set, UPSDataRef ptr) {
-	bool ret = false;
-	if (!set) return false;
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	for (size_t i = 0; i < set->count; i++) {
-		if (set->items[i]->regID == ptr->regID) { ret = true; break; }
+static UPSDataRef UPSDataRetain(UPSDataRef upsDataRef) {
+	if (upsDataRef) {
+		__atomic_add_fetch(&upsDataRef->retainCount, 1, __ATOMIC_RELAXED);
 	}
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return ret;
+	return upsDataRef;
 }
 
-// New: check existence by regID
-static bool UPSDeviceSetContainsByID(UPSDeviceSet *set, uint64_t regID) {
-	bool ret = false;
-	if (!set) return false;
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	for (size_t i = 0; i < set->count; i++) {
-		if (set->items[i]->regID == regID) { ret = true; break; }
-	}
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return ret;
+static void UPSDataRelease(UPSDataRef upsDataRef);
+
+typedef struct UPSRuntimeResources {
+	IOUPSPlugInInterface **plugin;
+	io_object_t notification;
+	UPSDataRef notificationOwner;
+	CFRunLoopSourceRef eventSource;
+	CFRunLoopTimerRef eventTimer;
+} UPSRuntimeResources;
+
+static UPSRuntimeResources UPSDetachRuntimeLocked(UPSDataRef upsDataRef) {
+	UPSRuntimeResources runtime = {
+		.plugin = upsDataRef->upsPlugInInterface,
+		.notification = upsDataRef->notification,
+		.notificationOwner = upsDataRef->notification != MACH_PORT_NULL ? upsDataRef : NULL,
+		.eventSource = upsDataRef->upsEventSource,
+		.eventTimer = upsDataRef->upsEventTimer,
+	};
+	upsDataRef->upsPlugInInterface = NULL;
+	upsDataRef->notification = MACH_PORT_NULL;
+	upsDataRef->upsEventSource = NULL;
+	upsDataRef->upsEventTimer = NULL;
+	return runtime;
 }
 
-// Add ptr if not already in the set
-static bool UPSDeviceSetAdd(UPSDeviceSet *set, UPSDataRef ptr) {
-	if (!set || !ptr) return false;
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	// check existence by regID
-	for (size_t i = 0; i < set->count; i++) {
-		if (set->items[i]->regID == ptr->regID) {
-			pthread_mutex_unlock(&gAllUPSDevicesLock);
-			return false;
-		}
+static void UPSReleaseRuntime(UPSRuntimeResources runtime) {
+	if (runtime.notification != MACH_PORT_NULL) {
+		IOObjectRelease(runtime.notification);
 	}
-	if (set->count == set->capacity) {
-		size_t newCap = set->capacity * 2;
-		UPSDataRef *newArr = realloc(set->items, newCap * sizeof(UPSDataRef));
-		if (!newArr) {
-			pthread_mutex_unlock(&gAllUPSDevicesLock);
-			return false;
-		}
-		set->items    = newArr;
-		set->capacity = newCap;
+	if (runtime.eventSource) {
+		CFRunLoopSourceInvalidate(runtime.eventSource);
+		CFRelease(runtime.eventSource);
 	}
-	set->items[set->count++] = ptr;
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return true;
+	if (runtime.eventTimer) {
+		CFRunLoopTimerInvalidate(runtime.eventTimer);
+		CFRelease(runtime.eventTimer);
+	}
+	if (runtime.plugin) {
+		(*runtime.plugin)->Release(runtime.plugin);
+	}
+	if (runtime.notificationOwner) {
+		UPSDataRelease(runtime.notificationOwner);
+	}
 }
 
-// Remove ptr if present; shifts tail elements down
-static bool UPSDeviceSetRemove(UPSDeviceSet *set, UPSDataRef ptr) {
-	if (!set || !ptr) return false;
-	bool ret = false;
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	for (size_t i = 0; i < set->count; i++) {
-		if (set->items[i]->regID == ptr->regID) {
-			memmove(&set->items[i],
-					&set->items[i+1],
-					(set->count - i - 1) * sizeof(UPSDataRef));
-			set->count--;
-			ret = true;
-			break;
-		}
-	}
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return ret;
+static void UPSDataDestroy(UPSDataRef upsDataRef) {
+	TeardownDeviceRuntime(upsDataRef);
+	if (upsDataRef->upsProperties) CFRelease(upsDataRef->upsProperties);
+	if (upsDataRef->upsCapabilities) CFRelease(upsDataRef->upsCapabilities);
+	if (upsDataRef->upsEvent) CFRelease(upsDataRef->upsEvent);
+	free(upsDataRef);
 }
 
-// Number of items
-static size_t UPSDeviceSetCount(UPSDeviceSet *set) {
-	size_t c = 0;
-	if (!set) return 0;
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	c = set->count;
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return c;
+static void UPSDataRelease(UPSDataRef upsDataRef) {
+	if (upsDataRef &&
+	    __atomic_sub_fetch(&upsDataRef->retainCount, 1, __ATOMIC_ACQ_REL) == 0) {
+		UPSDataDestroy(upsDataRef);
+	}
 }
 
-// Copy all items into user-supplied buffer (must be at least count() in size)
-static void UPSDeviceSetGetAll(UPSDeviceSet *set, UPSDataRef *outBuffer) {
-	if (!set || !outBuffer) return;
+static bool AllUPSDevicesContainsByID(uint64_t regID) {
+	bool contains = false;
 	pthread_mutex_lock(&gAllUPSDevicesLock);
-	memcpy(outBuffer, set->items, set->count * sizeof(UPSDataRef));
-	pthread_mutex_unlock(&gAllUPSDevicesLock);
-}
-
-UPSDataRef UPSDeviceMatchingVendorProduct(int vid, int pid) {
-	UPSDataRef ret = NULL;
-	if (!gAllUPSDevices || gAllUPSDevices->count == 0) {
-		DBGLOG(@"[UPSMonitor] no UPS devices yet");
-		return NULL;
-	}
-	if (vid == 0 || pid == 0) {
-		return NULL;
-	}
-	
-	pthread_mutex_lock(&gAllUPSDevicesLock);
-	for (size_t i = 0; i < gAllUPSDevices->count; i++) {
-		UPSDataRef d = gAllUPSDevices->items[i];
-		
-		SInt32 vendor, product;
-		CFNumberRef number;
-		if (d->upsProperties) {
-			number = CFDictionaryGetValue(d->upsProperties, CFSTR("Vendor ID"));
-			if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &vendor)) {
-				continue;
-			}
-			number = CFDictionaryGetValue(d->upsProperties, CFSTR("Product ID"));
-			if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &product)) {
-				continue;
-			}
-			if ((vendor == vid) && (product == pid)) {
-				ret = d;
+	if (gAllUPSDevices) {
+		for (size_t i = 0; i < gAllUPSDevices->count; i++) {
+			if (gAllUPSDevices->items[i]->regID == regID) {
+				contains = true;
 				break;
 			}
 		}
 	}
 	pthread_mutex_unlock(&gAllUPSDevicesLock);
-	return ret;
+	return contains;
 }
 
-// Free per-device runtime objects and the structure. This function must be safe to call from any thread.
-// It will schedule runloop removals on gBackgroundRunLoop if needed.
-static void
-FreeUPSData(UPSDataRef upsDataRef)
-{
-	if (upsDataRef == NULL) return;
-	
-	// Remove runloop source/timer on the background runloop (if that runloop exists)
-	if (upsDataRef->upsEventSource || upsDataRef->upsEventTimer) {
-		if (gBackgroundRunLoop) {
-			// schedule removal on the background runloop to be safe
-			CFRetain(upsDataRef); // keep until removal block runs
-			CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-				if (upsDataRef->upsEventSource) {
-					CFRunLoopRemoveSource(gBackgroundRunLoop, upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-					CFRelease(upsDataRef->upsEventSource);
-					upsDataRef->upsEventSource = NULL;
+// Transfers the caller's initial reference to the global set on success.
+static bool AllUPSDevicesAdd(UPSDataRef upsDataRef) {
+	bool added = false;
+	if (!upsDataRef) return false;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (!gTerminationInProgress) {
+		if (!gAllUPSDevices) gAllUPSDevices = UPSDeviceSetCreate();
+		if (gAllUPSDevices) {
+			bool duplicate = false;
+			for (size_t i = 0; i < gAllUPSDevices->count; i++) {
+				if (gAllUPSDevices->items[i]->regID == upsDataRef->regID) {
+					duplicate = true;
+					break;
 				}
-				if (upsDataRef->upsEventTimer) {
-					CFRunLoopRemoveTimer(gBackgroundRunLoop, upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-					CFRelease(upsDataRef->upsEventTimer);
-					upsDataRef->upsEventTimer = NULL;
-				}
-				CFRelease(upsDataRef);
-			});
-			CFRunLoopWakeUp(gBackgroundRunLoop);
-		} else {
-			// no background runloop: try to remove from current runloop (best-effort)
-			if (upsDataRef->upsEventSource) {
-				CFRunLoopRemoveSource(CFRunLoopGetCurrent(), upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventSource);
-				upsDataRef->upsEventSource = NULL;
 			}
-			if (upsDataRef->upsEventTimer) {
-				CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventTimer);
-				upsDataRef->upsEventTimer = NULL;
+			if (!duplicate) {
+				if (gAllUPSDevices->count < gAllUPSDevices->capacity) {
+					added = true;
+				} else {
+					size_t newCapacity = gAllUPSDevices->capacity
+					    ? gAllUPSDevices->capacity * 2 : 1;
+					UPSDataRef *items = realloc(gAllUPSDevices->items,
+					    newCapacity * sizeof(*items));
+					if (items) {
+						gAllUPSDevices->items = items;
+						gAllUPSDevices->capacity = newCapacity;
+						added = true;
+					}
+				}
+				if (added) gAllUPSDevices->items[gAllUPSDevices->count++] = upsDataRef;
 			}
 		}
 	}
-	
-	if (upsDataRef->upsPlugInInterface) {
-		// safe guard: only release if non-null
-		(*upsDataRef->upsPlugInInterface)->Release(upsDataRef->upsPlugInInterface);
-		upsDataRef->upsPlugInInterface = NULL;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	return added;
+}
+
+// Transfers the set's reference to the caller on success.
+static bool AllUPSDevicesRemove(UPSDataRef upsDataRef) {
+	bool removed = false;
+	if (!upsDataRef) return false;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gAllUPSDevices) {
+		for (size_t i = 0; i < gAllUPSDevices->count; i++) {
+			if (gAllUPSDevices->items[i] == upsDataRef) {
+				memmove(&gAllUPSDevices->items[i], &gAllUPSDevices->items[i + 1],
+				    (gAllUPSDevices->count - i - 1) * sizeof(UPSDataRef));
+				gAllUPSDevices->count--;
+				removed = true;
+				break;
+			}
+		}
 	}
-	
-	if (upsDataRef->notification != MACH_PORT_NULL) {
-		IOObjectRelease(upsDataRef->notification);
-		upsDataRef->notification = MACH_PORT_NULL;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	return removed;
+}
+
+// Returns retained device references from one lock-protected snapshot.
+static UPSDataRef *AllUPSDevicesCopy(size_t *outCount) {
+	UPSDataRef *items = NULL;
+	*outCount = 0;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gAllUPSDevices && gAllUPSDevices->count) {
+		items = calloc(gAllUPSDevices->count, sizeof(*items));
+		if (items) {
+			*outCount = gAllUPSDevices->count;
+			for (size_t i = 0; i < *outCount; i++) {
+				items[i] = UPSDataRetain(gAllUPSDevices->items[i]);
+			}
+		}
 	}
-	
-	// release CF objects (properties/capabilities/event) - these were retained when created/assigned
-	if (upsDataRef->upsProperties) {
-		CFRelease(upsDataRef->upsProperties);
-		upsDataRef->upsProperties = NULL;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	return items;
+}
+
+// Detaches the set atomically so only one shutdown path owns its references.
+static UPSDeviceSet *AllUPSDevicesTake(void) {
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	UPSDeviceSet *set = gAllUPSDevices;
+	gAllUPSDevices = NULL;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	return set;
+}
+
+bool UPSCopyBatterySnapshot(int vid, int pid, UPSBatterySnapshot *snapshot) {
+	if (!snapshot) return false;
+	memset(snapshot, 0, sizeof(*snapshot));
+	if (vid == 0 || pid == 0) return false;
+
+	bool found = false;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gAllUPSDevices) {
+		for (size_t i = 0; i < gAllUPSDevices->count; i++) {
+			UPSDataRef device = gAllUPSDevices->items[i];
+			if (!device->upsProperties ||
+			    CFGetTypeID(device->upsProperties) != CFDictionaryGetTypeID()) continue;
+			SInt32 vendor = 0;
+			SInt32 product = 0;
+			CFNumberRef number = CFDictionaryGetValue(device->upsProperties, CFSTR("Vendor ID"));
+			if (!number || CFGetTypeID(number) != CFNumberGetTypeID() ||
+			    !CFNumberGetValue(number, kCFNumberSInt32Type, &vendor)) continue;
+			number = CFDictionaryGetValue(device->upsProperties, CFSTR("Product ID"));
+			if (!number || CFGetTypeID(number) != CFNumberGetTypeID() ||
+			    !CFNumberGetValue(number, kCFNumberSInt32Type, &product)) continue;
+			if (vendor != vid || product != pid) continue;
+
+			snapshot->battery = ups_battery_info(device);
+			if (device->upsCapabilities &&
+			    CFGetTypeID(device->upsCapabilities) == CFSetGetTypeID()) {
+				CFIndex count = CFSetGetCount(device->upsCapabilities);
+				for (CFIndex cell = 0; cell < count; cell++) {
+					CFStringRef key = CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+					    CFSTR("Cell %ld Voltage"), cell);
+					if (!key) break;
+					bool present = CFSetContainsValue(device->upsCapabilities, key);
+					CFRelease(key);
+					if (!present) break;
+					snapshot->cell_count++;
+				}
+			}
+			found = true;
+			break;
+		}
 	}
-	if (upsDataRef->upsCapabilities) {
-		CFRelease(upsDataRef->upsCapabilities);
-		upsDataRef->upsCapabilities = NULL;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	return found;
+}
+
+static void TeardownDeviceRuntime(UPSDataRef upsDataRef) {
+	if (!upsDataRef) return;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	UPSRuntimeResources runtime = UPSDetachRuntimeLocked(upsDataRef);
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	UPSReleaseRuntime(runtime);
+}
+
+static void FreeUPSData(UPSDataRef upsDataRef) {
+	if (!upsDataRef) return;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	upsDataRef->removed = true;
+	UPSRuntimeResources runtime = UPSDetachRuntimeLocked(upsDataRef);
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	UPSDataRelease(upsDataRef);
+	UPSReleaseRuntime(runtime);
+}
+
+static void AllUPSDevicesRemoveMissing(CFSetRef presentRegistryIDs) {
+	if (!presentRegistryIDs) return;
+	UPSDataRef *removed = NULL;
+	size_t removedCount = 0;
+
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gAllUPSDevices && gAllUPSDevices->count) {
+		removed = calloc(gAllUPSDevices->count, sizeof(*removed));
+		if (removed) {
+			for (size_t i = 0; i < gAllUPSDevices->count;) {
+				uint64_t regID = gAllUPSDevices->items[i]->regID;
+				CFNumberRef number = CFNumberCreate(kCFAllocatorDefault,
+				    kCFNumberSInt64Type, &regID);
+				bool present = !number || CFSetContainsValue(presentRegistryIDs, number);
+				if (number) CFRelease(number);
+				if (present) {
+					i++;
+					continue;
+				}
+				removed[removedCount++] = gAllUPSDevices->items[i];
+				memmove(&gAllUPSDevices->items[i], &gAllUPSDevices->items[i + 1],
+				    (gAllUPSDevices->count - i - 1) * sizeof(UPSDataRef));
+				gAllUPSDevices->count--;
+			}
+		}
 	}
-	if (upsDataRef->upsEvent) {
-		CFRelease(upsDataRef->upsEvent);
-		upsDataRef->upsEvent = NULL;
-	}
-	
-	free(upsDataRef);
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+
+	for (size_t i = 0; i < removedCount; i++) FreeUPSData(removed[i]);
+	free(removed);
 }
 
 // Device interest notifications come here (called by IOKit)
@@ -266,11 +338,8 @@ void DeviceNotification(void *refCon, io_service_t service, natural_t messageTyp
 	}
 	
 	if (messageType == kIOMessageServiceIsTerminated) {
-		// Remove from set and free
-		if (gAllUPSDevices) {
-			UPSDeviceSetRemove(gAllUPSDevices, upsData);
-		}
-		FreeUPSData(upsData);
+		// The set reference belongs to whichever removal path wins.
+		if (AllUPSDevicesRemove(upsData)) FreeUPSData(upsData);
 	}
 }
 
@@ -297,8 +366,14 @@ static void SetupPluginAndEventSourceForDevice(UPSDataRef upsDataRef, io_service
 	IOUPSPlugInInterface_v140 **   upsPlugInInterface  = NULL;
 	SInt32                    score           = 0;
 	IOReturn                  kr;
-	HRESULT                   result;
+	HRESULT                   result          = E_NOINTERFACE;
 	CFTypeRef typeRef = NULL;
+	CFRunLoopSourceRef newSource = NULL;
+	CFRunLoopTimerRef newTimer = NULL;
+	CFDictionaryRef newProps = NULL;
+	CFSetRef newCaps = NULL;
+	CFDictionaryRef newEvent = NULL;
+	io_object_t newNotification = MACH_PORT_NULL;
 	
 	kr = IOCreatePlugInInterfaceForService(upsDevice, kIOUPSPlugInTypeID, kIOCFPlugInInterfaceID, &plugInInterface, &score);
 	if (kr != kIOReturnSuccess || !plugInInterface) {
@@ -325,152 +400,118 @@ static void SetupPluginAndEventSourceForDevice(UPSDataRef upsDataRef, io_service
 		}
 	}
 	
-	// We have an async event source (or timer)
+	// Build runtime state in locals so teardown never races partially initialized fields.
 	if (typeRef) {
-		// Process and attach to the background runloop
-		ProcessUPSEventSource(typeRef, &upsDataRef->upsEventTimer, &upsDataRef->upsEventSource);
-		
-		// Attach to background runloop safely (we expect this function to be called on the background runloop,
-		// but guard just in case)
-		if (gBackgroundRunLoop && (upsDataRef->upsEventSource || upsDataRef->upsEventTimer)) {
-			if (upsDataRef->upsEventSource) {
-				CFRunLoopAddSource(gBackgroundRunLoop, upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-			}
-			if (upsDataRef->upsEventTimer) {
-				CFRunLoopAddTimer(gBackgroundRunLoop, upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
+		if (CFGetTypeID(typeRef) == CFArrayGetTypeID()) {
+			CFArrayRef sources = (CFArrayRef)typeRef;
+			for (CFIndex i = 0; i < CFArrayGetCount(sources); i++) {
+				ProcessUPSEventSource(CFArrayGetValueAtIndex(sources, i),
+				    &newTimer, &newSource);
 			}
 		} else {
-			// best-effort: add to current runloop
-			if (upsDataRef->upsEventSource) {
-				CFRunLoopAddSource(CFRunLoopGetCurrent(), upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-			}
-			if (upsDataRef->upsEventTimer) {
-				CFRunLoopAddTimer(CFRunLoopGetCurrent(), upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-			}
+			ProcessUPSEventSource(typeRef, &newTimer, &newSource);
 		}
 		
+		CFRunLoopRef runLoop = gBackgroundRunLoop ?: CFRunLoopGetCurrent();
+		if (newSource) {
+			CFRunLoopAddSource(runLoop, newSource, kCFRunLoopDefaultMode);
+		}
+		if (newTimer) {
+			CFRunLoopAddTimer(runLoop, newTimer, kCFRunLoopDefaultMode);
+		}
 		CFRelease(typeRef);
 		typeRef = NULL;
 	}
 	
-	// Now always try to get fresh properties/capabilities/event from the plugin and replace stored copies.
-	// Use temporaries and swap under mutex to avoid races and leaks.
-	if (( result == S_OK ) && upsPlugInInterface) {
-		CFDictionaryRef newProps = NULL;
-		CFSetRef newCaps  = NULL;
-		CFDictionaryRef       newEvent = NULL;
-		
-		// attempt to get fresh values; failures are non-fatal (we keep existing ones)
+	if ((result == S_OK) && upsPlugInInterface) {
 		kr = (*upsPlugInInterface)->getProperties(upsPlugInInterface, &newProps);
-		if ((kr != kIOReturnSuccess) || (!newProps)) {
-			if (newProps) { CFRelease(newProps); newProps = NULL; }
+		if ((kr != kIOReturnSuccess) || !newProps) {
+			if (newProps) CFRelease(newProps);
+			newProps = NULL;
 		}
-		
 		kr = (*upsPlugInInterface)->getCapabilities(upsPlugInInterface, &newCaps);
-		if ((kr != kIOReturnSuccess) || (!newCaps)) {
-			if (newCaps) { CFRelease(newCaps); newCaps = NULL; }
+		if ((kr != kIOReturnSuccess) || !newCaps) {
+			if (newCaps) CFRelease(newCaps);
+			newCaps = NULL;
 		}
-		
 		kr = (*upsPlugInInterface)->getEvent(upsPlugInInterface, &newEvent);
-		if ((kr != kIOReturnSuccess) || (!newEvent)) {
-			if (newEvent) { CFRelease(newEvent); newEvent = NULL; }
+		if ((kr != kIOReturnSuccess) || !newEvent) {
+			if (newEvent) CFRelease(newEvent);
+			newEvent = NULL;
 		}
-		
-		// release the plugin interface immediately per your requirement
 		(*upsPlugInInterface)->Release(upsPlugInInterface);
 		upsPlugInInterface = NULL;
-		
-		// Atomically swap the CF objects while holding the global devices lock to avoid races
-		pthread_mutex_lock(&gAllUPSDevicesLock);
-		
+	}
+
+	if (gNotifyPort) {
+		kr = IOServiceAddInterestNotification(gNotifyPort, upsDevice, "IOGeneralInterest",
+		    DeviceNotification, upsDataRef, &newNotification);
+		if (kr == kIOReturnSuccess) {
+			UPSDataRetain(upsDataRef);
+		} else {
+			if (newNotification != MACH_PORT_NULL) IOObjectRelease(newNotification);
+			newNotification = MACH_PORT_NULL;
+		}
+	}
+
+	UPSRuntimeResources oldRuntime = {0};
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (!upsDataRef->removed) {
+		oldRuntime = UPSDetachRuntimeLocked(upsDataRef);
+		upsDataRef->upsEventSource = newSource;
+		upsDataRef->upsEventTimer = newTimer;
+		upsDataRef->notification = newNotification;
+		newSource = NULL;
+		newTimer = NULL;
+		newNotification = MACH_PORT_NULL;
+
 		if (newProps) {
 			if (upsDataRef->upsProperties) CFRelease(upsDataRef->upsProperties);
-			upsDataRef->upsProperties = newProps; // ownership transferred
+			upsDataRef->upsProperties = newProps;
+			newProps = NULL;
 		}
-		// else: keep existing upsProperties if fresh fetch failed
-		
 		if (newCaps) {
 			if (upsDataRef->upsCapabilities) CFRelease(upsDataRef->upsCapabilities);
 			upsDataRef->upsCapabilities = newCaps;
+			newCaps = NULL;
 		}
-		
 		if (newEvent) {
 			if (upsDataRef->upsEvent) CFRelease(upsDataRef->upsEvent);
 			upsDataRef->upsEvent = newEvent;
+			newEvent = NULL;
 		}
-		
-		pthread_mutex_unlock(&gAllUPSDevicesLock);
 	}
-	
-	// Release the original plugInInterface if still held
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+
+	UPSReleaseRuntime(oldRuntime);
+	UPSRuntimeResources unusedRuntime = {
+		.notification = newNotification,
+		.notificationOwner = newNotification != MACH_PORT_NULL ? upsDataRef : NULL,
+		.eventSource = newSource,
+		.eventTimer = newTimer,
+	};
+	UPSReleaseRuntime(unusedRuntime);
+	if (newProps) CFRelease(newProps);
+	if (newCaps) CFRelease(newCaps);
+	if (newEvent) CFRelease(newEvent);
+	if (typeRef) CFRelease(typeRef);
+	if (upsPlugInInterface) {
+		(*upsPlugInInterface)->Release(upsPlugInInterface);
+		upsPlugInInterface = NULL;
+	}
 	if (plugInInterface) {
 		(*plugInInterface)->Release(plugInInterface);
 		plugInInterface = NULL;
 	}
-	
-	// Ensure interest notification is present (best-effort)
-	if (upsDataRef->notification == MACH_PORT_NULL) {
-		kr = IOServiceAddInterestNotification(gNotifyPort, upsDevice, "IOGeneralInterest", DeviceNotification, upsDataRef, &(upsDataRef->notification));
-		if (kr != kIOReturnSuccess) {
-			upsDataRef->notification = MACH_PORT_NULL;
-		}
-	}
-}
-
-// Helper: teardown the runtime pieces of the upsDataRef but keep upsProperties/upsCapabilities/upsEvent
-static void TeardownDeviceRuntime(UPSDataRef upsDataRef) {
-	if (!upsDataRef) return;
-	
-	// Remove sources/timers on background runloop
-	if ((upsDataRef->upsEventSource || upsDataRef->upsEventTimer) && gBackgroundRunLoop) {
-		CFRetain(upsDataRef);
-		CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-			if (upsDataRef->upsEventSource) {
-				CFRunLoopRemoveSource(gBackgroundRunLoop, upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventSource);
-				upsDataRef->upsEventSource = NULL;
-			}
-			if (upsDataRef->upsEventTimer) {
-				CFRunLoopRemoveTimer(gBackgroundRunLoop, upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventTimer);
-				upsDataRef->upsEventTimer = NULL;
-			}
-			CFRelease(upsDataRef);
-		});
-		CFRunLoopWakeUp(gBackgroundRunLoop);
-	} else {
-		// best-effort immediate removal if background runloop missing
-		if (upsDataRef->upsEventSource) {
-			CFRunLoopRemoveSource(CFRunLoopGetCurrent(), upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-			CFRelease(upsDataRef->upsEventSource);
-			upsDataRef->upsEventSource = NULL;
-		}
-		if (upsDataRef->upsEventTimer) {
-			CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-			CFRelease(upsDataRef->upsEventTimer);
-			upsDataRef->upsEventTimer = NULL;
-		}
-	}
-	
-	// Release plugin interface if still held
-	if (upsDataRef->upsPlugInInterface) {
-		(*upsDataRef->upsPlugInInterface)->Release(upsDataRef->upsPlugInInterface);
-		upsDataRef->upsPlugInInterface = NULL;
-	}
-	
-	// Release interest notification so we don't get callbacks while backgrounded
-	if (upsDataRef->notification != MACH_PORT_NULL) {
-		IOObjectRelease(upsDataRef->notification);
-		upsDataRef->notification = MACH_PORT_NULL;
-	}
-	
-	// Note: do NOT CFRelease upsProperties/upsCapabilities/upsEvent here — we want to keep these across backgrounding per requirement
 }
 
 // Recreate monitoring for devices that are currently present. Runs on background runloop.
 static void RecreateMonitoringForExistingDevices(void) {
-	if (!gAllUPSDevices) return;
-	
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	bool terminating = gTerminationInProgress;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (terminating) return;
+
 	// Build a matching dictionary similar to threadMain
 	CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOHIDDeviceKey);
 	if (!matchingDict) {
@@ -529,20 +570,40 @@ static void RecreateMonitoringForExistingDevices(void) {
 		if (iter != MACH_PORT_NULL) IOObjectRelease(iter);
 		return;
 	}
+	CFMutableSetRef presentRegistryIDs = CFSetCreateMutable(kCFAllocatorDefault,
+	    0, &kCFTypeSetCallBacks);
+	bool canReconcile = presentRegistryIDs != NULL;
 	
 	// Iterate present devices; for each, try to match by registry entry ID to an existing element in gAllUPSDevices
 	io_service_t service;
 	while ((service = IOIteratorNext(iter))) {
 		uint64_t entryID = 0;
-		IORegistryEntryGetRegistryEntryID(service, &entryID);
+		kr = IORegistryEntryGetRegistryEntryID(service, &entryID);
+		if (kr != kIOReturnSuccess) {
+			canReconcile = false;
+			IOObjectRelease(service);
+			continue;
+		}
+		if (canReconcile) {
+			CFNumberRef registryID = CFNumberCreate(kCFAllocatorDefault,
+			    kCFNumberSInt64Type, &entryID);
+			if (registryID) {
+				CFSetAddValue(presentRegistryIDs, registryID);
+				CFRelease(registryID);
+			} else {
+				canReconcile = false;
+			}
+		}
 		
 		// find an upsDataRef with same regID
 		pthread_mutex_lock(&gAllUPSDevicesLock);
 		UPSDataRef matched = NULL;
-		for (size_t i = 0; i < gAllUPSDevices->count; i++) {
-			if (gAllUPSDevices->items[i]->regID == entryID) {
-				matched = gAllUPSDevices->items[i];
-				break;
+		if (gAllUPSDevices) {
+			for (size_t i = 0; i < gAllUPSDevices->count; i++) {
+				if (gAllUPSDevices->items[i]->regID == entryID) {
+					matched = UPSDataRetain(gAllUPSDevices->items[i]);
+					break;
+				}
 			}
 		}
 		pthread_mutex_unlock(&gAllUPSDevicesLock);
@@ -550,6 +611,7 @@ static void RecreateMonitoringForExistingDevices(void) {
 		if (matched) {
 			// set up plugin and event source for the existing upsDataRef
 			SetupPluginAndEventSourceForDevice(matched, service);
+			UPSDataRelease(matched);
 		} else {
 			// no existing device with that regID — normal: let UPSDeviceAdded handle it (it will be called via first-match notifications)
 		}
@@ -557,6 +619,8 @@ static void RecreateMonitoringForExistingDevices(void) {
 		IOObjectRelease(service);
 	}
 	IOObjectRelease(iter);
+	if (canReconcile) AllUPSDevicesRemoveMissing(presentRegistryIDs);
+	if (presentRegistryIDs) CFRelease(presentRegistryIDs);
 }
 
 // Called by the IOKit matching notification when devices are added
@@ -582,6 +646,7 @@ UPSDeviceAdded(void *refCon, io_iterator_t iterator)
 		
 		uint64_t entryID = 0;
 		IORegistryEntryGetRegistryEntryID(upsDevice, &entryID);
+		upsDataRef->retainCount        = 1;
 		upsDataRef->regID              = entryID;
 		upsDataRef->notification       = MACH_PORT_NULL;
 		upsDataRef->upsPlugInInterface = NULL;
@@ -592,9 +657,9 @@ UPSDeviceAdded(void *refCon, io_iterator_t iterator)
 		upsDataRef->upsEventTimer      = NULL;
 		
 		// If we already have a device with this registry ID, avoid creating a duplicate. Free the temp and continue.
-		if (gAllUPSDevices && UPSDeviceSetContainsByID(gAllUPSDevices, entryID)) {
+		if (AllUPSDevicesContainsByID(entryID)) {
 			DBGLOG(@"[UPSMonitor] device with regID %llu already present - skipping", entryID);
-			free(upsDataRef);
+			UPSDataRelease(upsDataRef);
 			IOObjectRelease(upsDevice);
 			continue;
 		}
@@ -672,34 +737,23 @@ UPSDeviceAdded(void *refCon, io_iterator_t iterator)
 			
 			// Create interest notification and add to set
 			kr = IOServiceAddInterestNotification(gNotifyPort, upsDevice, "IOGeneralInterest", DeviceNotification, upsDataRef, &(upsDataRef->notification));
-			if (kr != kIOReturnSuccess) {
+			if (kr == kIOReturnSuccess) {
+				UPSDataRetain(upsDataRef);
+			} else {
+				if (upsDataRef->notification != MACH_PORT_NULL) {
+					IOObjectRelease(upsDataRef->notification);
+				}
 				upsDataRef->notification = MACH_PORT_NULL;
 			}
 			
-			if (!gAllUPSDevices) {
-				gAllUPSDevices = UPSDeviceSetCreate();
+			if (plugInInterface) {
+				(*plugInInterface)->Release(plugInInterface);
+				plugInInterface = NULL;
 			}
-			if (!UPSDeviceSetAdd(gAllUPSDevices, upsDataRef)) {
+			if (!AllUPSDevicesAdd(upsDataRef)) {
 				// If we failed to add (race or duplicate), cleanup upsDataRef to avoid leak
 				DBGLOG(@"[UPSMonitor] Failed to add upsDataRef to global set - cleaning up");
-				if (upsDataRef->notification != MACH_PORT_NULL) {
-					IOObjectRelease(upsDataRef->notification);
-					upsDataRef->notification = MACH_PORT_NULL;
-				}
-				if (upsDataRef->upsEventSource) {
-					CFRunLoopRemoveSource(CFRunLoopGetCurrent(), upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-					CFRelease(upsDataRef->upsEventSource);
-					upsDataRef->upsEventSource = NULL;
-				}
-				if (upsDataRef->upsEventTimer) {
-					CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-					CFRelease(upsDataRef->upsEventTimer);
-					upsDataRef->upsEventTimer = NULL;
-				}
-				if (upsDataRef->upsProperties) CFRelease(upsDataRef->upsProperties);
-				if (upsDataRef->upsCapabilities) CFRelease(upsDataRef->upsCapabilities);
-				if (upsDataRef->upsEvent) CFRelease(upsDataRef->upsEvent);
-				free(upsDataRef);
+				FreeUPSData(upsDataRef);
 				upsDataRef = NULL;
 				IOObjectRelease(upsDevice);
 				continue;
@@ -713,33 +767,18 @@ UPSDeviceAdded(void *refCon, io_iterator_t iterator)
 		}
 		
 	CLEANUP_PARTIAL:
-		// (same cleanup logic as before), but be careful to only release what we have.
 		if (upsDataRef) {
 			DBGLOG(@"[UPSMonitor] cleanup");
-			if (upsDataRef->notification != MACH_PORT_NULL) {
-				IOObjectRelease(upsDataRef->notification);
-				upsDataRef->notification = MACH_PORT_NULL;
-			}
-			// if plugin interface stored, release it
-			if (upsDataRef->upsPlugInInterface) {
-				(*upsDataRef->upsPlugInInterface)->Release(upsDataRef->upsPlugInInterface);
-				upsDataRef->upsPlugInInterface = NULL;
-			}
-			if (upsDataRef->upsProperties)     CFRelease(upsDataRef->upsProperties);
-			if (upsDataRef->upsCapabilities)   CFRelease(upsDataRef->upsCapabilities);
-			if (upsDataRef->upsEvent)          CFRelease(upsDataRef->upsEvent);
-			if (upsDataRef->upsEventSource) {
-				CFRunLoopRemoveSource(CFRunLoopGetCurrent(), upsDataRef->upsEventSource, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventSource);
-				upsDataRef->upsEventSource = NULL;
-			}
-			if (upsDataRef->upsEventTimer) {
-				CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), upsDataRef->upsEventTimer, kCFRunLoopDefaultMode);
-				CFRelease(upsDataRef->upsEventTimer);
-				upsDataRef->upsEventTimer = NULL;
-			}
-			free(upsDataRef);
+			FreeUPSData(upsDataRef);
 			upsDataRef = NULL;
+		}
+		if (typeRef) {
+			CFRelease(typeRef);
+			typeRef = NULL;
+		}
+		if (upsPlugInInterface) {
+			(*upsPlugInInterface)->Release(upsPlugInInterface);
+			upsPlugInInterface = NULL;
 		}
 		if (plugInInterface) {
 			(*plugInInterface)->Release(plugInInterface);
@@ -749,21 +788,43 @@ UPSDeviceAdded(void *refCon, io_iterator_t iterator)
 	}
 }
 
-// --- threadMain and signal handling largely unchanged, small guard added ---
-static void
-threadMain(void)
+static void UPSKeepAlivePerform(void *info) {}
+
+static void *
+threadMain(void *context)
 {
 	@autoreleasepool {
-		gNotifyPort = IONotificationPortCreate(kIOMasterPortDefault);
-		if (!gNotifyPort) {
+		IONotificationPortRef notifyPort = IONotificationPortCreate(kIOMasterPortDefault);
+		CFRunLoopSourceRef keepAliveSource = NULL;
+		CFRunLoopRef runLoopToRelease = NULL;
+		if (!notifyPort) {
 			NSLog(@"[UPSMonitor] ERROR: failed to create IONotificationPort");
-			return;
+			goto CLEANUP_ALL;
 		}
 		
-		CFRunLoopSourceRef rlSrc = IONotificationPortGetRunLoopSource(gNotifyPort);
-		CFRunLoopAddSource(CFRunLoopGetCurrent(), rlSrc, kCFRunLoopDefaultMode);
-		gBackgroundRunLoop = CFRunLoopGetCurrent();
-		CFRetain(gBackgroundRunLoop);
+		CFRunLoopRef currentRunLoop = CFRunLoopGetCurrent();
+		CFRunLoopSourceRef notificationSource = IONotificationPortGetRunLoopSource(notifyPort);
+		CFRunLoopSourceContext keepAliveContext = {
+			.version = 0,
+			.perform = UPSKeepAlivePerform,
+		};
+		keepAliveSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &keepAliveContext);
+		if (!notificationSource || !keepAliveSource) {
+			NSLog(@"[UPSMonitor] ERROR: failed to create run loop sources");
+			goto CLEANUP_ALL;
+		}
+		CFRunLoopAddSource(currentRunLoop, notificationSource, kCFRunLoopDefaultMode);
+		CFRunLoopAddSource(currentRunLoop, keepAliveSource, kCFRunLoopDefaultMode);
+
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		bool shouldTerminate = gTerminationInProgress;
+		if (!shouldTerminate) {
+			gNotifyPort = notifyPort;
+			gBackgroundRunLoop = currentRunLoop;
+			CFRetain(gBackgroundRunLoop);
+		}
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+		if (shouldTerminate) goto CLEANUP_ALL;
 		
 		CFMutableDictionaryRef matchingDict = IOServiceMatching(kIOHIDDeviceKey);
 		if (!matchingDict) {
@@ -830,7 +891,7 @@ threadMain(void)
 		devicePairs = NULL;
 		
 		// Now set up the “first match” notification so UPSDeviceAdded() is called whenever a device arrives.
-		kern_return_t kr = IOServiceAddMatchingNotification(gNotifyPort, kIOFirstMatchNotification, matchingDict, UPSDeviceAdded, NULL, &gAddedIter);
+		kern_return_t kr = IOServiceAddMatchingNotification(notifyPort, kIOFirstMatchNotification, matchingDict, UPSDeviceAdded, NULL, &gAddedIter);
 		// matchingDict is retained by IOKit (no need to CFRelease here; IOKit takes ownership)
 		matchingDict = NULL;
 		
@@ -841,45 +902,49 @@ threadMain(void)
 		DBGLOG(@"[UPSMonitor] thread setup");
 		// Drain any already‐present devices so they don’t get missed
 		UPSDeviceAdded(NULL, gAddedIter);
-		
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		gWatchThreadReady = true;
+		pthread_cond_broadcast(&gWatchStateCondition);
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+
 		CFRunLoopRun();
 		
 	CLEANUP_ALL:
-		if (gBackgroundRunLoop) {
-			CFRelease(gBackgroundRunLoop);
-			gBackgroundRunLoop = NULL;
-		}
-		
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		if (gNotifyPort == notifyPort) gNotifyPort = NULL;
+		runLoopToRelease = gBackgroundRunLoop;
+		gBackgroundRunLoop = NULL;
+		gWatchThreadReady = false;
+		UPSWatching = false;
+		gWatchThreadExited = true;
+		gNotificationsPaused = false;
+		pthread_cond_broadcast(&gWatchStateCondition);
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+
 		if (gAddedIter != MACH_PORT_NULL) {
 			IOObjectRelease(gAddedIter);
 			gAddedIter = MACH_PORT_NULL;
 		}
 		
-		if (gAllUPSDevices) {
-			size_t n = UPSDeviceSetCount(gAllUPSDevices);
-			UPSDataRef *buffer = calloc(n, sizeof(UPSDataRef));
-			UPSDeviceSetGetAll(gAllUPSDevices, buffer);
-			for (size_t i = 0; i < n; i++) {
-				FreeUPSData(buffer[i]);
-			}
-			free(buffer);
-			UPSDeviceSetDestroy(gAllUPSDevices);
-			gAllUPSDevices = NULL;
+		UPSDeviceSet *set = AllUPSDevicesTake();
+		if (set) {
+			for (size_t i = 0; i < set->count; i++) FreeUPSData(set->items[i]);
+			UPSDeviceSetDestroy(set);
 		}
 		
-		
-		if (gNotifyPort) {
-			IONotificationPortDestroy(gNotifyPort);
-			gNotifyPort = NULL;
+		if (keepAliveSource) {
+			CFRunLoopSourceInvalidate(keepAliveSource);
+			CFRelease(keepAliveSource);
 		}
+		if (notifyPort) IONotificationPortDestroy(notifyPort);
+		if (runLoopToRelease) CFRelease(runLoopToRelease);
 	}
+	return NULL;
 }
 
-// Signal and cleanup functions unchanged except ensure cleanupAllResources uses TeardownDeviceRuntime
 void SignalHandler(int sigraised) {
-	syslog(LOG_INFO, "Battman: received signal %d, exiting gracefully\n", sigraised);
-	[UPSMonitor cleanupAllResources];
-	// app_exit();
+	// Process teardown is not async-signal-safe; the OS reclaims these resources.
+	_exit(128 + sigraised);
 }
 
 // Update the CleanupAndExit function
@@ -888,79 +953,57 @@ void CleanupAndExit(void) {
 	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
-static bool gNotificationsPaused = false;
++ (void)_cleanupAllResourcesLocked
+{
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gTerminationInProgress) {
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+		return;
+	}
+	gTerminationInProgress = true;
+	gNotificationsPaused = false;
+	CFRunLoopRef runLoop = gBackgroundRunLoop;
+	if (runLoop) CFRetain(runLoop);
+	pthread_t watchThread = gUPSWatchThread;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	
+	NSLog(@"[UPSMonitor] Starting graceful shutdown...");
+	cleanupPowerEventMonitoring();
+
+	if (runLoop) {
+		CFRunLoopPerformBlock(runLoop, kCFRunLoopDefaultMode, ^{
+			CFRunLoopStop(CFRunLoopGetCurrent());
+		});
+		CFRunLoopWakeUp(runLoop);
+		CFRelease(runLoop);
+	}
+	if (watchThread && !pthread_equal(watchThread, pthread_self())) {
+		pthread_join(watchThread, NULL);
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		if (pthread_equal(gUPSWatchThread, watchThread)) gUPSWatchThread = 0;
+		UPSWatching = false;
+		gWatchThreadExited = false;
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+	} else if (!watchThread) {
+		UPSDeviceSet *set = AllUPSDevicesTake();
+		if (set) {
+			for (size_t i = 0; i < set->count; i++) FreeUPSData(set->items[i]);
+			UPSDeviceSetDestroy(set);
+		}
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		UPSWatching = false;
+		gWatchThreadExited = false;
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+	}
+
+	NSLog(@"[UPSMonitor] Graceful shutdown completed");
+}
 
 + (void)cleanupAllResources
 {
-	if (gTerminationInProgress) {
-		return; // Prevent double cleanup
-	}
-	gTerminationInProgress = true;
-	
-	NSLog(@"[UPSMonitor] Starting graceful shutdown...");
-	
-	// Stop power event monitoring first
-	cleanupPowerEventMonitoring();
-	
-	// Stop the UPS monitoring run loop if it's running
-	if (gBackgroundRunLoop) {
-		CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-			CFRunLoopStop(CFRunLoopGetCurrent());
-		});
-		CFRunLoopWakeUp(gBackgroundRunLoop);
-		
-		// Give the run loop time to stop gracefully
-		dispatch_semaphore_t stopSemaphore = dispatch_semaphore_create(0);
-		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-			// Wait a bit for the run loop to stop
-			usleep(100000); // 100ms
-			dispatch_semaphore_signal(stopSemaphore);
-		});
-		
-		// Wait up to 1 second for graceful shutdown
-		dispatch_semaphore_wait(stopSemaphore, dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC));
-	}
-	
-	// Clean up all UPS devices
-	if (gAllUPSDevices) {
-		NSLog(@"[UPSMonitor] Cleaning up %zu UPS devices", UPSDeviceSetCount(gAllUPSDevices));
-		size_t n = UPSDeviceSetCount(gAllUPSDevices);
-		if (n > 0) {
-			UPSDataRef *buffer = calloc(n, sizeof(UPSDataRef));
-			if (buffer) {
-				UPSDeviceSetGetAll(gAllUPSDevices, buffer);
-				for (size_t i = 0; i < n; i++) {
-					FreeUPSData(buffer[i]);
-				}
-				free(buffer);
-			}
-		}
-		UPSDeviceSetDestroy(gAllUPSDevices);
-		gAllUPSDevices = NULL;
-	}
-	
-	// Clean up IOKit resources
-	if (gAddedIter != MACH_PORT_NULL) {
-		IOObjectRelease(gAddedIter);
-		gAddedIter = MACH_PORT_NULL;
-	}
-	
-	if (gNotifyPort) {
-		IONotificationPortDestroy(gNotifyPort);
-		gNotifyPort = NULL;
-	}
-	
-	// Clean up run loop reference
-	if (gBackgroundRunLoop) {
-		CFRelease(gBackgroundRunLoop);
-		gBackgroundRunLoop = NULL;
-	}
-	
-	// Reset state
-	UPSWatching = false;
-	gNotificationsPaused = false;
-	
-	NSLog(@"[UPSMonitor] Graceful shutdown completed");
+	pthread_mutex_lock(&gWatchLifecycleLock);
+	[self _cleanupAllResourcesLocked];
+	pthread_mutex_unlock(&gWatchLifecycleLock);
 }
 
 // app background/foreground handling — updated to teardown/recreate runtime parts (but keep CF properties)
@@ -972,124 +1015,192 @@ static bool gNotificationsPaused = false;
 
 + (void)appDidEnterBackground:(NSNotification *)note
 {
-	if (gTerminationInProgress) return;
-	
-	extern dispatch_queue_t _powerQueue;
-	
-	// stop power monitoring first
-	suspendPowerEventMonitoring();
-	
-	// If already paused or not initialized, nothing to do
-	if (gBackgroundRunLoop == NULL || gNotifyPort == NULL || gNotificationsPaused)
+	pthread_mutex_lock(&gWatchLifecycleLock);
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	bool terminating = gTerminationInProgress;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (terminating) {
+		pthread_mutex_unlock(&gWatchLifecycleLock);
 		return;
-	
-	CFRunLoopSourceRef src = IONotificationPortGetRunLoopSource(gNotifyPort);
-	if (!src) return;
-	
-	// Remove the UPS monitoring run loop source
-	CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-		CFRunLoopRemoveSource(CFRunLoopGetCurrent(), src, kCFRunLoopDefaultMode);
-	});
-	CFRunLoopWakeUp(gBackgroundRunLoop);
-	
-	// Teardown runtime pieces of each device (leave properties/capabilities/events)
-	if (gAllUPSDevices) {
-		size_t n = UPSDeviceSetCount(gAllUPSDevices);
-		if (n > 0) {
-			UPSDataRef *buffer = calloc(n, sizeof(UPSDataRef));
-			if (buffer) {
-				UPSDeviceSetGetAll(gAllUPSDevices, buffer);
-				for (size_t i = 0; i < n; i++) {
-					TeardownDeviceRuntime(buffer[i]);
-				}
-				free(buffer);
-			}
+	}
+
+	suspendPowerEventMonitoring();
+
+	CFRunLoopRef runLoop = NULL;
+	CFRunLoopSourceRef notificationSource = NULL;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (!gTerminationInProgress && !gNotificationsPaused &&
+	    gBackgroundRunLoop && gNotifyPort) {
+		notificationSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+		if (notificationSource) {
+			CFRetain(notificationSource);
+			runLoop = gBackgroundRunLoop;
+			CFRetain(runLoop);
+			gNotificationsPaused = true;
 		}
 	}
-	
-	gNotificationsPaused = true;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (!runLoop || !notificationSource) {
+		pthread_mutex_unlock(&gWatchLifecycleLock);
+		return;
+	}
+
+	CFRunLoopRemoveSource(runLoop, notificationSource, kCFRunLoopDefaultMode);
+	CFRelease(notificationSource);
+	CFRunLoopPerformBlock(runLoop, kCFRunLoopDefaultMode, ^{
+		size_t count = 0;
+		UPSDataRef *devices = AllUPSDevicesCopy(&count);
+		for (size_t i = 0; i < count; i++) {
+			TeardownDeviceRuntime(devices[i]);
+			UPSDataRelease(devices[i]);
+		}
+		free(devices);
+	});
+	CFRunLoopWakeUp(runLoop);
+	CFRelease(runLoop);
+
 	NSLog(@"[UPSMonitor] Suspended monitoring - app entered background (plugin/interfaces released, CF props retained)");
+	pthread_mutex_unlock(&gWatchLifecycleLock);
 }
 
 + (void)appWillEnterForeground:(NSNotification *)note
 {
-	if (gTerminationInProgress) return;
-	
-	extern dispatch_queue_t _powerQueue;
-	
-	// resume power monitoring first
-	resumePowerEventMonitoring();
-	
-	if (gBackgroundRunLoop == NULL || gNotifyPort == NULL || !gNotificationsPaused)
+	pthread_mutex_lock(&gWatchLifecycleLock);
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	bool terminating = gTerminationInProgress;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (terminating) {
+		pthread_mutex_unlock(&gWatchLifecycleLock);
 		return;
-	
-	CFRunLoopSourceRef src = IONotificationPortGetRunLoopSource(gNotifyPort);
-	if (!src) return;
-	
-	// Add back the UPS monitoring run loop source
-	CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-		CFRunLoopAddSource(CFRunLoopGetCurrent(), src, kCFRunLoopDefaultMode);
-	});
-	CFRunLoopWakeUp(gBackgroundRunLoop);
-	
-	// Recreate plugin/interfaces/event sources for existing devices on the background runloop
-	if (gAllUPSDevices) {
-		CFRunLoopPerformBlock(gBackgroundRunLoop, kCFRunLoopDefaultMode, ^{
-			RecreateMonitoringForExistingDevices();
-		});
-		CFRunLoopWakeUp(gBackgroundRunLoop);
 	}
-	
-	gNotificationsPaused = false;
+
+	resumePowerEventMonitoring();
+
+	CFRunLoopRef runLoop = NULL;
+	CFRunLoopSourceRef notificationSource = NULL;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (!gTerminationInProgress && gNotificationsPaused &&
+	    gBackgroundRunLoop && gNotifyPort) {
+		notificationSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+		if (notificationSource) {
+			CFRetain(notificationSource);
+			runLoop = gBackgroundRunLoop;
+			CFRetain(runLoop);
+			gNotificationsPaused = false;
+		}
+	}
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (!runLoop || !notificationSource) {
+		pthread_mutex_unlock(&gWatchLifecycleLock);
+		return;
+	}
+
+	CFRunLoopAddSource(runLoop, notificationSource, kCFRunLoopDefaultMode);
+	CFRelease(notificationSource);
+	CFRunLoopPerformBlock(runLoop, kCFRunLoopDefaultMode, ^{
+		RecreateMonitoringForExistingDevices();
+	});
+	CFRunLoopWakeUp(runLoop);
+	CFRelease(runLoop);
+
 	NSLog(@"[UPSMonitor] Resumed monitoring - app will enter foreground");
+	pthread_mutex_unlock(&gWatchLifecycleLock);
 }
 
 
 + (void)startWatchingUPS
 {
 	DBGLOG(@"[UPSMonitor] called");
-	if (UPSWatching) {
+	pthread_mutex_lock(&gWatchLifecycleLock);
+	pthread_t exitedThread = 0;
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	if (gUPSWatchThread && gWatchThreadExited && !UPSWatching) {
+		exitedThread = gUPSWatchThread;
+		gUPSWatchThread = 0;
+		gWatchThreadExited = false;
+	} else if (UPSWatching || gUPSWatchThread || gWatchThreadStarting) {
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+		pthread_mutex_unlock(&gWatchLifecycleLock);
 		return;
 	}
+	gWatchThreadStarting = true;
+	gWatchThreadReady = false;
+	gTerminationInProgress = false;
+	gNotificationsPaused = false;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
+	if (exitedThread) pthread_join(exitedThread, NULL);
 	
-	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-	[nc addObserver:self selector:@selector(appDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-	[nc addObserver:self selector:@selector(appWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
-	[nc addObserver:self selector:@selector(appWillTerminate:) name:UIApplicationWillTerminateNotification object:nil];
-	
-	// Install a signal handler so if someone ^C’s, we clean up
-	signal(SIGINT, SignalHandler);
-	signal(SIGTERM, SignalHandler);
-	
-	// Spawn a detached pthread that we do not affect the UIKit
-	pthread_t thread;
+	// Keep the watch thread joinable so cleanup can synchronize ownership.
+	pthread_t thread = 0;
 	pthread_attr_t attrs;
 	pthread_attr_init(&attrs);
-	pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
 	
-	int err = pthread_create(&thread, &attrs, (void *(*)(void *))threadMain, NULL);
+	pthread_mutex_lock(&gAllUPSDevicesLock);
+	bool cancelled = gTerminationInProgress;
+	int err = cancelled ? 0 : pthread_create(&thread, &attrs, threadMain, NULL);
+	if (!cancelled && !err) {
+		gUPSWatchThread = thread;
+		UPSWatching = true;
+		gWatchThreadExited = false;
+		NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+		[nc removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+		[nc removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+		[nc removeObserver:self name:UIApplicationWillTerminateNotification object:nil];
+		[nc addObserver:self selector:@selector(appDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+		[nc addObserver:self selector:@selector(appWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+		[nc addObserver:self selector:@selector(appWillTerminate:) name:UIApplicationWillTerminateNotification object:nil];
+		signal(SIGINT, SignalHandler);
+		signal(SIGTERM, SignalHandler);
+	}
+	gWatchThreadStarting = false;
+	pthread_mutex_unlock(&gAllUPSDevicesLock);
 	pthread_attr_destroy(&attrs);
+	if (cancelled) {
+		pthread_mutex_unlock(&gWatchLifecycleLock);
+		return;
+	}
 	
 	if (err) {
 		NSLog(@"[UPSMonitor] Failed to create UPS‐watch thread: %d", err);
 	} else {
-		gUPSWatchThread = thread;
-		NSLog(@"[UPSMonitor] UPS‐watch thread launched.");
-		UPSWatching = true;
+		pthread_mutex_lock(&gAllUPSDevicesLock);
+		while (!gWatchThreadReady && !gWatchThreadExited) {
+			pthread_cond_wait(&gWatchStateCondition, &gAllUPSDevicesLock);
+		}
+		bool ready = gWatchThreadReady;
+		pthread_mutex_unlock(&gAllUPSDevicesLock);
+		if (ready) {
+			NSLog(@"[UPSMonitor] UPS‐watch thread launched.");
+		} else {
+			pthread_join(thread, NULL);
+			pthread_mutex_lock(&gAllUPSDevicesLock);
+			if (pthread_equal(gUPSWatchThread, thread)) gUPSWatchThread = 0;
+			UPSWatching = false;
+			gWatchThreadExited = false;
+			pthread_mutex_unlock(&gAllUPSDevicesLock);
+			NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+			[nc removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+			[nc removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+			[nc removeObserver:self name:UIApplicationWillTerminateNotification object:nil];
+			NSLog(@"[UPSMonitor] UPS‐watch thread failed during initialization.");
+		}
 	}
+	pthread_mutex_unlock(&gWatchLifecycleLock);
 }
 
 // manually stop monitoring (useful for testing ig)
 + (void)stopWatchingUPS
 {
 	NSLog(@"[UPSMonitor] Manually stopping UPS monitoring");
-	[self cleanupAllResources];
+	pthread_mutex_lock(&gWatchLifecycleLock);
+	[self _cleanupAllResourcesLocked];
 	
 	// Remove notification observers
 	NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 	[nc removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
 	[nc removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
 	[nc removeObserver:self name:UIApplicationWillTerminateNotification object:nil];
+	pthread_mutex_unlock(&gWatchLifecycleLock);
 }
 
 @end
