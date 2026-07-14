@@ -609,37 +609,42 @@ static bool gNotificationsPaused = false;
 
 @end
 
-UPSDataRef UPSDeviceMatchingVendorProduct(int vid, int pid) {
-	UPSDataRef ret = NULL;
-	if (!gAllUPSDevices || gAllUPSDevices->count == 0) {
-		DBGLOG(@"[UPSMonitor] no UPS devices yet");
-		return NULL;
-	}
-	if (vid == 0 || pid == 0) {
-		return NULL;
-	}
-	
+bool UPSCopyBatterySnapshot(int vid, int pid, UPSBatterySnapshot *snapshot) {
+	if (!snapshot) return false;
+	memset(snapshot, 0, sizeof(*snapshot));
+	if (!gAllUPSDevices || vid == 0 || pid == 0) return false;
+
 	for (size_t i = 0; i < gAllUPSDevices->count; i++) {
-		UPSDataRef d = gAllUPSDevices->items[i];
-		
-		SInt32 vendor, product;
-		CFNumberRef number;
-		if (d->upsProperties) {
-			number = CFDictionaryGetValue(d->upsProperties, CFSTR("Vendor ID"));
-			if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &vendor)) {
-				continue;
-			}
-			number = CFDictionaryGetValue(d->upsProperties, CFSTR("Product ID"));
-			if (!number || !CFNumberGetValue(number, kCFNumberSInt32Type, &product)) {
-				continue;
-			}
-			if ((vendor == vid) && (product == pid)) {
-				ret = d;
-				break;
+		UPSDataRef device = gAllUPSDevices->items[i];
+		if (!device->upsProperties ||
+		    CFGetTypeID(device->upsProperties) != CFDictionaryGetTypeID()) continue;
+		SInt32 vendor = 0;
+		SInt32 product = 0;
+		CFNumberRef number = CFDictionaryGetValue(device->upsProperties, CFSTR("Vendor ID"));
+		if (!number || CFGetTypeID(number) != CFNumberGetTypeID() ||
+		    !CFNumberGetValue(number, kCFNumberSInt32Type, &vendor)) continue;
+		number = CFDictionaryGetValue(device->upsProperties, CFSTR("Product ID"));
+		if (!number || CFGetTypeID(number) != CFNumberGetTypeID() ||
+		    !CFNumberGetValue(number, kCFNumberSInt32Type, &product)) continue;
+		if (vendor != vid || product != pid) continue;
+
+		snapshot->battery = ups_battery_info(device);
+		if (device->upsCapabilities &&
+		    CFGetTypeID(device->upsCapabilities) == CFSetGetTypeID()) {
+			CFIndex count = CFSetGetCount(device->upsCapabilities);
+			for (CFIndex cell = 0; cell < count; cell++) {
+				CFStringRef key = CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				    CFSTR("Cell %ld Voltage"), cell);
+				if (!key) break;
+				bool present = CFSetContainsValue(device->upsCapabilities, key);
+				CFRelease(key);
+				if (!present) break;
+				snapshot->cell_count++;
 			}
 		}
+		return true;
 	}
-	return ret;
+	return false;
 }
 
 #endif
@@ -666,15 +671,20 @@ void PrintAllUPSDevices(void) {
 }
 #endif
 
-#define GetIntForKey(x, y, z) 										\
-	number = CFDictionaryGetValue(x, CFSTR(y));							\
-	if (!number || !CFNumberGetValue(number, kCFNumberIntType, &(z)))	\
-		z = 0
+#define GetIntForKey(x, y, z) do { \
+	(z) = 0; \
+	if ((x) && CFGetTypeID(x) == CFDictionaryGetTypeID()) { \
+		number = CFDictionaryGetValue((x), CFSTR(y)); \
+		if (!number || CFGetTypeID(number) != CFNumberGetTypeID() || \
+		    !CFNumberGetValue(number, kCFNumberIntType, &(z))) (z) = 0; \
+	} \
+} while (0)
 
 ups_batt_t ups_battery_info(UPSDataRef device) {
 	ups_batt_t info = {0};
 
-	if (!device || !device->upsEvent) return info;
+	if (!device || !device->upsEvent ||
+	    CFGetTypeID(device->upsEvent) != CFDictionaryGetTypeID()) return info;
 
 	CFNumberRef number;
 	/* Do not show Nominal Capacity, to avoid confusions */

@@ -103,6 +103,8 @@ __BEGIN_DECLS
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 typedef struct UPSData {
+	uint32_t                    retainCount;          // internal lifetime management
+	bool                        removed;              // no new runtime state after detach
 	uint64_t                    regID;
 	io_object_t                 notification;          // returned by IOServiceAddInterestNotification
 	IOUPSPlugInInterface **     upsPlugInInterface;    // the v140 or old plugin Interface
@@ -138,10 +140,15 @@ typedef struct ups_batt {
 	int time_to_full;
 } ups_batt_t;
 
+typedef struct ups_battery_snapshot {
+	ups_batt_t battery;
+	int cell_count;
+} UPSBatterySnapshot;
+
 extern UPSDeviceSet *gAllUPSDevices;
 
 void PrintAllUPSDevices(void);
-UPSDataRef UPSDeviceMatchingVendorProduct(int vid, int pid);
+bool UPSCopyBatterySnapshot(int vid, int pid, UPSBatterySnapshot *snapshot);
 ups_batt_t ups_battery_info(UPSDataRef device);
 
 #pragma clang diagnostic pop
