@@ -55,8 +55,8 @@ This section displays the most commonly used Gas Gauge metrics.
 
 | Field | Description |
 | --- | --- |
-| Depth of Discharge (DOD₀) | Chemical depth of discharge, updated from OCV readings in a `relaxed` state. |
-| Passed Charge | Cumulative capacity of the current charge/discharge cycle; resets with each DOD₀ update. |
+| DOD₀ Reference | Chemical depth-of-discharge reference recorded at the most recent qualifying OCV reading while the battery was at rest. The gauge's raw 0–16384 value is displayed as a percentage and may differ from the current depth of discharge. |
+| Passed Charge | Signed charge in mAh passed through the sense resistor since the last Impedance Track simulation/DOD₀ reference update. It is not lifetime throughput or cycle count. |
 
 #### Electrical Measurements
 

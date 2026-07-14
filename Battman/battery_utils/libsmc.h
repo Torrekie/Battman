@@ -113,7 +113,7 @@ typedef struct gas_gauge {
     uint16_t StateOfCharge;         /* % */
     int16_t TrueRemainingCapacity;  /* mAh */
     int16_t PassedCharge;           /* mAh */
-    uint16_t DOD0;                  /* mAh */
+    uint16_t DOD0;                  /* raw 0-16384 */
     uint16_t PresentDOD;            /* %/mAh */
     uint16_t DesignCapacity;        /* mAh */
     int16_t IMAX;                   /* mA */
@@ -159,7 +159,7 @@ typedef struct cell_info {
     int64_t CurrentAccumulator; /* BC?A */
     uint16_t Voltage;           /* BC?V */
     uint16_t Qmax;              /* BQX? */
-    uint16_t DOD0;              /* BQD? */
+    uint16_t DOD0;              /* BQD?, raw 0-16384 */
     uint16_t PresentDOD;        /* BDD? */
     uint16_t WoM;               /* BMW? */
     uint8_t RaTableRaw[32];     /* B0R? */
@@ -226,7 +226,7 @@ typedef struct shutdown_data {
     int16_t AverageCurrent;             /* UBAC */
     int16_t PrevAverageCurrent;         /* UBPI */
     uint16_t RSS;                       /* UBSS */
-    uint16_t DOD0;                      /* UBD0 */
+    uint16_t DOD0;                      /* UBD0, raw 0-16384 */
     int16_t PresentDOD;                 /* UBDD */
     int16_t PassedCharge;               /* UBPC */
     uint16_t CycleCount;                /* UBCT */
@@ -516,7 +516,7 @@ extern board_info_t gBoard;
 const board_info_t *get_board_info(void);
 int get_fan_status(void);
 float get_temperature(void);
-int get_time_to_empty(void);
+int get_time_to_empty(charging_state_t charging_state);
 int estimate_time_to_full(void);
 float get_battery_health(float *design_cap, float *full_cap);
 bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design);

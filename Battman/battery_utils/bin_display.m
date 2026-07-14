@@ -151,17 +151,20 @@ NSString *bin_format_special(uint32_t content) {
 	bool   is_float = (content & BIN_IS_FLOAT) == BIN_IS_FLOAT;
 	double value    = is_float ? (double)bin_content_load_float(content)
 	                           : (double)(int16_t)(content >> 16);
+	NSString *number_format = is_float
+	    ? ((content & BIN_FORMAT_FIXED_2) ? @"%.2f" : @"%.4g")
+	    : @"%.0f";
 
 	if (content & BIN_HAS_UNIT) {
 		uint32_t unit_index = BIN_UNIT_INDEX(content);
 		if (unit_index >= BIN_UNIT_COUNT)
-			return [NSString stringWithFormat:is_float ? @"%.4g" : @"%.0f", value];
+			return [NSString stringWithFormat:number_format, value];
 
 		bin_unit_formatter_t fmt = bin_unit_formatters[unit_index];
 		if (fmt)
 			return fmt(content, value);
-		return [NSString stringWithFormat:is_float ? @"%.4g %@" : @"%.0f %@",
+		return [NSString stringWithFormat:[number_format stringByAppendingString:@" %@"],
 		        value, _(bin_unit_strings[unit_index])];
 	}
-	return [NSString stringWithFormat:is_float ? @"%.4g" : @"%.0f", value];
+	return [NSString stringWithFormat:number_format, value];
 }

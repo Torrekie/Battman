@@ -141,6 +141,7 @@
 		684114A82E5323E2001B76B6 /* daemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911F2DC754100089BA1F /* daemon.c */; };
 		684114A92E5323E2001B76B6 /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
 		68F000032F00000000000003 /* bin_display.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F000012F00000000000001 /* bin_display.m */; };
+		68F100032F20000000000003 /* battery_diagnostics.c in Sources */ = {isa = PBXBuildFile; fileRef = 68F100012F20000000000001 /* battery_diagnostics.c */; };
 		684114AA2E5323E2001B76B6 /* IOMFB_interaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 6846114F2E0D5250006B651D /* IOMFB_interaction.c */; };
 		684114AB2E5323E2001B76B6 /* pmnotification.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911E2DC754100089BA1F /* pmnotification.c */; };
 		684114AC2E5323E2001B76B6 /* GradientArcView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B5FF2D2D85606000919BC2 /* GradientArcView.m */; };
@@ -200,6 +201,7 @@
 		684114FE2E57BDE7001B76B6 /* daemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911F2DC754100089BA1F /* daemon.c */; };
 		684114FF2E57BDE7001B76B6 /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
 		68F000042F00000000000004 /* bin_display.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F000012F00000000000001 /* bin_display.m */; };
+		68F100042F20000000000004 /* battery_diagnostics.c in Sources */ = {isa = PBXBuildFile; fileRef = 68F100012F20000000000001 /* battery_diagnostics.c */; };
 		684115002E57BDE7001B76B6 /* IOMFB_interaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 6846114F2E0D5250006B651D /* IOMFB_interaction.c */; };
 		684115012E57BDE7001B76B6 /* pmnotification.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911E2DC754100089BA1F /* pmnotification.c */; };
 		684115022E57BDE7001B76B6 /* GradientArcView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B5FF2D2D85606000919BC2 /* GradientArcView.m */; };
@@ -278,6 +280,7 @@
 		684972982EACB71B00C9C58A /* daemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911F2DC754100089BA1F /* daemon.c */; };
 		684972992EACB71B00C9C58A /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
 		68F000052F00000000000005 /* bin_display.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F000012F00000000000001 /* bin_display.m */; };
+		68F100052F20000000000005 /* battery_diagnostics.c in Sources */ = {isa = PBXBuildFile; fileRef = 68F100012F20000000000001 /* battery_diagnostics.c */; };
 		6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 6846114F2E0D5250006B651D /* IOMFB_interaction.c */; };
 		6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911E2DC754100089BA1F /* pmnotification.c */; };
 		6849729C2EACB71B00C9C58A /* PickerAccessoryView.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2C9C2E6185D900FECDF5 /* PickerAccessoryView.m */; };
@@ -346,6 +349,7 @@
 		68B16F122E1BBCC7009B63AC /* NSData+HexString.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B16F112E1BBCC6009B63AC /* NSData+HexString.m */; };
 		68B291232DC754100089BA1F /* daemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911F2DC754100089BA1F /* daemon.c */; };
 		68F000062F00000000000006 /* bin_display.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F000012F00000000000001 /* bin_display.m */; };
+		68F100062F20000000000006 /* battery_diagnostics.c in Sources */ = {isa = PBXBuildFile; fileRef = 68F100012F20000000000001 /* battery_diagnostics.c */; };
 		68B291272DC7547B0089BA1F /* ChargingLimitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291252DC7547B0089BA1F /* ChargingLimitViewController.m */; };
 		68B291282DC75F610089BA1F /* pmnotification.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911E2DC754100089BA1F /* pmnotification.c */; };
 		68B291362DD1E6960089BA1F /* SimpleTemperatureViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291322DD1E6960089BA1F /* SimpleTemperatureViewController.m */; };
@@ -1986,6 +1990,8 @@
 		68B291392DD1FEDA0089BA1F /* hid.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = hid.m; sourceTree = "<group>"; };
 		68F000012F00000000000001 /* bin_display.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = bin_display.m; sourceTree = "<group>"; };
 		68F000022F00000000000002 /* bin_display.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bin_display.h; sourceTree = "<group>"; };
+		68F100012F20000000000001 /* battery_diagnostics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = battery_diagnostics.c; sourceTree = "<group>"; };
+		68F100022F20000000000002 /* battery_diagnostics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = battery_diagnostics.h; sourceTree = "<group>"; };
 		68B2913B2DD86AAB0089BA1F /* accessory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = accessory.h; sourceTree = "<group>"; };
 		68B2913C2DD86AAB0089BA1F /* accessory.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = accessory.c; sourceTree = "<group>"; };
 		68B2913F2DD86ABF0089BA1F /* IOAccessoryManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IOAccessoryManager.h; sourceTree = "<group>"; };
@@ -14136,6 +14142,8 @@
 				68B291392DD1FEDA0089BA1F /* hid.m */,
 				68F000012F00000000000001 /* bin_display.m */,
 				68F000022F00000000000002 /* bin_display.h */,
+				68F100012F20000000000001 /* battery_diagnostics.c */,
+				68F100022F20000000000002 /* battery_diagnostics.h */,
 				68B2911F2DC754100089BA1F /* daemon.c */,
 				68B2911E2DC754100089BA1F /* pmnotification.c */,
 				68B291202DC754100089BA1F /* smctest.c */,
@@ -15074,6 +15082,7 @@
 				684114A82E5323E2001B76B6 /* daemon.c in Sources */,
 				684114A92E5323E2001B76B6 /* battery_info.c in Sources */,
 				68F000032F00000000000003 /* bin_display.m in Sources */,
+				68F100032F20000000000003 /* battery_diagnostics.c in Sources */,
 				68D800C72EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
 				68D800852EC5B8140012B84A /* dcp.c in Sources */,
 				684114AA2E5323E2001B76B6 /* IOMFB_interaction.c in Sources */,
@@ -15178,6 +15187,7 @@
 				68D800862EC5B8140012B84A /* dcp.c in Sources */,
 				684114FF2E57BDE7001B76B6 /* battery_info.c in Sources */,
 				68F000042F00000000000004 /* bin_display.m in Sources */,
+				68F100042F20000000000004 /* battery_diagnostics.c in Sources */,
 				68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
 				684115002E57BDE7001B76B6 /* IOMFB_interaction.c in Sources */,
 				684115012E57BDE7001B76B6 /* pmnotification.c in Sources */,
@@ -15284,6 +15294,7 @@
 				684972982EACB71B00C9C58A /* daemon.c in Sources */,
 				684972992EACB71B00C9C58A /* battery_info.c in Sources */,
 				68F000052F00000000000005 /* bin_display.m in Sources */,
+				68F100052F20000000000005 /* battery_diagnostics.c in Sources */,
 				68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
 				68D800872EC5B8140012B84A /* dcp.c in Sources */,
 				6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */,
@@ -15381,6 +15392,7 @@
 				68B291232DC754100089BA1F /* daemon.c in Sources */,
 				68A3EAFB2D5204D2003381DF /* battery_info.c in Sources */,
 				68F000062F00000000000006 /* bin_display.m in Sources */,
+				68F100062F20000000000006 /* battery_diagnostics.c in Sources */,
 				684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				6841152D2E57E166001B76B6 /* control in Sources */,

@@ -1129,21 +1129,20 @@ msgid "Cycle Count"
 msgstr ""
 
 msgid ""
-"Cycle Count exceeded designed cycle count, consider replacing with a genuine "
-"battery."
+"Cycle count exceeds the battery's design target. Capacity or peak "
+"performance may be reduced."
 msgstr ""
 
 msgid "Time to Empty"
 msgstr ""
 
-msgid "Unusual Time to Empty, a non-genuine battery component may be in use."
+msgid "Time to Empty is inconsistent with current battery data."
 msgstr ""
 
-msgid "Depth of Discharge"
+msgid "DOD₀ Reference"
 msgstr ""
 
-msgid ""
-"Unusual Depth of Discharge, a non-genuine battery component may be in use."
+msgid "DOD₀ data is invalid."
 msgstr ""
 
 msgid "Not HVC"
@@ -1501,17 +1500,16 @@ msgid "Qmax"
 msgstr ""
 
 msgid ""
-"Current chemical depth of discharge (DOD₀). The gas gauge updates "
-"information on the DOD₀ based on open-circuit voltage (OCV) readings when in "
-"a relaxed state."
+"Chemical depth of discharge recorded while the battery was last at rest. "
+"This value may differ from the current depth of discharge."
 msgstr ""
 
 msgid "Passed Charge"
 msgstr ""
 
 msgid ""
-"The cumulative capacity of the current charging or discharging cycle. It is "
-"reset to zero with each DOD₀ update."
+"Signed charge measured since the battery gauge's last reference update. "
+"This value is not lifetime charge or cycle count."
 msgstr ""
 
 msgid "Voltage"
