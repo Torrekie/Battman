@@ -19,6 +19,7 @@
 #import "WarnAccessoryView.h"
 #import "BrightnessAdvancedViewController.h"
 #import "ScrollableDetailCell.h"
+#include <math.h>
 
 @interface BrightnessDetailsViewController ()
  
@@ -33,6 +34,11 @@
 @property (nonatomic, assign) BOOL alsSupportedCached;
 @property (nonatomic, assign) BOOL dcpBacklightCached;
 @property (nonatomic, strong) CADisplay *cachedMainDisplay;
+@property (nonatomic, strong) UITableViewCell *nitsControlCell;
+@property (nonatomic, strong) UILabel *nitsControlValueLabel;
+@property (nonatomic, strong) UILabel *nitsControlRangeLabel;
+@property (nonatomic, strong) UISlider *nitsControlSlider;
+@property (nonatomic, assign) BOOL nitsControlTracking;
 
 @end
 
@@ -41,6 +47,7 @@
 typedef enum {
 	B_SECT_BASIC,
 	B_SECT_LIMITS,
+	B_SECT_CONTROL,
 	B_SECT_SPECS,
 	B_SECT_COUNT,
 } BrightnessSect;
@@ -54,6 +61,11 @@ typedef enum {
 	B_ROW_LIMITS_CARD,
 	B_ROW_LIMITS_COUNT,
 } BrightnessRowLimits;
+
+typedef enum {
+	B_ROW_CONTROL_NITS,
+	B_ROW_CONTROL_COUNT,
+} BrightnessRowControl;
 
 typedef enum {
 	B_ROW_SPECS_BACKEND,
@@ -120,6 +132,127 @@ typedef enum {
 	self.dcpBacklightCached = dcp_backlight();
 	self.alsSupportedCached = als_supported();
 	self.cachedMainDisplay = CADisplay.mainDisplay;
+	if (self.nitsControlCell)
+		[self _configureNitsControlCell];
+}
+
+- (UITableViewCell *)_newNitsControlCell {
+	UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+	cell.selectionStyle = UITableViewCellSelectionStyleNone;
+
+	UILabel *titleLabel = [[UILabel alloc] init];
+	titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+	titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+	titleLabel.text = _("Manual High Brightness");
+	[cell.contentView addSubview:titleLabel];
+
+	UILabel *valueLabel = [[UILabel alloc] init];
+	valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
+	valueLabel.font = [UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightMedium];
+	valueLabel.textAlignment = NSTextAlignmentRight;
+	[cell.contentView addSubview:valueLabel];
+
+	UISlider *slider = [[UISlider alloc] init];
+	slider.translatesAutoresizingMaskIntoConstraints = NO;
+	slider.continuous = YES;
+	slider.accessibilityLabel = _("Manual brightness in nits");
+	[slider addTarget:self action:@selector(_nitsSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
+	[slider addTarget:self action:@selector(_nitsSliderChanged:) forControlEvents:UIControlEventValueChanged];
+	[slider addTarget:self action:@selector(_nitsSliderCommitted:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
+	[cell.contentView addSubview:slider];
+
+	UILabel *rangeLabel = [[UILabel alloc] init];
+	rangeLabel.translatesAutoresizingMaskIntoConstraints = NO;
+	rangeLabel.font = [UIFont systemFontOfSize:12];
+	rangeLabel.textColor = [UIColor compatSecondaryLabelColor];
+	rangeLabel.numberOfLines = 0;
+	[cell.contentView addSubview:rangeLabel];
+
+	UILayoutGuide *margins = cell.contentView.layoutMarginsGuide;
+	[NSLayoutConstraint activateConstraints:@[
+		[titleLabel.topAnchor constraintEqualToAnchor:margins.topAnchor],
+		[titleLabel.leadingAnchor constraintEqualToAnchor:margins.leadingAnchor],
+		[titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:valueLabel.leadingAnchor constant:-12],
+		[valueLabel.firstBaselineAnchor constraintEqualToAnchor:titleLabel.firstBaselineAnchor],
+		[valueLabel.trailingAnchor constraintEqualToAnchor:margins.trailingAnchor],
+		[slider.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:8],
+		[slider.leadingAnchor constraintEqualToAnchor:margins.leadingAnchor],
+		[slider.trailingAnchor constraintEqualToAnchor:margins.trailingAnchor],
+		[rangeLabel.topAnchor constraintEqualToAnchor:slider.bottomAnchor constant:4],
+		[rangeLabel.leadingAnchor constraintEqualToAnchor:margins.leadingAnchor],
+		[rangeLabel.trailingAnchor constraintEqualToAnchor:margins.trailingAnchor],
+		[rangeLabel.bottomAnchor constraintEqualToAnchor:margins.bottomAnchor],
+	]];
+
+	self.nitsControlCell = cell;
+	self.nitsControlValueLabel = valueLabel;
+	self.nitsControlRangeLabel = rangeLabel;
+	self.nitsControlSlider = slider;
+	[self _configureNitsControlCell];
+	return cell;
+}
+
+- (void)_configureNitsControlCell {
+	if (!self.nitsControlSlider)
+		return;
+
+	VirtualBrightnessLimits limits = self.cachedLimits;
+	double minNits = limits.HardwareAccessibleMinNits;
+	double maxNits = limits.HardwareAccessibleMaxNits;
+	double sliderMaxNits = limits.UserAccessibleMaxNits;
+	BOOL validRange = !is_simulator() && limits.ExtrabrightEDRSupported && minNits >= 0 && maxNits > minNits && maxNits > sliderMaxNits;
+
+	self.nitsControlSlider.enabled = validRange;
+	if (!validRange) {
+		self.nitsControlValueLabel.text = _("Unavailable");
+		self.nitsControlRangeLabel.text = _("This display does not report a manual high-brightness range.");
+		self.nitsControlSlider.minimumValue = 0;
+		self.nitsControlSlider.maximumValue = 1;
+		self.nitsControlSlider.value = 0;
+		self.nitsControlSlider.accessibilityValue = self.nitsControlValueLabel.text;
+		return;
+	}
+
+	self.nitsControlSlider.minimumValue = minNits;
+	self.nitsControlSlider.maximumValue = maxNits;
+	double currentNits = self.cachedDisplayBrightness.Nits;
+	if (currentNits <= 0)
+		currentNits = self.cachedDisplayBrightness.NitsPhysical;
+	currentNits = MIN(MAX(currentNits, minNits), maxNits);
+	if (!self.nitsControlTracking)
+		self.nitsControlSlider.value = currentNits;
+	[self _updateNitsControlValue:self.nitsControlSlider.value];
+	self.nitsControlRangeLabel.text = [NSString stringWithFormat:_("System slider max: %.0f nits · Hardware max: %.0f nits"), sliderMaxNits, maxNits];
+	self.nitsControlSlider.accessibilityHint = _("Values above the system slider maximum use the display's high-brightness range.");
+}
+
+- (void)_updateNitsControlValue:(double)nits {
+	double roundedNits = round(nits);
+	self.nitsControlValueLabel.text = [NSString stringWithFormat:_("%.0f nits"), roundedNits];
+	self.nitsControlSlider.accessibilityValue = self.nitsControlValueLabel.text;
+}
+
+- (void)_nitsSliderTouchDown:(UISlider *)slider {
+	self.nitsControlTracking = YES;
+}
+
+- (void)_nitsSliderChanged:(UISlider *)slider {
+	double roundedNits = round(slider.value);
+	[self _updateNitsControlValue:roundedNits];
+	set_display_brightness(false, roundedNits, !self.nitsControlTracking);
+}
+
+- (void)_nitsSliderCommitted:(UISlider *)slider {
+	double roundedNits = round(slider.value);
+	self.nitsControlTracking = NO;
+	slider.value = roundedNits;
+	[self _updateNitsControlValue:roundedNits];
+	if (!set_display_brightness(false, roundedNits, true)) {
+		show_alert(_C("Brightness Unavailable"), _C("The system brightness service could not apply this value."), L_OK);
+		return;
+	}
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_reloadBrightnessSection) object:nil];
+	[self performSelector:@selector(_reloadBrightnessSection) withObject:nil afterDelay:0.2];
 }
 
 - (void)_handlePullToRefresh:(UIRefreshControl *)refreshControl {
@@ -148,6 +281,7 @@ typedef enum {
 	switch (sect) {
 		case B_SECT_BASIC: return nil;
 		case B_SECT_LIMITS: return nil;
+		case B_SECT_CONTROL: return _("High Brightness Override");
 		case B_SECT_SPECS: return _("Specs (Basic)");
 		case B_SECT_COUNT: break;
 	}
@@ -159,6 +293,7 @@ typedef enum {
 	switch (sect) {
 		case B_SECT_BASIC: return nil;
 		case B_SECT_LIMITS: return _("These limitations are typically determined by the hardware and returned by the Brightness system.");
+		case B_SECT_CONTROL: return _("Brightness above the system slider maximum increases power use and heat. iOS may reduce it to protect the display.");
 		case B_SECT_SPECS: return _("These parameters are sourced from the system’s high-level graphics layer. Because the display is ultimately composed through CoreAnimation and backboardd before it reaches the screen hardware, the values shown here are estimates and may not precisely reflect the true behavior of the physical display.");
 		case B_SECT_COUNT: break;
 	}
@@ -170,6 +305,7 @@ typedef enum {
 	switch (sect) {
 		case B_SECT_BASIC: return B_ROW_BASIC_COUNT;
 		case B_SECT_LIMITS: return B_ROW_LIMITS_COUNT;
+		case B_SECT_CONTROL: return B_ROW_CONTROL_COUNT;
 		case B_SECT_SPECS: return B_ROW_SPECS_COUNT;
 		case B_SECT_COUNT: break;
 	}
@@ -248,6 +384,17 @@ typedef enum {
 			}
 			break;
 		}
+		case B_SECT_CONTROL: {
+			BrightnessRowControl row = (BrightnessRowControl)indexPath.row;
+			switch (row) {
+				case B_ROW_CONTROL_NITS:
+					cell = self.nitsControlCell ?: [self _newNitsControlCell];
+					[self _configureNitsControlCell];
+					break;
+				case B_ROW_CONTROL_COUNT: break;
+			}
+			break;
+		}
 		case B_SECT_SPECS: {
 			BrightnessRowSpecs row = (BrightnessRowSpecs)indexPath.row;
 			if (!cell)
@@ -314,6 +461,12 @@ typedef enum {
 
 	cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+	if (indexPath.section == B_SECT_CONTROL)
+		return 102.0;
+	return UITableViewAutomaticDimension;
 }
 
 - (void)warnForWeirdPanelID {

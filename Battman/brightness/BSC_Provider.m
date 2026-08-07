@@ -8,6 +8,7 @@
 #import "../ObjCExt/NSBundle+Auto.h"
 #import "libbrightness.h"
 #import "../common.h"
+#include <math.h>
 
 Class BrightnessSystemClient = nil;
 
@@ -70,14 +71,17 @@ DisplayBrightness display_brightness(void) {
 }
 
 bool set_display_brightness(bool by_percentage, double value, bool commit) {
+	id<BrightnessSystemClientProtocol> client = sharedClient;
+	if (!client || !isfinite(value) || value < 0)
+		return false;
+
 	CFMutableDictionaryRef dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 2, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+	if (!dict)
+		return false;
 	CFDictionaryAddValue(dict, by_percentage ? CFSTR("Brightness") : CFSTR("Nits"), (__bridge CFNumberRef)@(value));
 	if (commit)
 		CFDictionaryAddValue(dict, CFSTR("Commit"), kCFBooleanTrue);
-	[sharedClient setProperty:(__bridge id)(dict) forKey:@"DisplayBrightness"];
-	if (dict) {
-		CFRelease(dict);
-		return true;
-	}
-	return false;
+	[client setProperty:(__bridge id)(dict) forKey:@"DisplayBrightness"];
+	CFRelease(dict);
+	return true;
 }
