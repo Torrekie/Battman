@@ -158,7 +158,8 @@ typedef enum {
 	slider.accessibilityLabel = _("Manual brightness in nits");
 	[slider addTarget:self action:@selector(_nitsSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
 	[slider addTarget:self action:@selector(_nitsSliderChanged:) forControlEvents:UIControlEventValueChanged];
-	[slider addTarget:self action:@selector(_nitsSliderCommitted:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
+	[slider addTarget:self action:@selector(_nitsSliderCommitted:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside];
+	[slider addTarget:self action:@selector(_nitsSliderCancelled:) forControlEvents:UIControlEventTouchCancel];
 	[cell.contentView addSubview:slider];
 
 	UILabel *rangeLabel = [[UILabel alloc] init];
@@ -253,6 +254,11 @@ typedef enum {
 	}
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_reloadBrightnessSection) object:nil];
 	[self performSelector:@selector(_reloadBrightnessSection) withObject:nil afterDelay:0.2];
+}
+
+- (void)_nitsSliderCancelled:(UISlider *)slider {
+	self.nitsControlTracking = NO;
+	[self _reloadBrightnessSection];
 }
 
 - (void)_handlePullToRefresh:(UIRefreshControl *)refreshControl {
@@ -464,8 +470,6 @@ typedef enum {
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-	if (indexPath.section == B_SECT_CONTROL)
-		return 102.0;
 	return UITableViewAutomaticDimension;
 }
 
