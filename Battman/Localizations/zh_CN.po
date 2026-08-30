@@ -6,7 +6,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.4\n"
+"Project-Id-Version: Battman 1.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
@@ -2125,3 +2125,321 @@ msgstr "温度单位"
 
 msgid "System"
 msgstr "系统"
+
+msgid "Add Card"
+msgstr "添加卡片"
+
+msgid "Open"
+msgstr "打开"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."
+msgstr "%@ %@ 已在不运行其代码的情况下完成验证，并保存到 Battman 的私有隔离区。它尚未获准、安装、启用或加载。请在“插件”中检查其身份和请求的扩展点。"
+
+msgid "%lu recorded issue(s)"
+msgstr "%lu 个已记录问题"
+
+msgid "Actions"
+msgstr "操作"
+
+msgid "Allow This Version"
+msgstr "允许此版本"
+
+msgid "Allow This Version?"
+msgstr "允许此版本？"
+
+msgid "Allow Version and Schedule"
+msgstr "允许此版本并安排加载"
+
+msgid "Allowed Version"
+msgstr "已允许的版本"
+
+msgid "Approval Required"
+msgstr "需要批准"
+
+msgid "Developer Mode"
+msgstr "开发者模式"
+
+msgid "Diagnostics"
+msgstr "诊断"
+
+msgid "Disable Last Plug-in"
+msgstr "禁用上一个插件"
+
+msgid "Disable Next Launch"
+msgstr "下次启动时禁用"
+
+msgid "Enable Next Launch"
+msgstr "下次启动时启用"
+
+msgid "Enable Third-Party Plug-ins?"
+msgstr "启用第三方插件？"
+
+msgid "Enabled Next Launch"
+msgstr "下次启动时启用"
+
+msgid "Export Diagnostics"
+msgstr "导出诊断信息"
+
+msgid "Extensions"
+msgstr "扩展"
+
+msgid "I Understand, Enable"
+msgstr "我已了解，启用"
+
+msgid "Identity"
+msgstr "身份"
+
+msgid "Install for Next Launch"
+msgstr "为下次启动安装"
+
+msgid "Installed"
+msgstr "已安装"
+
+msgid "Manage native extensions and recovery"
+msgstr "管理原生扩展和恢复"
+
+msgid "Native Plug-ins"
+msgstr "原生插件"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "原生插件与 Battman 之间没有隔离。它们可以使用 Battman 的数据、权限和网络连接，替换界面并危害应用。开源和有效签名并不代表代码安全。\n\n名称：%@\nID：%@\n发布者：%@\n软件包：%@\n扩展点：\n%@\n\n%@\n\n只有重新启动 Battman 后才会加载。"
+
+msgid "No Installed Plug-ins"
+msgstr "没有已安装的插件"
+
+msgid "No Quarantined Plug-ins"
+msgstr "隔离区中没有插件"
+
+msgid "Not Now"
+msgstr "暂不"
+
+msgid "Official"
+msgstr "官方"
+
+msgid "Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code."
+msgstr "打开 .battman 文件只会验证文件并保存私有隔离副本，不会批准或加载代码。"
+
+msgid "Package Digest"
+msgstr "软件包摘要"
+
+msgid "Plug-in Approval Failed"
+msgstr "插件批准失败"
+
+msgid "Plug-in Change Failed"
+msgstr "插件更改失败"
+
+msgid "Plug-in Details"
+msgstr "插件详情"
+
+msgid "Plug-in Import Failed"
+msgstr "插件导入失败"
+
+msgid "Plug-in Installation Failed"
+msgstr "插件安装失败"
+
+msgid "Plug-in Inventory Failed"
+msgstr "无法读取插件清单"
+
+msgid "Plug-in Quarantined"
+msgstr "插件已隔离"
+
+msgid "Plug-in Removal Failed"
+msgstr "插件移除失败"
+
+msgid "Plug-ins"
+msgstr "插件"
+
+msgid "Plug-ins relying on this publisher approval will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "依赖此发布者批准的插件将在 Battman 下次启动时被拒绝。已加载的代码无法安全卸载。"
+
+msgid "Publisher"
+msgstr "发布者"
+
+msgid "Quarantine"
+msgstr "隔离区"
+
+msgid "Recovery"
+msgstr "恢复"
+
+msgid "Recovery Change Failed"
+msgstr "恢复设置更改失败"
+
+msgid "Remove Plug-in"
+msgstr "移除插件"
+
+msgid "Remove from Quarantine"
+msgstr "从隔离区移除"
+
+msgid "Remove this exact plug-in from Battman's private app-data directory? App-bundle and package-manager files are never removed here."
+msgstr "从 Battman 的私有应用数据目录移除此插件的当前副本？此处绝不会移除应用包或软件包管理器中的文件。"
+
+msgid "Remove this verified package from Battman's private quarantine?"
+msgstr "从 Battman 的私有隔离区移除此已验证软件包？"
+
+msgid "Requested Extension Points"
+msgstr "请求的扩展点"
+
+msgid "Extension-point changes since prior version"
+msgstr "与上一版本相比的扩展点变化"
+
+msgid "No prior installed version"
+msgstr "没有先前安装的版本"
+
+msgid "Comparison unavailable: multiple installed representations"
+msgstr "无法比较：存在多个已安装副本"
+
+msgid "Comparison unavailable: installed version failed verification"
+msgstr "无法比较：已安装版本验证失败"
+
+msgid "Comparison unavailable: installed version is not approved"
+msgstr "无法比较：已安装版本未获批准"
+
+msgid "Comparison unavailable: activation state does not match installed bytes"
+msgstr "无法比较：激活状态与已安装字节不匹配"
+
+msgid "Comparison unavailable: publisher key changed"
+msgstr "无法比较：发布者密钥已更改"
+
+msgid "Comparison unavailable: candidate is not a newer release"
+msgstr "无法比较：候选版本不是较新的发行版"
+
+msgid "Prior-version comparison unavailable"
+msgstr "无法与先前版本比较"
+
+msgid "Requires Battman Reinstall"
+msgstr "需要重新安装 Battman"
+
+msgid "Review Plug-in"
+msgstr "检查插件"
+
+msgid "Revoke Publisher Trust"
+msgstr "撤销发布者信任"
+
+msgid "Revoke Version Approval"
+msgstr "撤销版本批准"
+
+msgid "Safe Mode Could Not Be Scheduled"
+msgstr "无法安排安全模式"
+
+msgid "Safe Mode Scheduled"
+msgstr "已安排安全模式"
+
+msgid "Schedule one safe-mode launch"
+msgstr "安排一次安全模式启动"
+
+msgid "Scheduled for Next Launch"
+msgstr "已安排在下次启动时加载"
+
+msgid "Source"
+msgstr "来源"
+
+msgid "Start Without Third-Party Plug-ins"
+msgstr "不加载第三方插件启动"
+
+msgid "The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "Battman 下次启动时将跳过所有第三方插件一次。准备好后，请退出并重新打开 Battman。"
+
+msgid "The selected package could not be verified and was not imported."
+msgstr "无法验证所选软件包，因此未将其导入。"
+
+msgid "The verified plug-in is installed and scheduled. It can load only after Battman restarts, and third-party loading must also be enabled."
+msgstr "已验证插件已安装并安排加载。它只能在 Battman 重新启动后加载，并且还必须启用第三方插件加载。"
+
+msgid "Third-Party Plug-ins"
+msgstr "第三方插件"
+
+msgid "Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."
+msgstr "第三方原生插件在 Battman 进程内运行，与 Battman 之间没有沙盒隔离。更改仅在重新启动后生效；已加载的映像绝不会卸载。"
+
+msgid "Third-party native plug-ins run inside Battman without isolation. They can access Battman's data and entitlements, use the network, replace UI, and crash or compromise the app. Signatures identify package bytes; they do not make code safe. Only continue if you understand and accept these risks."
+msgstr "第三方原生插件在 Battman 进程内运行，没有隔离。它们可以访问 Battman 的数据和权限、使用网络、替换界面，并可导致应用崩溃或被攻破。签名只能识别软件包字节，不能保证代码安全。仅在您理解并接受这些风险时继续。"
+
+msgid "This Battman installation cannot load newly imported native code directly. The approved package remains quarantined and must be embedded in a replacement Battman app, then installed explicitly."
+msgstr "当前 Battman 安装无法直接加载新导入的原生代码。已批准的软件包会继续留在隔离区，必须嵌入替换版 Battman 应用，再由您明确安装。"
+
+msgid "This approval applies only to these exact package bytes. Any update requires approval again."
+msgstr "此批准仅适用于当前完全一致的软件包字节。任何更新都需要重新批准。"
+
+msgid "This version will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "Battman 下次启动时将拒绝此版本。已加载的代码无法安全卸载。"
+
+msgid "Trust"
+msgstr "信任"
+
+msgid "Trust Change Failed"
+msgstr "信任设置更改失败"
+
+msgid "Trust Publisher and Schedule"
+msgstr "信任发布者并安排加载"
+
+msgid "Trust This Publisher"
+msgstr "信任此发布者"
+
+msgid "Trust This Publisher?"
+msgstr "信任此发布者？"
+
+msgid "Trusted Publisher"
+msgstr "已信任的发布者"
+
+msgid "Trusting this publisher also allows future versions signed by this key for the same plug-in ID and requested extension points. Future versions still must pass offline signature, revocation, release-sequence rollback, and extension-point scope checks."
+msgstr "信任此发布者后，也会允许由此密钥签名、使用相同插件 ID 和请求扩展点的未来版本。未来版本仍必须通过离线签名、撤销、发行序列回滚和扩展点范围检查。"
+
+msgid "Verification Failed"
+msgstr "验证失败"
+
+msgid "Review Diagnostics Before Sharing"
+msgstr "分享前检查诊断信息"
+
+msgid "The report contains Battman version, generation time, plug-in identifiers, package hashes, source, trust and activation state, and error domain/code values. It excludes plug-in files, private keys, battery measurements, device identifiers, and filesystem paths. Review the report and recipient before sharing."
+msgstr "报告包含 Battman 版本、生成时间、插件标识符、软件包哈希、来源、信任和启用状态，以及错误域/错误码。报告不包含插件文件、私钥、电池测量值、设备标识符或文件系统路径。分享前请检查报告和接收者。"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Author & Support"
+msgstr "作者与支持"
+
+msgid "Author and contact details are supplied by the signed package. The verification status above determines whether Battman recognizes its publisher."
+msgstr "作者和联系信息由已签名的软件包提供。上方的验证状态说明 Battman 是否认可其发布者。"
+
+msgid "Copied"
+msgstr "已复制"
+
+msgid "Homepage"
+msgstr "主页"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "原生插件与 Battman 之间没有隔离。它们可以使用 Battman 的数据、权限和网络访问，替换界面并攻破应用。开源和有效签名都不能保证代码安全。\n\n名称：%@\n作者：%@\nID：%@\n版本：%@（%@）\n发行序列：%llu\n发布者指纹：%@\n软件包摘要：%@\n扩展点：\n%@\n\n%@\n\nBattman 重新启动前不会加载任何内容。"
+
+msgid "Release Sequence"
+msgstr "发行序列"
+
+msgid "Not Provided"
+msgstr "未提供"
+
+msgid "Publisher Fingerprint"
+msgstr "发布者指纹"
+
+msgid "Publisher Fingerprint and Package Digest"
+msgstr "发布者指纹与软件包摘要"
+
+msgid "Support Email"
+msgstr "支持邮箱"
+
+msgid "Technical Details"
+msgstr "技术详情"
+
+msgid "These identifiers verify the signing key and exact package bytes. Tap a value to copy its full form."
+msgstr "这些标识符用于验证签名密钥和完全一致的软件包字节。轻点某个值可复制其完整内容。"
+
+msgid "This package does not provide author or support information."
+msgstr "此软件包未提供作者或支持信息。"
+
+msgid "Verification"
+msgstr "验证"
+
+msgid "View Verification Details"
+msgstr "查看验证详情"

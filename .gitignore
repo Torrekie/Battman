@@ -25,6 +25,27 @@ docs/battman-user-manuals/__pycache__/
 docs/battman-user-manuals/*.egg-info/
 docs/battman-user-manuals/.deploy_temp/
 
+# Local-only review evidence and planning state. These records can contain
+# device identifiers, screenshots, recovery notes, or owner decisions; they
+# are intentionally kept outside public pull requests.
+/docs/design-concepts/
+/docs/evidence/
+/docs/release-decisions/
+/docs/review-templates/
+/docs/release-readiness.md
+/docs/plugin-system-plan.md
+/docs/official-trust-ceremony.md
+/docs/*readiness*.md
+/docs/*state*.md
+/docs/**/*state*.md
+/docs/**/*working-state*.md
+/docs/**/*completion-audit*.md
+/Packaging/Release/readiness-state.json
+/Scripts/Release/check-release-readiness.py
+/Tests/Release/test_release_readiness.py
+/Tests/Release/test_plugin_management_screenshots.py
+/.agent-workbench/
+
 # Python cache
 **/__pycache__/
 **/*.pyc

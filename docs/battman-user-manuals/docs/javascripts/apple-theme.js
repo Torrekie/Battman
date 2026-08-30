@@ -8,10 +8,12 @@
   var sidebar = document.querySelector('.bm-sidebar');
   var langSelect = document.getElementById('bm-lang-select');
   var colorSchemeMql = null;
-  var lang = (root.getAttribute('lang') || 'en').toLowerCase();
+  var rawLang = (root.getAttribute('lang') || 'en').toLowerCase();
+  var lang = rawLang === 'zh_tw' ? 'zh_TW' : rawLang;
   var THEME_LABELS = {
     en: { light: 'Light', dark: 'Dark', auto: 'Auto' },
     zh: { light: '浅色', dark: '深色', auto: '自动' },
+    zh_TW: { light: '淺色', dark: '深色', auto: '自動' },
   };
 
   function getSystemPrefersDark() {
@@ -148,6 +150,9 @@
     }
     var segments = path.split('/');
     var first = segments[0];
+    if (first === 'zh_TW') {
+      return 'zh_TW';
+    }
     if (first === 'zh') {
       return 'zh';
     }
@@ -160,7 +165,7 @@
     path = path.replace(/^\/+|\/+$/g, '');
 
     var segments = path ? path.split('/').filter(function(s) { return s; }) : [];
-    var knownLocales = ['zh'];
+    var knownLocales = ['zh', 'zh_TW'];
 
     // Strip existing locale prefix from current path, if any
     if (segments.length > 0 && knownLocales.indexOf(segments[0]) !== -1) {
@@ -214,7 +219,9 @@
   // (i.e. there is no storedLang yet). In that case, prefer zh for zh-* browsers.
   if (!storedLang) {
     var navLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-    if (navLang.indexOf('zh') === 0 && currentLang !== 'zh') {
+    if ((navLang === 'zh-tw' || navLang === 'zh-hant' || navLang.indexOf('zh-hant-') === 0) && currentLang !== 'zh_TW') {
+      window.location.pathname = buildPathForLang('zh_TW');
+    } else if (navLang.indexOf('zh') === 0 && currentLang !== 'zh') {
       window.location.pathname = buildPathForLang('zh');
     }
   }

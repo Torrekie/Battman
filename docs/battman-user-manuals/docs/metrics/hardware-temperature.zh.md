@@ -15,7 +15,7 @@ Battman 会将温度数据分为以下板块：
 - **系统温控状态**  
   显示系统温控值守进程 `thermalmonitord` 的状态。
 - **温控信息**  
-  上层热指标：温控压力等级、[温控通知等级](../../troubleshooting/thermals/thermal-notification-levels)、最大触发温度、阳光暴晒状态。
+  上层热指标：温控压力等级、[温控通知等级](../troubleshooting/thermals/thermal-notification-levels.md)、最大触发温度、阳光暴晒状态。
 - **设备传感器**  
   系统报告的逐个传感器读数（如 SoC、机身、电池模组、摄像头模组）。
 - **HID / HID 原始数据**  

@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.4\n"
+"Project-Id-Version: Battman 1.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
@@ -2196,3 +2196,321 @@ msgstr "Temperature Unit"
 
 msgid "System"
 msgstr "System"
+
+msgid "Add Card"
+msgstr "Add Card"
+
+msgid "Open"
+msgstr "Open"
+
+msgid "Remove"
+msgstr "Remove"
+
+msgid "%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."
+msgstr "%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."
+
+msgid "%lu recorded issue(s)"
+msgstr "%lu recorded issue(s)"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Allow This Version"
+msgstr "Allow This Version"
+
+msgid "Allow This Version?"
+msgstr "Allow This Version?"
+
+msgid "Allow Version and Schedule"
+msgstr "Allow Version and Schedule"
+
+msgid "Allowed Version"
+msgstr "Allowed Version"
+
+msgid "Approval Required"
+msgstr "Approval Required"
+
+msgid "Developer Mode"
+msgstr "Developer Mode"
+
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+msgid "Disable Last Plug-in"
+msgstr "Disable Last Plug-in"
+
+msgid "Disable Next Launch"
+msgstr "Disable Next Launch"
+
+msgid "Enable Next Launch"
+msgstr "Enable Next Launch"
+
+msgid "Enable Third-Party Plug-ins?"
+msgstr "Enable Third-Party Plug-ins?"
+
+msgid "Enabled Next Launch"
+msgstr "Enabled Next Launch"
+
+msgid "Export Diagnostics"
+msgstr "Export Diagnostics"
+
+msgid "Extensions"
+msgstr "Extensions"
+
+msgid "I Understand, Enable"
+msgstr "I Understand, Enable"
+
+msgid "Identity"
+msgstr "Identity"
+
+msgid "Install for Next Launch"
+msgstr "Install for Next Launch"
+
+msgid "Installed"
+msgstr "Installed"
+
+msgid "Manage native extensions and recovery"
+msgstr "Manage native extensions and recovery"
+
+msgid "Native Plug-ins"
+msgstr "Native Plug-ins"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+
+msgid "No Installed Plug-ins"
+msgstr "No Installed Plug-ins"
+
+msgid "No Quarantined Plug-ins"
+msgstr "No Quarantined Plug-ins"
+
+msgid "Not Now"
+msgstr "Not Now"
+
+msgid "Official"
+msgstr "Official"
+
+msgid "Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code."
+msgstr "Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code."
+
+msgid "Package Digest"
+msgstr "Package Digest"
+
+msgid "Plug-in Approval Failed"
+msgstr "Plug-in Approval Failed"
+
+msgid "Plug-in Change Failed"
+msgstr "Plug-in Change Failed"
+
+msgid "Plug-in Details"
+msgstr "Plug-in Details"
+
+msgid "Plug-in Import Failed"
+msgstr "Plug-in Import Failed"
+
+msgid "Plug-in Installation Failed"
+msgstr "Plug-in Installation Failed"
+
+msgid "Plug-in Inventory Failed"
+msgstr "Plug-in Inventory Failed"
+
+msgid "Plug-in Quarantined"
+msgstr "Plug-in Quarantined"
+
+msgid "Plug-in Removal Failed"
+msgstr "Plug-in Removal Failed"
+
+msgid "Plug-ins"
+msgstr "Plug-ins"
+
+msgid "Plug-ins relying on this publisher approval will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "Plug-ins relying on this publisher approval will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+
+msgid "Publisher"
+msgstr "Publisher"
+
+msgid "Quarantine"
+msgstr "Quarantine"
+
+msgid "Recovery"
+msgstr "Recovery"
+
+msgid "Recovery Change Failed"
+msgstr "Recovery Change Failed"
+
+msgid "Remove Plug-in"
+msgstr "Remove Plug-in"
+
+msgid "Remove from Quarantine"
+msgstr "Remove from Quarantine"
+
+msgid "Remove this exact plug-in from Battman's private app-data directory? App-bundle and package-manager files are never removed here."
+msgstr "Remove this exact plug-in from Battman's private app-data directory? App-bundle and package-manager files are never removed here."
+
+msgid "Remove this verified package from Battman's private quarantine?"
+msgstr "Remove this verified package from Battman's private quarantine?"
+
+msgid "Requested Extension Points"
+msgstr "Requested Extension Points"
+
+msgid "Extension-point changes since prior version"
+msgstr "Extension-point changes since prior version"
+
+msgid "No prior installed version"
+msgstr "No prior installed version"
+
+msgid "Comparison unavailable: multiple installed representations"
+msgstr "Comparison unavailable: multiple installed representations"
+
+msgid "Comparison unavailable: installed version failed verification"
+msgstr "Comparison unavailable: installed version failed verification"
+
+msgid "Comparison unavailable: installed version is not approved"
+msgstr "Comparison unavailable: installed version is not approved"
+
+msgid "Comparison unavailable: activation state does not match installed bytes"
+msgstr "Comparison unavailable: activation state does not match installed bytes"
+
+msgid "Comparison unavailable: publisher key changed"
+msgstr "Comparison unavailable: publisher key changed"
+
+msgid "Comparison unavailable: candidate is not a newer release"
+msgstr "Comparison unavailable: candidate is not a newer release"
+
+msgid "Prior-version comparison unavailable"
+msgstr "Prior-version comparison unavailable"
+
+msgid "Requires Battman Reinstall"
+msgstr "Requires Battman Reinstall"
+
+msgid "Review Plug-in"
+msgstr "Review Plug-in"
+
+msgid "Revoke Publisher Trust"
+msgstr "Revoke Publisher Trust"
+
+msgid "Revoke Version Approval"
+msgstr "Revoke Version Approval"
+
+msgid "Safe Mode Could Not Be Scheduled"
+msgstr "Safe Mode Could Not Be Scheduled"
+
+msgid "Safe Mode Scheduled"
+msgstr "Safe Mode Scheduled"
+
+msgid "Schedule one safe-mode launch"
+msgstr "Schedule one safe-mode launch"
+
+msgid "Scheduled for Next Launch"
+msgstr "Scheduled for Next Launch"
+
+msgid "Source"
+msgstr "Source"
+
+msgid "Start Without Third-Party Plug-ins"
+msgstr "Start Without Third-Party Plug-ins"
+
+msgid "The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready."
+
+msgid "The selected package could not be verified and was not imported."
+msgstr "The selected package could not be verified and was not imported."
+
+msgid "The verified plug-in is installed and scheduled. It can load only after Battman restarts, and third-party loading must also be enabled."
+msgstr "The verified plug-in is installed and scheduled. It can load only after Battman restarts, and third-party loading must also be enabled."
+
+msgid "Third-Party Plug-ins"
+msgstr "Third-Party Plug-ins"
+
+msgid "Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."
+msgstr "Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."
+
+msgid "Third-party native plug-ins run inside Battman without isolation. They can access Battman's data and entitlements, use the network, replace UI, and crash or compromise the app. Signatures identify package bytes; they do not make code safe. Only continue if you understand and accept these risks."
+msgstr "Third-party native plug-ins run inside Battman without isolation. They can access Battman's data and entitlements, use the network, replace UI, and crash or compromise the app. Signatures identify package bytes; they do not make code safe. Only continue if you understand and accept these risks."
+
+msgid "This Battman installation cannot load newly imported native code directly. The approved package remains quarantined and must be embedded in a replacement Battman app, then installed explicitly."
+msgstr "This Battman installation cannot load newly imported native code directly. The approved package remains quarantined and must be embedded in a replacement Battman app, then installed explicitly."
+
+msgid "This approval applies only to these exact package bytes. Any update requires approval again."
+msgstr "This approval applies only to these exact package bytes. Any update requires approval again."
+
+msgid "This version will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "This version will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+
+msgid "Trust"
+msgstr "Trust"
+
+msgid "Trust Change Failed"
+msgstr "Trust Change Failed"
+
+msgid "Trust Publisher and Schedule"
+msgstr "Trust Publisher and Schedule"
+
+msgid "Trust This Publisher"
+msgstr "Trust This Publisher"
+
+msgid "Trust This Publisher?"
+msgstr "Trust This Publisher?"
+
+msgid "Trusted Publisher"
+msgstr "Trusted Publisher"
+
+msgid "Trusting this publisher also allows future versions signed by this key for the same plug-in ID and requested extension points. Future versions still must pass offline signature, revocation, release-sequence rollback, and extension-point scope checks."
+msgstr "Trusting this publisher also allows future versions signed by this key for the same plug-in ID and requested extension points. Future versions still must pass offline signature, revocation, release-sequence rollback, and extension-point scope checks."
+
+msgid "Verification Failed"
+msgstr "Verification Failed"
+
+msgid "Review Diagnostics Before Sharing"
+msgstr "Review Diagnostics Before Sharing"
+
+msgid "The report contains Battman version, generation time, plug-in identifiers, package hashes, source, trust and activation state, and error domain/code values. It excludes plug-in files, private keys, battery measurements, device identifiers, and filesystem paths. Review the report and recipient before sharing."
+msgstr "The report contains Battman version, generation time, plug-in identifiers, package hashes, source, trust and activation state, and error domain/code values. It excludes plug-in files, private keys, battery measurements, device identifiers, and filesystem paths. Review the report and recipient before sharing."
+
+msgid "Author"
+msgstr "Author"
+
+msgid "Author & Support"
+msgstr "Author & Support"
+
+msgid "Author and contact details are supplied by the signed package. The verification status above determines whether Battman recognizes its publisher."
+msgstr "Author and contact details are supplied by the signed package. The verification status above determines whether Battman recognizes its publisher."
+
+msgid "Copied"
+msgstr "Copied"
+
+msgid "Homepage"
+msgstr "Homepage"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+
+msgid "Release Sequence"
+msgstr "Release Sequence"
+
+msgid "Not Provided"
+msgstr "Not Provided"
+
+msgid "Publisher Fingerprint"
+msgstr "Publisher Fingerprint"
+
+msgid "Publisher Fingerprint and Package Digest"
+msgstr "Publisher Fingerprint and Package Digest"
+
+msgid "Support Email"
+msgstr "Support Email"
+
+msgid "Technical Details"
+msgstr "Technical Details"
+
+msgid "These identifiers verify the signing key and exact package bytes. Tap a value to copy its full form."
+msgstr "These identifiers verify the signing key and exact package bytes. Tap a value to copy its full form."
+
+msgid "This package does not provide author or support information."
+msgstr "This package does not provide author or support information."
+
+msgid "Verification"
+msgstr "Verification"
+
+msgid "View Verification Details"
+msgstr "View Verification Details"

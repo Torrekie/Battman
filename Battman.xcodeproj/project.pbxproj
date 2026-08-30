@@ -223,7 +223,6 @@
 		684115162E57BDE7001B76B6 /* license.html in Resources */ = {isa = PBXBuildFile; fileRef = 6838BF642DB8D06B007EB66C /* license.html */; };
 		684115172E57BDE7001B76B6 /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
 		6841151E2E57BEAF001B76B6 /* SF-Pro-Display-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */; };
-		6841152D2E57E166001B76B6 /* control in Sources */ = {isa = PBXBuildFile; fileRef = 6841152C2E57E166001B76B6 /* control */; };
 		6845759A2E3CBD2B00618DFD /* BattmanIcons@3x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */; };
 		6845759C2E3CBFEB00618DFD /* BattmanIcons@2x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */; };
 		684575AA2E3D4ABF00618DFD /* thermtune.c in Sources */ = {isa = PBXBuildFile; fileRef = 6845759E2E3D4A9900618DFD /* thermtune.c */; };
@@ -337,6 +336,206 @@
 		689FE0B52DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B42DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c */; };
 		68A3EAFB2D5204D2003381DF /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
 		68A3EAFD2D5204EA003381DF /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68A3EAFC2D5204EA003381DF /* IOKit.framework */; };
+		68AC00062F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
+		68AC00072F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
+		68AC00082F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
+		68AC00092F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
+		68AC000A2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
+		68AC000B2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
+		68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
+		68AC000D2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
+		68AC00262F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
+		68AC00272F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
+		68AC00282F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
+		68AC00292F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
+		68E210012F20000000001001 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
+		68E210022F20000000001002 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
+		68E210032F20000000001003 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
+		68E210042F20000000001004 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
+		68E210052F20000000001005 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
+		68E210062F20000000001006 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
+		68E210072F20000000001007 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
+		68E210082F20000000001008 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
+		68E210092F20000000001009 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
+		68E2100A2F2000000000100A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
+		68E2100B2F2000000000100B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
+		68E2100C2F2000000000100C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
+		68E211012F20000000001101 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
+		68E211022F20000000001102 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
+		68E211032F20000000001103 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
+		68E211042F20000000001104 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
+		68E211052F20000000001105 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
+		68E211062F20000000001106 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
+		68E211072F20000000001107 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
+		68E211082F20000000001108 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
+		68E211092F20000000001109 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
+		68E2110A2F2000000000110A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
+		68E2110B2F2000000000110B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
+		68E2110C2F2000000000110C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
+		68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
+		68E212022F20000000001202 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
+		68E212032F20000000001203 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
+		68E212042F20000000001204 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
+		68E212052F20000000001205 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
+		68E212062F20000000001206 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
+		68E212072F20000000001207 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
+		68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
+		68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
+		68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
+		68E2120B2F2000000000120B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
+		68E2120C2F2000000000120C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
+		68E213012F20000000001301 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
+		68E213022F20000000001302 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
+		68E213032F20000000001303 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
+		68E213042F20000000001304 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
+		68E213052F20000000001305 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
+		68E213062F20000000001306 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
+		68E213072F20000000001307 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
+		68E213082F20000000001308 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
+		68E213092F20000000001309 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
+		68E2130A2F2000000000130A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
+		68E2130B2F2000000000130B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
+		68E2130C2F2000000000130C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
+		68D101012F10000000000101 /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
+		68D101022F10000000000102 /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
+		68D101032F10000000000103 /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
+		68D101042F10000000000104 /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
+		68D101052F10000000000105 /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
+		68D101062F10000000000106 /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
+		68D101072F10000000000107 /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
+		68D101082F10000000000108 /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
+		68D101092F10000000000109 /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
+		68D1010A2F1000000000010A /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
+		68D1010B2F1000000000010B /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
+		68D1010C2F1000000000010C /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
+		68D1010D2F1000000000010D /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
+		68D1010E2F1000000000010E /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
+		68D1010F2F1000000000010F /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
+		68D101102F10000000000110 /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
+		68D101112F10000000000111 /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
+		68D101122F10000000000112 /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
+		68D101132F10000000000113 /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
+		68D101142F10000000000114 /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
+		68F310012F30000000001001 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
+		68F310022F30000000001002 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
+		68F310032F30000000001003 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
+		68F310042F30000000001004 /* BTPluginMachOInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300092F30000000000009 /* BTPluginMachOInspector.m */; };
+		68F310052F30000000001005 /* BTPluginP256.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000B2F3000000000000B /* BTPluginP256.m */; };
+		68F310062F30000000001006 /* BTPluginPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */; };
+		68F310072F30000000001007 /* BTPluginPackageVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */; };
+		68F310082F30000000001008 /* BTPluginPlatformLoadabilityVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */; };
+		68F310092F30000000001009 /* BTPluginSignatureVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300132F30000000000013 /* BTPluginSignatureVerifier.m */; };
+		68F3100A2F3000000000100A /* BTPluginTrustEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300152F30000000000015 /* BTPluginTrustEvaluator.m */; };
+		68F3100B2F3000000000100B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
+		68F3100C2F3000000000100C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
+		68F3100D2F3000000000100D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
+		68F311012F30000000001101 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
+		68F311022F30000000001102 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
+		68F311032F30000000001103 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
+		68F311042F30000000001104 /* BTPluginMachOInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300092F30000000000009 /* BTPluginMachOInspector.m */; };
+		68F311052F30000000001105 /* BTPluginP256.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000B2F3000000000000B /* BTPluginP256.m */; };
+		68F311062F30000000001106 /* BTPluginPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */; };
+		68F311072F30000000001107 /* BTPluginPackageVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */; };
+		68F311082F30000000001108 /* BTPluginPlatformLoadabilityVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */; };
+		68F311092F30000000001109 /* BTPluginSignatureVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300132F30000000000013 /* BTPluginSignatureVerifier.m */; };
+		68F3110A2F3000000000110A /* BTPluginTrustEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300152F30000000000015 /* BTPluginTrustEvaluator.m */; };
+		68F3110B2F3000000000110B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
+		68F3110C2F3000000000110C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
+		68F3110D2F3000000000110D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
+		68F312012F30000000001201 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
+		68F312022F30000000001202 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
+		68F312032F30000000001203 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
+		68F312042F30000000001204 /* BTPluginMachOInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300092F30000000000009 /* BTPluginMachOInspector.m */; };
+		68F312052F30000000001205 /* BTPluginP256.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000B2F3000000000000B /* BTPluginP256.m */; };
+		68F312062F30000000001206 /* BTPluginPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */; };
+		68F312072F30000000001207 /* BTPluginPackageVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */; };
+		68F312082F30000000001208 /* BTPluginPlatformLoadabilityVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */; };
+		68F312092F30000000001209 /* BTPluginSignatureVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300132F30000000000013 /* BTPluginSignatureVerifier.m */; };
+		68F3120A2F3000000000120A /* BTPluginTrustEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300152F30000000000015 /* BTPluginTrustEvaluator.m */; };
+		68F3120B2F3000000000120B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
+		68F3120C2F3000000000120C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
+		68F3120D2F3000000000120D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
+		68F313012F30000000001301 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
+		68F313022F30000000001302 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
+		68F313032F30000000001303 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
+		68F313042F30000000001304 /* BTPluginMachOInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300092F30000000000009 /* BTPluginMachOInspector.m */; };
+		68F313052F30000000001305 /* BTPluginP256.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000B2F3000000000000B /* BTPluginP256.m */; };
+		68F313062F30000000001306 /* BTPluginPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */; };
+		68F313072F30000000001307 /* BTPluginPackageVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */; };
+		68F313082F30000000001308 /* BTPluginPlatformLoadabilityVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */; };
+		68F313092F30000000001309 /* BTPluginSignatureVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300132F30000000000013 /* BTPluginSignatureVerifier.m */; };
+		68F3130A2F3000000000130A /* BTPluginTrustEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300152F30000000000015 /* BTPluginTrustEvaluator.m */; };
+		68F3130B2F3000000000130B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
+		68F3130C2F3000000000130C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
+		68F3130D2F3000000000130D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
+		68F410012F40000000001001 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
+		68F410022F40000000001002 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
+		68F410032F40000000001003 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
+		68F410042F40000000001004 /* BTPluginActivationStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400082F40000000000008 /* BTPluginActivationStore.m */; };
+		68F410212F40000000001021 /* BTPluginApplicationDataTransaction.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */; };
+		68F410052F40000000001005 /* BTPluginNativeImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */; };
+		68F410062F40000000001006 /* BTPluginRuntimeEnvironment.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */; };
+		68F410072F40000000001007 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
+		68F4101E2F4000000000101E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
+		68F410082F40000000001008 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
+		68F411012F40000000001101 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
+		68F411022F40000000001102 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
+		68F411032F40000000001103 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
+		68F411042F40000000001104 /* BTPluginActivationStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400082F40000000000008 /* BTPluginActivationStore.m */; };
+		68F411212F40000000001121 /* BTPluginApplicationDataTransaction.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */; };
+		68F411052F40000000001105 /* BTPluginNativeImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */; };
+		68F411062F40000000001106 /* BTPluginRuntimeEnvironment.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */; };
+		68F411072F40000000001107 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
+		68F4111E2F4000000000111E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
+		68F411082F40000000001108 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
+		68F412012F40000000001201 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
+		68F412022F40000000001202 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
+		68F412032F40000000001203 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
+		68F412042F40000000001204 /* BTPluginActivationStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400082F40000000000008 /* BTPluginActivationStore.m */; };
+		68F412212F40000000001221 /* BTPluginApplicationDataTransaction.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */; };
+		68F412052F40000000001205 /* BTPluginNativeImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */; };
+		68F412062F40000000001206 /* BTPluginRuntimeEnvironment.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */; };
+		68F412072F40000000001207 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
+		68F4121E2F4000000000121E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
+		68F412082F40000000001208 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
+		68F413012F40000000001301 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
+		68F413022F40000000001302 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
+		68F413032F40000000001303 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
+		68F413042F40000000001304 /* BTPluginActivationStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400082F40000000000008 /* BTPluginActivationStore.m */; };
+		68F413212F40000000001321 /* BTPluginApplicationDataTransaction.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */; };
+		68F413052F40000000001305 /* BTPluginNativeImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */; };
+		68F413062F40000000001306 /* BTPluginRuntimeEnvironment.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */; };
+		68F413072F40000000001307 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
+		68F4131E2F4000000000131E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
+		68F413082F40000000001308 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
+		68F410092F40000000001009 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
+		68F4100A2F4000000000100A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
+		68F411092F40000000001109 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
+		68F4110A2F4000000000110A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
+		68F412092F40000000001209 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
+		68F4120A2F4000000000120A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
+		68F413092F40000000001309 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
+		68F4130A2F4000000000130A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
+		68F4100B2F4000000000100B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
+		68F4100C2F4000000000100C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
+		68F410222F40000000001022 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
+		68F4100D2F4000000000100D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
+		68F4100E2F4000000000100E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
+		68F4110B2F4000000000110B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
+		68F4110C2F4000000000110C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
+		68F411222F40000000001122 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
+		68F4110D2F4000000000110D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
+		68F4110E2F4000000000110E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
+		68F4120B2F4000000000120B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
+		68F4120C2F4000000000120C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
+		68F412222F40000000001222 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
+		68F4120D2F4000000000120D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
+		68F4120E2F4000000000120E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
+		68F4130B2F4000000000130B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
+		68F4130C2F4000000000130C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
+		68F413222F40000000001322 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
+		68F4130D2F4000000000130D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
+		68F4130E2F4000000000130E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
 		68AE40B82D8EB8870023D7B0 /* UberSegmentedControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40AA2D8EB8870023D7B0 /* UberSegmentedControl.m */; };
 		68AE40B92D8EB8870023D7B0 /* MultiSelectSegmentedControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40AB2D8EB8870023D7B0 /* MultiSelectSegmentedControl.m */; };
 		68AE40BA2D8EB8870023D7B0 /* DividerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B02D8EB8870023D7B0 /* DividerView.m */; };
@@ -633,10 +832,10 @@
 		6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BattmanVectorIcon.m; sourceTree = "<group>"; };
 		6841147E2E512AB1001B76B6 /* BattmanVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BattmanVectorIcon.h; sourceTree = "<group>"; };
 		684114C62E5323E2001B76B6 /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		684114C72E5323E4001B76B6 /* Battman-nonfree.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Battman-nonfree.plist"; path = "/Users/torrekie/proj/Battman/Battman-nonfree.plist"; sourceTree = "<absolute>"; };
+		684114C72E5323E4001B76B6 /* Battman-nonfree.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Battman-nonfree.plist"; sourceTree = "<group>"; };
 		684114D52E57BCE7001B76B6 /* nonfree-havoc.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "nonfree-havoc.m"; sourceTree = "<group>"; };
 		6841151C2E57BDE7001B76B6 /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		6841151D2E57BDE9001B76B6 /* Battman-havoc.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Battman-havoc.plist"; path = "/Users/torrekie/proj/Battman/Battman-havoc.plist"; sourceTree = "<absolute>"; };
+		6841151D2E57BDE9001B76B6 /* Battman-havoc.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Battman-havoc.plist"; sourceTree = "<group>"; };
 		684115202E57C13D001B76B6 /* havoc-defs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "havoc-defs.h"; sourceTree = "<group>"; };
 		6841152C2E57E166001B76B6 /* control */ = {isa = PBXFileReference; lastKnownFileType = text; path = control; sourceTree = "<group>"; };
 		684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BattmanIcons@3x.artwork"; sourceTree = "<group>"; };
@@ -1918,7 +2117,7 @@
 		6849725E2EACA13300C9C58A /* UITextFieldStepper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UITextFieldStepper.m; sourceTree = "<group>"; };
 		684972622EACA13300C9C58A /* UITextFieldStepper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UITextFieldStepper.h; sourceTree = "<group>"; };
 		684972BD2EACB71B00C9C58A /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		684972BE2EACB71D00C9C58A /* Battman-havoc-tipa-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Battman-havoc-tipa-Info.plist"; path = "/Users/torrekie/proj/Battman/Battman-havoc-tipa-Info.plist"; sourceTree = "<absolute>"; };
+		684972BE2EACB71D00C9C58A /* Battman-havoc-tipa-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Battman-havoc-tipa-Info.plist"; sourceTree = "<group>"; };
 		684972E72EAE1B5F00C9C58A /* LanguageSelectionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LanguageSelectionViewController.h; sourceTree = "<group>"; };
 		684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LanguageSelectionViewController.m; sourceTree = "<group>"; };
 		684972EC2EAF482500C9C58A /* de.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = de.po; sourceTree = "<group>"; };
@@ -1954,6 +2153,106 @@
 		68A3EAF62D5204D2003381DF /* battery_info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = battery_info.c; sourceTree = "<group>"; };
 		68A3EAF72D5204D2003381DF /* battery_info.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = battery_info.h; sourceTree = "<group>"; };
 		68A3EAFC2D5204EA003381DF /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		68AC00012F00000100AC0000 /* AnalyticsCardCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsCardCell.m; path = Battman/Features/Analytics/Host/AnalyticsCardCell.m; sourceTree = SOURCE_ROOT; };
+		68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsBuiltInCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInCard.m; sourceTree = SOURCE_ROOT; };
+		68AC00102F00000100AC0000 /* BAAnalyticsCard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsCard.h; path = Battman/Features/Analytics/Public/BAAnalyticsCard.h; sourceTree = SOURCE_ROOT; };
+		68AC00112F00000100AC0000 /* AnalyticsCardCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsCardCell.h; path = Battman/Features/Analytics/Host/AnalyticsCardCell.h; sourceTree = SOURCE_ROOT; };
+		68AC00122F00000100AC0000 /* BAAnalyticsBuiltInCard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsBuiltInCard.h; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInCard.h; sourceTree = SOURCE_ROOT; };
+		68AC00202F00000100AC0000 /* AnalyticsCardGridLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsCardGridLayout.h; path = Battman/Features/Analytics/Host/AnalyticsCardGridLayout.h; sourceTree = SOURCE_ROOT; };
+		68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsCardGridLayout.m; path = Battman/Features/Analytics/Host/AnalyticsCardGridLayout.m; sourceTree = SOURCE_ROOT; };
+		68D100012F10000000000001 /* BAAnalyticsBuiltInPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsBuiltInPlugin.h; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInPlugin.h; sourceTree = SOURCE_ROOT; };
+		68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsBuiltInPlugin.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInPlugin.m; sourceTree = SOURCE_ROOT; };
+		68D100032F10000000000003 /* BTEmbeddedPluginRegistration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTEmbeddedPluginRegistration.h; path = Battman/PluginHost/BTEmbeddedPluginRegistration.h; sourceTree = SOURCE_ROOT; };
+		68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTEmbeddedPluginRegistration.m; path = Battman/PluginHost/BTEmbeddedPluginRegistration.m; sourceTree = SOURCE_ROOT; };
+		68D100052F10000000000005 /* BTPluginExtensionDescriptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginExtensionDescriptor.h; path = Battman/PluginHost/BTPluginExtensionDescriptor.h; sourceTree = SOURCE_ROOT; };
+		68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginExtensionDescriptor.m; path = Battman/PluginHost/BTPluginExtensionDescriptor.m; sourceTree = SOURCE_ROOT; };
+		68D100072F10000000000007 /* BTPluginIdentifiers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginIdentifiers.h; path = Battman/PluginHost/BTPluginIdentifiers.h; sourceTree = SOURCE_ROOT; };
+		68D100082F10000000000008 /* BTPluginIdentifiers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginIdentifiers.m; path = Battman/PluginHost/BTPluginIdentifiers.m; sourceTree = SOURCE_ROOT; };
+		68D100092F10000000000009 /* BTPluginRegistry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginRegistry.h; path = Battman/PluginHost/BTPluginRegistry.h; sourceTree = SOURCE_ROOT; };
+		68D1000A2F1000000000000A /* BTPluginRegistry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginRegistry.m; path = Battman/PluginHost/BTPluginRegistry.m; sourceTree = SOURCE_ROOT; };
+		68D1000B2F1000000000000B /* BattmanPluginABI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BattmanPluginABI.h; path = PluginSDK/include/BattmanPluginABI.h; sourceTree = SOURCE_ROOT; };
+		68F300012F30000000000001 /* BTPluginQuarantineStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginQuarantineStore.h; path = Battman/PluginHost/Import/BTPluginQuarantineStore.h; sourceTree = SOURCE_ROOT; };
+		68F300022F30000000000002 /* BTPluginQuarantineStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginQuarantineStore.m; path = Battman/PluginHost/Import/BTPluginQuarantineStore.m; sourceTree = SOURCE_ROOT; };
+		68F300032F30000000000003 /* BTPluginPackageErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPackageErrors.h; path = Battman/PluginHost/Model/BTPluginPackageErrors.h; sourceTree = SOURCE_ROOT; };
+		68F300042F30000000000004 /* BTPluginPackageErrors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPackageErrors.m; path = Battman/PluginHost/Model/BTPluginPackageErrors.m; sourceTree = SOURCE_ROOT; };
+		68F300052F30000000000005 /* BTPluginPackageManifest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPackageManifest.h; path = Battman/PluginHost/Model/BTPluginPackageManifest.h; sourceTree = SOURCE_ROOT; };
+		68F300062F30000000000006 /* BTPluginPackageManifest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPackageManifest.m; path = Battman/PluginHost/Model/BTPluginPackageManifest.m; sourceTree = SOURCE_ROOT; };
+		68F300072F30000000000007 /* BTPluginStrictJSON.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginStrictJSON.h; path = Battman/PluginHost/Model/BTPluginStrictJSON.h; sourceTree = SOURCE_ROOT; };
+		68F300082F30000000000008 /* BTPluginMachOInspector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginMachOInspector.h; path = Battman/PluginHost/Security/BTPluginMachOInspector.h; sourceTree = SOURCE_ROOT; };
+		68F300092F30000000000009 /* BTPluginMachOInspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginMachOInspector.m; path = Battman/PluginHost/Security/BTPluginMachOInspector.m; sourceTree = SOURCE_ROOT; };
+		68F3000A2F3000000000000A /* BTPluginP256.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginP256.h; path = Battman/PluginHost/Security/BTPluginP256.h; sourceTree = SOURCE_ROOT; };
+		68F3000B2F3000000000000B /* BTPluginP256.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginP256.m; path = Battman/PluginHost/Security/BTPluginP256.m; sourceTree = SOURCE_ROOT; };
+		68F3000C2F3000000000000C /* BTPluginPackageStructuralVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPackageStructuralVerifier.h; path = Battman/PluginHost/Security/BTPluginPackageStructuralVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPackageStructuralVerifier.m; path = Battman/PluginHost/Security/BTPluginPackageStructuralVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F3000E2F3000000000000E /* BTPluginPackageVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPackageVerifier.h; path = Battman/PluginHost/Security/BTPluginPackageVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPackageVerifier.m; path = Battman/PluginHost/Security/BTPluginPackageVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F300102F30000000000010 /* BTPluginPlatformLoadabilityVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPlatformLoadabilityVerifier.h; path = Battman/PluginHost/Security/BTPluginPlatformLoadabilityVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPlatformLoadabilityVerifier.m; path = Battman/PluginHost/Security/BTPluginPlatformLoadabilityVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F300122F30000000000012 /* BTPluginSignatureVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginSignatureVerifier.h; path = Battman/PluginHost/Security/BTPluginSignatureVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F300132F30000000000013 /* BTPluginSignatureVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginSignatureVerifier.m; path = Battman/PluginHost/Security/BTPluginSignatureVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F300142F30000000000014 /* BTPluginTrustEvaluator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginTrustEvaluator.h; path = Battman/PluginHost/Security/BTPluginTrustEvaluator.h; sourceTree = SOURCE_ROOT; };
+		68F300152F30000000000015 /* BTPluginTrustEvaluator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginTrustEvaluator.m; path = Battman/PluginHost/Security/BTPluginTrustEvaluator.m; sourceTree = SOURCE_ROOT; };
+		68F300162F30000000000016 /* BTPluginTrustMetadataVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginTrustMetadataVerifier.h; path = Battman/PluginHost/Security/BTPluginTrustMetadataVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginTrustMetadataVerifier.m; path = Battman/PluginHost/Security/BTPluginTrustMetadataVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F300182F30000000000018 /* BTPluginTrustStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginTrustStore.h; path = Battman/PluginHost/Security/BTPluginTrustStore.h; sourceTree = SOURCE_ROOT; };
+		68F300192F30000000000019 /* BTPluginTrustStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginTrustStore.m; path = Battman/PluginHost/Security/BTPluginTrustStore.m; sourceTree = SOURCE_ROOT; };
+		68F3001A2F3000000000001A /* BTPluginOfficialTrustLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginOfficialTrustLoader.h; path = Battman/PluginHost/Security/BTPluginOfficialTrustLoader.h; sourceTree = SOURCE_ROOT; };
+		68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginOfficialTrustLoader.m; path = Battman/PluginHost/Security/BTPluginOfficialTrustLoader.m; sourceTree = SOURCE_ROOT; };
+		68F400012F40000000000001 /* BTPluginPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPlatform.h; path = Battman/PluginHost/Application/BTPluginPlatform.h; sourceTree = SOURCE_ROOT; };
+		68F400022F40000000000002 /* BTPluginPlatform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginPlatform.m; path = Battman/PluginHost/Application/BTPluginPlatform.m; sourceTree = SOURCE_ROOT; };
+		68F400032F40000000000003 /* BTPluginDiscovery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginDiscovery.h; path = Battman/PluginHost/Discovery/BTPluginDiscovery.h; sourceTree = SOURCE_ROOT; };
+		68F400042F40000000000004 /* BTPluginDiscovery.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginDiscovery.m; path = Battman/PluginHost/Discovery/BTPluginDiscovery.m; sourceTree = SOURCE_ROOT; };
+		68F400052F40000000000005 /* BTPluginSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginSource.h; path = Battman/PluginHost/Model/BTPluginSource.h; sourceTree = SOURCE_ROOT; };
+		68F400062F40000000000006 /* BTPluginSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginSource.m; path = Battman/PluginHost/Model/BTPluginSource.m; sourceTree = SOURCE_ROOT; };
+		68F400072F40000000000007 /* BTPluginActivationStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginActivationStore.h; path = Battman/PluginHost/Runtime/BTPluginActivationStore.h; sourceTree = SOURCE_ROOT; };
+		68F400082F40000000000008 /* BTPluginActivationStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginActivationStore.m; path = Battman/PluginHost/Runtime/BTPluginActivationStore.m; sourceTree = SOURCE_ROOT; };
+		68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginApplicationDataTransaction.m; path = Battman/PluginHost/Runtime/BTPluginApplicationDataTransaction.m; sourceTree = SOURCE_ROOT; };
+		68F400232F40000000000023 /* BTPluginApplicationDataTransaction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginApplicationDataTransaction.h; path = Battman/PluginHost/Runtime/BTPluginApplicationDataTransaction.h; sourceTree = SOURCE_ROOT; };
+		68F400092F40000000000009 /* BTPluginNativeImageLoaderPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginNativeImageLoaderPrivate.h; path = Battman/PluginHost/Runtime/BTPluginNativeImageLoaderPrivate.h; sourceTree = SOURCE_ROOT; };
+		68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginNativeImageLoader.m; path = Battman/PluginHost/Runtime/BTPluginNativeImageLoader.m; sourceTree = SOURCE_ROOT; };
+		68F4000B2F4000000000000B /* BTPluginRuntimeEnvironment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginRuntimeEnvironment.h; path = Battman/PluginHost/Runtime/BTPluginRuntimeEnvironment.h; sourceTree = SOURCE_ROOT; };
+		68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginRuntimeEnvironment.m; path = Battman/PluginHost/Runtime/BTPluginRuntimeEnvironment.m; sourceTree = SOURCE_ROOT; };
+		68F4000D2F4000000000000D /* BTPluginRuntimeLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginRuntimeLoader.h; path = Battman/PluginHost/Runtime/BTPluginRuntimeLoader.h; sourceTree = SOURCE_ROOT; };
+		68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginRuntimeLoader.m; path = Battman/PluginHost/Runtime/BTPluginRuntimeLoader.m; sourceTree = SOURCE_ROOT; };
+		68F400212F40000000000021 /* BTPluginRuntimeLoaderInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginRuntimeLoaderInternal.h; path = Battman/PluginHost/Runtime/BTPluginRuntimeLoaderInternal.h; sourceTree = SOURCE_ROOT; };
+		68F4001E2F4000000000001E /* BTPluginSafeModeRequest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginSafeModeRequest.h; path = Battman/PluginHost/Runtime/BTPluginSafeModeRequest.h; sourceTree = SOURCE_ROOT; };
+		68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginSafeModeRequest.m; path = Battman/PluginHost/Runtime/BTPluginSafeModeRequest.m; sourceTree = SOURCE_ROOT; };
+		68F400202F40000000000020 /* BTPluginManagementViewControllerInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginManagementViewControllerInternal.h; path = Battman/PluginHost/UI/BTPluginManagementViewControllerInternal.h; sourceTree = SOURCE_ROOT; };
+		68F4000F2F4000000000000F /* BTPluginPackageInspectionPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginPackageInspectionPrivate.h; path = Battman/PluginHost/Security/BTPluginPackageInspectionPrivate.h; sourceTree = SOURCE_ROOT; };
+		68F400102F40000000000010 /* BTPluginSealedPackageStructuralVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginSealedPackageStructuralVerifier.h; path = Battman/PluginHost/Security/BTPluginSealedPackageStructuralVerifier.h; sourceTree = SOURCE_ROOT; };
+		68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginSealedPackageStructuralVerifier.m; path = Battman/PluginHost/Security/BTPluginSealedPackageStructuralVerifier.m; sourceTree = SOURCE_ROOT; };
+		68F400122F40000000000012 /* BTPluginApplicationIntegration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginApplicationIntegration.h; path = Battman/PluginHost/Application/BTPluginApplicationIntegration.h; sourceTree = SOURCE_ROOT; };
+		68F400132F40000000000013 /* BTPluginApplicationIntegration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginApplicationIntegration.m; path = Battman/PluginHost/Application/BTPluginApplicationIntegration.m; sourceTree = SOURCE_ROOT; };
+		68F400142F40000000000014 /* BTPluginImportCoordinator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginImportCoordinator.h; path = Battman/PluginHost/Import/BTPluginImportCoordinator.h; sourceTree = SOURCE_ROOT; };
+		68F400152F40000000000015 /* BTPluginImportCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginImportCoordinator.m; path = Battman/PluginHost/Import/BTPluginImportCoordinator.m; sourceTree = SOURCE_ROOT; };
+		68F400162F40000000000016 /* BTPluginApplicationDataStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginApplicationDataStore.h; path = Battman/PluginHost/Import/BTPluginApplicationDataStore.h; sourceTree = SOURCE_ROOT; };
+		68F400172F40000000000017 /* BTPluginApplicationDataStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginApplicationDataStore.m; path = Battman/PluginHost/Import/BTPluginApplicationDataStore.m; sourceTree = SOURCE_ROOT; };
+		68F400182F40000000000018 /* BTPluginManagementService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginManagementService.h; path = Battman/PluginHost/Management/BTPluginManagementService.h; sourceTree = SOURCE_ROOT; };
+		68F400192F40000000000019 /* BTPluginManagementService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginManagementService.m; path = Battman/PluginHost/Management/BTPluginManagementService.m; sourceTree = SOURCE_ROOT; };
+		68F400242F40000000000024 /* BTPluginManagementLineage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginManagementLineage.m; path = Battman/PluginHost/Management/BTPluginManagementLineage.m; sourceTree = SOURCE_ROOT; };
+		68F4001A2F4000000000001A /* BTPluginManagementViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginManagementViewController.h; path = Battman/PluginHost/UI/BTPluginManagementViewController.h; sourceTree = SOURCE_ROOT; };
+		68F4001B2F4000000000001B /* BTPluginManagementViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginManagementViewController.m; path = Battman/PluginHost/UI/BTPluginManagementViewController.m; sourceTree = SOURCE_ROOT; };
+		68F4001C2F4000000000001C /* BTPluginImportPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BTPluginImportPresenter.h; path = Battman/PluginHost/UI/BTPluginImportPresenter.h; sourceTree = SOURCE_ROOT; };
+		68F4001D2F4000000000001D /* BTPluginImportPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BTPluginImportPresenter.m; path = Battman/PluginHost/UI/BTPluginImportPresenter.m; sourceTree = SOURCE_ROOT; };
+		68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsBuiltInCards.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInCards.m; sourceTree = SOURCE_ROOT; };
+		68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsBatterySummaryCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBatterySummaryCard.m; sourceTree = SOURCE_ROOT; };
+		68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsChargingLimitCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsChargingLimitCard.m; sourceTree = SOURCE_ROOT; };
+		68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCycleSummaryCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsCycleSummaryCard.m; sourceTree = SOURCE_ROOT; };
+		68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsPowerAverageCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsPowerAverageCard.m; sourceTree = SOURCE_ROOT; };
+		68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsRemainingCapacityCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsRemainingCapacityCard.m; sourceTree = SOURCE_ROOT; };
+		68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsTemperatureAverageCard.m; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsTemperatureAverageCard.m; sourceTree = SOURCE_ROOT; };
+		68E200082F20000000000008 /* BAAnalyticsMetricService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsMetricService.m; path = Battman/Features/Analytics/Data/BAAnalyticsMetricService.m; sourceTree = SOURCE_ROOT; };
+		68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsSystemMetricSource.m; path = Battman/Features/Analytics/Data/BAAnalyticsSystemMetricSource.m; sourceTree = SOURCE_ROOT; };
+		68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCardLayoutStore.m; path = Battman/Features/Analytics/Host/BAAnalyticsCardLayoutStore.m; sourceTree = SOURCE_ROOT; };
+		68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsUnavailableCard.m; path = Battman/Features/Analytics/Host/BAAnalyticsUnavailableCard.m; sourceTree = SOURCE_ROOT; };
+		68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsMetricSnapshot.m; path = Battman/Features/Analytics/Public/BAAnalyticsMetricSnapshot.m; sourceTree = SOURCE_ROOT; };
+		68E200112F20000000000011 /* BAAnalyticsBuiltInCards.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsBuiltInCards.h; path = Battman/Features/Analytics/BuiltIn/BAAnalyticsBuiltInCards.h; sourceTree = SOURCE_ROOT; };
+		68E200122F20000000000012 /* BAAnalyticsMetricService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsMetricService.h; path = Battman/Features/Analytics/Data/BAAnalyticsMetricService.h; sourceTree = SOURCE_ROOT; };
+		68E200132F20000000000013 /* BAAnalyticsSystemMetricSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsSystemMetricSource.h; path = Battman/Features/Analytics/Data/BAAnalyticsSystemMetricSource.h; sourceTree = SOURCE_ROOT; };
+		68E200142F20000000000014 /* BAAnalyticsCardLayoutStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsCardLayoutStore.h; path = Battman/Features/Analytics/Host/BAAnalyticsCardLayoutStore.h; sourceTree = SOURCE_ROOT; };
+		68E200152F20000000000015 /* BAAnalyticsUnavailableCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsUnavailableCard.h; path = Battman/Features/Analytics/Host/BAAnalyticsUnavailableCard.h; sourceTree = SOURCE_ROOT; };
+		68E200162F20000000000016 /* BAAnalyticsMetricSnapshot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsMetricSnapshot.h; path = Battman/Features/Analytics/Public/BAAnalyticsMetricSnapshot.h; sourceTree = SOURCE_ROOT; };
+		68E200172F20000000000017 /* BAAnalyticsMetricSnapshotInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsMetricSnapshotInternal.h; path = Battman/Features/Analytics/Data/BAAnalyticsMetricSnapshotInternal.h; sourceTree = SOURCE_ROOT; };
 		68AE40AA2D8EB8870023D7B0 /* UberSegmentedControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UberSegmentedControl.m; sourceTree = "<group>"; };
 		68AE40AB2D8EB8870023D7B0 /* MultiSelectSegmentedControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MultiSelectSegmentedControl.m; sourceTree = "<group>"; };
 		68AE40AC2D8EB8870023D7B0 /* SegmentButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegmentButton.h; sourceTree = "<group>"; };
@@ -2023,8 +2322,8 @@
 		68BC0A082ED5A43B0046407B /* BrightnessAdvancedViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BrightnessAdvancedViewController.h; sourceTree = "<group>"; };
 		68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BrightnessAdvancedViewController.m; sourceTree = "<group>"; };
 		68BC0A142ED82DF10046407B /* xpcextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = xpcextern.h; sourceTree = "<group>"; };
-		68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsViewController.h; path = Battman/AnalyticsViewController.h; sourceTree = SOURCE_ROOT; };
-		68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsViewController.m; path = Battman/AnalyticsViewController.m; sourceTree = SOURCE_ROOT; };
+		68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AnalyticsViewController.h; path = Battman/Features/Analytics/Host/AnalyticsViewController.h; sourceTree = SOURCE_ROOT; };
+		68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AnalyticsViewController.m; path = Battman/Features/Analytics/Host/AnalyticsViewController.m; sourceTree = SOURCE_ROOT; };
 		68C0C73D2E93B92F006F73EA /* UIImage+SVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+SVG.h"; sourceTree = "<group>"; };
 		68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+SVG.m"; sourceTree = "<group>"; };
 		68C0C7422E93BA3C006F73EA /* SVG.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVG.m; sourceTree = "<group>"; };
@@ -14056,6 +14355,7 @@
 		686AECB62D3B93CB0059ECD0 = {
 			isa = PBXGroup;
 			children = (
+				68D102052F10000000000205 /* PluginSDK */,
 				684973262EB3502300C9C58A /* FLEX.xcodeproj */,
 				6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */,
 				684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */,
@@ -14094,6 +14394,7 @@
 			isa = PBXGroup;
 			children = (
 				68C0C72B2E9271D7006F73EA /* Tabs */,
+				68D102042F10000000000204 /* PluginHost */,
 				68336DE82E979C4400E9F180 /* CGIconSet */,
 				68C0C7392E93B4FF006F73EA /* Helpers */,
 				6838BF632DB8D06B007EB66C /* license */,
@@ -14321,7 +14622,7 @@
 			isa = PBXGroup;
 			children = (
 				68C0C7322E9272BC006F73EA /* BatteryInfoViewController */,
-				68C68B132E9503BE00389852 /* AnalyticsViewController */,
+				68C68B132E9503BE00389852 /* Analytics */,
 				68C0C7302E927246006F73EA /* SettingsViewController */,
 			);
 			name = Tabs;
@@ -14427,13 +14728,223 @@
 			name = SubSections;
 			sourceTree = "<group>";
 		};
-		68C68B132E9503BE00389852 /* AnalyticsViewController */ = {
+		68C68B132E9503BE00389852 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				68D102012F10000000000201 /* Public */,
+				68E202002F20000000000200 /* Data */,
+				68D102022F10000000000202 /* Host */,
+				68D102032F10000000000203 /* BuiltIn */,
+			);
+			name = Analytics;
+			sourceTree = "<group>";
+		};
+		68D102012F10000000000201 /* Public */ = {
+			isa = PBXGroup;
+			children = (
+				68AC00102F00000100AC0000 /* BAAnalyticsCard.h */,
+				68E200162F20000000000016 /* BAAnalyticsMetricSnapshot.h */,
+				68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */,
+			);
+			name = Public;
+			sourceTree = "<group>";
+		};
+		68D102022F10000000000202 /* Host */ = {
 			isa = PBXGroup;
 			children = (
 				68C0C7332E9272F0006F73EA /* AnalyticsViewController.h */,
 				68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */,
+				68AC00202F00000100AC0000 /* AnalyticsCardGridLayout.h */,
+				68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */,
+				68AC00112F00000100AC0000 /* AnalyticsCardCell.h */,
+				68AC00012F00000100AC0000 /* AnalyticsCardCell.m */,
+				68E200142F20000000000014 /* BAAnalyticsCardLayoutStore.h */,
+				68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */,
+				68E200152F20000000000015 /* BAAnalyticsUnavailableCard.h */,
+				68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */,
 			);
-			name = AnalyticsViewController;
+			name = Host;
+			sourceTree = "<group>";
+		};
+		68D102032F10000000000203 /* BuiltIn */ = {
+			isa = PBXGroup;
+			children = (
+				68D100012F10000000000001 /* BAAnalyticsBuiltInPlugin.h */,
+				68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */,
+				68AC00122F00000100AC0000 /* BAAnalyticsBuiltInCard.h */,
+				68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */,
+				68E200112F20000000000011 /* BAAnalyticsBuiltInCards.h */,
+				68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */,
+				68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */,
+				68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */,
+				68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */,
+				68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */,
+				68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */,
+				68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */,
+			);
+			name = BuiltIn;
+			sourceTree = "<group>";
+		};
+		68E202002F20000000000200 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				68E200172F20000000000017 /* BAAnalyticsMetricSnapshotInternal.h */,
+				68E200122F20000000000012 /* BAAnalyticsMetricService.h */,
+				68E200082F20000000000008 /* BAAnalyticsMetricService.m */,
+				68E200132F20000000000013 /* BAAnalyticsSystemMetricSource.h */,
+				68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */,
+			);
+			name = Data;
+			sourceTree = "<group>";
+		};
+		68D102042F10000000000204 /* PluginHost */ = {
+			isa = PBXGroup;
+			children = (
+				68F402012F40000000000201 /* Application */,
+				68F402022F40000000000202 /* Discovery */,
+				68F302012F30000000000201 /* Import */,
+				68F302022F30000000000202 /* Model */,
+				68F402032F40000000000203 /* Runtime */,
+				68F302032F30000000000203 /* Security */,
+				68F402042F40000000000204 /* Management */,
+				68F402052F40000000000205 /* UI */,
+				68D100032F10000000000003 /* BTEmbeddedPluginRegistration.h */,
+				68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */,
+				68D100052F10000000000005 /* BTPluginExtensionDescriptor.h */,
+				68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */,
+				68D100072F10000000000007 /* BTPluginIdentifiers.h */,
+				68D100082F10000000000008 /* BTPluginIdentifiers.m */,
+				68D100092F10000000000009 /* BTPluginRegistry.h */,
+				68D1000A2F1000000000000A /* BTPluginRegistry.m */,
+			);
+			name = PluginHost;
+			sourceTree = "<group>";
+		};
+		68F302012F30000000000201 /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				68F400162F40000000000016 /* BTPluginApplicationDataStore.h */,
+				68F400172F40000000000017 /* BTPluginApplicationDataStore.m */,
+				68F400142F40000000000014 /* BTPluginImportCoordinator.h */,
+				68F400152F40000000000015 /* BTPluginImportCoordinator.m */,
+				68F300012F30000000000001 /* BTPluginQuarantineStore.h */,
+				68F300022F30000000000002 /* BTPluginQuarantineStore.m */,
+			);
+			name = Import;
+			sourceTree = "<group>";
+		};
+		68F402012F40000000000201 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				68F400122F40000000000012 /* BTPluginApplicationIntegration.h */,
+				68F400132F40000000000013 /* BTPluginApplicationIntegration.m */,
+				68F400012F40000000000001 /* BTPluginPlatform.h */,
+				68F400022F40000000000002 /* BTPluginPlatform.m */,
+			);
+			name = Application;
+			sourceTree = "<group>";
+		};
+		68F402022F40000000000202 /* Discovery */ = {
+			isa = PBXGroup;
+			children = (
+				68F400032F40000000000003 /* BTPluginDiscovery.h */,
+				68F400042F40000000000004 /* BTPluginDiscovery.m */,
+			);
+			name = Discovery;
+			sourceTree = "<group>";
+		};
+		68F302022F30000000000202 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				68F300032F30000000000003 /* BTPluginPackageErrors.h */,
+				68F300042F30000000000004 /* BTPluginPackageErrors.m */,
+				68F300052F30000000000005 /* BTPluginPackageManifest.h */,
+				68F300062F30000000000006 /* BTPluginPackageManifest.m */,
+				68F300072F30000000000007 /* BTPluginStrictJSON.h */,
+				68F400052F40000000000005 /* BTPluginSource.h */,
+				68F400062F40000000000006 /* BTPluginSource.m */,
+			);
+			name = Model;
+			sourceTree = "<group>";
+		};
+		68F402032F40000000000203 /* Runtime */ = {
+			isa = PBXGroup;
+			children = (
+				68F400072F40000000000007 /* BTPluginActivationStore.h */,
+				68F400082F40000000000008 /* BTPluginActivationStore.m */,
+				68F400232F40000000000023 /* BTPluginApplicationDataTransaction.h */,
+				68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */,
+				68F400092F40000000000009 /* BTPluginNativeImageLoaderPrivate.h */,
+				68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */,
+				68F4000B2F4000000000000B /* BTPluginRuntimeEnvironment.h */,
+				68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */,
+				68F4000D2F4000000000000D /* BTPluginRuntimeLoader.h */,
+				68F400212F40000000000021 /* BTPluginRuntimeLoaderInternal.h */,
+				68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */,
+				68F4001E2F4000000000001E /* BTPluginSafeModeRequest.h */,
+				68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */,
+			);
+			name = Runtime;
+			sourceTree = "<group>";
+		};
+		68F402042F40000000000204 /* Management */ = {
+			isa = PBXGroup;
+			children = (
+				68F400182F40000000000018 /* BTPluginManagementService.h */,
+				68F400192F40000000000019 /* BTPluginManagementService.m */,
+				68F400242F40000000000024 /* BTPluginManagementLineage.m */,
+			);
+			name = Management;
+			sourceTree = "<group>";
+		};
+		68F402052F40000000000205 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				68F4001C2F4000000000001C /* BTPluginImportPresenter.h */,
+				68F4001D2F4000000000001D /* BTPluginImportPresenter.m */,
+				68F4001A2F4000000000001A /* BTPluginManagementViewController.h */,
+				68F400202F40000000000020 /* BTPluginManagementViewControllerInternal.h */,
+				68F4001B2F4000000000001B /* BTPluginManagementViewController.m */,
+			);
+			name = UI;
+			sourceTree = "<group>";
+		};
+		68F302032F30000000000203 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				68F4000F2F4000000000000F /* BTPluginPackageInspectionPrivate.h */,
+				68F300082F30000000000008 /* BTPluginMachOInspector.h */,
+				68F300092F30000000000009 /* BTPluginMachOInspector.m */,
+				68F3000A2F3000000000000A /* BTPluginP256.h */,
+				68F3000B2F3000000000000B /* BTPluginP256.m */,
+				68F3000C2F3000000000000C /* BTPluginPackageStructuralVerifier.h */,
+				68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */,
+				68F400102F40000000000010 /* BTPluginSealedPackageStructuralVerifier.h */,
+				68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */,
+				68F3000E2F3000000000000E /* BTPluginPackageVerifier.h */,
+				68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */,
+				68F300102F30000000000010 /* BTPluginPlatformLoadabilityVerifier.h */,
+				68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */,
+				68F300122F30000000000012 /* BTPluginSignatureVerifier.h */,
+				68F300132F30000000000013 /* BTPluginSignatureVerifier.m */,
+				68F300142F30000000000014 /* BTPluginTrustEvaluator.h */,
+				68F300152F30000000000015 /* BTPluginTrustEvaluator.m */,
+				68F300162F30000000000016 /* BTPluginTrustMetadataVerifier.h */,
+				68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */,
+				68F300182F30000000000018 /* BTPluginTrustStore.h */,
+				68F300192F30000000000019 /* BTPluginTrustStore.m */,
+				68F3001A2F3000000000001A /* BTPluginOfficialTrustLoader.h */,
+				68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */,
+			);
+			name = Security;
+			sourceTree = "<group>";
+		};
+		68D102052F10000000000205 /* PluginSDK */ = {
+			isa = PBXGroup;
+			children = (
+				68D1000B2F1000000000000B /* BattmanPluginABI.h */,
+			);
+			name = PluginSDK;
 			sourceTree = "<group>";
 		};
 		68DCA5B42D40EDE8004D0104 /* Localizations */ = {
@@ -14795,7 +15306,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=${COMMIT_HASH:-`git rev-parse --short HEAD`}\nINFO_PLIST=\"${CODESIGNING_FOLDER_PATH}/Info.plist\"\nif [ -f \"${INFO_PLIST}\" ]; then\n  /usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${INFO_PLIST}\" || /usr/libexec/PlistBuddy -c \"Add :GIT_COMMIT_HASH string $COMMIT_HASH\" \"${INFO_PLIST}\"\nfi\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
 		};
 		6838BF6D2DB8D363007EB66C /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14813,10 +15324,11 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/constants.c",
+				"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\"";
 		};
 		684114832E5323E2001B76B6 /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14834,10 +15346,11 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/constants.c",
+				"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\"";
 		};
 		684114C22E5323E2001B76B6 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14855,7 +15368,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n#if [ ${CONFIGURATION} == \"Debug\" ]; then\n#\trsync -Kah \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\" \"${CODESIGNING_FOLDER_PATH}/\"\n#fi\n\n#rm -rf ${CODESIGNING_FOLDER_PATH}/Frameworks/intl.framework/Headers\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n# deb\nrm -rf ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir ${CODESIGNING_FOLDER_PATH}/../deb-nonfree\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/DEBIAN/control\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree .\n# deb rootless\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../tree-nonfree/Applications ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm64/g\" ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/DEBIAN/control\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless/var/jb/Applications/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../deb-nonfree/ && dpkg-deb --root-owner-group -b ../tree-nonfree-rootless .\n# TrollStore ipa\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../intl.framework ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/Frameworks/intl.framework/Headers ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/Payload/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa/ && zip -r ../deb-nonfree/Battman.tipa Payload/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-nonfree ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-rootless ${CODESIGNING_FOLDER_PATH}/../tree-nonfree-ipa\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
 		};
 		684114D92E57BDE7001B76B6 /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14873,10 +15386,11 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/constants.c",
+				"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\"";
 		};
 		684115182E57BDE7001B76B6 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14894,7 +15408,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`cd ${PROJECT_DIR} && git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n# deb\nrm -rf ${CODESIGNING_FOLDER_PATH}/../deb-havoc\nmkdir ${CODESIGNING_FOLDER_PATH}/../deb-havoc\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-havoc/Applications/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-havoc/Applications/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-havoc/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-havoc/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm/g\" ${CODESIGNING_FOLDER_PATH}/../tree-havoc/DEBIAN/control\ncd ${CODESIGNING_FOLDER_PATH}/../deb-havoc/ && dpkg-deb --root-owner-group -b ../tree-havoc .\n# deb rootless\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/var/jb/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../tree-havoc/Applications ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/var/jb/\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/DEBIAN\ncp ${PROJECT_DIR}/Battman/control ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/DEBIAN/\ngsed -i \"s/ARCH/iphoneos-arm64/g\" ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/DEBIAN/control\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless/var/jb/Applications/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../deb-havoc/ && dpkg-deb --root-owner-group -b ../tree-havoc-rootless .\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-havoc ${CODESIGNING_FOLDER_PATH}/../tree-havoc-rootless\nfi\n\n# test: license malformed\n# echo \"<html><body><p>MODIFIED</p></body></html>\" > ${CODESIGNING_FOLDER_PATH}/license.html\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
 		};
 		684972692EACB71B00C9C58A /* Generate Sources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14912,10 +15426,11 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/constants.c",
+				"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PATH=/opt/homebrew/bin:$PATH\n\nINFILE=${SCRIPT_INPUT_FILE_0}\nOUTFILE=${SCRIPT_OUTPUT_FILE_0}\n\necho \"const unsigned char lh_arr[] = {\" > ${OUTFILE}\nopenssl sha256 -c ${INFILE} | gsed \"s/^.*= /0x/g;s/:/,0x/g\" >> ${OUTFILE}\necho \"};\" >> ${OUTFILE}\n\nif [ -e ${SRCROOT}/Battman/gen_locale_hashes.py ]; then\n\trm -f \"${DERIVED_FILE_DIR}/mo_verification.h\"\n\tpython3 ${SRCROOT}/Battman/gen_locale_hashes.py --out \"${DERIVED_FILE_DIR}/mo_verification\" `find \"${PROJECT_DIR}/${PROJECT_NAME}/locales\" -type f -name battman.mo`\nfi\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\"";
 		};
 		684972B92EACB71B00C9C58A /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -14933,7 +15448,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e -x\n\nPATH=/opt/homebrew/bin:$PATH\n\n# ldid fakesign\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n  ldid -S${PROJECT_DIR}/Battman.entitlements ${CODESIGNING_FOLDER_PATH}/Battman\nfi\n\n# Replace GIT_COMMIT_HASH in Info.plist\nCOMMIT_HASH=`git rev-parse --short HEAD`\n/usr/libexec/PlistBuddy -c \"Set :GIT_COMMIT_HASH $COMMIT_HASH\" \"${CODESIGNING_FOLDER_PATH}/Info.plist\"\n\n# generate and sync icons to app root\nsh ${PROJECT_DIR}/Battman/generate_icons.sh ${PROJECT_DIR}/Battman.svg ${CODESIGNING_FOLDER_PATH}/\n\n# restore\n#git restore \"${INFOPLIST_FILE}\" || true\n\nif [ ${PLATFORM_NAME} == \"iphoneos\" ]; then\n# deb\nrm -rf ${CODESIGNING_FOLDER_PATH}/../deb-havoc\nmkdir ${CODESIGNING_FOLDER_PATH}/../deb-havoc\n\n# TrollStore ipa\nmkdir -p ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/Payload\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../Battman.app ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/Payload/\nrsync -Kah ${CODESIGNING_FOLDER_PATH}/../intl.framework ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/Payload/Battman.app/Frameworks/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/Payload/Battman.app/Frameworks/intl.framework/Headers ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/Payload/Battman.app/SF-Pro-Display-Regular.otf\ncd ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa/ && zip -r ../deb-havoc/Battman.tipa Payload/\nrm -r ${CODESIGNING_FOLDER_PATH}/../tree-havoc-ipa\nfi\n\n# test: license malformed\n# echo \"<html><body><p>MODIFIED</p></body></html>\" > ${CODESIGNING_FOLDER_PATH}/license.html\n";
+			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
 		};
 		687742AF2D437EEA00375A2C /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -15058,6 +15573,56 @@
 				683B2D082E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
 				684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
+				68AC00082F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
+				68AC00092F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
+				68E210012F20000000001001 /* BAAnalyticsBuiltInCards.m in Sources */,
+				68E210022F20000000001002 /* BAAnalyticsBatterySummaryCard.m in Sources */,
+				68E210032F20000000001003 /* BAAnalyticsChargingLimitCard.m in Sources */,
+				68E210042F20000000001004 /* BAAnalyticsCycleSummaryCard.m in Sources */,
+				68E210052F20000000001005 /* BAAnalyticsPowerAverageCard.m in Sources */,
+				68E210062F20000000001006 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
+				68E210072F20000000001007 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
+				68E210082F20000000001008 /* BAAnalyticsMetricService.m in Sources */,
+				68E210092F20000000001009 /* BAAnalyticsSystemMetricSource.m in Sources */,
+				68E2100A2F2000000000100A /* BAAnalyticsCardLayoutStore.m in Sources */,
+				68E2100B2F2000000000100B /* BAAnalyticsUnavailableCard.m in Sources */,
+				68E2100C2F2000000000100C /* BAAnalyticsMetricSnapshot.m in Sources */,
+				68AC00272F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */,
+				68D101012F10000000000101 /* BAAnalyticsBuiltInPlugin.m in Sources */,
+				68D101022F10000000000102 /* BTEmbeddedPluginRegistration.m in Sources */,
+				68D101032F10000000000103 /* BTPluginExtensionDescriptor.m in Sources */,
+				68D101042F10000000000104 /* BTPluginIdentifiers.m in Sources */,
+				68D101052F10000000000105 /* BTPluginRegistry.m in Sources */,
+				68F310012F30000000001001 /* BTPluginQuarantineStore.m in Sources */,
+				68F310022F30000000001002 /* BTPluginPackageErrors.m in Sources */,
+				68F310032F30000000001003 /* BTPluginPackageManifest.m in Sources */,
+				68F310042F30000000001004 /* BTPluginMachOInspector.m in Sources */,
+				68F310052F30000000001005 /* BTPluginP256.m in Sources */,
+				68F310062F30000000001006 /* BTPluginPackageStructuralVerifier.m in Sources */,
+				68F310072F30000000001007 /* BTPluginPackageVerifier.m in Sources */,
+				68F310082F30000000001008 /* BTPluginPlatformLoadabilityVerifier.m in Sources */,
+				68F310092F30000000001009 /* BTPluginSignatureVerifier.m in Sources */,
+				68F3100A2F3000000000100A /* BTPluginTrustEvaluator.m in Sources */,
+				68F3100B2F3000000000100B /* BTPluginTrustMetadataVerifier.m in Sources */,
+				68F3100C2F3000000000100C /* BTPluginTrustStore.m in Sources */,
+				68F3100D2F3000000000100D /* BTPluginOfficialTrustLoader.m in Sources */,
+				68F410012F40000000001001 /* BTPluginPlatform.m in Sources */,
+				68F410022F40000000001002 /* BTPluginDiscovery.m in Sources */,
+				68F410032F40000000001003 /* BTPluginSource.m in Sources */,
+				68F410042F40000000001004 /* BTPluginActivationStore.m in Sources */,
+				68F410212F40000000001021 /* BTPluginApplicationDataTransaction.m in Sources */,
+				68F410052F40000000001005 /* BTPluginNativeImageLoader.m in Sources */,
+				68F410062F40000000001006 /* BTPluginRuntimeEnvironment.m in Sources */,
+				68F410072F40000000001007 /* BTPluginRuntimeLoader.m in Sources */,
+				68F4101E2F4000000000101E /* BTPluginSafeModeRequest.m in Sources */,
+				68F410082F40000000001008 /* BTPluginSealedPackageStructuralVerifier.m in Sources */,
+				68F410092F40000000001009 /* BTPluginApplicationIntegration.m in Sources */,
+				68F4100A2F4000000000100A /* BTPluginImportCoordinator.m in Sources */,
+				68F4100B2F4000000000100B /* BTPluginApplicationDataStore.m in Sources */,
+				68F4100C2F4000000000100C /* BTPluginManagementService.m in Sources */,
+				68F410222F40000000001022 /* BTPluginManagementLineage.m in Sources */,
+				68F4100D2F4000000000100D /* BTPluginManagementViewController.m in Sources */,
+				68F4100E2F4000000000100E /* BTPluginImportPresenter.m in Sources */,
 				684114972E5323E2001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114982E5323E2001B76B6 /* localized.c in Sources */,
 				684114992E5323E2001B76B6 /* BatteryInfoViewController.m in Sources */,
@@ -15160,6 +15725,56 @@
 				683B2D072E6C346800FECDF5 /* UPSMonitor-new.m in Sources */,
 				684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
+				68AC000A2F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
+				68AC000B2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
+				68E211012F20000000001101 /* BAAnalyticsBuiltInCards.m in Sources */,
+				68E211022F20000000001102 /* BAAnalyticsBatterySummaryCard.m in Sources */,
+				68E211032F20000000001103 /* BAAnalyticsChargingLimitCard.m in Sources */,
+				68E211042F20000000001104 /* BAAnalyticsCycleSummaryCard.m in Sources */,
+				68E211052F20000000001105 /* BAAnalyticsPowerAverageCard.m in Sources */,
+				68E211062F20000000001106 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
+				68E211072F20000000001107 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
+				68E211082F20000000001108 /* BAAnalyticsMetricService.m in Sources */,
+				68E211092F20000000001109 /* BAAnalyticsSystemMetricSource.m in Sources */,
+				68E2110A2F2000000000110A /* BAAnalyticsCardLayoutStore.m in Sources */,
+				68E2110B2F2000000000110B /* BAAnalyticsUnavailableCard.m in Sources */,
+				68E2110C2F2000000000110C /* BAAnalyticsMetricSnapshot.m in Sources */,
+				68AC00282F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */,
+				68D101062F10000000000106 /* BAAnalyticsBuiltInPlugin.m in Sources */,
+				68D101072F10000000000107 /* BTEmbeddedPluginRegistration.m in Sources */,
+				68D101082F10000000000108 /* BTPluginExtensionDescriptor.m in Sources */,
+				68D101092F10000000000109 /* BTPluginIdentifiers.m in Sources */,
+				68D1010A2F1000000000010A /* BTPluginRegistry.m in Sources */,
+				68F311012F30000000001101 /* BTPluginQuarantineStore.m in Sources */,
+				68F311022F30000000001102 /* BTPluginPackageErrors.m in Sources */,
+				68F311032F30000000001103 /* BTPluginPackageManifest.m in Sources */,
+				68F311042F30000000001104 /* BTPluginMachOInspector.m in Sources */,
+				68F311052F30000000001105 /* BTPluginP256.m in Sources */,
+				68F311062F30000000001106 /* BTPluginPackageStructuralVerifier.m in Sources */,
+				68F311072F30000000001107 /* BTPluginPackageVerifier.m in Sources */,
+				68F311082F30000000001108 /* BTPluginPlatformLoadabilityVerifier.m in Sources */,
+				68F311092F30000000001109 /* BTPluginSignatureVerifier.m in Sources */,
+				68F3110A2F3000000000110A /* BTPluginTrustEvaluator.m in Sources */,
+				68F3110B2F3000000000110B /* BTPluginTrustMetadataVerifier.m in Sources */,
+				68F3110C2F3000000000110C /* BTPluginTrustStore.m in Sources */,
+				68F3110D2F3000000000110D /* BTPluginOfficialTrustLoader.m in Sources */,
+				68F411012F40000000001101 /* BTPluginPlatform.m in Sources */,
+				68F411022F40000000001102 /* BTPluginDiscovery.m in Sources */,
+				68F411032F40000000001103 /* BTPluginSource.m in Sources */,
+				68F411042F40000000001104 /* BTPluginActivationStore.m in Sources */,
+				68F411212F40000000001121 /* BTPluginApplicationDataTransaction.m in Sources */,
+				68F411052F40000000001105 /* BTPluginNativeImageLoader.m in Sources */,
+				68F411062F40000000001106 /* BTPluginRuntimeEnvironment.m in Sources */,
+				68F411072F40000000001107 /* BTPluginRuntimeLoader.m in Sources */,
+				68F4111E2F4000000000111E /* BTPluginSafeModeRequest.m in Sources */,
+				68F411082F40000000001108 /* BTPluginSealedPackageStructuralVerifier.m in Sources */,
+				68F411092F40000000001109 /* BTPluginApplicationIntegration.m in Sources */,
+				68F4110A2F4000000000110A /* BTPluginImportCoordinator.m in Sources */,
+				68F4110B2F4000000000110B /* BTPluginApplicationDataStore.m in Sources */,
+				68F4110C2F4000000000110C /* BTPluginManagementService.m in Sources */,
+				68F411222F40000000001122 /* BTPluginManagementLineage.m in Sources */,
+				68F4110D2F4000000000110D /* BTPluginManagementViewController.m in Sources */,
+				68F4110E2F4000000000110E /* BTPluginImportPresenter.m in Sources */,
 				684114ED2E57BDE7001B76B6 /* SimpleTemperatureViewController.m in Sources */,
 				684114EE2E57BDE7001B76B6 /* localized.c in Sources */,
 				684114EF2E57BDE7001B76B6 /* BatteryInfoViewController.m in Sources */,
@@ -15268,6 +15883,56 @@
 				68E674A52ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
 				684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */,
 				684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */,
+				68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
+				68AC000D2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
+				68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */,
+				68E212022F20000000001202 /* BAAnalyticsBatterySummaryCard.m in Sources */,
+				68E212032F20000000001203 /* BAAnalyticsChargingLimitCard.m in Sources */,
+				68E212042F20000000001204 /* BAAnalyticsCycleSummaryCard.m in Sources */,
+				68E212052F20000000001205 /* BAAnalyticsPowerAverageCard.m in Sources */,
+				68E212062F20000000001206 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
+				68E212072F20000000001207 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
+				68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */,
+				68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */,
+				68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */,
+				68E2120B2F2000000000120B /* BAAnalyticsUnavailableCard.m in Sources */,
+				68E2120C2F2000000000120C /* BAAnalyticsMetricSnapshot.m in Sources */,
+				68AC00292F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */,
+				68D1010B2F1000000000010B /* BAAnalyticsBuiltInPlugin.m in Sources */,
+				68D1010C2F1000000000010C /* BTEmbeddedPluginRegistration.m in Sources */,
+				68D1010D2F1000000000010D /* BTPluginExtensionDescriptor.m in Sources */,
+				68D1010E2F1000000000010E /* BTPluginIdentifiers.m in Sources */,
+				68D1010F2F1000000000010F /* BTPluginRegistry.m in Sources */,
+				68F312012F30000000001201 /* BTPluginQuarantineStore.m in Sources */,
+				68F312022F30000000001202 /* BTPluginPackageErrors.m in Sources */,
+				68F312032F30000000001203 /* BTPluginPackageManifest.m in Sources */,
+				68F312042F30000000001204 /* BTPluginMachOInspector.m in Sources */,
+				68F312052F30000000001205 /* BTPluginP256.m in Sources */,
+				68F312062F30000000001206 /* BTPluginPackageStructuralVerifier.m in Sources */,
+				68F312072F30000000001207 /* BTPluginPackageVerifier.m in Sources */,
+				68F312082F30000000001208 /* BTPluginPlatformLoadabilityVerifier.m in Sources */,
+				68F312092F30000000001209 /* BTPluginSignatureVerifier.m in Sources */,
+				68F3120A2F3000000000120A /* BTPluginTrustEvaluator.m in Sources */,
+				68F3120B2F3000000000120B /* BTPluginTrustMetadataVerifier.m in Sources */,
+				68F3120C2F3000000000120C /* BTPluginTrustStore.m in Sources */,
+				68F3120D2F3000000000120D /* BTPluginOfficialTrustLoader.m in Sources */,
+				68F412012F40000000001201 /* BTPluginPlatform.m in Sources */,
+				68F412022F40000000001202 /* BTPluginDiscovery.m in Sources */,
+				68F412032F40000000001203 /* BTPluginSource.m in Sources */,
+				68F412042F40000000001204 /* BTPluginActivationStore.m in Sources */,
+				68F412212F40000000001221 /* BTPluginApplicationDataTransaction.m in Sources */,
+				68F412052F40000000001205 /* BTPluginNativeImageLoader.m in Sources */,
+				68F412062F40000000001206 /* BTPluginRuntimeEnvironment.m in Sources */,
+				68F412072F40000000001207 /* BTPluginRuntimeLoader.m in Sources */,
+				68F4121E2F4000000000121E /* BTPluginSafeModeRequest.m in Sources */,
+				68F412082F40000000001208 /* BTPluginSealedPackageStructuralVerifier.m in Sources */,
+				68F412092F40000000001209 /* BTPluginApplicationIntegration.m in Sources */,
+				68F4120A2F4000000000120A /* BTPluginImportCoordinator.m in Sources */,
+				68F4120B2F4000000000120B /* BTPluginApplicationDataStore.m in Sources */,
+				68F4120C2F4000000000120C /* BTPluginManagementService.m in Sources */,
+				68F412222F40000000001222 /* BTPluginManagementLineage.m in Sources */,
+				68F4120D2F4000000000120D /* BTPluginManagementViewController.m in Sources */,
+				68F4120E2F4000000000120E /* BTPluginImportPresenter.m in Sources */,
 				684972832EACB71B00C9C58A /* SimpleTemperatureViewController.m in Sources */,
 				684972842EACB71B00C9C58A /* localized.c in Sources */,
 				684972852EACB71B00C9C58A /* BatteryInfoViewController.m in Sources */,
@@ -15365,6 +16030,56 @@
 				684973322EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
 				6838BF762DBF810D007EB66C /* localized.c in Sources */,
 				68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
+				68AC00062F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
+				68AC00072F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
+				68E213012F20000000001301 /* BAAnalyticsBuiltInCards.m in Sources */,
+				68E213022F20000000001302 /* BAAnalyticsBatterySummaryCard.m in Sources */,
+				68E213032F20000000001303 /* BAAnalyticsChargingLimitCard.m in Sources */,
+				68E213042F20000000001304 /* BAAnalyticsCycleSummaryCard.m in Sources */,
+				68E213052F20000000001305 /* BAAnalyticsPowerAverageCard.m in Sources */,
+				68E213062F20000000001306 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
+				68E213072F20000000001307 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
+				68E213082F20000000001308 /* BAAnalyticsMetricService.m in Sources */,
+				68E213092F20000000001309 /* BAAnalyticsSystemMetricSource.m in Sources */,
+				68E2130A2F2000000000130A /* BAAnalyticsCardLayoutStore.m in Sources */,
+				68E2130B2F2000000000130B /* BAAnalyticsUnavailableCard.m in Sources */,
+				68E2130C2F2000000000130C /* BAAnalyticsMetricSnapshot.m in Sources */,
+				68AC00262F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */,
+				68D101102F10000000000110 /* BAAnalyticsBuiltInPlugin.m in Sources */,
+				68D101112F10000000000111 /* BTEmbeddedPluginRegistration.m in Sources */,
+				68D101122F10000000000112 /* BTPluginExtensionDescriptor.m in Sources */,
+				68D101132F10000000000113 /* BTPluginIdentifiers.m in Sources */,
+				68D101142F10000000000114 /* BTPluginRegistry.m in Sources */,
+				68F313012F30000000001301 /* BTPluginQuarantineStore.m in Sources */,
+				68F313022F30000000001302 /* BTPluginPackageErrors.m in Sources */,
+				68F313032F30000000001303 /* BTPluginPackageManifest.m in Sources */,
+				68F313042F30000000001304 /* BTPluginMachOInspector.m in Sources */,
+				68F313052F30000000001305 /* BTPluginP256.m in Sources */,
+				68F313062F30000000001306 /* BTPluginPackageStructuralVerifier.m in Sources */,
+				68F313072F30000000001307 /* BTPluginPackageVerifier.m in Sources */,
+				68F313082F30000000001308 /* BTPluginPlatformLoadabilityVerifier.m in Sources */,
+				68F313092F30000000001309 /* BTPluginSignatureVerifier.m in Sources */,
+				68F3130A2F3000000000130A /* BTPluginTrustEvaluator.m in Sources */,
+				68F3130B2F3000000000130B /* BTPluginTrustMetadataVerifier.m in Sources */,
+				68F3130C2F3000000000130C /* BTPluginTrustStore.m in Sources */,
+				68F3130D2F3000000000130D /* BTPluginOfficialTrustLoader.m in Sources */,
+				68F413012F40000000001301 /* BTPluginPlatform.m in Sources */,
+				68F413022F40000000001302 /* BTPluginDiscovery.m in Sources */,
+				68F413032F40000000001303 /* BTPluginSource.m in Sources */,
+				68F413042F40000000001304 /* BTPluginActivationStore.m in Sources */,
+				68F413212F40000000001321 /* BTPluginApplicationDataTransaction.m in Sources */,
+				68F413052F40000000001305 /* BTPluginNativeImageLoader.m in Sources */,
+				68F413062F40000000001306 /* BTPluginRuntimeEnvironment.m in Sources */,
+				68F413072F40000000001307 /* BTPluginRuntimeLoader.m in Sources */,
+				68F4131E2F4000000000131E /* BTPluginSafeModeRequest.m in Sources */,
+				68F413082F40000000001308 /* BTPluginSealedPackageStructuralVerifier.m in Sources */,
+				68F413092F40000000001309 /* BTPluginApplicationIntegration.m in Sources */,
+				68F4130A2F4000000000130A /* BTPluginImportCoordinator.m in Sources */,
+				68F4130B2F4000000000130B /* BTPluginApplicationDataStore.m in Sources */,
+				68F4130C2F4000000000130C /* BTPluginManagementService.m in Sources */,
+				68F413222F40000000001322 /* BTPluginManagementLineage.m in Sources */,
+				68F4130D2F4000000000130D /* BTPluginManagementViewController.m in Sources */,
+				68F4130E2F4000000000130E /* BTPluginImportPresenter.m in Sources */,
 				68336E3D2E9F80DF00E9F180 /* BrightnessInfoTableViewCell.m in Sources */,
 				687743372D4E08AD00375A2C /* BatteryInfoViewController.m in Sources */,
 				68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
@@ -15395,7 +16110,6 @@
 				68F100062F20000000000006 /* battery_diagnostics.c in Sources */,
 				684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */,
 				684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
-				6841152D2E57E166001B76B6 /* control in Sources */,
 				68E674592ED05349006F94DE /* VirtBriCardCell.m in Sources */,
 				684611502E0D5250006B651D /* IOMFB_interaction.c in Sources */,
 				68B291282DC75F610089BA1F /* pmnotification.c in Sources */,
@@ -15535,7 +16249,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_GITHUB",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -15590,7 +16304,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_GITHUB",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -15648,7 +16362,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman.Havoc;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -15704,7 +16418,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman.Havoc;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -15786,7 +16500,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -15843,7 +16557,7 @@
 					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
 					"-DUSE_MOBILEGESTALT",
 				);
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = Battman;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -16016,7 +16730,7 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = "$(CUSTOM_CFLAGS)";
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -16062,7 +16776,7 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MARKETING_VERSION = "$(BATTMAN_VERSION)";
 				OTHER_CFLAGS = "$(CUSTOM_CFLAGS)";
-				OTHER_LDFLAGS = "$(OLDFL)";
+				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

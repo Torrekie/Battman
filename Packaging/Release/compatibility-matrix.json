@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "1.1.0",
+  "host": {
+    "architecture": "arm64",
+    "declaredHardwareBaseline": "Apple A11 or newer",
+    "fullDeviceMatrixCompleted": false,
+    "minimumIOSVersion": "12.0"
+  },
+  "validationPolicy": {
+    "ios12PhysicalDeviceRequiredForCurrentGoal": false,
+    "minimumRuntimeEvidence": "simulator-and-arm64-ios12-compile",
+    "trollStoreDataDirectoryNativeLoadingClaimed": false,
+    "trollStoreThirdPartyActivation": "replacement-tipa-only"
+  },
+  "installationChannels": [
+    {
+      "artifactArchitecture": "iphoneos-arm",
+      "deviceCoverage": "supplemental-rooted-ios14-package-integrity",
+      "documentedMinimumIOSVersion": "12.0",
+      "identifier": "jailbroken-rooted",
+      "nativePluginActivation": "verified-package-on-next-launch",
+      "supportStatus": "release-contract"
+    },
+    {
+      "artifactArchitecture": "iphoneos-arm64",
+      "deviceCoverage": "not-a-complete-device-matrix",
+      "documentedMinimumIOSVersion": "15.0",
+      "identifier": "jailbroken-rootless",
+      "nativePluginActivation": "verified-package-on-next-launch",
+      "supportStatus": "release-contract"
+    },
+    {
+      "artifactArchitecture": "tipa",
+      "deviceCoverage": "outer-signing-and-install-not-proven-by-local-artifact-tests",
+      "documentedMinimumIOSVersion": "14.0",
+      "identifier": "trollstore",
+      "nativePluginActivation": "replacement-tipa-only",
+      "supportStatus": "release-contract"
+    }
+  ],
+  "evidence": [
+    {
+      "identifier": "arm64-ios12-compile",
+      "reference": "Battman/Makefile",
+      "scope": "host-and-native-plugin-load-commands",
+      "status": "verified"
+    },
+    {
+      "identifier": "iphone-ios15-simulator-ui",
+      "reference": "Tests/Simulator/BTAnalyticsCardsScreenshotHarness.m",
+      "scope": "analytics-layout-lifecycle-accessibility-and-energy",
+      "status": "verified"
+    },
+    {
+      "identifier": "ipad-ios15-simulator-ui",
+      "reference": "Tests/Simulator/BTAnalyticsCardsScreenshotHarness.m",
+      "scope": "portrait-landscape-and-split-view",
+      "status": "verified"
+    },
+    {
+      "identifier": "rooted-ios14-package-integrity",
+      "reference": "Tests/Device/run-analytics-rooted-preflight.sh",
+      "scope": "package-signature-registration-and-locked-launch-request",
+      "status": "verified-limited"
+    },
+    {
+      "identifier": "trollstore-replacement-artifact",
+      "reference": "Scripts/Release/build-tipa.py",
+      "scope": "sealed-plugin-layout-and-resign-report-not-device-installation",
+      "status": "verified-artifact-only"
+    },
+    {
+      "identifier": "a11-ios12-through-ios17",
+      "reference": "docs/plugin-system.md",
+      "scope": "host-hardware-runtime",
+      "status": "community-reported"
+    }
+  ],
+  "analyticsCards": [
+    {
+      "availability": "Shows Unavailable when the host does not provide state-of-charge, health, or charging-state metrics.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-provided-battery-and-charging-telemetry",
+      "identifier": "com.torrekie.battman.analytics.battery.summary",
+      "requiredMetrics": [
+        "battery.state-of-charge.percent",
+        "battery.health.percent",
+        "battery.charging.state",
+        "charging-limit.reached"
+      ]
+    },
+    {
+      "availability": "Shows Unavailable when the host cannot read a valid average battery temperature.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-provided-temperature-telemetry",
+      "identifier": "com.torrekie.battman.analytics.temperature.average",
+      "requiredMetrics": [
+        "battery.temperature.average.celsius"
+      ]
+    },
+    {
+      "availability": "Shows Unavailable when the host cannot read average power; current and voltage details remain optional.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-provided-power-telemetry",
+      "identifier": "com.torrekie.battman.analytics.power.average",
+      "requiredMetrics": [
+        "battery.power.average.watts",
+        "battery.current.average.milliamps",
+        "battery.voltage.millivolts"
+      ]
+    },
+    {
+      "availability": "Shows Unavailable when the host cannot read cycle count; design count and battery uptime remain optional.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-provided-cycle-and-uptime-telemetry",
+      "identifier": "com.torrekie.battman.analytics.cycle.summary",
+      "requiredMetrics": [
+        "battery.cycles.current",
+        "battery.cycles.design",
+        "battery.uptime.seconds"
+      ]
+    },
+    {
+      "availability": "Shows Unavailable for any capacity value the host battery-capacity provider does not expose.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-provided-capacity-telemetry",
+      "identifier": "com.torrekie.battman.analytics.capacity.remaining",
+      "requiredMetrics": [
+        "battery.capacity.remaining.milliamp-hours",
+        "battery.capacity.full-charge.milliamp-hours",
+        "battery.capacity.design.milliamp-hours",
+        "battery.health.percent"
+      ]
+    },
+    {
+      "availability": "Shows Inactive when the charging-limit service is stopped and Unavailable when its state cannot be read.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-owned-charging-limit-state-and-battery-telemetry",
+      "identifier": "com.torrekie.battman.analytics.charging-limit",
+      "requiredMetrics": [
+        "charging-limit.service-active",
+        "charging-limit.percent",
+        "charging-limit.reached",
+        "battery.state-of-charge.percent"
+      ]
+    },
+    {
+      "availability": "Shows Unavailable when the immutable host snapshot lacks state-of-charge or charging-state metrics.",
+      "delivery": "official-plugin",
+      "hardwareBoundary": "host-snapshot-only-no-direct-hardware-access",
+      "identifier": "com.torrekie.battman.plugin.charge-gauge",
+      "requiredMetrics": [
+        "battery.state-of-charge.percent",
+        "battery.charging.state"
+      ]
+    }
+  ],
+  "unsupportedClaims": [
+    "independent-device-certification-for-every-a11-or-newer-device-on-ios12-through-ios17",
+    "trollstore-data-directory-native-loading",
+    "automatic-resigning-or-installation-by-battman",
+    "apple-supported-general-purpose-ios-plugin-loading"
+  ]
+}

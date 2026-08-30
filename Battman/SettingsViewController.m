@@ -6,6 +6,7 @@
 #import "LanguageSelectionViewController.h"
 #import "DonationPrompter.h"
 #import "CGIconSet/BattmanVectorIcon.h"
+#import "PluginHost/UI/BTPluginManagementViewController.h"
 #include "common.h"
 #include <math.h>
 #include <sys/utsname.h>
@@ -75,6 +76,7 @@ static UIImage *loadSerialNumberQRCodeImage(void) {
 
 enum sections_settings {
 	SS_SECT_VERSION,
+	SS_SECT_PLUGINS,
     SS_SECT_ABOUT,
 	SS_SECT_SNS,
 #ifdef DEBUG
@@ -270,6 +272,8 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 - (NSInteger)tableView:(id)tv numberOfRowsInSection:(NSInteger)section {
 	if (section == SS_SECT_VERSION)
 		return 3;
+	if (section == SS_SECT_PLUGINS)
+		return 1;
 	if (section == SS_SECT_ABOUT)
 		return 6;
 	if (section == SS_SECT_SNS)
@@ -286,6 +290,8 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 }
 
 - (NSString *)tableView:(UITableView *)tv titleForHeaderInSection:(NSInteger)sect {
+	if (sect == SS_SECT_PLUGINS)
+		return _("Extensions");
 	if (sect == SS_SECT_ABOUT)
         return _("About Battman");
 #ifdef DEBUG
@@ -334,6 +340,9 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 
 			[self presentViewController:alert animated:YES completion:nil];
 		}
+	}
+	if (indexPath.section == SS_SECT_PLUGINS) {
+		[self.navigationController pushViewController:[BTPluginManagementViewController new] animated:YES];
 	}
     if (indexPath.section == SS_SECT_ABOUT) {
         if (indexPath.row == 0) {
@@ -470,6 +479,12 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 		}
 	}
 #endif
+	if (indexPath.section == SS_SECT_PLUGINS) {
+		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+		cell.textLabel.text = _("Plug-ins");
+		cell.detailTextLabel.text = _("Manage native extensions and recovery");
+	}
 	if (indexPath.section == SS_SECT_VERSION) {
 		if (indexPath.row == 0) {
 			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
@@ -645,10 +660,11 @@ static BOOL _cachedIconCornerRadiusValid = NO;
 		}
     }
 #endif
-	// Normally you should have a valid cell before reaching here
+	// Keep unexpected future section/row combinations inert in production. The
+	// old developer sentinel must never become user-facing table content.
 	if (cell == nil) {
 		cell = [UITableViewCell new];
-		cell.textLabel.text = @"YOU CAN'T SEE ME";
+		cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	}
 	for (NSIndexPath *ip in hided_ip) {
 		if (ip.section == indexPath.section && ip.row == indexPath.row) {

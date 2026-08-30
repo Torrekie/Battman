@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.4\n"
+"Project-Id-Version: Battman 1.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-10-11 17:32+0800\n"
@@ -1136,7 +1136,7 @@ msgid "Standard"
 msgstr "Standard"
 
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 msgid "Ambient Light Sensor"
 msgstr "Umgebungslichtsensor"
@@ -2230,3 +2230,321 @@ msgstr "Temperatureinheit"
 
 msgid "System"
 msgstr "System"
+
+msgid "Add Card"
+msgstr "Karte hinzufügen"
+
+msgid "Open"
+msgstr "Öffnen"
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."
+msgstr "%@ %@ wurde geprüft, ohne seinen Code auszuführen, und in Battmans privater Quarantäne gespeichert. Das Plug-in ist weder genehmigt noch installiert, aktiviert oder geladen. Prüfen Sie Identität und angeforderte Erweiterungspunkte unter „Plug-ins“."
+
+msgid "%lu recorded issue(s)"
+msgstr "%lu aufgezeichnete Probleme"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Allow This Version"
+msgstr "Diese Version erlauben"
+
+msgid "Allow This Version?"
+msgstr "Diese Version erlauben?"
+
+msgid "Allow Version and Schedule"
+msgstr "Version erlauben und einplanen"
+
+msgid "Allowed Version"
+msgstr "Erlaubte Version"
+
+msgid "Approval Required"
+msgstr "Genehmigung erforderlich"
+
+msgid "Developer Mode"
+msgstr "Entwicklermodus"
+
+msgid "Diagnostics"
+msgstr "Diagnose"
+
+msgid "Disable Last Plug-in"
+msgstr "Letztes Plug-in deaktivieren"
+
+msgid "Disable Next Launch"
+msgstr "Beim nächsten Start deaktivieren"
+
+msgid "Enable Next Launch"
+msgstr "Beim nächsten Start aktivieren"
+
+msgid "Enable Third-Party Plug-ins?"
+msgstr "Plug-ins von Drittanbietern aktivieren?"
+
+msgid "Enabled Next Launch"
+msgstr "Beim nächsten Start aktiviert"
+
+msgid "Export Diagnostics"
+msgstr "Diagnose exportieren"
+
+msgid "Extensions"
+msgstr "Erweiterungen"
+
+msgid "I Understand, Enable"
+msgstr "Ich verstehe das Risiko, aktivieren"
+
+msgid "Identity"
+msgstr "Identität"
+
+msgid "Install for Next Launch"
+msgstr "Für den nächsten Start installieren"
+
+msgid "Installed"
+msgstr "Installiert"
+
+msgid "Manage native extensions and recovery"
+msgstr "Native Erweiterungen und Wiederherstellung verwalten"
+
+msgid "Native Plug-ins"
+msgstr "Native Plug-ins"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "Native Plug-ins sind nicht von Battman isoliert. Sie können Battmans Daten, Berechtigungen und Netzwerkzugriff verwenden, die Oberfläche ersetzen und die App kompromittieren. Quelloffenheit und gültige Signaturen machen Code nicht sicher.\n\nName: %@\nID: %@\nHerausgeber: %@\nPaket: %@\nErweiterungspunkte:\n%@\n\n%@\n\nNichts wird geladen, bevor Battman neu gestartet wird."
+
+msgid "No Installed Plug-ins"
+msgstr "Keine installierten Plug-ins"
+
+msgid "No Quarantined Plug-ins"
+msgstr "Keine Plug-ins in Quarantäne"
+
+msgid "Not Now"
+msgstr "Nicht jetzt"
+
+msgid "Official"
+msgstr "Offiziell"
+
+msgid "Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code."
+msgstr "Beim Öffnen einer .battman-Datei wird sie nur geprüft und als private Quarantänekopie gespeichert. Code wird dabei weder genehmigt noch geladen."
+
+msgid "Package Digest"
+msgstr "Paketprüfsumme"
+
+msgid "Plug-in Approval Failed"
+msgstr "Plug-in-Genehmigung fehlgeschlagen"
+
+msgid "Plug-in Change Failed"
+msgstr "Plug-in-Änderung fehlgeschlagen"
+
+msgid "Plug-in Details"
+msgstr "Plug-in-Details"
+
+msgid "Plug-in Import Failed"
+msgstr "Plug-in-Import fehlgeschlagen"
+
+msgid "Plug-in Installation Failed"
+msgstr "Plug-in-Installation fehlgeschlagen"
+
+msgid "Plug-in Inventory Failed"
+msgstr "Plug-in-Bestand konnte nicht erfasst werden"
+
+msgid "Plug-in Quarantined"
+msgstr "Plug-in in Quarantäne"
+
+msgid "Plug-in Removal Failed"
+msgstr "Plug-in konnte nicht entfernt werden"
+
+msgid "Plug-ins"
+msgstr "Plug-ins"
+
+msgid "Plug-ins relying on this publisher approval will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "Plug-ins, die diese Herausgebergenehmigung benötigen, werden beim nächsten Start von Battman abgewiesen. Bereits geladener Code kann nicht sicher entladen werden."
+
+msgid "Publisher"
+msgstr "Herausgeber"
+
+msgid "Quarantine"
+msgstr "Quarantäne"
+
+msgid "Recovery"
+msgstr "Wiederherstellung"
+
+msgid "Recovery Change Failed"
+msgstr "Wiederherstellungsänderung fehlgeschlagen"
+
+msgid "Remove Plug-in"
+msgstr "Plug-in entfernen"
+
+msgid "Remove from Quarantine"
+msgstr "Aus Quarantäne entfernen"
+
+msgid "Remove this exact plug-in from Battman's private app-data directory? App-bundle and package-manager files are never removed here."
+msgstr "Dieses exakte Plug-in aus Battmans privatem App-Datenordner entfernen? Dateien im App-Bundle oder aus der Paketverwaltung werden hier niemals entfernt."
+
+msgid "Remove this verified package from Battman's private quarantine?"
+msgstr "Dieses geprüfte Paket aus Battmans privater Quarantäne entfernen?"
+
+msgid "Requested Extension Points"
+msgstr "Angeforderte Erweiterungspunkte"
+
+msgid "Extension-point changes since prior version"
+msgstr "Änderungen der Erweiterungspunkte seit der vorherigen Version"
+
+msgid "No prior installed version"
+msgstr "Keine zuvor installierte Version"
+
+msgid "Comparison unavailable: multiple installed representations"
+msgstr "Vergleich nicht verfügbar: mehrere installierte Darstellungen"
+
+msgid "Comparison unavailable: installed version failed verification"
+msgstr "Vergleich nicht verfügbar: Überprüfung der installierten Version fehlgeschlagen"
+
+msgid "Comparison unavailable: installed version is not approved"
+msgstr "Vergleich nicht verfügbar: installierte Version ist nicht genehmigt"
+
+msgid "Comparison unavailable: activation state does not match installed bytes"
+msgstr "Vergleich nicht verfügbar: Aktivierungsstatus stimmt nicht mit den installierten Bytes überein"
+
+msgid "Comparison unavailable: publisher key changed"
+msgstr "Vergleich nicht verfügbar: Herausgeberschlüssel geändert"
+
+msgid "Comparison unavailable: candidate is not a newer release"
+msgstr "Vergleich nicht verfügbar: Kandidat ist keine neuere Version"
+
+msgid "Prior-version comparison unavailable"
+msgstr "Vergleich mit vorheriger Version nicht verfügbar"
+
+msgid "Requires Battman Reinstall"
+msgstr "Battman muss neu installiert werden"
+
+msgid "Review Plug-in"
+msgstr "Plug-in prüfen"
+
+msgid "Revoke Publisher Trust"
+msgstr "Herausgebervertrauen widerrufen"
+
+msgid "Revoke Version Approval"
+msgstr "Versionsgenehmigung widerrufen"
+
+msgid "Safe Mode Could Not Be Scheduled"
+msgstr "Sicherer Modus konnte nicht eingeplant werden"
+
+msgid "Safe Mode Scheduled"
+msgstr "Sicherer Modus eingeplant"
+
+msgid "Schedule one safe-mode launch"
+msgstr "Einen Start im sicheren Modus einplanen"
+
+msgid "Scheduled for Next Launch"
+msgstr "Für den nächsten Start eingeplant"
+
+msgid "Source"
+msgstr "Quelle"
+
+msgid "Start Without Third-Party Plug-ins"
+msgstr "Ohne Plug-ins von Drittanbietern starten"
+
+msgid "The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "Beim nächsten Start überspringt Battman einmalig alle Plug-ins von Drittanbietern. Beenden und öffnen Sie Battman erneut, wenn Sie bereit sind."
+
+msgid "The selected package could not be verified and was not imported."
+msgstr "Das ausgewählte Paket konnte nicht geprüft werden und wurde nicht importiert."
+
+msgid "The verified plug-in is installed and scheduled. It can load only after Battman restarts, and third-party loading must also be enabled."
+msgstr "Das geprüfte Plug-in ist installiert und eingeplant. Es kann erst nach einem Neustart von Battman geladen werden; außerdem muss das Laden von Drittanbieter-Plug-ins aktiviert sein."
+
+msgid "Third-Party Plug-ins"
+msgstr "Plug-ins von Drittanbietern"
+
+msgid "Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."
+msgstr "Native Plug-ins von Drittanbietern werden innerhalb von Battman ausgeführt und sind nicht davon isoliert. Änderungen gelten erst nach einem Neustart; geladene Images werden niemals entladen."
+
+msgid "Third-party native plug-ins run inside Battman without isolation. They can access Battman's data and entitlements, use the network, replace UI, and crash or compromise the app. Signatures identify package bytes; they do not make code safe. Only continue if you understand and accept these risks."
+msgstr "Native Plug-ins von Drittanbietern werden ohne Isolierung innerhalb von Battman ausgeführt. Sie können auf Battmans Daten und Berechtigungen zugreifen, das Netzwerk verwenden, die Benutzeroberfläche ersetzen und die App zum Absturz bringen oder kompromittieren. Signaturen identifizieren Paketbytes; sie machen Code nicht sicher. Fahren Sie nur fort, wenn Sie diese Risiken verstehen und akzeptieren."
+
+msgid "This Battman installation cannot load newly imported native code directly. The approved package remains quarantined and must be embedded in a replacement Battman app, then installed explicitly."
+msgstr "Diese Battman-Installation kann neu importierten nativen Code nicht direkt laden. Das genehmigte Paket bleibt in Quarantäne und muss in eine Ersatzversion der Battman-App eingebettet und anschließend ausdrücklich installiert werden."
+
+msgid "This approval applies only to these exact package bytes. Any update requires approval again."
+msgstr "Diese Genehmigung gilt nur für genau diese Paketbytes. Jede Aktualisierung muss erneut genehmigt werden."
+
+msgid "This version will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "Diese Version wird beim nächsten Start von Battman abgewiesen. Bereits geladener Code kann nicht sicher entladen werden."
+
+msgid "Trust"
+msgstr "Vertrauen"
+
+msgid "Trust Change Failed"
+msgstr "Vertrauensänderung fehlgeschlagen"
+
+msgid "Trust Publisher and Schedule"
+msgstr "Herausgeber vertrauen und einplanen"
+
+msgid "Trust This Publisher"
+msgstr "Diesem Herausgeber vertrauen"
+
+msgid "Trust This Publisher?"
+msgstr "Diesem Herausgeber vertrauen?"
+
+msgid "Trusted Publisher"
+msgstr "Vertrauenswürdiger Herausgeber"
+
+msgid "Trusting this publisher also allows future versions signed by this key for the same plug-in ID and requested extension points. Future versions still must pass offline signature, revocation, release-sequence rollback, and extension-point scope checks."
+msgstr "Wenn Sie diesem Herausgeber vertrauen, werden auch zukünftige, mit diesem Schlüssel signierte Versionen für dieselbe Plug-in-ID und dieselben angeforderten Erweiterungspunkte erlaubt. Zukünftige Versionen müssen weiterhin die Offline-Signatur-, Widerrufs-, Release-Sequenz-Rollback- und Erweiterungspunktbereichsprüfungen bestehen."
+
+msgid "Verification Failed"
+msgstr "Überprüfung fehlgeschlagen"
+
+msgid "Review Diagnostics Before Sharing"
+msgstr "Diagnosedaten vor dem Teilen prüfen"
+
+msgid "The report contains Battman version, generation time, plug-in identifiers, package hashes, source, trust and activation state, and error domain/code values. It excludes plug-in files, private keys, battery measurements, device identifiers, and filesystem paths. Review the report and recipient before sharing."
+msgstr "Der Bericht enthält Battman-Version, Erstellungszeit, Plug-in-Kennungen, Paket-Hashes, Quelle, Vertrauens- und Aktivierungsstatus sowie Fehlerdomänen-/Codewerte. Er enthält keine Plug-in-Dateien, privaten Schlüssel, Batteriemesswerte, Gerätekennungen oder Dateisystempfade. Prüfen Sie Bericht und Empfänger vor dem Teilen."
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Author & Support"
+msgstr "Autor und Support"
+
+msgid "Author and contact details are supplied by the signed package. The verification status above determines whether Battman recognizes its publisher."
+msgstr "Autor- und Kontaktdaten werden vom signierten Paket bereitgestellt. Der obige Verifizierungsstatus zeigt, ob Battman den Herausgeber erkennt."
+
+msgid "Copied"
+msgstr "Kopiert"
+
+msgid "Homepage"
+msgstr "Website"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "Native Plug-ins sind nicht von Battman isoliert. Sie können Battmans Daten, Berechtigungen und Netzwerkzugriff verwenden, die Oberfläche ersetzen und die App kompromittieren. Quelloffenheit und gültige Signaturen machen Code nicht sicher.\n\nName: %@\nAutor: %@\nID: %@\nVersion: %@ (%@)\nRelease-Sequenz: %llu\nHerausgeber-Fingerabdruck: %@\nPaketprüfsumme: %@\nErweiterungspunkte:\n%@\n\n%@\n\nNichts wird geladen, bevor Battman neu gestartet wird."
+
+msgid "Release Sequence"
+msgstr "Release-Sequenz"
+
+msgid "Not Provided"
+msgstr "Nicht angegeben"
+
+msgid "Publisher Fingerprint"
+msgstr "Herausgeber-Fingerabdruck"
+
+msgid "Publisher Fingerprint and Package Digest"
+msgstr "Herausgeber-Fingerabdruck und Paketprüfsumme"
+
+msgid "Support Email"
+msgstr "Support-E-Mail"
+
+msgid "Technical Details"
+msgstr "Technische Details"
+
+msgid "These identifiers verify the signing key and exact package bytes. Tap a value to copy its full form."
+msgstr "Diese Kennungen verifizieren den Signaturschlüssel und die exakten Paketbytes. Tippen Sie auf einen Wert, um seine vollständige Form zu kopieren."
+
+msgid "This package does not provide author or support information."
+msgstr "Dieses Paket enthält keine Angaben zum Autor oder Support."
+
+msgid "Verification"
+msgstr "Verifizierung"
+
+msgid "View Verification Details"
+msgstr "Verifizierungsdetails anzeigen"

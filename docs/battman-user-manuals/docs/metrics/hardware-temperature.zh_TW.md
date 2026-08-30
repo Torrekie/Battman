@@ -15,7 +15,7 @@ Battman 會將溫度數據分為以下板塊：
 - **系統溫控狀態**  
   顯示系統溫控值守進程 `thermalmonitord` 的狀態。
 - **溫控信息**  
-  上層熱指標：溫控壓力等級、[溫控通知等級](../../troubleshooting/thermals/thermal-notification-levels)、最大觸發溫度、陽光暴曬狀態。
+  上層熱指標：溫控壓力等級、[溫控通知等級](../troubleshooting/thermals/thermal-notification-levels.md)、最大觸發溫度、陽光暴曬狀態。
 - **設備傳感器**  
   系統報告的逐個傳感器讀數（如 SoC、機身、電池模組、攝像頭模組）。
 - **HID / HID 原始數據**  

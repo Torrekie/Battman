@@ -1,0 +1,75 @@
+name: Plug-in compatibility report
+description: Report a non-sensitive import, trust, activation, UI, or packaging problem.
+title: "[Plug-in] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not use a public issue for a vulnerability or private diagnostics. Read SECURITY.md first. Review exported diagnostics before pasting them; never include private keys, signing identities, device identifiers, battery measurements, or filesystem paths.
+  - type: input
+    id: battman-version
+    attributes:
+      label: Battman version and build
+      placeholder: "1.1.0, Release"
+    validations:
+      required: true
+  - type: input
+    id: ios-environment
+    attributes:
+      label: iOS and installation environment
+      placeholder: "iOS 14.8, arm64, rooted APT/dpkg"
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Plug-in installation channel
+      options:
+        - Rooted APT/dpkg
+        - Rootless APT/dpkg
+        - Battman private app-data import
+        - Battman app bundle
+        - TrollStore replacement TIPA
+    validations:
+      required: true
+  - type: input
+    id: plugin-identity
+    attributes:
+      label: Plug-in identifier and version
+      placeholder: "com.example.plugin 1.0.0 (build 1)"
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Failure stage
+      options:
+        - Document import or quarantine
+        - Verification or trust review
+        - Approval or next-launch activation
+        - Analytics UI or card lifecycle
+        - Safe mode or recovery
+        - APT/dpkg packaging
+        - TrollStore replacement TIPA
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction and observed result
+      description: Include the smallest repeatable steps, expected result, and exact observed result.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized plug-in diagnostics (optional)
+      description: Paste only the bounded text from More → Plug-ins → Export Diagnostics after reviewing it.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I reviewed this report and removed vulnerabilities, private keys, signing material, personal data, device identifiers, battery measurements, and filesystem paths.
+          required: true

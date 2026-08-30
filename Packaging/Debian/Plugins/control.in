@@ -1,0 +1,12 @@
+Package: @PACKAGE@
+Name: @NAME@
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Section: @SECTION@
+Installed-Size: @INSTALLED_SIZE@
+Depends: com.torrekie.battman (>= @HOST_VERSION@)
+Homepage: @HOMEPAGE@
+Maintainer: @MAINTAINER@
+Description: Battman plug-in: @NAME@
+ Signed native Battman plug-in. Installation does not grant activation trust;
+ Battman verifies and applies its offline trust policy on restart.

@@ -9,6 +9,10 @@
 #define iokitextern_h
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <CoreFoundation/CFPlugIn.h>
+#if COREFOUNDATION_CFPLUGINCOM_SEPARATE || !defined(IUNKNOWN_C_GUTS)
+#include <CoreFoundation/CFPlugInCOM.h>
+#endif
 #include <dispatch/dispatch.h>
 
 #if __has_include(<IOKit/IOKitLib.h>)
@@ -23,11 +27,6 @@ typedef struct task *task_t;
 typedef task_t task_port_t;
 __END_DECLS
 #endif
-#include <CoreFoundation/CFPlugIn.h>
-#if COREFOUNDATION_CFPLUGINCOM_SEPARATE
-#include <CoreFoundation/CFPlugInCOM.h>
-#endif
-
 __BEGIN_DECLS
 
 extern const mach_port_t kIOMasterPortDefault;

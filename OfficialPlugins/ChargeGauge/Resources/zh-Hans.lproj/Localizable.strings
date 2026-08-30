@@ -1,0 +1,8 @@
+"Charge Gauge" = "电量仪表";
+"Charge" = "电量";
+"Unavailable" = "不可用";
+"Charging" = "正在充电";
+"Paused" = "已暂停";
+"Not Charging" = "未充电";
+"%.0f percent" = "百分之 %.0f";
+"Charge Gauge, %@, %@" = "电量仪表，%@，%@";

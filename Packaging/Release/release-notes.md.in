@@ -1,0 +1,45 @@
+# Battman @VERSION@
+
+Source commit: `@COMMIT@`
+
+## Highlights
+
+- Production Analytics cards share one lifecycle and registration path with native plug-ins.
+- Offline-signed `.battman` packages, explicit third-party approval, quarantine, safe mode, and management are available.
+- Rooted, rootless, and replacement-TIPA artifacts are produced by the bounded release pipeline.
+
+## Compatibility
+
+- UI and host ABI deployment target: iOS 12.0, arm64.
+- Declared hardware baseline: A11 or newer. iOS 12 through 17 coverage is
+  community-reported rather than an independently completed device matrix.
+- Individual Analytics cards show `Unavailable` when their host metric source
+  is absent; `compatibility-matrix.json` records the exact evidence and card
+  hardware boundary shipped with this release.
+- TrollStore plug-ins are embedded in a replacement TIPA; direct data-container native loading is not claimed.
+
+## Security and trust
+
+- Plug-in publisher verification works offline.
+- Unknown third-party native code requires explicit dangerous-load approval after hard structural and native-policy checks pass.
+- APT/dpkg or marketplace availability does not grant Battman activation trust.
+
+## Artifacts
+
+Verify `release-manifest.json` against the exact downloaded filename set, then verify every downloaded artifact with `SHA256SUMS`, its detached offline P-256 signature, and the separately owner-published fingerprint of `SHA256SUMS.p256.pub` before distribution or installation. The hosted build handled only the public key; the production checksum private key remained offline. The manifest records artifact roles, channels, and activation policy; it never authorizes publication. A public key bundled beside a signature is not identity proof by itself.
+
+Selected signed official plug-ins also produce a downloadable `.battman.zip`
+containing the canonical signed directory package, one rooted and one rootless
+Debian add-on, and sealed replacement-TIPA code. Installing an add-on through
+APT/dpkg is transport only; Battman still verifies its signed package and
+official delegation before activation.
+
+The SDK Analytics example is separately signed and distributed only as a
+third-party `.battman.zip`; it is not officially delegated or embedded in the
+replacement TIPA and still requires explicit dangerous-load approval.
+
+## Known release gates
+
+@KNOWN_GATES@
+
+This file is generated locally. Publication and installation require separate owner approval.

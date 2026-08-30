@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": 1,
+  "pluginIdentifier": "com.torrekie.battman.plugin.charge-gauge",
+  "displayName": "Battman Charge Gauge",
+  "displayVersion": "1.0.0",
+  "buildVersion": "1",
+  "publisher": {
+    "primaryKeyIdentifier": "@PUBLISHER_KEY_ID@",
+    "signatureKeyIdentifiers": ["@PUBLISHER_KEY_ID@"],
+    "algorithm": "ecdsa-p256-sha256"
+  },
+  "author": {
+    "name": "Torrekie",
+    "homepageURL": "https://github.com/Torrekie/Battman",
+    "supportEmail": "me@torrekie.dev"
+  },
+  "hostABI": {"minimum": 1, "maximum": 1},
+  "payload": {
+    "path": "BattmanChargeGauge.bundle",
+    "kind": "bundle",
+    "executablePath": "BattmanChargeGauge.bundle/BattmanChargeGauge",
+    "architecture": "arm64",
+    "minimumIOSVersion": "12.0",
+    "entryPoint": "BattmanPluginEntryPointV1"
+  },
+  "extensionPoints": [
+    {
+      "identifier": "com.torrekie.battman.analytics.card.v1",
+      "interfaceVersion": 1
+    }
+  ],
+  "dependencies": [],
+  "releaseSequence": 1
+}

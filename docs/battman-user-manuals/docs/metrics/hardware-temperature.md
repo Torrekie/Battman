@@ -15,7 +15,7 @@ Battman groups temperature data into several sections:
 - **System Thermal Monitor State**  
   Shows the status of system thermal monitor daemon `thermalmonitord`.
 - **Thermal Basics**  
-  High‑level thermal metrics: thermal pressure level, [thermal notification level](../../troubleshooting/thermals/thermal-notification-levels), maximum trigger temperature and sunlight‑exposure state.
+  High‑level thermal metrics: thermal pressure level, [thermal notification level](../troubleshooting/thermals/thermal-notification-levels.md), maximum trigger temperature and sunlight‑exposure state.
 - **Device Sensors**
   Per‑sensor readings reported by the system (e.g. SoC, skin, battery pack, camera module).
 - **HID / HID Raw Data**  

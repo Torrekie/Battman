@@ -181,6 +181,7 @@
 	<array>
 		<string>read</string>
 		<string>write</string>
+		<string>critical-alerts</string>
 	</array>
 	<key>com.apple.localnotification.schedulingproxy</key>
 	<true/>
@@ -200,10 +201,6 @@
 	<true/>
 	<key>com.apple.usernotifications.legacy-extension</key>
 	<true/>
-	<key>com.apple.private.usernotifications.settings</key>
-	<array>
-		<string>critical-alerts</string>
-	</array>
 	<key>com.apple.developer.usernotifications.critical-alerts</key>
 	<true/>
 </dict>

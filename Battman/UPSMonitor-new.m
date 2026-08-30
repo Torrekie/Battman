@@ -900,12 +900,18 @@ threadMain(void *context)
 			goto CLEANUP_ALL;
 		}
 		DBGLOG(@"[UPSMonitor] thread setup");
-		// Drain any already‐present devices so they don’t get missed
-		UPSDeviceAdded(NULL, gAddedIter);
+		// Readiness means the watch thread owns a run loop and has installed its
+		// matching notification. Initial device materialization can enter slow
+		// private IOKit plug-in code on real hardware, so it must not extend the
+		// main-thread launch barrier.
 		pthread_mutex_lock(&gAllUPSDevicesLock);
 		gWatchThreadReady = true;
 		pthread_cond_broadcast(&gWatchStateCondition);
 		pthread_mutex_unlock(&gAllUPSDevicesLock);
+
+		// Drain already-present devices only after releasing application launch.
+		// This remains serialized on the dedicated UPS watch thread.
+		UPSDeviceAdded(NULL, gAddedIter);
 
 		CFRunLoopRun();
 		
@@ -1009,8 +1015,13 @@ void CleanupAndExit(void) {
 // app background/foreground handling — updated to teardown/recreate runtime parts (but keep CF properties)
 + (void)appWillTerminate:(NSNotification *)note
 {
-	NSLog(@"[UPSMonitor] App will terminate - beginning cleanup");
-	[self cleanupAllResources];
+	(void)note;
+	// UIKit is already tearing down the process. Joining a watch thread that is
+	// inside IOCreatePlugInInterfaceForService can consume the entire
+	// termination allowance and used to race UPSData destruction. Manual stop
+	// remains available for callers that genuinely need synchronous cleanup;
+	// process termination deliberately relies on kernel resource reclamation.
+	NSLog(@"[UPSMonitor] App will terminate - skipping blocking IOKit teardown");
 }
 
 + (void)appDidEnterBackground:(NSNotification *)note

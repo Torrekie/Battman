@@ -33,6 +33,10 @@ extern int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
 
 #import <UserNotifications/UserNotifications.h>
 #import "CrashLogger.h"
+#if TARGET_OS_IPHONE
+#import "PluginHost/Application/BTPluginApplicationIntegration.h"
+#import "PluginHost/Application/BTPluginPlatform.h"
+#endif
 
 struct localization_entry {
 	CFStringRef *cfstr;
@@ -402,7 +406,14 @@ int main(int argc, char * argv[]) {
 #if TARGET_OS_IPHONE
 	    @autoreleasepool{
 		    extern NSString *battman_bootstrap(char *, int);
-		    return UIApplicationMain(argc, argv, nil, battman_bootstrap("", 0));
+		    NSString *applicationDelegateClassName = battman_bootstrap("", 0);
+		    NSError *pluginStartupError = nil;
+		    if (![BTPluginPlatform.sharedPlatform prepareForApplicationLaunchWithError:&pluginStartupError])
+			    NSLog(@"Plug-in platform startup failed closed: %@", pluginStartupError.localizedDescription);
+		    NSError *pluginIntegrationError = nil;
+		    if (!BTPluginInstallApplicationIntegration(applicationDelegateClassName, &pluginIntegrationError))
+			    NSLog(@"Plug-in document integration failed closed: %@", pluginIntegrationError.localizedDescription);
+		    return UIApplicationMain(argc, argv, nil, applicationDelegateClassName);
 	    }
 #else
         @autoreleasepool {
