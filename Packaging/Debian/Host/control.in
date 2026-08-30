@@ -1,0 +1,13 @@
+Package: @PACKAGE@
+Name: Battman
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Section: Applications
+Installed-Size: @INSTALLED_SIZE@
+Depends: firmware (>= 12.0), cy+model.iphone (>= 10.1) | cy+model.ipad (>= 8.1), libintl8 | libintl
+Homepage: https://github.com/Torrekie/Battman
+Maintainer: Torrekie <me@torrekie.dev>
+Author: Torrekie <me@torrekie.dev>
+Description: Battman the Battery Manager
+ Battman provides deep real-time battery insights and power-management tools.
+ It currently requires an A11 or newer device.

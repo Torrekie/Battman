@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": 1,
+  "pluginIdentifier": "com.torrekie.battman.example.analytics",
+  "displayName": "Battman Analytics SDK Example",
+  "displayVersion": "1.0",
+  "buildVersion": "1",
+  "publisher": {
+    "primaryKeyIdentifier": "@PUBLISHER_KEY_ID@",
+    "signatureKeyIdentifiers": ["@PUBLISHER_KEY_ID@"],
+    "algorithm": "ecdsa-p256-sha256"
+  },
+  "hostABI": {"minimum": 1, "maximum": 1},
+  "payload": {
+    "path": "BTAnalyticsExample.bundle",
+    "kind": "bundle",
+    "executablePath": "BTAnalyticsExample.bundle/BTAnalyticsExample",
+    "architecture": "arm64",
+    "minimumIOSVersion": "12.0",
+    "entryPoint": "BattmanPluginEntryPointV1"
+  },
+  "extensionPoints": [
+    {
+      "identifier": "com.torrekie.battman.analytics.card.v1",
+      "interfaceVersion": 1
+    }
+  ],
+  "dependencies": [],
+  "releaseSequence": 1
+}

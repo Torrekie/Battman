@@ -23,7 +23,7 @@ On the "Battery Info" page, you may see the following sections, depending on you
 
 - [Gas Gauge (Basic)](#gas-gauge-basic)
 - [Adapter Details](#adapter-details)
-- [Inductive Port / Serial Port](#inductive-port--serial-port)
+- [Inductive Port / Serial Port](#inductive-port-serial-port)
 
 Each section lists the detected metrics from different parts.
 
@@ -103,7 +103,7 @@ This section displays the most commonly used Gas Gauge metrics.
 | Field | Description |
 | --- | --- |
 | Resistance Scale | Scaling factor used for resistance calculations. |
-| Flags | See [Flags](../../troubleshooting/battery-info/flags). |
+| Flags | See [Flags](../troubleshooting/battery-info/flags.md). |
 | IT Misc Status | Impedance Track miscellaneous status information. |
 | Simulation Rate | Rate at which the Gas Gauge performs Impedance Track™ simulations. |
 
@@ -120,14 +120,14 @@ This section displays information about the current working adapter<sup>\[1\]</s
 | --- | --- |
 | Port | Numeric ID of the port in use. iPhone/iPad: `1` Serial (Lightning/USB-C), `2` Inductive (MagSafe/Wireless). MacBooks: `1` USB port 1, `2` USB port 2. |
 | Adapter Type | Numeric ID describing the current adapter type (undocumented). |
-| Type | Family code (`kIOPSPowerAdapterFamilyKey`) of the connected adapter. See [Family Keys](../../troubleshooting/battery-info/family-keys). |
+| Type | Family code (`kIOPSPowerAdapterFamilyKey`) of the connected adapter. See [Family Keys](../troubleshooting/battery-info/family-keys.md). |
 
 #### Charging Status
 
 | Field | Description |
 | --- | --- |
 | Status | Charging status: `Charging` or `Not Charging`. |
-| Reason | Reason code when not charging. See [NotChargingReason](../../troubleshooting/battery-info/not-charging-reason). |
+| Reason | Reason code when not charging. See [NotChargingReason](../troubleshooting/battery-info/not-charging-reason.md). |
 | Charger Capable | Adapter is identified as a compatible power source. |
 | External Connected | Adapter is present and usable as a stable power source / UPS. |
 

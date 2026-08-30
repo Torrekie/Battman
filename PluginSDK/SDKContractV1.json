@@ -1,0 +1,43 @@
+{
+  "contractSchemaVersion": 1,
+  "entryPointSymbol": "BattmanPluginEntryPointV1",
+  "extensionPoints": {
+    "analyticsCard": {
+      "identifier": "com.torrekie.battman.analytics.card.v1",
+      "interfaceVersion": 1
+    }
+  },
+  "lp64Layout": {
+    "BTPluginDescriptorV1": {
+      "currentSize": 40,
+      "minimumSize": 40
+    },
+    "BTPluginErrorV1": {
+      "currentSize": 24,
+      "minimumSize": 24
+    },
+    "BTPluginExtensionRegistrationV1": {
+      "currentSize": 40,
+      "minimumSize": 40
+    },
+    "BTPluginHostV1": {
+      "currentSize": 32,
+      "minimumSize": 24
+    }
+  },
+  "minimumDeployment": {
+    "architecture": "arm64",
+    "iOS": "12.0"
+  },
+  "packageFormatVersion": 1,
+  "pluginABIVersion": 1,
+  "publicFileSHA256": {
+    "TestSupport/ABI/v1-initial/BattmanPluginABI.h": "d66d5c6ff175421a1ef136a4a8709c532605cb209ec72d243af599a5631dbc8a",
+    "include/BAAnalyticsCard.h": "3e23601d6fba6fa4dd59dc757569551738a1254b07f4bbce270902ad28b52c00",
+    "include/BAAnalyticsMetricSnapshot.h": "8c36653477c395c3d05741ded7fbceae53008d44c013c9554a91d900fca2f297",
+    "include/BattmanPluginABI.h": "17802743965de24d14e39b2f49e9d932abdf81d71091d5a61d9c79048c89e3e1",
+    "schema/BattmanPluginManifestV1.schema.json": "ede86f27dfcfc848e27925b0231ea58cb5d371e43e49b8ed349354344c115e33",
+    "schema/BattmanPluginTrustMetadataV1.schema.json": "719f8e8c90379277c73bb92b69355a4d4d334b85e34873d8d5d8cebdda873fcf"
+  },
+  "sdkMajorVersion": 1
+}

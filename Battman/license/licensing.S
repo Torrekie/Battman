@@ -1,5 +1,5 @@
 .section __TEXT,__text,regular,pure_instructions
-.globl _battman_bootstrap,_ios_app_exit,____isOSVersionAtLeast
+.globl _battman_bootstrap,_ios_app_exit,____isOSVersionAtLeast,___isPlatformVersionAtLeast
 .p2align 2
 
 ; current version only works for arm64 iOS :(
@@ -1227,6 +1227,20 @@ ____isOSVersionAtLeast:
 	bl _objc_msgSend
 	ldp x29,x30,[sp,#32]
 	add sp,sp,#48
+	ret
+
+; Clang 16+ lowers @available checks to the four-argument platform helper.
+; Battman is an iOS-only binary (platform selector 2), so adapt that ABI to
+; the existing iOS version probe without pulling compiler-rt into the IPA.
+___isPlatformVersionAtLeast:
+	cmp w0,#2
+	b.ne L.platform.version.unavailable
+	mov x0,x1
+	mov x1,x2
+	mov x2,x3
+	b ____isOSVersionAtLeast
+L.platform.version.unavailable:
+	mov w0,wzr
 	ret
 
 .section __TEXT,__cstring,cstring_literals

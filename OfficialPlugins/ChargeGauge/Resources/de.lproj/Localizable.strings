@@ -1,0 +1,8 @@
+"Charge Gauge" = "Ladeanzeige";
+"Charge" = "Ladestand";
+"Unavailable" = "Nicht verfügbar";
+"Charging" = "Wird geladen";
+"Paused" = "Pausiert";
+"Not Charging" = "Wird nicht geladen";
+"%.0f percent" = "%.0f Prozent";
+"Charge Gauge, %@, %@" = "Ladeanzeige, %@, %@";

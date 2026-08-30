@@ -6,7 +6,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.4\n"
+"Project-Id-Version: Battman 1.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2026-01-19 14:04+0800\n"
 "PO-Revision-Date: 2025-01-27 17:32+0800\n"
@@ -2125,3 +2125,321 @@ msgstr "溫度單位"
 
 msgid "System"
 msgstr "系統"
+
+msgid "Add Card"
+msgstr "新增卡片"
+
+msgid "Open"
+msgstr "打開"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."
+msgstr "%@ %@ 已在不執行其程式碼的情況下完成驗證，並儲存至 Battman 的私人隔離區。它尚未獲准、安裝、啟用或載入。請在「外掛模組」中檢查其身分與要求的擴充點。"
+
+msgid "%lu recorded issue(s)"
+msgstr "%lu 個已記錄的問題"
+
+msgid "Actions"
+msgstr "動作"
+
+msgid "Allow This Version"
+msgstr "允許此版本"
+
+msgid "Allow This Version?"
+msgstr "允許此版本？"
+
+msgid "Allow Version and Schedule"
+msgstr "允許版本並排定載入"
+
+msgid "Allowed Version"
+msgstr "已允許的版本"
+
+msgid "Approval Required"
+msgstr "需要核准"
+
+msgid "Developer Mode"
+msgstr "開發者模式"
+
+msgid "Diagnostics"
+msgstr "診斷"
+
+msgid "Disable Last Plug-in"
+msgstr "停用上一個外掛模組"
+
+msgid "Disable Next Launch"
+msgstr "下次啟動時停用"
+
+msgid "Enable Next Launch"
+msgstr "下次啟動時啟用"
+
+msgid "Enable Third-Party Plug-ins?"
+msgstr "啟用第三方外掛模組？"
+
+msgid "Enabled Next Launch"
+msgstr "下次啟動時啟用"
+
+msgid "Export Diagnostics"
+msgstr "匯出診斷資料"
+
+msgid "Extensions"
+msgstr "擴充功能"
+
+msgid "I Understand, Enable"
+msgstr "我已瞭解，啟用"
+
+msgid "Identity"
+msgstr "身分"
+
+msgid "Install for Next Launch"
+msgstr "安裝供下次啟動使用"
+
+msgid "Installed"
+msgstr "已安裝"
+
+msgid "Manage native extensions and recovery"
+msgstr "管理原生擴充功能與復原"
+
+msgid "Native Plug-ins"
+msgstr "原生外掛模組"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限和網路存取，取代介面並危害 App。開放原始碼和有效簽章並不代表程式碼安全。\n\n名稱：%@\nID：%@\n發行者：%@\n套件：%@\n擴充點：\n%@\n\n%@\n\n只有重新啟動 Battman 後才會載入。"
+
+msgid "No Installed Plug-ins"
+msgstr "沒有已安裝的外掛模組"
+
+msgid "No Quarantined Plug-ins"
+msgstr "隔離區中沒有外掛模組"
+
+msgid "Not Now"
+msgstr "現在不要"
+
+msgid "Official"
+msgstr "官方"
+
+msgid "Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code."
+msgstr "開啟 .battman 檔案只會驗證檔案並儲存私人隔離副本，不會核准或載入程式碼。"
+
+msgid "Package Digest"
+msgstr "套件摘要"
+
+msgid "Plug-in Approval Failed"
+msgstr "外掛模組核准失敗"
+
+msgid "Plug-in Change Failed"
+msgstr "外掛模組變更失敗"
+
+msgid "Plug-in Details"
+msgstr "外掛模組詳細資訊"
+
+msgid "Plug-in Import Failed"
+msgstr "外掛模組匯入失敗"
+
+msgid "Plug-in Installation Failed"
+msgstr "外掛模組安裝失敗"
+
+msgid "Plug-in Inventory Failed"
+msgstr "無法讀取外掛模組清單"
+
+msgid "Plug-in Quarantined"
+msgstr "外掛模組已隔離"
+
+msgid "Plug-in Removal Failed"
+msgstr "外掛模組移除失敗"
+
+msgid "Plug-ins"
+msgstr "外掛模組"
+
+msgid "Plug-ins relying on this publisher approval will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "依賴此發行者核准的外掛模組將在 Battman 下次啟動時遭拒。已載入的程式碼無法安全卸載。"
+
+msgid "Publisher"
+msgstr "發行者"
+
+msgid "Quarantine"
+msgstr "隔離區"
+
+msgid "Recovery"
+msgstr "復原"
+
+msgid "Recovery Change Failed"
+msgstr "復原設定變更失敗"
+
+msgid "Remove Plug-in"
+msgstr "移除外掛模組"
+
+msgid "Remove from Quarantine"
+msgstr "從隔離區移除"
+
+msgid "Remove this exact plug-in from Battman's private app-data directory? App-bundle and package-manager files are never removed here."
+msgstr "要從 Battman 的私人 App 資料目錄移除此確切外掛模組嗎？此處絕不會移除 App 套件或套件管理器中的檔案。"
+
+msgid "Remove this verified package from Battman's private quarantine?"
+msgstr "要從 Battman 的私人隔離區移除此已驗證套件嗎？"
+
+msgid "Requested Extension Points"
+msgstr "要求的擴充點"
+
+msgid "Extension-point changes since prior version"
+msgstr "與上一版本相比的擴充點變更"
+
+msgid "No prior installed version"
+msgstr "沒有先前安裝的版本"
+
+msgid "Comparison unavailable: multiple installed representations"
+msgstr "無法比較：存在多個已安裝副本"
+
+msgid "Comparison unavailable: installed version failed verification"
+msgstr "無法比較：已安裝版本驗證失敗"
+
+msgid "Comparison unavailable: installed version is not approved"
+msgstr "無法比較：已安裝版本未獲核准"
+
+msgid "Comparison unavailable: activation state does not match installed bytes"
+msgstr "無法比較：啟用狀態與已安裝位元組不相符"
+
+msgid "Comparison unavailable: publisher key changed"
+msgstr "無法比較：發佈者金鑰已變更"
+
+msgid "Comparison unavailable: candidate is not a newer release"
+msgstr "無法比較：候選版本不是較新的發行版"
+
+msgid "Prior-version comparison unavailable"
+msgstr "無法與先前版本比較"
+
+msgid "Requires Battman Reinstall"
+msgstr "需要重新安裝 Battman"
+
+msgid "Review Plug-in"
+msgstr "檢查外掛模組"
+
+msgid "Revoke Publisher Trust"
+msgstr "撤銷發行者信任"
+
+msgid "Revoke Version Approval"
+msgstr "撤銷版本核准"
+
+msgid "Safe Mode Could Not Be Scheduled"
+msgstr "無法排定安全模式"
+
+msgid "Safe Mode Scheduled"
+msgstr "已排定安全模式"
+
+msgid "Schedule one safe-mode launch"
+msgstr "排定一次安全模式啟動"
+
+msgid "Scheduled for Next Launch"
+msgstr "已排定於下次啟動時載入"
+
+msgid "Source"
+msgstr "來源"
+
+msgid "Start Without Third-Party Plug-ins"
+msgstr "不載入第三方外掛模組並啟動"
+
+msgid "The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "Battman 下次啟動時會略過所有第三方外掛模組一次。準備好後，請結束並重新開啟 Battman。"
+
+msgid "The selected package could not be verified and was not imported."
+msgstr "無法驗證所選套件，因此未將其匯入。"
+
+msgid "The verified plug-in is installed and scheduled. It can load only after Battman restarts, and third-party loading must also be enabled."
+msgstr "已驗證的外掛模組已安裝並排定載入。它只能在 Battman 重新啟動後載入，而且也必須啟用第三方外掛模組載入。"
+
+msgid "Third-Party Plug-ins"
+msgstr "第三方外掛模組"
+
+msgid "Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."
+msgstr "第三方原生外掛模組會在 Battman 程序內執行，與 Battman 之間沒有沙盒隔離。變更僅在重新啟動後生效；已載入的映像絕不會卸載。"
+
+msgid "Third-party native plug-ins run inside Battman without isolation. They can access Battman's data and entitlements, use the network, replace UI, and crash or compromise the app. Signatures identify package bytes; they do not make code safe. Only continue if you understand and accept these risks."
+msgstr "第三方原生外掛模組會在 Battman 程序內執行，沒有隔離。它們可以存取 Battman 的資料與權限、使用網路、取代介面，以及導致 App 當機或遭入侵。簽章只能識別套件內容，不能保證程式碼安全。只有在您瞭解並接受這些風險時才繼續。"
+
+msgid "This Battman installation cannot load newly imported native code directly. The approved package remains quarantined and must be embedded in a replacement Battman app, then installed explicitly."
+msgstr "目前的 Battman 安裝無法直接載入新匯入的原生程式碼。已核准的套件會繼續留在隔離區，必須嵌入替代的 Battman App，之後再由您明確安裝。"
+
+msgid "This approval applies only to these exact package bytes. Any update requires approval again."
+msgstr "此核准僅適用於目前完全相同的套件內容。任何更新都需要重新核准。"
+
+msgid "This version will be rejected the next time Battman starts. Already loaded code cannot be unloaded safely."
+msgstr "Battman 下次啟動時將拒絕此版本。已載入的程式碼無法安全卸載。"
+
+msgid "Trust"
+msgstr "信任"
+
+msgid "Trust Change Failed"
+msgstr "信任設定變更失敗"
+
+msgid "Trust Publisher and Schedule"
+msgstr "信任發行者並排定載入"
+
+msgid "Trust This Publisher"
+msgstr "信任此發行者"
+
+msgid "Trust This Publisher?"
+msgstr "信任此發行者？"
+
+msgid "Trusted Publisher"
+msgstr "受信任的發行者"
+
+msgid "Trusting this publisher also allows future versions signed by this key for the same plug-in ID and requested extension points. Future versions still must pass offline signature, revocation, release-sequence rollback, and extension-point scope checks."
+msgstr "信任此發行者也會允許由此金鑰簽署、使用相同外掛模組 ID 與要求擴充點的未來版本。未來版本仍必須通過離線簽章、撤銷、發行序列回滾及擴充點範圍檢查。"
+
+msgid "Verification Failed"
+msgstr "驗證失敗"
+
+msgid "Review Diagnostics Before Sharing"
+msgstr "分享前檢查診斷資訊"
+
+msgid "The report contains Battman version, generation time, plug-in identifiers, package hashes, source, trust and activation state, and error domain/code values. It excludes plug-in files, private keys, battery measurements, device identifiers, and filesystem paths. Review the report and recipient before sharing."
+msgstr "報告包含 Battman 版本、產生時間、外掛模組識別碼、套件雜湊、來源、信任和啟用狀態，以及錯誤網域/錯誤碼。報告不包含外掛模組檔案、私密金鑰、電池測量值、裝置識別碼或檔案系統路徑。分享前請檢查報告與接收者。"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Author & Support"
+msgstr "作者與支援"
+
+msgid "Author and contact details are supplied by the signed package. The verification status above determines whether Battman recognizes its publisher."
+msgstr "作者與聯絡資訊由已簽署的套件提供。上方的驗證狀態說明 Battman 是否認可其發行者。"
+
+msgid "Copied"
+msgstr "已複製"
+
+msgid "Homepage"
+msgstr "首頁"
+
+msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgstr "原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限與網路存取、取代介面並入侵 App。開放原始碼和有效簽章都不能保證程式碼安全。\n\n名稱：%@\n作者：%@\nID：%@\n版本：%@（%@）\n發行序列：%llu\n發行者指紋：%@\n套件摘要：%@\n擴充點：\n%@\n\n%@\n\nBattman 重新啟動前不會載入任何內容。"
+
+msgid "Release Sequence"
+msgstr "發行序列"
+
+msgid "Not Provided"
+msgstr "未提供"
+
+msgid "Publisher Fingerprint"
+msgstr "發行者指紋"
+
+msgid "Publisher Fingerprint and Package Digest"
+msgstr "發行者指紋與套件摘要"
+
+msgid "Support Email"
+msgstr "支援電子郵件"
+
+msgid "Technical Details"
+msgstr "技術詳細資訊"
+
+msgid "These identifiers verify the signing key and exact package bytes. Tap a value to copy its full form."
+msgstr "這些識別碼用於驗證簽署金鑰與完全一致的套件內容。點一下某個值即可複製其完整內容。"
+
+msgid "This package does not provide author or support information."
+msgstr "此套件未提供作者或支援資訊。"
+
+msgid "Verification"
+msgstr "驗證"
+
+msgid "View Verification Details"
+msgstr "檢視驗證詳細資訊"

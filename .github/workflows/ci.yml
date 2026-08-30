@@ -1,0 +1,236 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      run_macos_evidence:
+        description: >-
+          Run the owner-triggered Xcode/simulator evidence lane (uses macOS
+          minutes; routine CI remains Linux-only).
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-evidence:
+    # Xcode and simulator evidence is intentionally opt-in. Keeping this lane
+    # out of pull-request and push requirements avoids spending a macOS runner
+    # on every routine cross-build.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_macos_evidence == true }}
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out the reviewed commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_16.4.app
+      - name: Select Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: Requirements/release.txt
+      - name: Install hash-pinned release dependencies
+        run: >-
+          python3 -m pip install --require-hashes --only-binary=:all:
+          -r Requirements/release.txt
+      - name: Run the complete focused plug-in and Analytics suite
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: bash Tests/run-plugin-phase1-tests.sh
+      - name: Render the multilingual user manual in isolation
+        env:
+          BATTMAN_DOCS_PYTHON: python3
+        run: Scripts/Docs/render-user-manual.sh "$RUNNER_TEMP/BattmanUserManual"
+      - name: Boot one bounded evidence simulator
+        id: boot-evidence-simulator
+        run: |
+          set -euo pipefail
+          selection="$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          matches = [(item["udid"], item.get("state", "Unknown"))
+                     for runtime in devices.values() for item in runtime
+                     if item.get("isAvailable") and item.get("name", "").startswith("iPhone")]
+          if not matches:
+              raise SystemExit("no available iPhone simulator")
+          print("\t".join(matches[0]))
+          ')"
+          IFS=$'\t' read -r udid state <<< "$selection"
+          booted_by_job=false
+          if [[ "$state" != "Booted" ]]; then
+            xcrun simctl boot "$udid"
+            booted_by_job=true
+          fi
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "booted_by_job=$booted_by_job" >> "$GITHUB_OUTPUT"
+      - name: Render official Charge Gauge screenshot evidence
+        env:
+          BATTMAN_SIMULATOR_UDID: ${{ steps.boot-evidence-simulator.outputs.udid }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ChargeGaugeScreenshots"
+          Tests/Simulator/run-charge-gauge-screenshots.sh "$RUNNER_TEMP/ChargeGaugeScreenshots"
+      - name: Compile the app for the iOS Simulator
+        run: >-
+          xcodebuild -project Battman.xcodeproj -scheme Battman
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/BattmanDerivedData"
+          SYMROOT="$RUNNER_TEMP/BattmanProducts"
+          OBJROOT="$RUNNER_TEMP/BattmanIntermediates"
+          COMPILER_INDEX_STORE_ENABLE=NO -jobs 1 build
+      - name: Inspect the simulator host build identity
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: >-
+          python3 Scripts/Build/verify-build-identity.py
+          --repo .
+          --executable "$RUNNER_TEMP/BattmanProducts/Debug-iphonesimulator/Battman.app/Battman"
+          --version "$(cat VERSION)"
+          --configuration Debug
+          --product-identifier com.torrekie.Battman
+      - name: Verify the release-script boundary
+        run: python3 Tests/Release/check_release_boundary.py
+      - name: Stop the evidence simulator
+        if: ${{ always() && steps.boot-evidence-simulator.outputs.booted_by_job == 'true' }}
+        run: xcrun simctl shutdown "${{ steps.boot-evidence-simulator.outputs.udid }}"
+
+  linux-debug-ipa:
+    # The normal CI artifact is a Debug host IPA. Keep all cross-build work
+    # serial so a small Ubuntu runner does not exhaust CPU or RAM.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # These release assets are reviewed inputs. A URL change must be made
+      # together with its SHA-256 and reviewed in this workflow; no mutable
+      # latest/master download or repository variable is accepted here.
+      BATTMAN_IOS_SDK_URL: 'https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz'
+      BATTMAN_IOS_SDK_SHA256: '661d1a8c518025f084d8c1e70dd8767581fb5730fb5950378f0915d840a7b5c3'
+      BATTMAN_IOS_TOOLCHAIN_URL: 'https://github.com/L1ghtmann/llvm-project/releases/download/main-update_3-eabca92/iOSToolchain-x86_64.tar.xz'
+      BATTMAN_IOS_TOOLCHAIN_SHA256: 'cc9fbc7f8a3f9336f926cd4fb7cc2233a17b2ba40504cc8c0ff3211bd9df27e3'
+    steps:
+      - name: Check out the reviewed commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install fixed host tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ca-certificates curl xz-utils zip
+      - name: Validate the reviewed Linux inputs
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          test "$BATTMAN_IOS_SDK_URL" = 'https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz'
+          test "$BATTMAN_IOS_TOOLCHAIN_URL" = 'https://github.com/L1ghtmann/llvm-project/releases/download/main-update_3-eabca92/iOSToolchain-x86_64.tar.xz'
+          printf '%s\n' "$BATTMAN_IOS_SDK_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+          printf '%s\n' "$BATTMAN_IOS_TOOLCHAIN_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+      - name: Fetch digest-locked iOS SDK and toolchain
+        run: |
+          set -euo pipefail
+          theos="$RUNNER_TEMP/theos"
+          sdk_archive="$RUNNER_TEMP/iphoneos-sdk.tar.xz"
+          toolchain_archive="$RUNNER_TEMP/ios-toolchain.tar.xz"
+          mkdir -p "$theos/sdks" "$theos/toolchain"
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 3 \
+            "$BATTMAN_IOS_SDK_URL" --output "$sdk_archive"
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 3 \
+            "$BATTMAN_IOS_TOOLCHAIN_URL" --output "$toolchain_archive"
+          printf '%s  %s\n' "$BATTMAN_IOS_SDK_SHA256" "$sdk_archive" \
+            | sha256sum --check --strict
+          printf '%s  %s\n' "$BATTMAN_IOS_TOOLCHAIN_SHA256" "$toolchain_archive" \
+            | sha256sum --check --strict
+
+          # Reject archive traversal before extraction. The toolchain archive
+          # already contains linux/iphone/, so extraction must target theos/
+          # toolchain (not theos/toolchain/linux/iphone).
+          for archive in "$sdk_archive" "$toolchain_archive"; do
+            listing="$archive.list"
+            tar --list --xz --file "$archive" > "$listing"
+            if awk '$0 ~ /^\// || $0 ~ /(^|\/)\.\.($|\/)/ { bad = 1 } END { exit bad }' "$listing"; then
+              :
+            else
+              echo "archive contains an unsafe path: $archive" >&2
+              exit 2
+            fi
+          done
+          tar --extract --xz --no-same-owner --file "$sdk_archive" \
+            --directory "$theos/sdks"
+          tar --extract --xz --no-same-owner --file "$toolchain_archive" \
+            --directory "$theos/toolchain"
+          test -d "$theos/sdks/iPhoneOS13.7.sdk"
+          test -x "$theos/toolchain/linux/iphone/bin/clang"
+          test -x "$theos/toolchain/linux/iphone/bin/ldid"
+      - name: Apply the reviewed iPhoneOS SDK compatibility shim
+        run: |
+          set -euo pipefail
+          header="$RUNNER_TEMP/theos/sdks/iPhoneOS13.7.sdk/System/Library/Frameworks/CoreGraphics.framework/Headers/CGColor.h"
+          test -f "$header"
+          before="$(grep -c ') CG_UNAVAILABLE_EMBEDDED' "$header" || true)"
+          test "$before" -gt 0
+          sed -i 's/) CG_UNAVAILABLE_EMBEDDED/, 2.0)/g' "$header"
+          test "$(grep -c ') CG_UNAVAILABLE_EMBEDDED' "$header" || true)" -eq 0
+      - name: Validate cross-build tools and source membership
+        env:
+          THEOS: ${{ runner.temp }}/theos
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$PATH"
+          command -v clang
+          command -v ldid
+          command -v make
+          command -v python3
+          command -v sha256sum
+          command -v zip
+          make -C Battman THEOS="$THEOS" RELEASE=0 -j1 source-membership-check
+          python3 PluginSDK/Tools/generate-sdk-contract.py --check
+          python3 Tests/check-plugin-loader-boundary.py
+          python3 Tests/check-ups-monitor-startup.py
+          python3 Tests/check-analytics-localizations.py
+          python3 Tests/check-plugin-localizations.py
+          python3 Tests/Release/check_release_boundary.py
+          python3 Tests/Release/test_compatibility_matrix.py
+          python3 Tests/Release/test_support_policy.py
+          python3 Tests/Release/test_havoc_candidate_policy.py
+          python3 Tests/Release/test_plugin_trust_resource_installer.py
+          python3 Tests/Release/test_plugin_release_pins.py
+          python3 Tests/Release/test_user_manual_sources.py
+      - name: Build one Debug host IPA with bounded parallelism
+        env:
+          THEOS: ${{ runner.temp }}/theos
+          RELEASE: "0"
+        run: |
+          set -euo pipefail
+          export PATH="$THEOS/toolchain/linux/iphone/bin:$PATH"
+          make -C Battman THEOS="$THEOS" RELEASE=0 -j1 all
+          test -s Battman/build/Battman.ipa
+          test -s Battman/build/Payload/Battman.app/Battman
+          PYTHONDONTWRITEBYTECODE=1 python3 Scripts/Build/verify-build-identity.py \
+            --repo . \
+            --executable Battman/build/Payload/Battman.app/Battman \
+            --version "$(cat VERSION)" \
+            --configuration Debug \
+            --product-identifier com.torrekie.Battman
+      - name: Upload the short-lived Debug IPA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Battman-debug-ipa
+          path: Battman/build/Battman.ipa
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0

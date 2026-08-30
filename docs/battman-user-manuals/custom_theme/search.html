@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {# Derive language: prefer page/lang metadata; fallback to URL prefix (i18n suffix build) #}
-{# Normalize URLs to detect /zh/ prefix #}
+{# Normalize URLs to detect localized prefixes #}
 {% set page_url = (page.url if page else '') | trim %}
 {% set abs_url = (page.abs_url if page else '') | trim %}
 {% set normalized_url = page_url.lstrip('/') %}
@@ -16,14 +16,17 @@
 
 {# Detect from absolute URL path (most reliable for /zh/search.html) #}
 {% if abs_url %}
-  {# Check if /zh/ is in the absolute URL #}
-  {% if '/zh/' in abs_url or abs_url.startswith('/zh') or abs_url.startswith('zh/') %}
+  {% if '/zh_TW/' in abs_url or abs_url.startswith('/zh_TW') or abs_url.startswith('zh_TW/') %}
+    {% set url_lang = 'zh_TW' %}
+  {% elif '/zh/' in abs_url or abs_url.startswith('/zh') or abs_url.startswith('zh/') %}
     {% set url_lang = 'zh' %}
   {% endif %}
 {% endif %}
 
 {# Also check normalized URL #}
-{% if normalized_url.startswith('zh/') or normalized_url.startswith('zh') %}
+{% if normalized_url.startswith('zh_TW/') or normalized_url.startswith('zh_TW') %}
+  {% set url_lang = 'zh_TW' %}
+{% elif normalized_url.startswith('zh/') or normalized_url.startswith('zh') %}
   {% set url_lang = 'zh' %}
 {% endif %}
 
@@ -44,9 +47,11 @@
 
 {# Check if we're in a language subdirectory by examining the output path #}
 {# When search.html is in /zh/, the base_url or page.url should reflect this #}
-{% if base_url %}
+{% if base_url and url_lang == 'en' %}
   {# base_url might be '../' for /zh/search.html or '.' for /search.html #}
-  {% if base_url == '../' or '/zh' in base_url %}
+  {% if '/zh_TW' in base_url %}
+    {% set url_lang = 'zh_TW' %}
+  {% elif base_url == '../' or '/zh' in base_url %}
     {% set url_lang = 'zh' %}
   {% endif %}
 {% endif %}
@@ -68,6 +73,11 @@
   {% set search_placeholder = "搜索" %}
   {% set search_title = "搜索结果" %}
   {% set search_no_results = "未找到结果" %}
+{% elif lang == 'zh_TW' %}
+  {% set site_label = "Battman 使用者手冊" %}
+  {% set search_placeholder = "搜尋" %}
+  {% set search_title = "搜尋結果" %}
+  {% set search_no_results = "找不到結果" %}
 {% endif %}
 <html lang="{{ lang }}">
   <head>
@@ -93,11 +103,12 @@
         </div>
       </div>
       <div class="bm-header-right">
-        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% else %}Menu{% endif %}</button>
-        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% else %}Theme{% endif %}</button>
-        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% else %}Language{% endif %}">
+        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% elif lang == 'zh_TW' %}選單{% else %}Menu{% endif %}</button>
+        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% elif lang == 'zh_TW' %}主題{% else %}Theme{% endif %}</button>
+        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% elif lang == 'zh_TW' %}語言{% else %}Language{% endif %}">
           <option value="en">English</option>
           <option value="zh">简体中文</option>
+          <option value="zh_TW">繁體中文</option>
         </select>
         {% if 'search' in config.plugins %}
         {% set search_url = 'search.html' | url %}
@@ -136,6 +147,8 @@
                 {# Check for common language prefixes and strip them #}
                 {% if nav_url.startswith('zh/') %}
                   {% set nav_url = nav_url[3:] %}
+                {% elif nav_url.startswith('zh_TW/') %}
+                  {% set nav_url = nav_url[6:] %}
                 {% elif nav_url.startswith('fr/') %}
                   {% set nav_url = nav_url[3:] %}
                 {% elif nav_url.startswith('de/') %}
@@ -190,7 +203,7 @@
         // Check if we're in a language subdirectory (e.g., /zh/search.html)
         if (pathParts.length >= 1) {
           var firstPart = pathParts[0];
-          var knownLangs = ['zh', 'fr', 'de', 'es', 'ja', 'ko'];
+          var knownLangs = ['zh', 'zh_TW', 'fr', 'de', 'es', 'ja', 'ko'];
           
           if (knownLangs.indexOf(firstPart) !== -1) {
             currentLang = firstPart;
@@ -227,6 +240,25 @@
             var noResults = document.querySelector('.bm-search-no-results');
             if (noResults && noResults.textContent.trim() === 'No results found') {
               noResults.textContent = '未找到结果';
+            }
+          } else if (currentLang === 'zh_TW') {
+            var pageTitle = document.querySelector('.bm-page-title');
+            if (pageTitle && pageTitle.textContent.trim() === 'Search Results') {
+              pageTitle.textContent = '搜尋結果';
+            }
+
+            var mainHeading = document.querySelector('article h1');
+            if (mainHeading && mainHeading.textContent.trim() === 'Search Results') {
+              mainHeading.textContent = '搜尋結果';
+            }
+
+            if (document.title && document.title.includes('Search Results')) {
+              document.title = document.title.replace('Search Results', '搜尋結果');
+            }
+
+            var noResults = document.querySelector('.bm-search-no-results');
+            if (noResults && noResults.textContent.trim() === 'No results found') {
+              noResults.textContent = '找不到結果';
             }
           }
         }

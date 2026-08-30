@@ -16,6 +16,12 @@ Please confirm if you have installed Battman in correct way, currently this tool
 Since it uses Apple **private entitlements**, common ways of sideloading WOULD NOT WORK (even if you using a developer cert).
 -->
 
+> **Security and privacy:** Do not use a public issue for a vulnerability or
+> private diagnostics. Use GitHub private vulnerability reporting as described
+> in [SECURITY.md](../../SECURITY.md). Review every attachment before sharing;
+> remove private keys, signing material, personal data, device identifiers,
+> battery measurements, and filesystem paths.
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 

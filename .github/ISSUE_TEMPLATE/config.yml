@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Battman user manual
+    url: https://battman-docs.torrekie.com
+    about: Check installation, Analytics, native plug-in, and recovery documentation first.

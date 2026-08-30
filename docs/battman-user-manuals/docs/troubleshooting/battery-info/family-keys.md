@@ -121,7 +121,7 @@ If a USB-C adapter shows a family code but isn't charging:
 - Verify the adapter supports Power Delivery (PD)
 - Check that the cable supports charging (some USB-C cables are data-only)
 - Ensure the adapter provides sufficient power for your device
-- Check the [Not Charging Reason](../not-charging-reason) for specific error codes
+- Check the [Not Charging Reason](not-charging-reason.md) for specific error codes
 
 ### Wireless Charging Issues
 For MagSafe or inductive charging:

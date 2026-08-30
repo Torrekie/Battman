@@ -103,7 +103,7 @@ title: 电池信息
 | 字段 | 说明 |
 | --- | --- |
 | 阻抗系数 | 用于电阻计算的缩放因子。 |
-| 标示位 | 参见[标示位](../../troubleshooting/battery-info/flags)。 |
+| 标示位 | 参见[标示位](../troubleshooting/battery-info/flags.md)。 |
 | IT 杂项数据 | Impedance Track 的其他状态信息。 |
 | 模拟频率 | 电量计芯片执行 Impedance Track™ 模拟的速率。 |
 
@@ -120,14 +120,14 @@ title: 电池信息
 | --- | --- |
 | 端口 | 正在使用的端口 ID。iPhone/iPad：`1` 串行接口（Lightning/USB‑C），`2` 非接触式（MagSafe/无线）。MacBook：`1` USB 端口 1，`2` USB 端口 2。 |
 | 适配器类型 | 描述当前适配器类型的数值 ID（未公开文档）。 |
-| 类型 | 已连接适配器的类型代码（`kIOPSPowerAdapterFamilyKey`）。参见[类型代码](../../troubleshooting/battery-info/family-keys)。 |
+| 类型 | 已连接适配器的类型代码（`kIOPSPowerAdapterFamilyKey`）。参见[类型代码](../troubleshooting/battery-info/family-keys.md)。 |
 
 #### 充电状态
 
 | 字段 | 说明 |
 | --- | --- |
 | 状态 | 充电状态：`正在充电` 或 `不在充电`。 |
-| 原因 | 未充电时的原因代码。参见[未充电原因](../../troubleshooting/battery-info/not-charging-reason)。 |
+| 原因 | 未充电时的原因代码。参见[未充电原因](../troubleshooting/battery-info/not-charging-reason.md)。 |
 | 充电器兼容 | 适配器被识别为兼容的电源。 |
 | 已连接电源 | 适配器存在且可作为稳定电源使用。 |
 

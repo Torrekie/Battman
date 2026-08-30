@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "hostPackageIdentifier": "com.torrekie.battman",
+  "nativeHostABI": 1,
+  "packageFormatVersion": 1,
+  "minimumIOSVersion": "12.0",
+  "compatibilityMatrix": "compatibility-matrix.json",
+  "hostDebian": {
+    "rooted": {
+      "architecture": "iphoneos-arm",
+      "installPath": "/Applications/Battman.app"
+    },
+    "rootless": {
+      "architecture": "iphoneos-arm64",
+      "installPath": "/var/jb/Applications/Battman.app"
+    }
+  },
+  "pluginDebian": {
+    "rooted": {
+      "architecture": "iphoneos-arm",
+      "installRoot": "/Library/Battman/PlugIns"
+    },
+    "rootless": {
+      "architecture": "iphoneos-arm64",
+      "installRoot": "/var/jb/Library/Battman/PlugIns"
+    }
+  },
+  "githubAssets": [
+    "Battman.tipa",
+    "Battman.tipa.report.json",
+    "com.torrekie.battman_@VERSION@_iphoneos-arm.deb",
+    "com.torrekie.battman_@VERSION@_iphoneos-arm64.deb",
+    "<plugin-identifier>_<plugin-version>.battman.zip",
+    "<plugin-identifier>_<plugin-version>_iphoneos-arm.deb",
+    "<plugin-identifier>_<plugin-version>_iphoneos-arm64.deb",
+    "<sdk-example-identifier>_<sdk-example-version>.battman.zip",
+    "BattmanPluginSDK-@VERSION@.tar.gz",
+    "compatibility-matrix.json",
+    "release-manifest.json",
+    "SHA256SUMS",
+    "SHA256SUMS.p256.sig",
+    "SHA256SUMS.p256.pub",
+    "release-sbom.cdx.json",
+    "release-provenance.intoto.jsonl",
+    "artifact-inspection.json",
+    "release-notes.md"
+  ],
+  "officialPluginSelection": {
+    "embeddedAnalyticsCards": [
+      "com.torrekie.battman.analytics.battery.summary",
+      "com.torrekie.battman.analytics.temperature.average",
+      "com.torrekie.battman.analytics.power.average",
+      "com.torrekie.battman.analytics.cycle.summary",
+      "com.torrekie.battman.analytics.capacity.remaining",
+      "com.torrekie.battman.analytics.charging-limit"
+    ],
+    "separatelyShipped": [
+      "com.torrekie.battman.plugin.charge-gauge"
+    ],
+    "replacementTIPAIncludesSeparatelyShipped": true
+  },
+  "sdkExample": {
+    "pluginIdentifier": "com.torrekie.battman.example.analytics",
+    "signedPackageRequired": true,
+    "publisherIdentityReviewRequired": true,
+    "officialTrustDelegation": false,
+    "rootedRootlessAddOns": false,
+    "replacementTIPAInclusion": false,
+    "activationPolicy": "third-party-explicit-approval-required"
+  },
+  "signedPluginReleasePins": {
+    "official": [
+      {
+        "pluginIdentifier": "com.torrekie.battman.plugin.charge-gauge",
+        "releaseRole": "official",
+        "displayVersion": "1.0.0",
+        "buildVersion": "1",
+        "releaseSequence": 1,
+        "sourceBindings": {
+          "manifestTemplate": "OfficialPlugins/ChargeGauge/ManifestTemplate.json.in",
+          "bundleInfoPlist": "OfficialPlugins/ChargeGauge/Info.plist",
+          "displayVersionFile": "OfficialPlugins/ChargeGauge/VERSION",
+          "buildVersionFile": "OfficialPlugins/ChargeGauge/BUILD_VERSION"
+        }
+      }
+    ],
+    "sdkExample": {
+      "pluginIdentifier": "com.torrekie.battman.example.analytics",
+      "releaseRole": "sdk-example",
+      "displayVersion": "1.0",
+      "buildVersion": "1",
+      "releaseSequence": 1,
+      "sourceBindings": {
+        "manifestTemplate": "PluginSDK/Examples/AnalyticsCard/ManifestTemplate.json.in",
+        "bundleInfoPlist": "PluginSDK/Examples/AnalyticsCard/Info.plist",
+        "buildVersionFile": "PluginSDK/Examples/AnalyticsCard/BUILD_VERSION"
+      }
+    }
+  },
+  "perPluginCandidates": {
+    "transport": "<plugin-identifier>.battman directory package before channel archiving",
+    "transportArchive": "<plugin-identifier>_<plugin-version>.battman.zip containing the canonical <plugin-identifier>.battman directory",
+    "rootedDebian": "<plugin-identifier>_<version>_iphoneos-arm.deb",
+    "rootlessDebian": "<plugin-identifier>_<version>_iphoneos-arm64.deb",
+    "selectedPluginIdentifiers": [
+      "com.torrekie.battman.plugin.charge-gauge"
+    ],
+    "matrixAssembly": "Each selected signed official package emits a .battman.zip transport, rooted and rootless Debian add-ons, and sealed replacement-TIPA code; the separately signed SDK example emits only a third-party .battman.zip. All enter inspection, SBOM, provenance, and SHA256SUMS.",
+    "selectionRequired": true,
+    "officialTrustRequired": true
+  },
+  "havocManualSubmission": {
+    "submissionMode": "manual-owner-upload-only",
+    "automaticUpload": false,
+    "eligibleArtifactKinds": [
+      "host-debian-rooted",
+      "host-debian-rootless",
+      "plugin-debian-rooted",
+      "plugin-debian-rootless"
+    ],
+    "eligibleFilenameSuffix": ".deb",
+    "ownerApprovalRequired": true,
+    "classificationReviewRequired": true,
+    "dualHostingReviewRequired": true,
+    "publicationStateAuthority": "owner-maintained-external-record"
+  },
+  "publication": {
+    "automatic": false,
+    "requiresCleanExactTag": true,
+    "requiresExistingSigningKeys": true,
+    "requiresOwnerApproval": true
+  }
+}

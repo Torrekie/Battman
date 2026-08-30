@@ -5,6 +5,9 @@ nav:
   - Installation:
       - iOS: installation/index.md
       - macOS: installation/macos.md
+  - Features:
+      - Analytics: features/analytics.md
+      - Native plug-ins: features/plugins.md
   - Metrics:
       - Battery Info: metrics/battery-info.md
       - Hardware Temperature: metrics/hardware-temperature.md
@@ -73,6 +76,9 @@ plugins:
             Installation: 安装
             iOS: iOS
             macOS: macOS
+            Features: 功能
+            Analytics: 分析
+            Native plug-ins: 原生插件
             Metrics: 数据
             Battery Info: 电池信息
             Hardware Temperature: 硬件温度
@@ -101,5 +107,43 @@ plugins:
             Codes: 代码
             Updating: 更新
 #            Theme Test: 主题测试
+        - locale: zh_TW
+          name: Traditional Chinese
+          build: true
+          nav_translations:
+            Home: 首頁
+            Installation: 安裝
+            iOS: iOS
+            macOS: macOS
+            Features: 功能
+            Analytics: 分析
+            Native plug-ins: 原生外掛程式
+            Metrics: 資料
+            Battery Info: 電池資訊
+            Hardware Temperature: 硬體溫度
+            Brightness: 亮度
+            Controls: 控制
+            Charging Managements: 充電管理
+            Charging Limits: 充電限制
+            Thermal Tunes: 溫控調校
+            Troubleshooting: 疑難排解
+            Warning Conditions: 警告條件
+            Flags: 旗標
+            Not Charging Reason: 未充電原因
+            Family Codes: 類型代碼
+            Thermals: 溫控
+            "'Unknown' Screen Temperature": "「未知」螢幕溫度"
+            Thermal Notification Levels: 溫控通知等級
+            Screen & Brightness: 螢幕與亮度
+            Nits & Percentages: Nit 與百分比
+            Brightness Backends: 亮度後端
+            Preferences: 設定
+            Preferred Languages: 偏好語言
+            Wiping Data: 清除資料
+            Uninstallation: 解除安裝
+            Contributing: 參與貢獻
+            Locales: 在地化
+            Codes: 程式碼
+            Updating: 更新
+#            Theme Test: 主題測試
   - fix_search
-

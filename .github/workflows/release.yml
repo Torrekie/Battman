@@ -1,0 +1,235 @@
+name: Gated release candidate
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Exact existing v<version> tag to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-inspect:
+    runs-on: macos-15
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+    steps:
+      - name: Check out exact tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate clean tag and version identity
+        id: identity
+        env:
+          REQUESTED_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag=$REQUESTED_TAG
+          case "$tag" in v[0-9]*) ;; *) echo 'tag must be v<version>' >&2; exit 2;; esac
+          test "$(git describe --tags --exact-match HEAD)" = "$tag"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          version=${tag#v}
+          test "$(tr -d '\r\n' < VERSION)" = "$version"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          git show -s --format=%ct HEAD > "$RUNNER_TEMP/source-date-epoch"
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_16.4.app
+      - name: Select Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: Requirements/release.txt
+      - name: Install hash-pinned release dependencies
+        run: >-
+          python3 -m pip install --require-hashes --only-binary=:all:
+          -r Requirements/release.txt
+      - name: Run focused tests
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: bash Tests/run-plugin-phase1-tests.sh
+      - name: Build the public Release app
+        run: |
+          set -euo pipefail
+          BATTMAN_CODESIGN_TOOL=codesign xcodebuild \
+            -project Battman.xcodeproj -scheme Battman -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/ReleaseDerivedData" \
+            SYMROOT="$RUNNER_TEMP/BattmanProducts" \
+            OBJROOT="$RUNNER_TEMP/BattmanIntermediates" \
+            COMPILER_INDEX_STORE_ENABLE=NO -jobs 1 build
+          cp -R "$RUNNER_TEMP/BattmanProducts/Release-iphoneos/Battman.app" "$RUNNER_TEMP/Battman-deb.app"
+          cp -R "$RUNNER_TEMP/BattmanProducts/Release-iphoneos/Battman.app" "$RUNNER_TEMP/Battman-tipa.app"
+          python3 Scripts/Build/verify-build-identity.py \
+            --repo . \
+            --executable "$RUNNER_TEMP/Battman-deb.app/Battman" \
+            --version '${{ steps.identity.outputs.version }}' \
+            --configuration Release \
+            --product-identifier com.torrekie.Battman
+      - name: Import reviewed checksum public key
+        env:
+          CHECKSUM_PUBLIC_KEY_PEM: ${{ vars.BATTMAN_CHECKSUM_PUBLIC_KEY_PEM }}
+          CHECKSUM_KEY_ID: ${{ vars.BATTMAN_CHECKSUM_SIGNING_KEY_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CHECKSUM_PUBLIC_KEY_PEM"
+          test -n "$CHECKSUM_KEY_ID"
+          printf '%s\n' "$CHECKSUM_PUBLIC_KEY_PEM" > "$RUNNER_TEMP/checksum-public.pem"
+          python3 Scripts/Release/inspect-checksum-public-key.py \
+            "$RUNNER_TEMP/checksum-public.pem" \
+            --expected-key-id "$CHECKSUM_KEY_ID"
+      - name: Assemble strict unsigned non-published release matrix
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          CHECKSUM_KEY_ID: ${{ vars.BATTMAN_CHECKSUM_SIGNING_KEY_ID }}
+          SDK_EXAMPLE_KEY_ID: ${{ vars.BATTMAN_SDK_EXAMPLE_PUBLISHER_KEY_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CHECKSUM_KEY_ID"
+          test -n "$SDK_EXAMPLE_KEY_ID"
+          epoch=$(cat "$RUNNER_TEMP/source-date-epoch")
+          plugin_arguments=()
+          sdk_example_arguments=()
+          test -d OfficialPlugins/Packages
+          expected_plugins=$(python3 - <<'PY'
+          import json
+          value = json.load(open('Packaging/Release/release-matrix.json', encoding='utf-8'))
+          for identifier in value['officialPluginSelection']['separatelyShipped']:
+              print(identifier)
+          PY
+          )
+          test -n "$expected_plugins"
+          while IFS= read -r plugin; do
+            plugin_arguments+=(--plugin "$plugin")
+          done < <(find OfficialPlugins/Packages -mindepth 1 -maxdepth 1 -type d -name '*.battman' -print | LC_ALL=C sort)
+          test "${#plugin_arguments[@]}" -gt 0
+          actual_plugins=$(for plugin in "${plugin_arguments[@]}"; do
+            case "$plugin" in --plugin) continue ;; esac
+            python3 - "$plugin" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1] + '/Manifest.json', encoding='utf-8'))['pluginIdentifier'])
+          PY
+          done | LC_ALL=C sort)
+          test "$actual_plugins" = "$(printf '%s\n' "$expected_plugins" | LC_ALL=C sort)"
+          expected_sdk_example=$(python3 - <<'PY'
+          import json
+          value = json.load(open('Packaging/Release/release-matrix.json', encoding='utf-8'))
+          print(value['sdkExample']['pluginIdentifier'])
+          PY
+          )
+          test -n "$expected_sdk_example"
+          test -d PluginSDK/Examples/Packages
+          while IFS= read -r plugin; do
+            sdk_example_arguments+=(--sdk-example "$plugin")
+          done < <(find PluginSDK/Examples/Packages -mindepth 1 -maxdepth 1 -type d -name '*.battman' -print | LC_ALL=C sort)
+          test "${#sdk_example_arguments[@]}" -eq 2
+          actual_sdk_example=$(python3 - "${sdk_example_arguments[1]}" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1] + '/Manifest.json', encoding='utf-8'))['pluginIdentifier'])
+          PY
+          )
+          test "$actual_sdk_example" = "$expected_sdk_example"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          python3 Scripts/Release/assemble-release.py \
+            --repo . \
+            --deb-app "$RUNNER_TEMP/Battman-deb.app" \
+            --tipa-app "$RUNNER_TEMP/Battman-tipa.app" \
+            "${plugin_arguments[@]}" \
+            "${sdk_example_arguments[@]}" \
+            --sdk-example-key-id "$SDK_EXAMPLE_KEY_ID" \
+            --version '${{ steps.identity.outputs.version }}' \
+            --checksum-public-key "$RUNNER_TEMP/checksum-public.pem" \
+            --checksum-key-id "$CHECKSUM_KEY_ID" \
+            --output-directory "$RUNNER_TEMP/release" \
+            --source-date-epoch "$epoch" \
+            --builder-id "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}"
+          python3 Scripts/Release/verify-release-directory.py \
+            "$RUNNER_TEMP/release" --allow-missing-offline-signature
+          python3 Scripts/Release/verify-checksums.py "$RUNNER_TEMP/release/SHA256SUMS"
+      - name: Upload inspected unsigned candidate for offline signing
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: battman-release-${{ steps.identity.outputs.version }}
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  publish-github-draft:
+    needs: build-and-inspect
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: battman-production-release
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release verification tools
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Select Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: Requirements/release.txt
+      - name: Install hash-pinned release dependencies
+        run: >-
+          python3 -m pip install --require-hashes --only-binary=:all:
+          -r Requirements/release.txt
+      - name: Download the approved candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: battman-release-${{ needs.build-and-inspect.outputs.version }}
+          path: release
+      - name: Attach and verify the approved offline checksum signature
+        env:
+          CHECKSUM_SIGNATURE_BASE64: ${{ secrets.BATTMAN_CHECKSUM_SIGNATURE_BASE64 }}
+          CHECKSUM_KEY_ID: ${{ vars.BATTMAN_CHECKSUM_SIGNING_KEY_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CHECKSUM_SIGNATURE_BASE64"
+          test -n "$CHECKSUM_KEY_ID"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          Path(os.environ['RUNNER_TEMP'], 'SHA256SUMS.p256.sig').write_bytes(
+              base64.b64decode(os.environ['CHECKSUM_SIGNATURE_BASE64'], validate=True)
+          )
+          PY
+          epoch=$(git show -s --format=%ct HEAD)
+          python3 Scripts/Release/finalize-release-signature.py \
+            --candidate release \
+            --signature "$RUNNER_TEMP/SHA256SUMS.p256.sig" \
+            --expected-key-id "$CHECKSUM_KEY_ID" \
+            --output-directory signed-release \
+            --source-date-epoch "$epoch"
+      - name: Create a draft GitHub release after environment approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          test "$TAG" = "v${{ needs.build-and-inspect.outputs.version }}"
+          gh release create "$TAG" signed-release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --verify-tag \
+            --title "Battman ${{ needs.build-and-inspect.outputs.version }}" \
+            --notes-file signed-release/release-notes.md

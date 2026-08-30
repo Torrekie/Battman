@@ -137,8 +137,20 @@ function parse_po() {
 	fi
 	for ((i=num_order;i!=${#keys[@]};i++)); do
 		if [[ "${rpo_ret[$i]}" == "" ]]; then
-			echo WARNING: msgid "$i" is not defined in $1, >&2
-			echo WARNING: BUT in base.pot. >&2
+			fallback=""
+			for msgid in "${!keys[@]}"; do
+				if (( keys["$msgid"] == i )); then
+					fallback="$msgid"
+					break
+				fi
+			done
+			if [[ "$fallback" == "" ]]; then
+				echo ERROR: localization order "$i" has no base msgid >&2
+				exit 11
+			fi
+			echo NOTE: msgid "$i" is untranslated in $1, using the base text. >&2
+			curval="${fallback//\"/\\\"}"
+			echo -en "\t{(\"$curval\"),CFSTR(\"$curval\")},\n"
 			continue
 		fi
 		echo -en "${rpo_ret[$i]}"

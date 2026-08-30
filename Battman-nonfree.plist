@@ -34,6 +34,23 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GIT_COMMIT_HASH</key>
 	<string>$(COMMIT_HASH)</string>
+	<key>BTBuildConfiguration</key>
+	<string>$(CONFIGURATION)</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Battman Plug-in Package</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.torrekie.battman.plugin</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>
@@ -89,6 +106,28 @@
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Battman Plug-in Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.torrekie.battman.plugin</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>battman</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/vnd.torrekie.battman-plugin</string>
+			</dict>
+		</dict>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

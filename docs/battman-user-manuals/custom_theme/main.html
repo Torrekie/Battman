@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {# Derive language: prefer page/lang metadata; fallback to URL prefix (i18n suffix build) #}
-{# Normalize URLs to detect /zh/ prefix #}
+{# Normalize URLs to detect localized prefixes #}
 {% set page_url = (page.url or '') | trim %}
 {% set abs_url = (page.abs_url or '') | trim %}
 {% set normalized_url = page_url.lstrip('/') %}
@@ -9,8 +9,12 @@
 {% set url_lang = 'en' %}
 {% if page and page.file and page.file.lang %}
   {% set url_lang = page.file.lang %}
+{% elif normalized_url.startswith('zh_TW/') %}
+  {% set url_lang = 'zh_TW' %}
 {% elif normalized_url.startswith('zh/') %}
   {% set url_lang = 'zh' %}
+{% elif '/zh_TW/' in abs_url %}
+  {% set url_lang = 'zh_TW' %}
 {% elif '/zh/' in abs_url %}
   {% set url_lang = 'zh' %}
 {% endif %}
@@ -27,6 +31,11 @@
   {% set search_placeholder = "搜索" %}
   {% set toc_label = "本页内容" %}
   {% set footer_label = "© Battman 用户手册" %}
+{% elif lang == 'zh_TW' %}
+  {% set site_label = "Battman 使用者手冊" %}
+  {% set search_placeholder = "搜尋" %}
+  {% set toc_label = "本頁內容" %}
+  {% set footer_label = "© Battman 使用者手冊" %}
 {% endif %}
 <html lang="{{ lang }}">
   <head>
@@ -52,11 +61,12 @@
         </div>
       </div>
       <div class="bm-header-right">
-        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% else %}Menu{% endif %}</button>
-        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% else %}Theme{% endif %}</button>
-        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% else %}Language{% endif %}">
+        <button id="bm-nav-toggle" class="bm-toggle bm-nav-toggle" type="button">{% if lang == 'zh' %}菜单{% elif lang == 'zh_TW' %}選單{% else %}Menu{% endif %}</button>
+        <button id="bm-theme-toggle" class="bm-toggle" type="button">{% if lang == 'zh' %}主题{% elif lang == 'zh_TW' %}主題{% else %}Theme{% endif %}</button>
+        <select id="bm-lang-select" class="bm-select" aria-label="{% if lang == 'zh' %}语言{% elif lang == 'zh_TW' %}語言{% else %}Language{% endif %}">
           <option value="en">English</option>
           <option value="zh">简体中文</option>
+          <option value="zh_TW">繁體中文</option>
         </select>
         {% if 'search' in config.plugins %}
         <form class="bm-search" action="{{ 'search.html' | url }}">
