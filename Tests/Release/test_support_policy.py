@@ -26,6 +26,9 @@ def main() -> int:
     source = (ROOT / "Battman/PluginHost/UI/BTPluginManagementViewController.m").read_text(
         encoding="utf-8"
     )
+    settings_source = (ROOT / "Battman/SettingsViewController.m").read_text(encoding="utf-8")
+    donation_source = (ROOT / "Battman/DonationViewController.m").read_text(encoding="utf-8")
+    preferences_source = (ROOT / "Battman/PreferencesViewController.m").read_text(encoding="utf-8")
     issue_form = (ROOT / ".github/ISSUE_TEMPLATE/plugin-report.yml").read_text(
         encoding="utf-8"
     )
@@ -81,6 +84,27 @@ def main() -> int:
         "battery measurements",
         "filesystem paths",
     ), "GitHub generic issue template")
+
+    # Ordinary users are routed to the public issue template.  The app must
+    # not construct mailto links or collect device identifiers as a side
+    # effect of opening the support screen; sensitive reporting belongs in
+    # SECURITY.md, outside this ordinary-user flow.
+    require(settings_source, (
+        "issues/new?template=bug_report.md",
+        "Use GitHub Issues for ordinary bugs and feature requests.",
+    ), "Settings support route")
+    require(donation_source, ("issues/new?template=bug_report.md", "Create a new GitHub issue"), "Donation support route")
+    require(preferences_source, ("issues/new?template=bug_report.md",), "Preferences support route")
+    settings_flow = settings_source.split('NSString *title = _("Gonna tell us something?")', 1)[-1].split(
+        "if (indexPath.section == SS_SECT_PLUGINS)", 1
+    )[0]
+    for label, text in (
+        ("Settings support flow", settings_flow),
+        ("Donation support flow", donation_source),
+        ("Preferences support flow", preferences_source),
+    ):
+        if "mailto:" in text or "MGCopyAnswerPtr" in text or "identifierForVendor" in text or "uname(" in text:
+            raise AssertionError(f"{label} must not collect or construct private device contact data")
 
     diagnostic_method = source.split("- (NSString *)diagnosticText", 1)[1].split(
         "- (void)presentDiagnosticShareFromSourceView", 1

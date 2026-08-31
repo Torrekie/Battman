@@ -1,6 +1,7 @@
 #import "BatteryInfoTableViewCell.h"
 #include "../battery_utils/bin_display.h"
 #include "../common.h"
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -47,6 +48,8 @@
 
 - (void)updateBatteryInfo {
 	NSString *final_str = @"";
+	BOOL updatedForeground = NO;
+	BOOL updatedBackground = NO;
 	battery_info_read_lock();
 	// TODO: Arabian? We need Arabian hackers to fix this code
 	for (struct battery_info_section *sect = *_batteryInfo; sect; sect = sect->next) {
@@ -56,10 +59,22 @@
 		for (struct battery_info_node *i = sect->data; i->name != NULL; i++) {
 			if (i->content & BIN_IS_SPECIAL) {
 				uint32_t value = i->content >> 16;
-				if ((i->content & BIN_IS_FOREGROUND) == BIN_IS_FOREGROUND) {
-					[_batteryCell updateForegroundPercentage:bi_node_load_float(i)];
-				} else if ((i->content & BIN_IS_BACKGROUND) == BIN_IS_BACKGROUND) {
-					[_batteryCell updateBackgroundPercentage:bi_node_load_float(i)];
+				/* A dynamically unavailable node may still carry the
+				 * foreground/background flag used by the previous value.  Do
+				 * not animate the gauge from that stale payload, while keeping
+				 * intrinsic hidden rows (such as ASoC) functional. */
+				if (!(i->content & BIN_DYNAMIC_HIDDEN)) {
+					float percentage = bi_node_load_float(i);
+					BOOL validPercentage = isfinite(percentage) && percentage >= 0.0f && percentage <= 100.0f;
+					if (validPercentage &&
+					    (i->content & BIN_IS_FOREGROUND) == BIN_IS_FOREGROUND) {
+						[_batteryCell updateForegroundPercentage:percentage];
+						updatedForeground = YES;
+					} else if (validPercentage &&
+					           (i->content & BIN_IS_BACKGROUND) == BIN_IS_BACKGROUND) {
+						[_batteryCell updateBackgroundPercentage:percentage];
+						updatedBackground = YES;
+					}
 				}
 				if (i->content & BIN_IS_HIDDEN)
 					continue;
@@ -72,12 +87,23 @@
 					    [NSString stringWithFormat:@"%@\n%@: %@", final_str, _(i->name), bin_format_special(i->content)];
 				}
 			}
-			// Only show in details if is string
 		}
+		// Only show in details if is string
 	}
 	battery_info_unlock();
-	if (!final_str.length)
+	/* A failed refresh must not leave the previous gauge percentages animating
+	 * indefinitely. Zeroing each missing layer leaves the neutral battery
+	 * outline while preserving any layer that did receive a valid value. */
+	if (!updatedForeground)
+		[_batteryCell updateForegroundPercentage:0.0f];
+	if (!updatedBackground)
+		[_batteryCell updateBackgroundPercentage:0.0f];
+	if (!final_str.length) {
+		/* Do not leave the previous refresh's values on screen when the SMC
+		 * temporarily stops answering. */
+		_batteryLabel.text = _("Unavailable");
 		return;
+	}
 	_batteryLabel.text = [final_str substringFromIndex:1];
 }
 

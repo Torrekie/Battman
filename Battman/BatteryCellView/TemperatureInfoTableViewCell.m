@@ -7,6 +7,7 @@
 
 #include "../battery_utils/bin_display.h"
 #include "../battery_utils/libsmc.h"
+#include <math.h>
 // Temporary ^
 
 #import "../BattmanPrefs.h"
@@ -120,6 +121,11 @@
 @property (nonatomic) dispatch_source_t timerSource;
 @end
 
+static BOOL BTTemperatureReadingIsValid(double temperature) {
+	return isfinite(temperature) && temperature != -1.0 &&
+	       temperature >= -50.0 && temperature <= 120.0;
+}
+
 @implementation TemperatureInfoTableViewCell
 
 - (void)setupCellUI {
@@ -165,30 +171,36 @@
 - (void)updateTemperatureInfo {
 	NSString *finalText = @"";
 	typedef enum {
-		TEMP_NULL = 0,
 		TEMP_BATT = (1 << 0),
 		TEMP_SNSR = (1 << 1),
 		TEMP_SCRN = (1 << 2),
 	} tempbit;
 	tempbit got_temp = 0;
-	float *btemps = get_temperature_per_cell();
+	size_t cellCount = 0;
+	float *btemps = get_temperature_per_cell_with_count(&cellCount);
 	float batttemp = -1;
-	if (btemps != NULL && *btemps) {
-		got_temp |= TEMP_BATT;
-		float total = 0;
-		int num = batt_cell_num();
-		for (int i = 0; i < num; i++) {
+	if (btemps != NULL && cellCount > 0) {
+		BOOL allCellsValid = YES;
+		float total = 0.0f;
+		for (size_t i = 0; i < cellCount; i++) {
+			if (!battman_temperature_is_valid(btemps[i])) {
+				allCellsValid = NO;
+				break;
+			}
 			total += btemps[i];
 		}
-		finalText = [NSString stringWithFormat:@"%@: %@", _("Battery Avg."), battman_temp_display_string(total / num)];
-		// Embedded designed operating temp: 0º to 35º C
-		batttemp = total / num;
+		if (allCellsValid) {
+			got_temp |= TEMP_BATT;
+			finalText = [NSString stringWithFormat:@"%@: %@", _("Battery Avg."), battman_temp_display_string(total / (float)cellCount)];
+			// Embedded designed operating temp: 0º to 35º C
+			batttemp = total / (float)cellCount;
+		}
 		free(btemps);
 	}
 
 	extern float getSensorAvgTemperature(void);
 	float snsrtemp = getSensorAvgTemperature();
-	if (snsrtemp != -1) {
+	if (BTTemperatureReadingIsValid(snsrtemp)) {
 		got_temp |= TEMP_SNSR;
 		if (finalText.length > 0) {
 			finalText = [finalText stringByAppendingFormat:@"\n%@: %@", _("Sensors Avg."), battman_temp_display_string(snsrtemp)];
@@ -200,7 +212,7 @@
 	// I've seen a broken screen that not reporting this, so this could also be a way to check screen sanity
 	extern double iomfb_primary_screen_temperature(void);
 	double scrntemp = iomfb_primary_screen_temperature();
-	if (scrntemp != -1) {
+	if (BTTemperatureReadingIsValid(scrntemp)) {
 		got_temp |= TEMP_SCRN;
 		if (finalText.length > 0) {
 			finalText = [finalText stringByAppendingFormat:@"\n%@: %@", _("Main Screen"), battman_temp_display_string(scrntemp)];
@@ -211,12 +223,11 @@
 
 	float minVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MIN];
 	float maxVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MAX];
-	if (minVal <= 0.0f) minVal = 0.0f;
-	if (maxVal <= 0.0f) maxVal = 45.0f;
+	if (!isfinite(minVal) || minVal <= 0.0f) minVal = 0.0f;
+	if (!isfinite(maxVal) || maxVal <= minVal)
+		maxVal = minVal + 45.0f;
 
 #define TEMP_TO_PERCENTAGE(x) (x > maxVal) ? 1.0 : (x < minVal ? 0.0 : (x - minVal) / (maxVal - minVal))
-	// Temp meter anim
-	DBGLOG(@"TEMP_TO_PERCENTAGE(batttemp: %f): %f", batttemp, TEMP_TO_PERCENTAGE(batttemp));
 	
 	// Cancel existing timer if any
 	if (self.timerSource) {
@@ -231,16 +242,11 @@
 	} else if (got_temp & TEMP_SCRN) {
 		[self.temperatureCell updatePercentage:TEMP_TO_PERCENTAGE(scrntemp)];
 	} else {
-		finalText = _("Who moved my temperature sensors?");
-		dispatch_queue_t queue = dispatch_get_main_queue();
-		self.timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-		dispatch_source_set_timer(self.timerSource, dispatch_time(DISPATCH_TIME_NOW, 0), NSEC_PER_SEC, 0);
-		dispatch_source_set_event_handler(self.timerSource, ^{
-			float percent = (arc4random_uniform(300)) / 100.0f;
-			float duration = (arc4random_uniform(101)) / 100.0f;
-			[self.temperatureCell updatePercentage:percent duration:duration];
-		});
-		dispatch_resume(self.timerSource);
+		/* A missing reading must not be disguised by the old random animation:
+		 * keep the gauge neutral, stop spending a timer tick every second, and
+		 * tell the user why no value is shown. */
+		finalText = [NSString stringWithFormat:@"%@\n%@", _("Unavailable"), _("Temperature is unavailable because no valid hardware reading was returned.")];
+		[self.temperatureCell updatePercentage:0.0];
 	}
 
 	// We need a better UI for representing temperatures ig

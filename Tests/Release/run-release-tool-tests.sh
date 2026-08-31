@@ -22,5 +22,6 @@ python3 "$repo_root/Tests/Release/test_plugin_release_pins.py"
 python3 "$repo_root/Tests/Release/test_official_charge_gauge.py"
 python3 "$repo_root/Tests/Release/test_user_manual_sources.py"
 python3 "$repo_root/Tests/Release/test_support_policy.py"
+python3 "$repo_root/Tests/Release/test_plugin_download_guidance.py"
 
 printf '%s\n' "Focused release-tool safety tests passed."

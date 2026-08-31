@@ -70,7 +70,7 @@ double iomfb_primary_screen_temperature(void) {
 	} else {
 		// Do alert? Can user actually understand what we wanted?
 		// consider do a raw dump as log file?
-		os_log_error(gLog, "Unknown temp_comp version %d, please report issue at https://github.com/Torrekie/Battman/issues/new", temp_comp[0]);
+		os_log_error(gLog, "Unknown temp_comp version %d, please report issue at https://github.com/Torrekie/Battman/issues/new?template=bug_report.md", temp_comp[0]);
 	}
 
 	return temp;

@@ -14,6 +14,10 @@
 @property (nonatomic, strong) UISlider *slider;
 @property (nonatomic, strong) UITextField *textField;
 @property (nonatomic, weak) id<SliderTableViewCellDelegate> delegate;
+/// When enabled, the text field and slider expose whole-number values only.
+@property (nonatomic) BOOL integerOnly;
+/// Value used when editing ends with invalid input. NaN keeps the current slider value.
+@property (nonatomic) float invalidInputFallbackValue;
 
 // Call this method to dismiss the keyboard programmatically
 - (void)dismissKeyboard;

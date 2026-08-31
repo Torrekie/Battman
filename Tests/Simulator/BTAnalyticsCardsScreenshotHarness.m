@@ -101,16 +101,21 @@ static void BTRestoreScreenTraitOverride(void) {
 		method_setImplementation(method, (IMP)BTOriginalScreenTraitCollection);
 }
 
-static NSArray<BAAnalyticsMetricPoint *> *BTSyntheticHistory(NSArray<NSNumber *> *values) {
+static NSArray<BAAnalyticsMetricPoint *> *BTSyntheticHistoryWithInterval(NSArray<NSNumber *> *values,
+	NSTimeInterval interval) {
 	NSDate *baseDate = [NSDate dateWithTimeIntervalSince1970:1700000000.0];
 	NSMutableArray<BAAnalyticsMetricPoint *> *points = [NSMutableArray arrayWithCapacity:values.count];
 	for (NSUInteger index = 0; index < values.count; index++) {
-		NSTimeInterval offset = -300.0 * (NSTimeInterval)(values.count - index - 1);
+		NSTimeInterval offset = -interval * (NSTimeInterval)(values.count - index - 1);
 		[points addObject:[[BAAnalyticsMetricPoint alloc]
 			initWithTimestamp:[baseDate dateByAddingTimeInterval:offset]
 			value:values[index].doubleValue]];
 	}
 	return points;
+}
+
+static NSArray<BAAnalyticsMetricPoint *> *BTSyntheticHistory(NSArray<NSNumber *> *values) {
+	return BTSyntheticHistoryWithInterval(values, 300.0);
 }
 
 static BAAnalyticsMetricSnapshot *BTSyntheticMetricSnapshot(void) {
@@ -219,15 +224,15 @@ static BOOL BTValidateProviderPresentations(void) {
 	BAAnalyticsMetricSnapshot *complete = BTSyntheticMetricSnapshot();
 	NSArray<NSDictionary<NSString *, id> *> *completeExpectations = @[
 		@{ @"value": @"73%", @"caption": @"Battery",
-			@"details": @[@"Health: 91%", @"Status: Charging"] },
+			@"details": @[@"Health: 91%", @"Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate.", @"Status: Charging"] },
 		@{ @"value": @"31.5 °C", @"caption": @"Avg. Temperature",
 			@"details": @[@"Hardware Temperature: 31.5 °C"] },
 		@{ @"value": @"-1.67 W", @"caption": @"Avg. Power",
 			@"details": @[@"Avg. Current: -420 mA", @"Voltage: 3.98 V"] },
 		@{ @"value": @"321", @"caption": @"Cycle Count",
-			@"details": @[@"Designed Cycle Count: 1000"] },
+			@"details": @[@"Cycle count is reported by the battery controller and may be unavailable on some devices.", @"Designed Cycle Count: 1000", @"Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."] },
 		@{ @"value": @"2468 mAh", @"caption": @"Full Charge Capacity: 3610 mAh",
-			@"details": @[@"Designed Capacity: 3968 mAh", @"Max Capacity: 91%"] },
+			@"details": @[@"Designed Capacity: 3968 mAh", @"Max Capacity: 91%", @"Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."] },
 		@{ @"value": @"80%", @"caption": @"Status",
 			@"details": @[@"Status: Active", @"Limit charging at (%): 80%"] },
 	];
@@ -243,9 +248,17 @@ static BOOL BTValidateProviderPresentations(void) {
 		@"Battery", @"Avg. Temperature", @"Avg. Power", @"Cycle Count",
 		@"Full Charge Capacity: Unavailable", @"Status",
 	];
+	NSArray<NSArray<NSString *> *> *emptyDetails = @[
+		@[@"Health is unavailable until both capacity readings are valid."],
+		@[@"Temperature is unavailable because no valid hardware reading was returned."],
+		@[],
+		@[@"Cycle count is unavailable because the battery controller did not provide a valid value."],
+		@[@"Health is unavailable until both capacity readings are valid."],
+		@[],
+	];
 	for (NSUInteger index = 0; index < cards.count; index++) {
 		if (!BTValidatePresentation(cards[index], empty, @"Unavailable",
-			emptyCaptions[index], @[]))
+			emptyCaptions[index], emptyDetails[index]))
 			return NO;
 	}
 
@@ -264,7 +277,11 @@ static BOOL BTValidateProviderPresentations(void) {
 		@"Full Charge Capacity: Unavailable",
 	];
 	NSArray<NSArray<NSString *> *> *primaryOnlyDetails = @[
-		@[], @[@"Hardware Temperature: 12.5 °C"], @[], @[], @[],
+		@[@"Health is unavailable until both capacity readings are valid."],
+		@[@"Hardware Temperature: 12.5 °C"],
+		@[],
+		@[@"Cycle count is reported by the battery controller and may be unavailable on some devices."],
+		@[@"Health is unavailable until both capacity readings are valid."],
 	];
 	for (NSUInteger index = 0; index < primaryOnlyValues.count; index++) {
 		if (!BTValidatePresentation(cards[index],
@@ -272,6 +289,19 @@ static BOOL BTValidateProviderPresentations(void) {
 			primaryOnlyCaptions[index], primaryOnlyDetails[index]))
 			return NO;
 	}
+
+	/* A long run of unchanged samples is called out without discarding the
+	 * reading. This keeps the stale-state contract exercised by the same
+	 * deterministic presentation fixture used for screenshots. */
+	BAAnalyticsMetricSnapshot *staleTemperature = [[BAAnalyticsMetricSnapshot alloc]
+		initWithSequenceNumber:2
+		timestamp:[NSDate dateWithTimeIntervalSince1970:1700000000.0]
+		values:@{ BAAnalyticsMetricAverageTemperatureCelsius: @31.5 }
+		histories:@{ BAAnalyticsMetricAverageTemperatureCelsius:
+		BTSyntheticHistoryWithInterval(@[@31.5, @31.5, @31.5, @31.5, @31.5, @31.5], 60.0) }];
+	if (!BTValidatePresentation(cards[1], staleTemperature, @"31.5 °C", @"Potentially Stale",
+		@[@"Hardware Temperature: 31.5 °C", @"No change detected for several minutes; verify this reading with another sensor if it looks wrong."]))
+		return NO;
 
 	id<BAAnalyticsCard> chargingLimit = cards[5];
 	if (!BTValidatePresentation(chargingLimit,

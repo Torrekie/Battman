@@ -33,8 +33,12 @@
 	NSString *value = stateOfCharge ? [NSString stringWithFormat:@"%.0f%%", stateOfCharge.doubleValue] : _("Unavailable");
 	NSMutableArray<NSString *> *details = [NSMutableArray array];
 	NSNumber *health = [snapshot valueForMetricIdentifier:BAAnalyticsMetricBatteryHealthPercent];
-	if (health)
+	if (health) {
 		[details addObject:BAAnalyticsLabeledValue(_("Health"), [NSString stringWithFormat:@"%.0f%%", health.doubleValue])];
+		[details addObject:_("Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate.")];
+	} else {
+		[details addObject:_("Health is unavailable until both capacity readings are valid.")];
+	}
 	NSNumber *rawChargingState = [snapshot valueForMetricIdentifier:BAAnalyticsMetricChargingState];
 	if (rawChargingState) {
 		NSString *chargingDescription = _("Not Charging");

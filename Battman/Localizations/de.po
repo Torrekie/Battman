@@ -80,22 +80,11 @@ msgstr "Debug"
 msgid "Gonna tell us something?"
 msgstr "Möchten Sie uns etwas mitteilen?"
 
-msgid ""
-"Found a bug or have an idea? Please choose one way to contact us:\n"
-"open a GitHub Issue (public — great for steps/logs)\n"
-"or Send Email (for private info or attachments). We really appreciate your "
-"help!"
-msgstr ""
-"Fehler gefunden oder eine Idee? Bitte wählen Sie eine Kontaktmöglichkeit:\n"
-"GitHub Issue erstellen (öffentlich — ideal für Schritte/Protokolle)\n"
-"oder E-Mail senden (für private Informationen oder Anhänge). Wir schätzen "
-"Ihre Hilfe sehr!"
+msgid "Use GitHub Issues for ordinary bugs and feature requests. Include steps to reproduce, but do not include personal data, device identifiers, or plug-in files."
+msgstr "Nutzen Sie GitHub Issues für gewöhnliche Fehler und Funktionswünsche. Fügen Sie Schritte zur Reproduktion hinzu, aber keine persönlichen Daten, Gerätekennungen oder Plug-in-Dateien."
 
 msgid "Open GitHub Issue"
 msgstr "GitHub Issue erstellen"
-
-msgid "Send Email"
-msgstr "E-Mail senden"
 
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -2548,3 +2537,75 @@ msgstr "Verifizierung"
 
 msgid "View Verification Details"
 msgstr "Verifizierungsdetails anzeigen"
+
+msgid "Download Guide"
+msgstr "Download-Anleitung"
+
+msgid "Use the package that matches how Battman is installed."
+msgstr "Verwenden Sie das Paket, das zur Battman-Installation passt."
+
+msgid "Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."
+msgstr "Rooted-Jailbreak (iOS 12+): Installieren Sie das passende Host- oder Plug-in-Paket iphoneos-arm .deb mit APT/dpkg; verwenden Sie nicht iphoneos-arm64."
+
+msgid "Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."
+msgstr "Rootless-Jailbreak (iOS 15+): Installieren Sie das passende Host- oder Plug-in-Paket iphoneos-arm64 .deb mit APT/dpkg; verwenden Sie nicht iphoneos-arm."
+
+msgid "TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."
+msgstr "TrollStore (iOS 14+): Installieren Sie die Ersatz-App Battman.tipa. Native Plug-ins müssen in diese Ersatz-App eingebettet werden; neu importierter nativer Code wird nicht direkt aus dem App-Datenverzeichnis geladen."
+
+msgid "A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."
+msgstr "Eine .battman-Datei ist ein Import-Transport. Battman überprüft sie vor der Freigabe; sie ist kein direktes Installationsprogramm."
+
+msgid "Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture."
+msgstr "Havoc ist ein manuell ausgewählter Kanal ausschließlich für Debian-Pakete. GitHub Releases ist der maßgebliche Ort für geprüfte Artefakte. Installieren Sie niemals ein Paket für eine andere Architektur."
+
+msgid "Use Download Guide for architecture-specific package instructions."
+msgstr "Verwenden Sie die Download-Anleitung für architekturspezifische Paketinformationen."
+
+msgid "Open GitHub Releases"
+msgstr "GitHub-Releases öffnen"
+
+msgid "Open Installation Guide"
+msgstr "Installationsanleitung öffnen"
+
+msgid "Open Havoc"
+msgstr "Havoc öffnen"
+
+msgid "Temperature is unavailable because no valid hardware reading was returned."
+msgstr "Temperatur nicht verfügbar, da keine gültige Hardwaremessung zurückgegeben wurde."
+
+msgid "No change detected for several minutes; verify this reading with another sensor if it looks wrong."
+msgstr "Seit mehreren Minuten keine Änderung erkannt; prüfen Sie den Wert mit einem anderen Sensor, wenn er falsch wirkt."
+
+msgid "Potentially Stale"
+msgstr "Möglicherweise veraltet"
+
+msgid "Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."
+msgstr "Der Gesundheitswert wird aus voller und ausgelegter Kapazität berechnet und ist keine Laufzeitprognose."
+
+msgid "Health is unavailable until both capacity readings are valid."
+msgstr "Der Gesundheitswert ist nicht verfügbar, solange nicht beide Kapazitätswerte gültig sind."
+
+msgid "Cycle count is reported by the battery controller and may be unavailable on some devices."
+msgstr "Die Zyklenzahl wird vom Batteriecontroller gemeldet und ist auf manchen Geräten nicht verfügbar."
+
+msgid "Cycle count is unavailable because the battery controller did not provide a valid value."
+msgstr "Die Zyklenzahl ist nicht verfügbar, da der Batteriecontroller keinen gültigen Wert geliefert hat."
+
+msgid "Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."
+msgstr "Die ausgelegte Zyklenzahl ist ein Herstellerreferenzwert und keine garantierte Nutzungsgrenze."
+
+msgid "Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."
+msgstr "Gas-Gauge-Werte werden beim Aktualisieren dieser Seite aus AppleSMC gelesen. Ein fehlender Wert bedeutet, dass Gerät oder Sensor keinen gültigen Messwert geliefert hat; Battman schätzt ihn nicht."
+
+msgid "Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."
+msgstr "Berechnet als volle Kapazität geteilt durch ausgelegte Kapazität. Nicht verfügbar, wenn ein Kapazitätswert fehlt, und keine Garantie für die Laufzeit."
+
+msgid "The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."
+msgstr "Die letzte gültige vom Batteriecontroller gemeldete Temperatur. Ein fehlender Wert bedeutet, dass kein gültiger Sensorwert vorlag; ein unveränderter Wert kann veraltet sein."
+
+msgid "Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."
+msgstr "Vom Batteriecontroller gemeldete kumulative Ladezyklen. Manche Geräte stellen diesen Wert nicht bereit; er ist kein direkter Gesundheitsprozentsatz."
+
+msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
+msgstr "Das vom Batteriecontroller bereitgestellte Herstellerziel für die Zyklenlebensdauer. Es ist ein Referenzwert und keine garantierte Nutzungsgrenze."
