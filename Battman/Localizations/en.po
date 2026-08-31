@@ -80,22 +80,11 @@ msgstr "Debug"
 msgid "Gonna tell us something?"
 msgstr "Gonna tell us something?"
 
-msgid ""
-"Found a bug or have an idea? Please choose one way to contact us:\n"
-"open a GitHub Issue (public — great for steps/logs)\n"
-"or Send Email (for private info or attachments). We really appreciate your "
-"help!"
-msgstr ""
-"Found a bug or have an idea? Please choose one way to contact us:\n"
-"open a GitHub Issue (public — great for steps/logs)\n"
-"or Send Email (for private info or attachments). We really appreciate your "
-"help!"
+msgid "Use GitHub Issues for ordinary bugs and feature requests. Include steps to reproduce, but do not include personal data, device identifiers, or plug-in files."
+msgstr "Use GitHub Issues for ordinary bugs and feature requests. Include steps to reproduce, but do not include personal data, device identifiers, or plug-in files."
 
 msgid "Open GitHub Issue"
 msgstr "Open GitHub Issue"
-
-msgid "Send Email"
-msgstr "Send Email"
 
 msgid "Cancel"
 msgstr "Cancel"
@@ -2514,3 +2503,75 @@ msgstr "Verification"
 
 msgid "View Verification Details"
 msgstr "View Verification Details"
+
+msgid "Download Guide"
+msgstr "Download Guide"
+
+msgid "Use the package that matches how Battman is installed."
+msgstr "Use the package that matches how Battman is installed."
+
+msgid "Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."
+msgstr "Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."
+
+msgid "Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."
+msgstr "Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."
+
+msgid "TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."
+msgstr "TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."
+
+msgid "A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."
+msgstr "A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."
+
+msgid "Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture."
+msgstr "Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture."
+
+msgid "Use Download Guide for architecture-specific package instructions."
+msgstr "Use Download Guide for architecture-specific package instructions."
+
+msgid "Open GitHub Releases"
+msgstr "Open GitHub Releases"
+
+msgid "Open Installation Guide"
+msgstr "Open Installation Guide"
+
+msgid "Open Havoc"
+msgstr "Open Havoc"
+
+msgid "Temperature is unavailable because no valid hardware reading was returned."
+msgstr "Temperature is unavailable because no valid hardware reading was returned."
+
+msgid "No change detected for several minutes; verify this reading with another sensor if it looks wrong."
+msgstr "No change detected for several minutes; verify this reading with another sensor if it looks wrong."
+
+msgid "Potentially Stale"
+msgstr "Potentially Stale"
+
+msgid "Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."
+msgstr "Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."
+
+msgid "Health is unavailable until both capacity readings are valid."
+msgstr "Health is unavailable until both capacity readings are valid."
+
+msgid "Cycle count is reported by the battery controller and may be unavailable on some devices."
+msgstr "Cycle count is reported by the battery controller and may be unavailable on some devices."
+
+msgid "Cycle count is unavailable because the battery controller did not provide a valid value."
+msgstr "Cycle count is unavailable because the battery controller did not provide a valid value."
+
+msgid "Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."
+msgstr "Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."
+
+msgid "Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."
+msgstr "Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."
+
+msgid "Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."
+msgstr "Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."
+
+msgid "The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."
+msgstr "The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."
+
+msgid "Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."
+msgstr "Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."
+
+msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
+msgstr "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."

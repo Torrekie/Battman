@@ -114,16 +114,17 @@ NSDictionary *getTemperatureHIDData(void) {
     };
     IOHIDEventSystemClientSetMatching(client, (__bridge CFDictionaryRef)matching);
 
-	NSArray *ret = (__bridge NSArray *)IOHIDEventSystemClientCopyServices(client);
+	NSArray *ret = CFBridgingRelease(IOHIDEventSystemClientCopyServices(client));
 	NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-	for (id client in ret) {
-		NSString *prod = (__bridge NSString *)IOHIDServiceClientCopyProperty((IOHIDServiceClientRef)client, CFSTR(kIOHIDProductKey));
+	for (id serviceClient in ret) {
+		NSString *prod = CFBridgingRelease(IOHIDServiceClientCopyProperty((IOHIDServiceClientRef)serviceClient, CFSTR(kIOHIDProductKey)));
 		if (!prod)
 			continue;
-        IOHIDEventRef event = IOHIDServiceClientCopyEvent((IOHIDServiceClientRef)client, kIOHIDEventTypeTemperature, 0, 0);
+	    IOHIDEventRef event = IOHIDServiceClientCopyEvent((IOHIDServiceClientRef)serviceClient, kIOHIDEventTypeTemperature, 0, 0);
 		if (!event)
 			continue;
 		dict[prod] = [NSNumber numberWithDouble:IOHIDEventGetFloatValue(event, kIOHIDEventFieldTemperatureLevel)];
+		CFRelease((CFTypeRef)event);
 	}
 	CFRelease(client);
 	return dict;
@@ -141,16 +142,17 @@ float getTemperatureHIDAt(NSString *locID) {
 	IOHIDEventSystemClientSetMatching(client, (__bridge CFDictionaryRef)matching);
 
 	float temp = -1;
-	NSArray *ret = (__bridge NSArray *)IOHIDEventSystemClientCopyServices(client);
-	for (id client in ret) {
-		NSNumber *location = (__bridge NSNumber *)IOHIDServiceClientCopyProperty((IOHIDServiceClientRef)client, CFSTR(kIOHIDLocationIDKey));
+	NSArray *ret = CFBridgingRelease(IOHIDEventSystemClientCopyServices(client));
+	for (id serviceClient in ret) {
+		NSNumber *location = CFBridgingRelease(IOHIDServiceClientCopyProperty((IOHIDServiceClientRef)serviceClient, CFSTR(kIOHIDLocationIDKey)));
 		if (!location || !NSStringEquals4CC([location unsignedIntValue], locID))
 			continue;
-		IOHIDEventRef event = IOHIDServiceClientCopyEvent((IOHIDServiceClientRef)client, kIOHIDEventTypeTemperature, 0, 0);
+		IOHIDEventRef event = IOHIDServiceClientCopyEvent((IOHIDServiceClientRef)serviceClient, kIOHIDEventTypeTemperature, 0, 0);
 		if (!event)
 			continue;
 		
 		temp = IOHIDEventGetFloatValue(event, kIOHIDEventFieldTemperatureLevel);
+		CFRelease((CFTypeRef)event);
 	}
 	CFRelease(client);
 	return temp;
@@ -201,7 +203,11 @@ uint32_t getMajorSkinTemperatureLocationOf(NSString *name) {
 */
 
 NSArray *getHIDSkinModelsOf(NSString *product) {
-	__block NSDictionary *skinModelsByProduct = nil;
+	/* Keep the dispatch_once result in function-static storage.  A block-local
+	 * variable would be nil on every call after the first one because the
+	 * once-token skips the initializer, making repeated UI refreshes lose the
+	 * Device Avg. sensor row. */
+	static NSDictionary *skinModelsByProduct = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
 		// define each value array once

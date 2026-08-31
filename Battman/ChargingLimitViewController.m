@@ -9,14 +9,20 @@
 #include "intlextern.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <signal.h>
 #include <sqlite3.h>
 #include <sys/errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 
 #import "ObjCExt/UIColor+compat.h"
 #import <objc/runtime.h>
@@ -214,6 +220,219 @@ static void CLPowerlogInstallMenuImageSupport(void) {
 
 @end
 
+/*
+ * The daemon control socket is intentionally a tiny protocol, but it still
+ * crosses a process boundary.  A daemon can be restarted while this view is
+ * alive (for example after a respring), so all I/O must tolerate a closed or
+ * stale descriptor.  Keep the timeout short: these calls can be made from a
+ * table-view action and must never leave the UI blocked indefinitely.
+ */
+#define CL_DAEMON_IO_TIMEOUT_SECONDS 1
+
+static void CLConfigureDaemonSocket(int sock) {
+	struct timeval timeout = { CL_DAEMON_IO_TIMEOUT_SECONDS, 0 };
+	(void)setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+	(void)setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+#ifdef SO_NOSIGPIPE
+	int no_sigpipe = 1;
+	(void)setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &no_sigpipe, sizeof(no_sigpipe));
+#endif
+	int flags = fcntl(sock, F_GETFD, 0);
+	if (flags >= 0)
+		(void)fcntl(sock, F_SETFD, flags | FD_CLOEXEC);
+}
+
+static ssize_t CLDaemonSend(int sock, const void *bytes, size_t length) {
+	ssize_t result;
+	do {
+		result = send(sock, bytes, length, MSG_NOSIGNAL);
+	} while (result < 0 && errno == EINTR);
+	return result;
+}
+
+static ssize_t CLDaemonReceive(int sock, void *bytes, size_t length) {
+	ssize_t result;
+	do {
+		result = recv(sock, bytes, length, 0);
+	} while (result < 0 && errno == EINTR);
+	return result;
+}
+
+static BOOL CLDaemonPath(char *buffer, size_t capacity, const char *suffix) {
+	const char *config_dir = battman_config_dir();
+	if (!buffer || capacity == 0 || !config_dir || !suffix)
+		return NO;
+	int length = snprintf(buffer, capacity, "%s/daemon%s", config_dir, suffix);
+	return length > 0 && (size_t)length < capacity;
+}
+
+static void CLRemoveStaleDaemonArtifacts(const char *run_path, pid_t expected_pid) {
+	char derived_run_path[PATH_MAX];
+	if (!run_path && CLDaemonPath(derived_run_path, sizeof(derived_run_path), ".run"))
+		run_path = derived_run_path;
+	if (!run_path)
+		return;
+	if (run_path && expected_pid > 1) {
+		/* Never remove a newer daemon's lock after a PID race.  The daemon keeps
+		 * an advisory write lock on this file for its whole lifetime; obtaining a
+		 * read lock here lets us distinguish a released stale file and keeps that
+		 * check held until the unlink. */
+		int fd = open(run_path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+		if (fd < 0)
+			return;
+		struct flock lock = {
+			.l_type = F_RDLCK, .l_whence = SEEK_SET, .l_start = 0, .l_len = 0
+		};
+		if (fcntl(fd, F_SETLK, &lock) != 0) {
+			close(fd);
+			return;
+		}
+		pid_t current_pid = 0;
+		ssize_t bytes = pread(fd, &current_pid, sizeof(current_pid), 0);
+		if (bytes != (ssize_t)sizeof(current_pid) || current_pid != expected_pid)
+		{
+			close(fd);
+			return;
+		}
+		/* The pathname can be replaced while this descriptor waits for the
+		 * released daemon lock.  Revalidate the descriptor's inode immediately
+		 * before unlinking so a stale opener cannot remove a newly published
+		 * daemon.run.  Cooperative daemon publishers hold a write lock on the
+		 * old inode, so the check and unlink remain serialized with them. */
+		struct stat locked_stat;
+		struct stat path_stat;
+		if (fstat(fd, &locked_stat) != 0 || lstat(run_path, &path_stat) != 0 ||
+		    locked_stat.st_dev != path_stat.st_dev ||
+		    locked_stat.st_ino != path_stat.st_ino) {
+			close(fd);
+			return;
+		}
+		(void)unlink(run_path);
+		close(fd);
+	} else {
+		return;
+	}
+	/* Leave the socket node for the next daemon instance to remove while it
+	 * holds its own run-file lock.  Unlinking it here after closing the run fd
+	 * could delete a replacement daemon's live socket during a restart race. */
+}
+
+/* Return YES for a PID that is still alive, including a process hidden by
+ * normal mobile-user permissions (kill(pid, 0) == EPERM). */
+static BOOL CLDaemonPIDIsAlive(pid_t pid) {
+	if (pid <= 1)
+		return NO;
+	if (kill(pid, 0) == 0)
+		return YES;
+	return errno == EPERM;
+}
+
+static BOOL CLReadDaemonPID(const char *run_path, pid_t *pid_out) {
+	if (!run_path || !pid_out)
+		return NO;
+	int fd = open(run_path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+	if (fd < 0)
+		return NO;
+
+	struct stat st;
+	BOOL valid_file = fstat(fd, &st) == 0 && S_ISREG(st.st_mode) &&
+	                  st.st_size == (off_t)sizeof(pid_t) &&
+	                  (st.st_mode & 022) == 0;
+	pid_t pid = 0;
+	ssize_t bytes = valid_file ? pread(fd, &pid, sizeof(pid), 0) : -1;
+	BOOL pid_alive = bytes == (ssize_t)sizeof(pid) && CLDaemonPIDIsAlive(pid);
+	int pid_errno = errno;
+	close(fd);
+	if (bytes != (ssize_t)sizeof(pid) || !pid_alive) {
+		/* Do not unlink a short file: the daemon may still be writing its PID. */
+		if (bytes == (ssize_t)sizeof(pid) && pid > 1 && pid_errno == ESRCH)
+			CLRemoveStaleDaemonArtifacts(run_path, pid);
+		return NO;
+	}
+	*pid_out = pid;
+	return YES;
+}
+
+static BOOL CLDaemonSettingLevelIsValid(unsigned char value) {
+	return value == 255 || value <= 100;
+}
+
+static BOOL CLDaemonSettingsAreValid(const unsigned char values[BATTMAN_DAEMON_SETTINGS_SIZE]) {
+	if (!values || !CLDaemonSettingLevelIsValid(values[0]) ||
+	    !CLDaemonSettingLevelIsValid(values[1]))
+		return NO;
+	/* A limit-only configuration (resume == 255) is valid.  The inverse
+	 * combination is not: without a disable threshold, an enable threshold
+	 * leaves the daemon with no safe state above that threshold. */
+	if (values[0] != 255 && values[1] == 255)
+		return NO;
+	return values[0] == 255 || values[0] < values[1];
+}
+
+static BOOL CLPrepareDaemonSettingsFile(int fd, unsigned char values[BATTMAN_DAEMON_SETTINGS_SIZE]) {
+	if (fd < 0 || !values)
+		return NO;
+
+	struct stat st;
+	if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode))
+		return NO;
+	if ((st.st_mode & 022) != 0 && fchmod(fd, st.st_mode & 0777 & ~022) != 0)
+		return NO;
+
+	unsigned char defaults[BATTMAN_DAEMON_SETTINGS_SIZE] = { 255, 255, 0 };
+	unsigned char existing[BATTMAN_DAEMON_SETTINGS_SIZE] = { 255, 255, 0 };
+	ssize_t bytes = pread(fd, existing, sizeof(existing), 0);
+	BOOL needs_write = bytes != (ssize_t)sizeof(existing) ||
+	                   st.st_size != (off_t)sizeof(existing);
+	if (bytes > 0 && bytes < (ssize_t)sizeof(existing)) {
+		/* Preserve settings written by older builds that only persisted two
+		 * bytes, while initializing the newly persisted drain-mode byte. */
+		memcpy(defaults, existing, (size_t)bytes);
+	}
+	if (bytes == (ssize_t)sizeof(existing)) {
+		memcpy(defaults, existing, sizeof(defaults));
+		needs_write = st.st_size != (off_t)sizeof(existing) ||
+		              !CLDaemonSettingsAreValid(existing);
+		if (needs_write) {
+			defaults[0] = 255;
+			defaults[1] = 255;
+		}
+	}
+	if (!CLDaemonSettingLevelIsValid(defaults[0]))
+		defaults[0] = 255;
+	if (!CLDaemonSettingLevelIsValid(defaults[1]))
+		defaults[1] = 255;
+	if (!CLDaemonSettingsAreValid(defaults)) {
+		defaults[0] = 255;
+		defaults[1] = 255;
+		needs_write = YES;
+	}
+
+	if (needs_write) {
+		size_t written = 0;
+		while (written < sizeof(defaults)) {
+			ssize_t count = pwrite(fd, defaults + written, sizeof(defaults) - written,
+			                       (off_t)written);
+			if (count < 0 && errno == EINTR)
+				continue;
+			if (count <= 0)
+				return NO;
+			written += (size_t)count;
+		}
+		/* Publish the complete three-byte record before shrinking an oversized
+		 * legacy file.  Truncating first made an interrupted write destroy the
+		 * last known settings even when no replacement bytes were durable. */
+		if (ftruncate(fd, BATTMAN_DAEMON_SETTINGS_SIZE) != 0)
+			return NO;
+		/* fsync is best effort on the simulator and on some jailbreak filesystems;
+		 * mmap + MS_SYNC below remains the authoritative persistence operation. */
+		(void)fsync(fd);
+	}
+
+	memcpy(values, needs_write ? defaults : existing, sizeof(existing));
+	return CLDaemonSettingsAreValid((const unsigned char *)values);
+}
+
 int connect_to_daemon(bool show_alerts) {
 	struct sockaddr_un sockaddr;
 	memset(&sockaddr, 0, sizeof(sockaddr));
@@ -221,6 +440,11 @@ int connect_to_daemon(bool show_alerts) {
 
 	// Use centralized socket path with iOS fallback paths
 	const char *socket_path = battman_socket_path();
+	if (!socket_path || strlen(socket_path) >= sizeof(sockaddr.sun_path)) {
+		if (show_alerts)
+			show_alert(L_FAILED, _C("The daemon socket path is invalid."), L_OK);
+		return 0;
+	}
 	strncpy(sockaddr.sun_path, socket_path, sizeof(sockaddr.sun_path) - 1);
 	sockaddr.sun_path[sizeof(sockaddr.sun_path) - 1] = '\0';
 	
@@ -236,6 +460,20 @@ int connect_to_daemon(bool show_alerts) {
 		 */
 		return 0;
 	}
+	/* A launched app normally has descriptors 0..2 occupied, but rooted
+	 * launchers sometimes close stdin/stdout/stderr. Keep 0 as the failure
+	 * sentinel used by this legacy C API and promote a valid socket if needed. */
+	if (sock < 3) {
+		int promoted = fcntl(sock, F_DUPFD, 3);
+		if (promoted >= 0) {
+			close(sock);
+			sock = promoted;
+		} else {
+			close(sock);
+			return 0;
+		}
+	}
+	CLConfigureDaemonSocket(sock);
 	
 	if (connect(sock, (struct sockaddr *)&sockaddr, (socklen_t)addrlen) == -1) {
 		/*
@@ -249,13 +487,13 @@ int connect_to_daemon(bool show_alerts) {
 	}
 	
 	char cmd = 2;
-	if (write(sock, &cmd, 1) != 1) {
+	if (CLDaemonSend(sock, &cmd, 1) != 1) {
 		NSLog(@"Failed to write ping to daemon: %s", strerror(errno));
 		if (show_alerts) show_alert(L_FAILED, "Failed to write to daemon.", L_OK);
 		close(sock);
 		return 0;
 	}
-	if (read(sock, &cmd, 1) != 1 || cmd != 2) {
+	if (CLDaemonReceive(sock, &cmd, 1) != 1 || cmd != 2) {
 		NSLog(@"Failed to ping daemon: %s", strerror(errno));
 		if (show_alerts) show_alert(L_FAILED, "The daemon may not be working properly.", L_OK);
 		close(sock);
@@ -406,6 +644,13 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 @property (nonatomic, copy) NSArray *drainModes;
 @property (nonatomic, weak) UIView *powerlogExportSourceView;
 @property (nonatomic) CGRect powerlogExportSourceRect;
+- (void)refreshDaemonStatus;
+- (void)restoreDefaults:(id)sender;
+- (BOOL)connectToDaemonWithAlerts:(BOOL)showAlerts;
+- (void)invalidateDaemonConnection;
+- (BOOL)sendDaemonCommand:(char)command reconnect:(BOOL)reconnect;
+- (BOOL)receiveDaemonByte:(char *)byte;
+- (BOOL)daemonRedecide;
 @end
 
 @implementation ChargingLimitViewController
@@ -573,6 +818,16 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	} else {
 		self = [super initWithStyle:UITableViewStyleGrouped];
 	}
+	if (!self)
+		return nil;
+
+	daemon_pid = 0;
+	daemon_fd = -1;
+	vals = NULL;
+	vals_mapped = false;
+	fallback_vals[0] = (char)255;
+	fallback_vals[1] = (char)255;
+	fallback_vals[2] = 0;
 #if 0
 	NSBundle *PLBundle = [NSBundle bundleWithPath:@"/System/Library/PreferenceBundles/BatteryUsageUI.bundle"];
 	if (PLBundle) {
@@ -600,69 +855,196 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"clhighthr"];
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"cllowthr"];
 
-	char  buf[1024];
-	char *end = stpcpy(stpcpy(buf, battman_config_dir()), "/daemon");
-	strcpy(end, ".run");
-	int drfd = open(buf, O_RDONLY);
-	if (drfd != -1) {
-		int pid;
-		if (read(drfd, &pid, 4) == 4) {
-			// Check if the process actually exists
-			// kill(pid, 0) returns 0 if process exists, -1 if not
-			// errno is ESRCH if process doesn't exist
-			if (kill(pid, 0) == 0) {
-				daemon_pid = pid;
-			} else if (errno == ESRCH) {
-				// Process doesn't exist, clean up stale PID file
-				NSLog(@"Found stale daemon PID file for PID %d, cleaning up", pid);
-				unlink(buf);
-			} else {
-				// Other error (EPERM, etc.), assume process exists for safety
-				daemon_pid = pid;
-			}
-		}
-		close(drfd);
-	}
-
-	strcpy(end, "_settings");
-	int fd = open(buf, O_RDWR | O_CREAT, 0644);
-	if (fd == -1) {
-		NSLog(@"open %s: Error - %s", buf, strerror(errno));
-		show_alert(L_ERR, _C("Failed to open daemon settings file"), L_OK);
-		vals = NULL;
+	char settings_path[PATH_MAX];
+	if (!CLDaemonPath(settings_path, sizeof(settings_path), "_settings")) {
+		NSLog(@"Unable to construct daemon settings path");
+		vals = fallback_vals;
 		return self;
 	}
-	// See daemon.c for vals struct, we are doing bad practice here
-	char _vals[3];
-	if (read(fd, _vals, 3) != 3) {
-		NSLog(@"Writing initial values to daemon_settings");
-		_vals[0] = -1;
-		_vals[1] = -1;
-		_vals[2] = 0;
-		lseek(fd, 0, SEEK_SET);
-		write(fd, _vals, 3);
+	int fd = open(settings_path, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600);
+	if (fd == -1) {
+		NSLog(@"open %s: Error - %s", settings_path, strerror(errno));
+		show_alert(L_ERR, _C("Failed to open daemon settings file"), L_OK);
+		vals = fallback_vals;
+		return self;
 	}
-	lseek(fd, 0, SEEK_SET);
-	vals = mmap(NULL, 3, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	if ((long long)vals == -1) {
+	unsigned char prepared_vals[BATTMAN_DAEMON_SETTINGS_SIZE];
+	if (!CLPrepareDaemonSettingsFile(fd, prepared_vals)) {
+		NSLog(@"Unable to validate daemon settings file %s", settings_path);
+		show_alert(L_ERR, _C("Failed to prepare daemon settings file"), L_OK);
+		close(fd);
+		vals = fallback_vals;
+		daemon_pid = 0;
+		return self;
+	}
+	memcpy(fallback_vals, prepared_vals, sizeof(prepared_vals));
+	void *mapping = mmap(NULL, BATTMAN_DAEMON_SETTINGS_SIZE,
+	                    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (mapping == MAP_FAILED) {
 		NSLog(@"mmap: Error - %s", strerror(errno));
 		show_alert(L_ERR, _C("File mapping failed"), L_OK);
-		vals = NULL;
+		vals = fallback_vals;
+		daemon_pid = 0;
 		close(fd);
 		return self;
 	}
+	vals = (char *)mapping;
+	vals_mapped = true;
 	close(fd);
-	if (daemon_pid) {
-		NSLog(@"Daemon likely valid, trying to connect");
-		[self connectToDaemon];
-	}
+	[self refreshDaemonStatus];
 	return self;
 }
 
-- (void)connectToDaemon {
-	if (daemon_fd)
+- (void)viewDidLoad {
+	[super viewDidLoad];
+	UIBarButtonItem *restore = [[UIBarButtonItem alloc] initWithTitle:_("Restore Defaults")
+	                                                                  style:UIBarButtonItemStylePlain
+	                                                                 target:self
+	                                                                 action:@selector(restoreDefaults:)];
+	restore.accessibilityLabel = _("Restore Defaults");
+	restore.enabled = vals_mapped;
+	self.navigationItem.rightBarButtonItem = restore;
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+	[self refreshDaemonStatus];
+	[self.tableView reloadData];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+	[super viewDidAppear:animated];
+	[self refreshDaemonStatus];
+}
+
+- (void)refreshDaemonStatus {
+	if (!vals_mapped) {
+		[self invalidateDaemonConnection];
+		daemon_pid = 0;
+		self.navigationItem.rightBarButtonItem.enabled = NO;
 		return;
-	daemon_fd = connect_to_daemon(true);
+	}
+
+	char run_path[PATH_MAX];
+	pid_t found_pid = 0;
+	BOOL has_pid = CLDaemonPath(run_path, sizeof(run_path), ".run") &&
+	               CLReadDaemonPID(run_path, &found_pid);
+	if (!has_pid) {
+		[self invalidateDaemonConnection];
+		daemon_pid = 0;
+		self.navigationItem.rightBarButtonItem.enabled = YES;
+		return;
+	}
+
+	if (daemon_pid != (int)found_pid)
+		[self invalidateDaemonConnection];
+	daemon_pid = (int)found_pid;
+	if (daemon_fd < 0 && ![self connectToDaemonWithAlerts:NO]) {
+		/* A live PID without the tiny Battman handshake is not safe to control.
+		 * Keep it visible as active so a later Stop/reconnect can recover it;
+		 * never unlink a live process's run lock from this status refresh. */
+		if (!CLDaemonPIDIsAlive(found_pid)) {
+			CLRemoveStaleDaemonArtifacts(run_path, found_pid);
+			daemon_pid = 0;
+		}
+	}
+	self.navigationItem.rightBarButtonItem.enabled = YES;
+}
+
+- (void)restoreDefaults:(id)sender {
+	(void)sender;
+	if (!vals || !vals_mapped) {
+		show_alert(L_FAILED, _C("Charging-limit settings are unavailable."), L_OK);
+		return;
+	}
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("Restore Defaults")
+	                                                                   message:_("Restore the charging thresholds and mode settings to their defaults?")
+	                                                            preferredStyle:UIAlertControllerStyleAlert];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Cancel") style:UIAlertActionStyleCancel handler:nil]];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Restore") style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+		(void)action;
+		unsigned char previous[BATTMAN_DAEMON_SETTINGS_SIZE];
+		memcpy(previous, self->vals, sizeof(previous));
+		self->vals[0] = (char)-1;
+		self->vals[1] = (char)-1;
+		self->vals[2] = 0;
+		if (![self daemonRedecide]) {
+			memcpy(self->vals, previous, sizeof(previous));
+			(void)msync(self->vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC);
+			show_alert(L_FAILED, _C("Unable to persist charging-limit defaults."), L_OK);
+			return;
+		}
+		[self.tableView reloadData];
+		UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, _("Charging-limit defaults restored."));
+	}]];
+	[self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)connectToDaemon {
+	(void)[self connectToDaemonWithAlerts:YES];
+}
+
+- (BOOL)connectToDaemonWithAlerts:(BOOL)showAlerts {
+	if (daemon_fd >= 0) {
+		/* A descriptor can outlive the daemon across a respring/restart.  Do a
+		 * bounded protocol ping before treating the cached connection as live;
+		 * otherwise stop/redecide silently writes to a dead peer and never
+		 * reaches the reconnect path. */
+		char ping = 2;
+		if (CLDaemonSend(daemon_fd, &ping, 1) == 1 &&
+		    CLDaemonReceive(daemon_fd, &ping, 1) == 1 && ping == 2)
+			return YES;
+		[self invalidateDaemonConnection];
+	}
+	int fd = connect_to_daemon(showAlerts);
+	if (fd <= 0) {
+		daemon_fd = -1;
+		return NO;
+	}
+	daemon_fd = fd;
+	return YES;
+}
+
+- (void)invalidateDaemonConnection {
+	if (daemon_fd >= 0)
+		close(daemon_fd);
+	daemon_fd = -1;
+}
+
+- (BOOL)receiveDaemonByte:(char *)byte {
+	if (daemon_fd < 0 || !byte)
+		return NO;
+	return CLDaemonReceive(daemon_fd, byte, 1) == 1;
+}
+
+- (BOOL)sendDaemonCommand:(char)command reconnect:(BOOL)reconnect {
+	for (int attempt = 0; attempt < (reconnect ? 2 : 1); attempt++) {
+		/* Always validate a cached descriptor.  The daemon may have exited or
+		 * been replaced since the previous command. */
+		if (![self connectToDaemonWithAlerts:NO]) {
+			/* A daemon can be between its PID-file and socket phases. Give a
+			 * reconnecting command one more bounded attempt instead of returning
+			 * before the retry loop has a chance to run. */
+			if (reconnect && attempt == 0) {
+				usleep(50000);
+				continue;
+			}
+			return NO;
+		}
+		if (CLDaemonSend(daemon_fd, &command, 1) == 1)
+			return YES;
+
+		int saved_errno = errno;
+		if (saved_errno == 0)
+			saved_errno = EPIPE;
+		[self invalidateDaemonConnection];
+		BOOL transient = saved_errno == EPIPE || saved_errno == ECONNRESET ||
+		                 saved_errno == ENOTCONN || saved_errno == EBADF ||
+		                 saved_errno == ETIMEDOUT || saved_errno == EAGAIN;
+		if (!reconnect || !transient)
+			return NO;
+	}
+	return NO;
 }
 
 - (NSString *)tableView:(UITableView *)tv titleForHeaderInSection:(NSInteger)sect {
@@ -684,7 +1066,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		case CL_SECTION_GRAPH:
 			return powerlog_db_path ? _("The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly.") : nil;
 		case CL_SECTION_MAIN:
-			return _("Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior.");
+			return vals_mapped ? _("Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior.") : _("Charging-limit settings are unavailable because the settings file could not be opened safely.");
 		default:
 			break;
 	}
@@ -693,12 +1075,14 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 - (void)dealloc {
 	const char endconnectioncmd = 5;
-	if (daemon_fd) {
-		write(daemon_fd, &endconnectioncmd, 1);
-		close(daemon_fd);
+	if (daemon_fd >= 0) {
+		(void)CLDaemonSend(daemon_fd, &endconnectioncmd, 1);
+		[self invalidateDaemonConnection];
 	}
-	if (vals)
-		munmap(vals, 3);
+	if (vals && vals_mapped) {
+		(void)msync(vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC);
+		munmap(vals, BATTMAN_DAEMON_SETTINGS_SIZE);
+	}
 	free((void *)powerlog_db_path);
 }
 
@@ -721,45 +1105,73 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 - (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	if (indexPath.section == CL_SECTION_MAIN && indexPath.row == CL_MAIN_DAEMONSWITCH) {
-		if (vals[1] < vals[0]) {
-			show_alert(_C("Invalid Setup"), _C("Limit Value should be bigger than Resume Value"), L_OK);
+		if (!vals || !vals_mapped) {
+			show_alert(L_FAILED, _C("Charging-limit settings are unavailable."), L_OK);
+			[tv deselectRowAtIndexPath:indexPath animated:YES];
 			return;
 		}
 		if (daemon_pid) {
 			NSLog(@"Daemon is likely active, requesting stop");
-			if (!daemon_fd) {
-				show_alert(L_ERR, _C("Unable to connect to the daemon."), L_OK);
+			if (![self connectToDaemonWithAlerts:NO]) {
+				BOOL alive = CLDaemonPIDIsAlive((pid_t)daemon_pid);
+				if (!alive) {
+					CLRemoveStaleDaemonArtifacts(NULL, (pid_t)daemon_pid);
+					daemon_pid = 0;
+					[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
+				} else {
+				/* Keep a live-but-unresponsive PID visible as active. The run file
+				 * remains a spawn lock and the user can retry Stop after the daemon
+				 * finishes its startup/recovery work. */
+					show_alert(L_ERR, _C("The daemon is running but did not answer. Try starting it again after it exits."), L_OK);
+				}
 				[tv deselectRowAtIndexPath:indexPath animated:YES];
 				return;
 			}
 			char stop_cmd = 3;
-			write(daemon_fd, &stop_cmd, 1);
-			if (read(daemon_fd, &stop_cmd, 1) == 1 && stop_cmd == 3) {
+			pid_t stopping_pid = (pid_t)daemon_pid;
+			BOOL sent = [self sendDaemonCommand:stop_cmd reconnect:NO];
+			BOOL stopped = sent && [self receiveDaemonByte:&stop_cmd] && stop_cmd == 3;
+			[self invalidateDaemonConnection];
+			if (stopped || !CLDaemonPIDIsAlive((pid_t)daemon_pid)) {
 				NSLog(@"Daemon returned 3 - stopped");
 				daemon_pid = 0;
-				close(daemon_fd);
-				daemon_fd = 0;
+				if (!stopped)
+					CLRemoveStaleDaemonArtifacts(NULL, stopping_pid);
+			} else if (!sent) {
+				show_alert(L_ERR, _C("Unable to send the stop request to the daemon."), L_OK);
+			} else {
+				show_alert(L_ERR, _C("The daemon did not respond before the timeout."), L_OK);
 			}
 			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
 		} else {
+			/* Validate only when starting.  A malformed settings record must not
+			 * prevent the user from reaching the Stop/recovery path for an already
+			 * running daemon. */
+			if (!CLDaemonSettingsAreValid((const unsigned char *)vals)) {
+				show_alert(_C("Invalid Setup"), _C("Limit Value should be bigger than Resume Value"), L_OK);
+				[tv deselectRowAtIndexPath:indexPath animated:YES];
+				return;
+			}
 			extern int battman_run_daemon(void);
 			daemon_pid = battman_run_daemon();
-			for (int i = 0; i < 30; i++) {
+			for (int i = 0; daemon_pid && i < 30; i++) {
 				usleep(50000);
-				[self connectToDaemon];
-				if (daemon_fd) {
+				(void)[self connectToDaemonWithAlerts:NO];
+				if (daemon_fd >= 0) {
 					DBGLOG(@"%@: Got Daemon fd: %d", indexPath, daemon_fd);
 					break;
-				} else if (i == 29) {
-					if (errno != 0) {
-						char *errmsg = calloc(256, sizeof(char));
-						sprintf(errmsg, "%s\n%s: %s", _C("Unable to connect to the daemon."), L_ERR, strerror(errno));
-						show_alert(L_FAILED, errmsg, L_OK);
-						free(errmsg);
-					} else {
-						show_alert(L_FAILED, _C("Couldn't start the daemon — it isn’t responding."), L_OK);
-					}
 				}
+			}
+			if (daemon_pid && daemon_fd < 0) {
+				pid_t started_pid = (pid_t)daemon_pid;
+				if (!CLDaemonPIDIsAlive(started_pid)) {
+					CLRemoveStaleDaemonArtifacts(NULL, started_pid);
+					daemon_pid = 0;
+				}
+				/* Keep a live PID as active until it is confirmed dead. This avoids
+				 * unlinking a replacement daemon's run/socket files and lets the user
+				 * retry a bounded Stop request. */
+				show_alert(L_FAILED, _C("Couldn't start the daemon — it isn’t responding."), L_OK);
 			}
 			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
 		}
@@ -768,7 +1180,18 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)cltypechanged:(UISegmentedControl *)segCon {
-	vals[0] = segCon.selectedSegmentIndex ? 0 : -1;
+	if (!vals || !vals_mapped)
+		return;
+	if (segCon.selectedSegmentIndex) {
+		/* Enabling resume mode requires a paired limit.  A fresh settings record
+		 * represents the limit-only mode with 255 in both slots, so seed the
+		 * visible/default 100% limit before publishing the resume threshold. */
+		if ((unsigned char)vals[1] == 255)
+			vals[1] = 100;
+		vals[0] = 0;
+	} else {
+		vals[0] = (char)-1;
+	}
 	[self daemonRedecide];
 	/* Refreshing the whole tableview causes animation lost */
 	NSIndexPath *resumeIndexLabel  = [NSIndexPath indexPathForRow:CL_MAIN_RESUMELABEL inSection:CL_SECTION_MAIN];
@@ -817,9 +1240,8 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 #endif
 
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-	UITableViewCell *cell;
+	UITableViewCell *cell = nil;
 	CLSect section = (CLSect)indexPath.section;
-	cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	switch (section) {
 		case CL_SECTION_GRAPH: {
 			if (!powerlog_db_path) {
@@ -907,6 +1329,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		case CL_SECTION_MAIN: {
 			CLRowMain row = (CLRowMain)indexPath.row;
 			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+			cell.selectionStyle = UITableViewCellSelectionStyleNone;
 			switch (row) {
 				case CL_MAIN_CYCLEMODE: {
 					cell.textLabel.text = _("When limit is reached");
@@ -925,13 +1348,15 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 						items = @[@"􀊛", @"􀣁"];
 					}
 					UISegmentedControl *segCon = [[UISegmentedControl alloc] initWithItems:items];
+					segCon.enabled = vals_mapped;
+					segCon.accessibilityLabel = _("When limit is reached");
 					if (@available(iOS 13.0, *)) {
 						// Handle something?
 					} else {
 						[segCon setTitleTextAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[UIFont fontWithName:@SFPRO size:12.0], NSFontAttributeName, nil] forState:UIControlStateNormal];
 					}
 					
-					if (vals[0] == -1) {
+					if ((unsigned char)vals[0] == 255) {
 						segCon.selectedSegmentIndex = 0;
 					} else {
 						segCon.selectedSegmentIndex = 1;
@@ -950,11 +1375,16 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 						scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"clhighthr"];
 					}
 					scell.slider.minimumValue = 1;
-					scell.slider.maximumValue = 100;
-					scell.slider.enabled      = 1;
-					scell.textField.enabled   = 1;
+					 scell.slider.maximumValue = 100;
+					scell.integerOnly     = YES;
+					scell.slider.enabled      = vals_mapped;
+					scell.textField.enabled   = vals_mapped;
+					scell.slider.userInteractionEnabled = vals_mapped;
+					scell.textField.userInteractionEnabled = vals_mapped;
+					scell.slider.accessibilityLabel = _("Limit charging at (%)");
+					scell.textField.accessibilityLabel = _("Limit charging at (%)");
 					scell.delegate            = (id)self;
-					if (vals[1] == -1) {
+					if ((unsigned char)vals[1] == 255) {
 						scell.slider.value   = 100;
 						scell.textField.text = @"100";
 					} else {
@@ -964,7 +1394,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					return scell;
 				}
 				case CL_MAIN_RESUMELABEL: {
-					if (vals[0] == -1)
+					if ((unsigned char)vals[0] == 255)
 						cell.textLabel.enabled = NO;
 					cell.textLabel.text = _("Resume charging at (%)");
 					break;
@@ -974,10 +1404,13 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					if (!scell) {
 						scell = [[SliderTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cllowthr"];
 					}
-					scell.slider.minimumValue = 0;
-					scell.slider.maximumValue = 100;
+					 scell.slider.minimumValue = 0;
+					 scell.slider.maximumValue = 100;
+					scell.integerOnly     = YES;
 					scell.delegate            = (id)self;
-					if (vals[0] == -1) {
+					scell.slider.accessibilityLabel = _("Resume charging at (%)");
+					scell.textField.accessibilityLabel = _("Resume charging at (%)");
+					if ((unsigned char)vals[0] == 255) {
 						scell.slider.enabled                   = NO;
 						scell.slider.userInteractionEnabled    = NO;
 						scell.slider.value                     = 0;
@@ -985,11 +1418,11 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 						scell.textField.userInteractionEnabled = 0;
 						scell.textField.text                   = @"0";
 					} else {
-						scell.slider.enabled                   = 1;
-						scell.slider.userInteractionEnabled    = 1;
+						scell.slider.enabled                   = vals_mapped;
+						scell.slider.userInteractionEnabled    = vals_mapped;
 						scell.slider.value                     = (float)vals[0];
-						scell.textField.enabled                = 1;
-						scell.textField.userInteractionEnabled = 1;
+						scell.textField.enabled                = vals_mapped;
+						scell.textField.userInteractionEnabled = vals_mapped;
 						scell.textField.text                   = [NSString stringWithFormat:@"%d", (int)vals[0]];
 					}
 					return scell;
@@ -998,6 +1431,8 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					cell.textLabel.text = _("Drain Mode");
 					PickerAccessoryView *picker = [[PickerAccessoryView alloc] initWithFrame:CGRectZero font:nil options:self.drainModes];
 					[picker addTarget:self action:@selector(drainModeChanged:)];
+					picker.userInteractionEnabled = vals_mapped;
+					picker.accessibilityLabel = _("Drain Mode");
 					[picker selectAutomaticRow:BIT_GET(vals[2], 0) animated:YES];
 					cell.accessoryView = picker;
 					cell.clipsToBounds = YES;
@@ -1007,6 +1442,9 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					cell.textLabel.text = _("Override OBC On Cycle");
 					UISwitch *cswitch = [UISwitch new];
 					cswitch.on = BIT_GET(vals[2], 1);
+					cswitch.enabled = vals_mapped;
+					cswitch.accessibilityLabel = _("Override OBC On Cycle");
+					cswitch.accessibilityValue = cswitch.on ? _("Enabled") : _("Disabled");
 					cell.detailTextLabel.text = cswitch.on ? _("OBC will turn off") : _("OBC will not be affected");
 					[cswitch addTarget:self action:@selector(overrideOBCChanged:) forControlEvents:UIControlEventValueChanged];
 					cell.accessoryView = cswitch;
@@ -1026,7 +1464,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					NSString *labelText = [NSString stringWithFormat:@"%@", daemon_pid ? _("Stop Daemon %@") : _("Start Daemon %@")];
 					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? _("(Enforce Mode)") : _("(Soft Mode)")];
 					cell.detailTextLabel.text = enforced ? _("Battman charging limits are enforced") : _("OBC may ignore Battman charging limits");
-					cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+					cell.selectionStyle = vals_mapped ? UITableViewCellSelectionStyleDefault : UITableViewCellSelectionStyleNone;
 					cell.textLabel.textColor = [UIColor compatLinkColor];
 					break;
 				}
@@ -1045,27 +1483,47 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 #pragma mark - SliderTableViewCell Delegate
 
 - (void)sliderTableViewCellDidBeginChanging:(SliderTableViewCell *)cell {
+	if (!vals || !vals_mapped)
+		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
 	if (curr.section == CL_SECTION_MAIN) {
 		NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
-		if (vals[0] != -1) {
+		if ((unsigned char)vals[0] != 255) {
 			SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
 			oppocell.userInteractionEnabled = NO;
 		}
+		return;
 	}
 
 	os_log_error(gLog, "sliderTableViewCellDidBeginChanging: unexpected call at indexPath %ld:%ld", curr.section, curr.row);
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didChangeValue:(float)value {
+	if (!vals || !vals_mapped)
+		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	int8_t rounded = (int8_t)lroundf(value);
 	NSIndexPath *ip = [self.tableView indexPathForCell:cell];
 	if (ip.section == CL_SECTION_MAIN) {
-		if ((isHighThr && value < vals[0]) || (!isHighThr && value > vals[1])) {
-			vals[!isHighThr] = rounded + (isHighThr ? -1 : 1);
-			vals[!isHighThr] = MIN(MAX(vals[!isHighThr], 0), 100);
+		/* Keep the resume threshold strictly below the limit.  Equality used to
+		 * pass the UI validation but selected the daemon's "resume" branch at the
+		 * shared boundary, so charging could never be inhibited at that value. */
+		int resumeThreshold = (unsigned char)vals[0];
+		int limitThreshold = (unsigned char)vals[1];
+		BOOL violatesOrder = isHighThr
+			? (resumeThreshold != 255 && (int)rounded <= resumeThreshold)
+			: (limitThreshold != 255 && (int)rounded >= limitThreshold);
+		if (violatesOrder) {
+			int adjusted = (int)rounded + (isHighThr ? -1 : 1);
+			if (!isHighThr && adjusted > 100) {
+				/* A 100% resume value cannot have a larger limit; clamp the
+				 * edited value to 99 and retain the 100% limit. */
+				rounded = 99;
+				adjusted = 100;
+			}
+			adjusted = MIN(MAX(adjusted, 0), 100);
+			vals[!isHighThr] = (char)adjusted;
 
 			// XXX: Improve readability
 			NSIndexPath *oppo = [NSIndexPath indexPathForRow:[self.tableView indexPathForCell:cell].row - (isHighThr ? -2 : 2) inSection:[self.tableView indexPathForCell:cell].section];
@@ -1084,33 +1542,47 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didEndChangingValue:(float)value {
+	if (!vals || !vals_mapped)
+		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
 	if (curr.section == CL_SECTION_MAIN) {
 		NSIndexPath *oppo = [NSIndexPath indexPathForRow:curr.row - (isHighThr ? -2 : 2) inSection:curr.section];
 
-		if (vals[0] != -1) {
+		if ((unsigned char)vals[0] != 255) {
 			SliderTableViewCell *oppocell = [self.tableView cellForRowAtIndexPath:oppo];
 			oppocell.userInteractionEnabled = YES;
 		}
 
 		[self daemonRedecide];
+		return;
 	}
 
 	os_log_error(gLog, "sliderTableViewCell:didEndChangingValue: unexpected call at indexPath %ld:%ld", curr.section, curr.row);
 }
 
 
-- (void)daemonRedecide {
-	// Do msync after vals[] changes
-	if (msync(vals, sizeof(vals), MS_SYNC) == -1) {
+
+- (BOOL)daemonRedecide {
+	if (!vals || !vals_mapped)
+		return NO;
+	/* Do msync after vals[] changes. The old sizeof(vals) expression measured
+	 * the pointer (8 bytes on arm64), not the shared record. */
+	if (msync(vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC) == -1) {
 		os_log_error(gLog, "msync failed: %s", strerror(errno));
+		return NO;
 	}
-	const char redecidecmd = 4;
-	write(daemon_fd, &redecidecmd, 1);
+	if (daemon_fd >= 0 || daemon_pid) {
+		const char redecidecmd = 4;
+		if (![self sendDaemonCommand:redecidecmd reconnect:YES])
+			DBGLOG(@"Daemon is unavailable; persisted charging-limit settings will be applied on reconnect");
+	}
+	return YES;
 }
 
 - (void)drainModeChanged:(PickerAccessoryView *)sender {
+	if (!vals || !vals_mapped || sender.options.count == 0)
+		return;
 	NSInteger row = [sender selectedRowInComponent:0];
 	NSInteger opt = row % sender.options.count;
 	DBGLOG(@"Value %ld: %@", opt, sender.options[opt]);
@@ -1121,6 +1593,8 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)overrideOBCChanged:(UISwitch *)sender {
+	if (!vals || !vals_mapped)
+		return;
 	BIT_SET(vals[2], 1, sender.on);
 	[self daemonRedecide];
 	/* Im lazy, so hardcode here */

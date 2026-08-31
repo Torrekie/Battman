@@ -15,6 +15,8 @@
 #import "BattmanPrefs.h"
 #import "UITextFieldStepper.h"
 
+#include <math.h>
+
 @interface ThermAniTestCell ()
 @property (nonatomic, strong) CAGradientLayer *borderGradient;
 @property (nonatomic, strong) CAGradientLayer *gradient;
@@ -197,43 +199,50 @@ extern UITableViewCell *find_cell(UIView *view);
 
 float get_current_temp_percentage(void) {
 	typedef enum {
-		TEMP_NULL = 0,
 		TEMP_BATT = (1 << 0),
 		TEMP_SNSR = (1 << 1),
 		TEMP_SCRN = (1 << 2),
 	} tempbit;
 	tempbit got_temp = 0;
-	float *btemps = get_temperature_per_cell();
+	size_t cellCount = 0;
+	float *btemps = get_temperature_per_cell_with_count(&cellCount);
 	float batttemp = -1;
-	if (btemps != NULL && *btemps) {
-		got_temp |= TEMP_BATT;
-		float total = 0;
-		int num = batt_cell_num();
-		for (int i = 0; i < num; i++) {
+	if (btemps != NULL && cellCount > 0) {
+		BOOL allCellsValid = YES;
+		float total = 0.0f;
+		for (size_t i = 0; i < cellCount; i++) {
+			if (!battman_temperature_is_valid(btemps[i])) {
+				allCellsValid = NO;
+				break;
+			}
 			total += btemps[i];
 		}
-		// Embedded designed operating temp: 0º to 35º C
-		batttemp = total / num;
+		if (allCellsValid) {
+			got_temp |= TEMP_BATT;
+			// Embedded designed operating temp: 0º to 35º C
+			batttemp = total / (float)cellCount;
+		}
 		free(btemps);
 	}
 	
 	extern float getSensorAvgTemperature(void);
 	float snsrtemp = getSensorAvgTemperature();
-	if (snsrtemp != -1) {
+	if (isfinite(snsrtemp) && snsrtemp != -1.0f && snsrtemp >= -50.0f && snsrtemp <= 120.0f) {
 		got_temp |= TEMP_SNSR;
 	}
 	
 	// I've seen a broken screen that not reporting this, so this could also be a way to check screen sanity
 	extern double iomfb_primary_screen_temperature(void);
 	double scrntemp = iomfb_primary_screen_temperature();
-	if (scrntemp != -1) {
+	if (isfinite(scrntemp) && scrntemp != -1.0 && scrntemp >= -50.0 && scrntemp <= 120.0) {
 		got_temp |= TEMP_SCRN;
 	}
 	
 	float minVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MIN];
 	float maxVal = [BattmanPrefs.sharedPrefs floatForKey:@kBattmanPrefs_THERM_UI_MAX];
-	if (minVal <= 0.0f) minVal = 0.0f;
-	if (maxVal <= 0.0f) maxVal = 45.0f;
+	if (!isfinite(minVal) || minVal <= 0.0f) minVal = 0.0f;
+	if (!isfinite(maxVal) || maxVal <= minVal)
+		maxVal = minVal + 45.0f;
 	
 #define TEMP_TO_PERCENTAGE(x) (x > maxVal) ? 1.0 : (x < minVal ? 0.0 : (x - minVal) / (maxVal - minVal))
 	float ret = 0;

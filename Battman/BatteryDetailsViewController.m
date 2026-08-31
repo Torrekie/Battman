@@ -172,8 +172,13 @@ static BDVCBatteryInfoTableSnapshot *BDVCCopyBatteryInfoSnapshot(
 
 		NSMutableArray<BDVCBatteryInfoNodeSnapshot *> *rows = [NSMutableArray array];
 		for (struct battery_info_node *i = sect->data + 1; i->name; i++) {
+			/* BIN_DYNAMIC_HIDDEN is a refresh-scoped unavailable marker.  Check it
+			 * before BIN_DETAILS_SHARED so a shared row (notably Avg. Temperature)
+			 * cannot expose its previous encoded value after an SMC failure. */
+			if ((i->content & BIN_IS_SPECIAL) && (i->content & BIN_DYNAMIC_HIDDEN))
+				continue;
 			if (strcmp(i->name, "Time to Empty") == 0 &&
-			    (chargingState == kIsCharging || (i->content & BIN_IS_HIDDEN)))
+				(chargingState == kIsCharging || (i->content & BIN_IS_HIDDEN)))
 				continue;
 			if ((i->content & BIN_DETAILS_SHARED) == BIN_DETAILS_SHARED || (i->content && !((i->content & BIN_IS_SPECIAL) == BIN_IS_SPECIAL))) {
 				if ((i->content & 1) != 1 || (i->content & (1 << 5)) != (1 << 5)) {

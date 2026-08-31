@@ -229,9 +229,16 @@ static UIFont *BAAnalyticsScaledFont(UIFontTextStyle textStyle, CGFloat size, UI
 		contentY += 22.0;
 	}
 
-	BOOL showDetail = !compact && self.detailLabel.text.length > 0;
+	/* Keep one concise detail line in a 1x1 card.  The full explanation remains
+	 * available in larger cards and through the cell's accessibility label, but
+	 * an unavailable/health/stale state must not disappear entirely at the
+	 * default size. */
+	BOOL showDetail = self.detailLabel.text.length > 0;
+	self.detailLabel.numberOfLines = compact ? 1 : 0;
+	self.detailLabel.lineBreakMode = compact ? NSLineBreakByTruncatingTail : NSLineBreakByWordWrapping;
 	self.detailLabel.hidden = !showDetail;
-	self.detailLabel.frame = showDetail ? CGRectMake(textX, contentY, textWidth, MAX(0.0, height - contentY - padding)) : CGRectZero;
+	CGFloat detailHeight = compact ? MIN(18.0, MAX(0.0, height - contentY - padding)) : MAX(0.0, height - contentY - padding);
+	self.detailLabel.frame = showDetail ? CGRectMake(textX, contentY, textWidth, detailHeight) : CGRectZero;
 	self.sparklineView.hidden = !canDrawGraph;
 	if (canDrawGraph) {
 		if (horizontal)
@@ -341,7 +348,10 @@ static UIFont *BAAnalyticsScaledFont(UIFontTextStyle textStyle, CGFloat size, UI
 
 - (NSString *)analyticsCardAccessibilityLabelForSize:(BAAnalyticsCardSize)size {
 	BAAnalyticsCardPresentation *presentation = [self presentationForSnapshot:self.latestSnapshot];
-	return [NSString stringWithFormat:@"%@, %@", self.analyticsCardDisplayName, presentation.value];
+	(void)size;
+	NSMutableArray<NSString *> *parts = [NSMutableArray arrayWithObjects:self.analyticsCardDisplayName ?: @"", presentation.value ?: @"", nil];
+	[parts addObjectsFromArray:presentation.detailLines ?: @[]];
+	return [parts componentsJoinedByString:@", "];
 }
 
 - (void)analyticsCardDidReceiveMemoryWarning {

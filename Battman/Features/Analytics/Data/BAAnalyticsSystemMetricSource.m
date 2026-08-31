@@ -12,8 +12,57 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <math.h>
 #include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+static BOOL BAAnalyticsReadDaemonPID(const char *path, pid_t *pid_out) {
+	if (!path || !pid_out)
+		return NO;
+	int descriptor = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+	if (descriptor < 0)
+		return NO;
+	struct stat st;
+	BOOL safe = fstat(descriptor, &st) == 0 && S_ISREG(st.st_mode) &&
+	            st.st_size == (off_t)sizeof(pid_t) && (st.st_mode & 022) == 0 &&
+	            (st.st_uid == 0 || st.st_uid == getuid());
+	pid_t processIdentifier = 0;
+	ssize_t readLength = safe ? pread(descriptor, &processIdentifier,
+	                                  sizeof(processIdentifier), 0) : -1;
+	close(descriptor);
+	if (readLength != (ssize_t)sizeof(processIdentifier) || processIdentifier <= 1)
+		return NO;
+	errno = 0;
+	if (kill(processIdentifier, 0) != 0 && errno != EPERM)
+		return NO;
+	*pid_out = processIdentifier;
+	return YES;
+}
+
+static BOOL BAAnalyticsReadDaemonSettings(const char *path, uint8_t settings[BATTMAN_DAEMON_SETTINGS_SIZE]) {
+	if (!path || !settings)
+		return NO;
+	int descriptor = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+	if (descriptor < 0)
+		return NO;
+	struct stat st;
+	BOOL safe = fstat(descriptor, &st) == 0 && S_ISREG(st.st_mode) &&
+	            st.st_size == (off_t)BATTMAN_DAEMON_SETTINGS_SIZE &&
+	            (st.st_mode & 022) == 0 && (st.st_uid == 0 || st.st_uid == getuid());
+	ssize_t readLength = safe ? pread(descriptor, settings,
+	                                  BATTMAN_DAEMON_SETTINGS_SIZE, 0) : -1;
+	close(descriptor);
+	if (readLength != (ssize_t)BATTMAN_DAEMON_SETTINGS_SIZE)
+		return NO;
+	if ((settings[0] != UINT8_MAX && settings[0] > 100) ||
+	    (settings[1] != UINT8_MAX && settings[1] > 100) ||
+	    (settings[0] != UINT8_MAX && settings[1] == UINT8_MAX) ||
+	    (settings[0] != UINT8_MAX && settings[1] != UINT8_MAX && settings[0] >= settings[1]))
+		return NO;
+	return YES;
+}
 
 static BOOL BAAnalyticsReadUInt16(uint32_t key, uint16_t *value) {
 	uint16_t result = 0;
@@ -51,29 +100,16 @@ static void BAAnalyticsReadChargingLimitMetrics(NSMutableDictionary<NSString *, 
 	int length = snprintf(path, sizeof(path), "%s/daemon.run", configDirectory);
 	BOOL serviceActive = NO;
 	if (length > 0 && (size_t)length < sizeof(path)) {
-		int descriptor = open(path, O_RDONLY);
-		if (descriptor >= 0) {
-			int processIdentifier = 0;
-			ssize_t readLength = read(descriptor, &processIdentifier, sizeof(processIdentifier));
-			close(descriptor);
-			if (readLength == (ssize_t)sizeof(processIdentifier) && processIdentifier > 1) {
-				errno = 0;
-				serviceActive = kill(processIdentifier, 0) == 0 || errno == EPERM;
-			}
-		}
+		pid_t processIdentifier = 0;
+		serviceActive = BAAnalyticsReadDaemonPID(path, &processIdentifier);
 	}
 	values[BAAnalyticsMetricChargingLimitServiceActive] = @(serviceActive);
 
 	length = snprintf(path, sizeof(path), "%s/daemon_settings", configDirectory);
 	if (length <= 0 || (size_t)length >= sizeof(path))
 		return;
-	int descriptor = open(path, O_RDONLY);
-	if (descriptor < 0)
-		return;
-	uint8_t settings[3] = { 0 };
-	ssize_t readLength = read(descriptor, settings, sizeof(settings));
-	close(descriptor);
-	if (readLength != (ssize_t)sizeof(settings))
+	uint8_t settings[BATTMAN_DAEMON_SETTINGS_SIZE] = { 0 };
+	if (!BAAnalyticsReadDaemonSettings(path, settings))
 		return;
 
 	NSUInteger limitPercent = settings[1] == UINT8_MAX ? 100 : settings[1];
@@ -99,12 +135,19 @@ static void BAAnalyticsReadChargingLimitMetrics(NSMutableDictionary<NSString *, 
 		uint16_t remainingCapacity = 0;
 		uint16_t fullChargeCapacity = 0;
 		uint16_t designCapacity = 0;
-		if (get_capacity(&remainingCapacity, &fullChargeCapacity, &designCapacity)) {
+		if (get_capacity(&remainingCapacity, &fullChargeCapacity, &designCapacity) &&
+		    fullChargeCapacity > 0 && designCapacity > 0) {
 			values[BAAnalyticsMetricRemainingCapacityMilliampHours] = @(remainingCapacity);
 			values[BAAnalyticsMetricFullChargeCapacityMilliampHours] = @(fullChargeCapacity);
 			values[BAAnalyticsMetricDesignCapacityMilliampHours] = @(designCapacity);
-			if (designCapacity > 0)
-				values[BAAnalyticsMetricBatteryHealthPercent] = @(100.0 * (double)fullChargeCapacity / (double)designCapacity);
+			if (designCapacity > 0 && fullChargeCapacity > 0) {
+				double health = 100.0 * (double)fullChargeCapacity / (double)designCapacity;
+				/* Capacity calibration can legitimately put the estimate a
+				 * little above 100%, but an unbounded/negative value is a
+				 * failed reading, not a meaningful health score. */
+				if (isfinite(health) && health >= 0.0 && health <= 200.0)
+					values[BAAnalyticsMetricBatteryHealthPercent] = @(health);
+			}
 		}
 
 		uint16_t unsignedValue = 0;

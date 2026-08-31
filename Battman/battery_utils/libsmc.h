@@ -3,7 +3,10 @@
 
 #include <CoreFoundation/CFBase.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <math.h>
+#include <stdbool.h>
 
 #if !defined(__arm64__) && !defined(__aarch64__) && !defined(__arm64e__)
 #error Current SMC implementation is arm64 only! \
@@ -11,6 +14,16 @@
 #endif
 
 extern int hasSMC;
+
+/*
+ * SMC temperature APIs use -1.0f as their read-failure sentinel.  Keep the
+ * validity rule in one place so callers do not accidentally display a NaN,
+ * an uninitialised cell, or an implausible raw value as a real temperature.
+ */
+static inline bool battman_temperature_is_valid(float temperature) {
+	return isfinite(temperature) && temperature != -1.0f &&
+	       temperature >= -50.0f && temperature <= 120.0f;
+}
 
 /* SMC operations */
 typedef CF_ENUM(UInt8, SMCIndex) {
@@ -524,6 +537,11 @@ int batt_cell_num(void);
 bool get_gas_gauge(gas_gauge_t *gauge);
 typedef unsigned int mach_port_t;
 charging_state_t is_charging(mach_port_t *family, device_info_t *info);
+/* Read all battery-cell temperatures and return the count for the same
+ * snapshot. Callers must free the returned array. A NULL result (or a zero
+ * count) means that the bounded cell read was unavailable. */
+float *get_temperature_per_cell_with_count(size_t *out_count);
+/* Compatibility wrapper for callers that do not need the count. */
 float *get_temperature_per_cell(void);
 bool battery_serial(char *serial);
 hvc_menu_t *hvc_menu_parse(uint8_t *input, size_t *size);

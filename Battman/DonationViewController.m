@@ -12,9 +12,8 @@
 #import "CGIconSet/BattmanVectorIcon.h"
 #include "common.h"
 #include "intlextern.h"
-#import <MessageUI/MessageUI.h>
 
-@interface DonationViewController () <MFMailComposeViewControllerDelegate>
+@interface DonationViewController ()
 @property (nonatomic, strong) UIImageView *icon;
 @property (nonatomic, strong) UIButton *bottomButton;
 @property (nonatomic, strong) NSArray *donateButtons;
@@ -130,27 +129,13 @@
 	[report setTitleColor:[UIColor compatLabelColor] forState:UIControlStateNormal];
 	[report addTarget:self action:@selector(issueTapped:) forControlEvents:UIControlEventTouchUpInside];
 	
-	UIButton *email = [UIButton buttonWithType:UIButtonTypeSystem];
-	email.translatesAutoresizingMaskIntoConstraints = NO;
-	email.layer.cornerRadius = 12;
-	[email.layer setSmoothCorners:YES];
-	email.clipsToBounds = YES;
-	email.contentEdgeInsets = UIEdgeInsetsMake(14, 20, 14, 20);
-	email.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightSemibold];
-	[email setTitle:_("Send an Email") forState:UIControlStateNormal];
-	email.backgroundColor = [UIColor clearColor];
-	email.layer.borderWidth = 1.0;
-	email.layer.borderColor = [UIColor compatGray4Color].CGColor;
-	[email setTitleColor:[UIColor compatLabelColor] forState:UIControlStateNormal];
-	[email addTarget:self action:@selector(emailTapped:) forControlEvents:UIControlEventTouchUpInside];
-	
 	NSMutableArray *btns = [NSMutableArray arrayWithCapacity:_donates.count / 2];
 	UIStackView *donationStack = [[UIStackView alloc] init];
 	donationStack.axis = UILayoutConstraintAxisHorizontal;
 	donationStack.distribution = UIStackViewDistributionFillEqually;
 	donationStack.spacing = 12;
 	donationStack.translatesAutoresizingMaskIntoConstraints = NO;
-	for (CFIndex i = 0; i < _donates.count / 2; i++) {
+	for (NSUInteger i = 0; i < _donates.count / 2; i++) {
 		UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
 		b.layer.cornerRadius = 10;
 		b.layer.borderWidth = 1.0;
@@ -183,7 +168,7 @@
 	self.bottomButton = donate;
 	
 	// Layout container
-	UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[imageContainer, titleLabel, subtitle, donationStack, note, issuetitle, issuetext, report, email]];
+	UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[imageContainer, titleLabel, subtitle, donationStack, note, issuetitle, issuetext, report]];
 	stack.axis = UILayoutConstraintAxisVertical;
 	stack.spacing = 16;
 	stack.translatesAutoresizingMaskIntoConstraints = NO;
@@ -371,8 +356,9 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		if (!url || ![[UIApplication sharedApplication] openURL:url]) {
 			NSString *msg = [NSString stringWithFormat:_("Error when opening URL: %@"), self.selectedDonate];
-			show_alert_async(L_ERR, msg.UTF8String, L_OK, ^(bool idk) {
-				[self dismissViewControllerAnimated:YES completion:nil];
+				show_alert_async(L_ERR, msg.UTF8String, L_OK, ^(bool idk) {
+					(void)idk;
+					[self dismissViewControllerAnimated:YES completion:nil];
 			});
 			return;
 		}
@@ -382,25 +368,7 @@
 }
 
 - (void)issueTapped:(UIButton *)sender {
-	open_url("https://github.com/Torrekie/Battman/issues/new");
-}
-
-- (void)emailTapped:(UIButton *)sender {
-	// I really don't want link against a new framework, can we just open "mailto:" url?
-	if (MFMailComposeViewController.canSendMail) {
-		MFMailComposeViewController *mailvc = [[MFMailComposeViewController alloc] init];
-		mailvc.mailComposeDelegate = self;
-		[mailvc setToRecipients:@[@"me@torrekie.dev"]];
-		[mailvc setSubject:@"Battman: "];
-		// TODO: Consider add some attached logs here
-		[self presentViewController:mailvc animated:YES completion:nil];
-	} else {
-		show_alert(L_ERR, _C("Your device does not support sending Emails."), L_OK);
-	}
-}
-
-- (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
-	[controller dismissViewControllerAnimated:YES completion:nil];
+	open_url("https://github.com/Torrekie/Battman/issues/new?template=bug_report.md");
 }
 
 - (void)dismissSelf {

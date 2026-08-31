@@ -17,6 +17,9 @@
 	bool lpm_supported;
 	bool lpm_on;
 	float lpm_thr;
+	/* Monotonically identifies asynchronous Low Power Mode requests so a
+	 * delayed completion cannot overwrite a newer user choice. */
+	NSUInteger lpm_request_generation;
 
 	int daemon_pid;
 }

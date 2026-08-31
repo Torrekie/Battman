@@ -15,6 +15,10 @@ string and requires it to have a non-empty translation in the tracked English,
 German, Simplified Chinese, and Traditional Chinese catalogs. It also rejects
 obsolete `#~` entries and runs `msgfmt --check` when Gettext is available.
 
+`check-analytics-metric-safety.py` is a host-only static regression check for
+bounded SMC/cell-temperature reads, explicit unavailable/stale states, and
+health/cycle-count explanations.
+
 `Device/run-analytics-rooted-preflight.sh` is a read-only rooted-device gate.
 It validates the exact local artifact and remote environment but contains no
 installation path. Device mutation still requires separate owner approval.

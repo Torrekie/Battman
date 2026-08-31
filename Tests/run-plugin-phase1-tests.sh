@@ -18,6 +18,8 @@ python3 "$REPO_ROOT/Tests/check-analytics-localizations.py"
 python3 "$REPO_ROOT/Tests/check-plugin-localizations.py"
 python3 "$REPO_ROOT/Tests/check-plugin-loader-boundary.py"
 python3 "$REPO_ROOT/Tests/check-ups-monitor-startup.py"
+python3 "$REPO_ROOT/Tests/check-charging-limit-daemon-safety.py"
+python3 "$REPO_ROOT/Tests/check-analytics-metric-safety.py"
 python3 "$REPO_ROOT/PluginSDK/Tools/generate-sdk-contract.py" --check
 bash -n "$REPO_ROOT/Tests/Device/run-analytics-rooted-preflight.sh"
 

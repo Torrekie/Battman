@@ -80,22 +80,11 @@ msgstr "调试"
 msgid "Gonna tell us something?"
 msgstr "想告诉我们点什么吗？"
 
-msgid ""
-"Found a bug or have an idea? Please choose one way to contact us:\n"
-"open a GitHub Issue (public — great for steps/logs)\n"
-"or Send Email (for private info or attachments). We really appreciate your "
-"help!"
-msgstr ""
-"发现问题或有好点子？请选择一种方式联系我们：\n"
-"在 GitHub 提交 Issue（公开，适合附上重现步骤/日志）\n"
-"或通过电子邮件发送给我们（适合私密信息或附件）。\n"
-"非常感谢你的反馈！"
+msgid "Use GitHub Issues for ordinary bugs and feature requests. Include steps to reproduce, but do not include personal data, device identifiers, or plug-in files."
+msgstr "普通故障和功能建议请使用 GitHub Issues。请提供重现步骤，但不要包含个人数据、设备标识符或插件文件。"
 
 msgid "Open GitHub Issue"
 msgstr "在 GitHub 提交疑述"
-
-msgid "Send Email"
-msgstr "发送邮件"
 
 msgid "Cancel"
 msgstr "取消"
@@ -2443,3 +2432,75 @@ msgstr "验证"
 
 msgid "View Verification Details"
 msgstr "查看验证详情"
+
+msgid "Download Guide"
+msgstr "下载指南"
+
+msgid "Use the package that matches how Battman is installed."
+msgstr "请选择与 Battman 安装方式匹配的软件包。"
+
+msgid "Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."
+msgstr "Rooted 越狱（iOS 12+）：使用 APT/dpkg 安装匹配的主机或插件 iphoneos-arm .deb；不要使用 iphoneos-arm64。"
+
+msgid "Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."
+msgstr "Rootless 越狱（iOS 15+）：使用 APT/dpkg 安装匹配的主机或插件 iphoneos-arm64 .deb；不要使用 iphoneos-arm。"
+
+msgid "TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."
+msgstr "TrollStore（iOS 14+）：安装替换版 Battman.tipa。原生插件必须嵌入该替换应用；新导入的原生代码不会直接从应用数据目录加载。"
+
+msgid "A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."
+msgstr ".battman 文件是导入传输包。Battman 会在批准前验证它；它不是直接安装程序。"
+
+msgid "Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture."
+msgstr "Havoc 是仅用于 Debian 的手动选择渠道。GitHub Releases 是已审查构建产物的规范来源。切勿安装其他架构的软件包。"
+
+msgid "Use Download Guide for architecture-specific package instructions."
+msgstr "请使用“下载指南”查看架构对应的软件包说明。"
+
+msgid "Open GitHub Releases"
+msgstr "打开 GitHub Releases"
+
+msgid "Open Installation Guide"
+msgstr "打开安装指南"
+
+msgid "Open Havoc"
+msgstr "打开 Havoc"
+
+msgid "Temperature is unavailable because no valid hardware reading was returned."
+msgstr "温度不可用，因为硬件未返回有效读数。"
+
+msgid "No change detected for several minutes; verify this reading with another sensor if it looks wrong."
+msgstr "数分钟内未检测到变化；如果读数看起来不正确，请使用其他传感器核对。"
+
+msgid "Potentially Stale"
+msgstr "可能已过期"
+
+msgid "Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."
+msgstr "健康度根据完全充电容量和设计容量计算，并不是续航时间估计。"
+
+msgid "Health is unavailable until both capacity readings are valid."
+msgstr "在两个容量读数都有效之前，健康度不可用。"
+
+msgid "Cycle count is reported by the battery controller and may be unavailable on some devices."
+msgstr "循环次数由电池控制器报告，某些设备可能无法提供。"
+
+msgid "Cycle count is unavailable because the battery controller did not provide a valid value."
+msgstr "循环次数不可用，因为电池控制器未提供有效值。"
+
+msgid "Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."
+msgstr "设计循环次数是制造商参考值，不是保证的使用上限。"
+
+msgid "Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."
+msgstr "Battman 刷新此页面时会从 AppleSMC 读取电量计值。缺少值表示设备或传感器未提供有效读数；Battman 不会进行估算。"
+
+msgid "Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."
+msgstr "计算方式为完全充电容量除以设计容量。当任一容量读数缺失时不可用，也不保证实际续航时间。"
+
+msgid "The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."
+msgstr "电池控制器报告的最新有效温度。缺少值表示未返回有效传感器读数；长期不变的值可能已过期。"
+
+msgid "Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."
+msgstr "电池控制器报告的累计充放电循环次数。某些设备不会公开此值，而且它不是直接的健康度百分比。"
+
+msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
+msgstr "电池控制器提供的制造商循环寿命目标（如有）。这是参考值，不是保证的使用上限。"

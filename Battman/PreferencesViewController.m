@@ -63,7 +63,7 @@ extern UITableViewCell *find_cell(UIView *view);
 }
 
 - (void)openIssueURL {
-	open_url("https://github.com/Torrekie/Battman/issues/new");
+	open_url("https://github.com/Torrekie/Battman/issues/new?template=bug_report.md");
 }
 
 - (void)updateLocaleWarning {

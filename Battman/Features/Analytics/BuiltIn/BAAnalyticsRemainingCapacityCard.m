@@ -40,12 +40,16 @@ static NSString *BAAnalyticsCapacityString(NSNumber *capacity) {
 	NSMutableArray<NSString *> *details = [NSMutableArray array];
 	if (design)
 		[details addObject:BAAnalyticsLabeledValue(_("Designed Capacity"), BAAnalyticsCapacityString(design))];
-	if (health)
+	if (health) {
 		[details addObject:BAAnalyticsLabeledValue(_("Max Capacity"), [NSString stringWithFormat:@"%.0f%%", health.doubleValue])];
+		[details addObject:_("Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate.")];
+	} else {
+		[details addObject:_("Health is unavailable until both capacity readings are valid.")];
+	}
 	return [BAAnalyticsCardPresentation presentationWithValue:BAAnalyticsCapacityString(remaining)
-													 caption:BAAnalyticsLabeledValue(_("Full Charge Capacity"), BAAnalyticsCapacityString(full))
-											   detailLines:details
-											  historyPoints:[snapshot historyForMetricIdentifier:BAAnalyticsMetricRemainingCapacityMilliampHours]];
+														 caption:BAAnalyticsLabeledValue(_("Full Charge Capacity"), BAAnalyticsCapacityString(full))
+														 detailLines:details
+														 historyPoints:remaining ? [snapshot historyForMetricIdentifier:BAAnalyticsMetricRemainingCapacityMilliampHours] : @[]];
 }
 
 @end

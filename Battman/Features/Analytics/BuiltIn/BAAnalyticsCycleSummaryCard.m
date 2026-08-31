@@ -41,9 +41,12 @@ static NSString *BAAnalyticsUptimeString(NSTimeInterval seconds) {
 	NSNumber *cycleCount = [snapshot valueForMetricIdentifier:BAAnalyticsMetricCycleCount];
 	NSString *value = cycleCount ? [NSString stringWithFormat:@"%llu", cycleCount.unsignedLongLongValue] : _("Unavailable");
 	NSMutableArray<NSString *> *details = [NSMutableArray array];
+	[details addObject:cycleCount ? _("Cycle count is reported by the battery controller and may be unavailable on some devices.") : _("Cycle count is unavailable because the battery controller did not provide a valid value.")];
 	NSNumber *designCycleCount = [snapshot valueForMetricIdentifier:BAAnalyticsMetricDesignCycleCount];
-	if (designCycleCount)
+	if (designCycleCount) {
 		[details addObject:BAAnalyticsLabeledValue(_("Designed Cycle Count"), [NSString stringWithFormat:@"%llu", designCycleCount.unsignedLongLongValue])];
+		[details addObject:_("Designed Cycle Count is a manufacturer reference, not a guaranteed service limit.")];
+	}
 	NSNumber *uptime = [snapshot valueForMetricIdentifier:BAAnalyticsMetricBatteryUptimeSeconds];
 	if (uptime)
 		[details addObject:BAAnalyticsLabeledValue(_("Battery Uptime"), BAAnalyticsUptimeString(uptime.doubleValue))];

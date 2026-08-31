@@ -88,9 +88,11 @@ static const NSUInteger BTPluginImportPresenterMaximumPendingResults = 8;
 	if (result) {
 		BTPluginPackageManifest *manifest = result.quarantinedPackage.verification.packageInspection.manifest;
 		title = _("Plug-in Quarantined");
-		message = [NSString stringWithFormat:
-			_("%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."),
-			manifest.displayName, manifest.displayVersion];
+		message = [NSString stringWithFormat:@"%@\n\n%@",
+			[NSString stringWithFormat:
+				_("%@ %@ was verified without running its code and saved in Battman's private quarantine. It is not approved, installed, enabled, or loaded. Review its identity and requested extension points in Plug-ins."),
+				manifest.displayName, manifest.displayVersion],
+			_("Use Download Guide for architecture-specific package instructions.")];
 	} else {
 		title = _("Plug-in Import Failed");
 		message = error.localizedDescription ?: _("The selected package could not be verified and was not imported.");

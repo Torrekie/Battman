@@ -64,6 +64,16 @@ SPECIAL:
 #define BIN_HAS_SUBCELLS (1<<10)
 #define BIN_IS_SUBCELL (1<<11)
 #define BIN_DEF_SUBCELL (BIN_IS_SUBCELL|1<<5)
+/* Runtime marker: the current refresh did not produce a usable value.  The
+ * current unit index consumes bits 6..8; bit 12 is reserved and intentionally
+ * outside the serialized value/unit fields so consumers can distinguish an
+ * unavailable value from an intrinsic hidden row. */
+#define BIN_DYNAMIC_HIDDEN (1U << 12)
+/* Set only while a refresh has temporarily added BIN_IS_HIDDEN.  Bit 31 is
+ * reserved for this marker only after the encoded value is cleared by the
+ * dynamic-hidden path; this avoids colliding with BIN_SECTION's bit 13 or
+ * the unit/format flags in the low word. */
+#define BIN_DYNAMIC_HIDDEN_VISIBILITY (1U << 31)
 #define BIN_SECTION					(1 << 13 | BIN_IS_SPECIAL)
 #define BIN_SECTION_HIDDEN			(1 << 14)
 #define BIN_SECTION_PRIORITY(p) ((p&0xffff)<<16)

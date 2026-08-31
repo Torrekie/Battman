@@ -86,6 +86,30 @@ static NSString *BTPluginDiagnosticErrorValue(NSError *error) {
 		(long)error.code];
 }
 
+/*
+ * Keep distribution guidance next to the import/recovery UI. The package
+ * manager and TrollStore paths have different architecture and activation
+ * rules; presenting them together prevents a user from treating a .deb,
+ * .tipa, and .battman transport as interchangeable files.
+ */
+static NSString *BTPluginDownloadGuideMessage(void) {
+	return [@[
+		_("Use the package that matches how Battman is installed."),
+		_("Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."),
+		_("Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."),
+		_("TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."),
+		_("A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."),
+		_("Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture.")
+	] componentsJoinedByString:@"\n\n"];
+}
+
+static void BTPluginOpenExternalURL(NSString *URLString) {
+	NSURL *URL = [NSURL URLWithString:URLString];
+	if (!URL)
+		return;
+	[[UIApplication sharedApplication] openURL:URL options:@{} completionHandler:nil];
+}
+
 static NSString *BTPluginShortDigest(NSString *digest) {
 	return digest.length > 16 ? [NSString stringWithFormat:@"%@…%@",
 		[digest substringToIndex:8], [digest substringFromIndex:digest.length - 8]] : digest;
@@ -675,6 +699,7 @@ static void BTPluginPresentActionResult(UIViewController *presenter, BTPluginMan
 @property (nonatomic) NSUInteger refreshGeneration;
 @property (nonatomic, strong) UIActivityIndicatorView *activityIndicator;
 @property (nonatomic) BOOL suppressInitialRefresh;
+- (void)presentDownloadGuide;
 @end
 
 @implementation BTPluginManagementViewController
@@ -712,9 +737,37 @@ static void BTPluginPresentActionResult(UIViewController *presenter, BTPluginMan
 	[super viewDidLoad];
 	self.tableView.estimatedRowHeight = 52.0;
 	self.tableView.rowHeight = UITableViewAutomaticDimension;
-	self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+	UIBarButtonItem *refreshItem = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(refreshSnapshot)];
+	UIBarButtonItem *guideItem = [[UIBarButtonItem alloc]
+		initWithTitle:_("Download Guide") style:UIBarButtonItemStylePlain target:self
+		action:@selector(presentDownloadGuide)];
+	guideItem.accessibilityLabel = _("Download Guide");
+	self.navigationItem.rightBarButtonItems = @[ refreshItem, guideItem ];
 	self.activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+}
+
+- (void)presentDownloadGuide {
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("Download Guide")
+		message:BTPluginDownloadGuideMessage() preferredStyle:UIAlertControllerStyleAlert];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Open GitHub Releases")
+		style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+			(void)action;
+			BTPluginOpenExternalURL(@"https://github.com/Torrekie/Battman/releases/latest");
+		}]];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Open Installation Guide")
+		style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+			(void)action;
+			BTPluginOpenExternalURL([NSString stringWithFormat:@"%s/installation/", BATTMAN_DOC_URL]);
+		}]];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Open Havoc")
+		style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+			(void)action;
+			BTPluginOpenExternalURL(@"https://havoc.app/package/battman");
+		}]];
+	[alert addAction:[UIAlertAction actionWithTitle:_("Cancel")
+		style:UIAlertActionStyleCancel handler:nil]];
+	[self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -779,7 +832,9 @@ static void BTPluginPresentActionResult(UIViewController *presenter, BTPluginMan
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
 	(void)tableView;
 	if (section == BTPluginManagementSectionSecurity)
-		return _("Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded.");
+		return [NSString stringWithFormat:@"%@\n\n%@",
+			_("Third-party native plug-ins run inside Battman and are not sandboxed from it. Changes take effect only after restart; loaded images are never unloaded."),
+			_("Use Download Guide for architecture-specific package instructions.")];
 	if (section == BTPluginManagementSectionQuarantine)
 		return _("Opening a .battman file only verifies it and saves a private quarantine copy. It never approves or loads code.");
 	return nil;

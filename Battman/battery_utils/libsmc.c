@@ -25,6 +25,7 @@
 #include <CoreFoundation/CFString.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include <sys/sysctl.h>
 #if __has_include(<mach/mach.h>)
 #include <mach/mach.h>
@@ -141,7 +142,10 @@ IOReturn smc_call(int index, SMCParamStruct *inputStruct,
 
 static IOReturn smc_get_keyinfo(UInt32 key, SMCKeyInfoData *keyInfo) {
     SMCParamStruct inputStruct={0};
-    SMCParamStruct outputStruct;
+    /* smc_call may fail before writing outputStruct.  Keep the subsequent
+     * dataSize check deterministic instead of reading an uninitialised
+     * stack buffer while handling a missing/disconnected SMC service. */
+    SMCParamStruct outputStruct = {0};
     IOReturn result;
 
     inputStruct.key = key;
@@ -151,7 +155,7 @@ static IOReturn smc_get_keyinfo(UInt32 key, SMCKeyInfoData *keyInfo) {
 
     // Important check: dataSize != 0
     // idk why a nonexist key could return kIOReturnSuccess
-    if (outputStruct.param.keyInfo.dataSize == 0)
+    if (result == kIOReturnSuccess && outputStruct.param.keyInfo.dataSize == 0)
         result = kIOReturnError;
     
     if (result == kIOReturnSuccess) {
@@ -232,7 +236,11 @@ IOReturn smc_read_n(uint32_t key, void *bytes, int32_t size) {
 //}
 
 static float ioft2flt(void *bytes) {
-	return (float)*(uint64_t*)bytes / 65536.0f;
+	/* SMC responses are copied into byte buffers whose alignment is not
+	 * guaranteed. Avoid an unaligned/strict-aliasing load on arm64. */
+	uint64_t raw = 0;
+	memcpy(&raw, bytes, sizeof(raw));
+	return (float)raw / 65536.0f;
 }
 
 __attribute__((destructor)) static void smc_close(void) {
@@ -318,48 +326,76 @@ int get_fan_status(void) {
 float get_temperature(void) {
     SMC_INIT_CHK(-1);
 
-    uint16_t retval;
+    uint16_t retval = 0;
 
     result = smc_read_n('B0AT', &retval, 2);
     if (result != kIOReturnSuccess)
         return -1;
 
-    return (float)retval * 0.01f;
+    float temperature = (float)retval * 0.01f;
+    return battman_temperature_is_valid(temperature) ? temperature : -1.0f;
 }
 
-float *get_temperature_per_cell(void) {
-    IOReturn result = kIOReturnSuccess;
-    float retval;
-    uint8_t ioftret[8];
+float *get_temperature_per_cell_with_count(size_t *out_count) {
+	if (out_count)
+		*out_count = 0;
+	IOReturn result = kIOReturnSuccess;
+	float retval = 0.0f;
+	uint8_t ioftret[8] = { 0 };
 
-    int num = batt_cell_num();
+	int num = batt_cell_num();
+    /* BNCB is an int8_t on the wire.  Refuse missing, nonsensical, or
+     * corrupted counts before using it as an allocation size. */
+    if (num <= 0 || num > 32)
+        return NULL;
 
-    float *cells = malloc(sizeof(float) * num);
+    float *cells = calloc((size_t)num, sizeof(*cells));
+    if (!cells)
+        return NULL;
+
+    bool allValid = true;
     /* TB?T(flt ): Cell ? real-time temperature */
     for (int i = 0; i < num; i++) {
-        result = smc_read_n('TB\0T' | ((0x30 + i) << 0x8), &retval,4);
-        if (result != kIOReturnSuccess) {
-            /* In design, you should able to get temps of all your cells */
+        result = smc_read_n('TB\0T' | ((0x30 + i) << 0x8), &retval, 4);
+        if (result != kIOReturnSuccess || !battman_temperature_is_valid(retval)) {
+            allValid = false;
             break;
         }
         cells[i] = retval;
     }
 
-    /* TB*T may not exist on mobile devices */
-    if (result != kIOReturnSuccess) {
-        /* TG?B(ioft): Cell ? existance & real-time temperature */
+    /* TB*T may not exist on mobile devices.  Do not return a partial array:
+     * callers have no length/status channel and would otherwise average
+     * uninitialised cells or mistake a zero for a valid reading. */
+    if (!allValid) {
+        allValid = true;
+        memset(cells, 0, sizeof(*cells) * (size_t)num);
+        /* TG?B(ioft): Cell ? existence & real-time temperature */
         for (int i = 0; i < num; i++) {
-            result = smc_read_n('TG\0B' | ((0x30 + i) << 0x8), &ioftret, 8);
+            result = smc_read_n('TG\0B' | ((0x30 + i) << 0x8), ioftret, 8);
             if (result != kIOReturnSuccess) {
-                /* In design, you should able to get temps of all your cells */
-                free(cells);
-                return NULL;
+                allValid = false;
+                break;
             }
             cells[i] = ioft2flt(ioftret);
+            if (!battman_temperature_is_valid(cells[i])) {
+                allValid = false;
+                break;
+            }
         }
     }
 
-    return cells;
+	if (!allValid) {
+		free(cells);
+		return NULL;
+	}
+	if (out_count)
+		*out_count = (size_t)num;
+	return cells;
+}
+
+float *get_temperature_per_cell(void) {
+	return get_temperature_per_cell_with_count(NULL);
 }
 
 int get_time_to_empty(charging_state_t charging_state) {
@@ -391,8 +427,8 @@ int get_time_to_empty(charging_state_t charging_state) {
 int estimate_time_to_full() {
     SMC_INIT_CHK(0);
 
-    int16_t current;
-    uint16_t fullcap;
+    int16_t current = 0;
+    uint16_t fullcap = 0;
 
     /* B0FC(ui16) FullChargeCapacity (mAh) */
     result = smc_read_n('B0FC', &fullcap,2);
@@ -406,18 +442,25 @@ int estimate_time_to_full() {
         return 0;
 
     /* Not charging */
-    if (current < 0)
-        return 0;
+	if (current <= 0 || fullcap == 0)
+		return 0;
 
     /* TimeToFullCharge = FullChargeCapacity (mAh) / AverageCurrent (mA) */
     return (fullcap / current);
 }
 
 float get_battery_health(float *design_cap, float *full_cap) {
+	/* Make failure observable to callers that reuse output storage.  Without
+	 * this, a failed reconnect leaves the previous refresh's capacities in
+	 * place while the scalar return value is the ambiguous zero sentinel. */
+	if (design_cap)
+		*design_cap = 0.0f;
+	if (full_cap)
+		*full_cap = 0.0f;
     SMC_INIT_CHK(0);
 
-    uint16_t fullcap;
-    uint16_t designcap;
+    uint16_t fullcap = 0;
+    uint16_t designcap = 0;
 
     /* B0FC(ui16) FullChargeCapacity (mAh) */
     result = smc_read_n('B0FC', &fullcap,2);
@@ -435,27 +478,45 @@ float get_battery_health(float *design_cap, float *full_cap) {
     if (full_cap) {
         *full_cap = fullcap;
     }
+    /* A zero full/design capacity means that health is unavailable, not
+     * zero.  Keep the scalar return sentinel consistent with the UI path. */
+    if (fullcap == 0 || designcap == 0)
+        return 0.0f;
+
     /* Health = 100.0f * FullChargeCapacity (mAh) / DesignCapacity (mAh) */
-    return (100.0f * fullcap / designcap);
+    float health = 100.0f * (float)fullcap / (float)designcap;
+    return isfinite(health) && health >= 0.0f && health <= 200.0f ? health : 0.0f;
 }
 
 bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design) {
     if(!remaining && !full && !design)
         return true;
+
+	/* Clear caller-owned outputs before any potentially failing SMC operation;
+	 * callers often retain these buffers across refreshes. */
+	if (remaining)
+		*remaining = 0;
+	if (full)
+		*full = 0;
+	if (design)
+		*design = 0;
     
     if (!gConn && smc_open())
         return false;
 
     int num = batt_cell_num();
-    if (num == -1) num = 1;
+    /* Some legacy gauges do not expose BNCB; retain the historical one-cell
+     * fallback, but never allow zero/negative/corrupt counts to erase valid
+     * readings or overflow the multiplication below. */
+    if (num <= 0 || num > 32) num = 1;
 
     uint16_t B0RM, B0FC, B0DC;
     B0RM = B0FC = B0DC = 0;
 
     /* B0RM(ui16) RemainingCapacity (mAh) */
-    IOReturn result = smc_read_n('B0RM', &B0RM, 2);
-    if (result != kIOReturnSuccess)
-        return false;
+	IOReturn result = smc_read_n('B0RM', &B0RM, 2);
+	if (result != kIOReturnSuccess)
+		return false;
 
     /* B0FC(ui16) FullChargeCapacity (mAh) */
     result = smc_read_n('B0FC', &B0FC, 2);
@@ -468,8 +529,8 @@ bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design) {
         return false;
 
 	SMCParamStruct input= {0};
-	result = smc_get_keyinfo('B0RM', &input.param.keyInfo);
-	if (result == kIOReturnSuccess) {
+	IOReturn keyInfoResult = smc_get_keyinfo('B0RM', &input.param.keyInfo);
+	if (keyInfoResult == kIOReturnSuccess) {
 		uint8_t atrib = input.param.keyInfo.dataAttributes;
 		if (atrib & 0x10) {
 			/* The known scene where the B0RM endian reversed is when it has attribute 'Function' */
@@ -482,39 +543,59 @@ bool get_capacity(uint16_t *remaining, uint16_t *full, uint16_t *design) {
 			B0RM = ((B0RM & 0xFF) << 8) | (B0RM >> 8);
 		}
 	}
+	if (B0FC == 0 || B0DC == 0)
+		/* A zero full/design capacity is a successful transport response but
+		 * not a usable battery capacity. Keep the bool contract aligned with
+		 * the unavailable-state handling in all callers. */
+		return false;
 
-    if (remaining)
-        *remaining = B0RM * num;
-    if (full)
-        *full = B0FC * num;
-    if (design)
-        *design = B0DC * num;
+	uint32_t scaledRemaining = (uint32_t)B0RM * (uint32_t)num;
+	uint32_t scaledFull = (uint32_t)B0FC * (uint32_t)num;
+	uint32_t scaledDesign = (uint32_t)B0DC * (uint32_t)num;
+	if (scaledRemaining > UINT16_MAX || scaledFull > UINT16_MAX || scaledDesign > UINT16_MAX)
+		return false;
+	if (remaining)
+		*remaining = (uint16_t)scaledRemaining;
+	if (full)
+		*full = (uint16_t)scaledFull;
+	if (design)
+		*design = (uint16_t)scaledDesign;
 
-    return result == kIOReturnSuccess;
+	/* The optional key-info query is only used to detect byte order.  A gauge
+	 * that does not expose key metadata can still provide valid capacities. */
+	return true;
 }
 
 bool get_gas_gauge(gas_gauge_t *gauge) {
+	if (!gauge)
+		return false;
+	/* Clear the caller's snapshot before attempting to reconnect. If SMC is
+	 * unavailable, a failed read must not leave the previous refresh's values
+	 * looking current. */
+	memset(gauge, 0, sizeof(gas_gauge_t));
     SMC_INIT_CHK(false);
 
-    // Zero before use
-    memset(gauge, 0, sizeof(gas_gauge_t));
+	bool requiredReadsOK = true;
+	#define GAUGE_READ_REQUIRED(key, destination, length) \
+		do { if (smc_read_n((key), (destination), (length)) != kIOReturnSuccess) \
+			requiredReadsOK = false; } while (0)
 
     /* TODO: Continue shorten those code */
 
     /* B0AT(ui16): Temperature */
-    smc_read_n('B0AT', &gauge->Temperature,2);
+    GAUGE_READ_REQUIRED('B0AT', &gauge->Temperature, 2);
 
     /* B0AV/BC1V(ui16): Average Voltage */
-    smc_read_n('B0AV', &gauge->Voltage,2);
+    GAUGE_READ_REQUIRED('B0AV', &gauge->Voltage, 2);
     
     /* B0FI(char[2]): Flags */
     smc_read_n('B0FI', &gauge->Flags,2);
     
     /* B0RM(ui16): RemainingCapacity */
-    smc_read_n('B0RM', &gauge->RemainingCapacity,2);
+    GAUGE_READ_REQUIRED('B0RM', &gauge->RemainingCapacity, 2);
     
     /* B0FC(ui16): FullChargeCapacity */
-    smc_read_n('B0FC', &gauge->FullChargeCapacity,2);
+    GAUGE_READ_REQUIRED('B0FC', &gauge->FullChargeCapacity, 2);
 
     /* B0AC(si16): AverageCurrent */
     smc_read_n('B0AC', &gauge->AverageCurrent,2);
@@ -554,7 +635,18 @@ bool get_gas_gauge(gas_gauge_t *gauge) {
     // smc_read_n('BDD1', &gauge->PresentDOD,-2);
 
     /* B0DC(ui16): DesignCapacity */
-    smc_read_n('B0DC', &gauge->DesignCapacity,2);
+    GAUGE_READ_REQUIRED('B0DC', &gauge->DesignCapacity, 2);
+
+    /* A few SMC implementations report kIOReturnSuccess with an all-zero
+     * payload for keys that are not available during wake/disconnect.  A
+     * zero average voltage or zero full/design capacity cannot describe a
+     * usable battery; treat the whole gauge snapshot as unavailable so
+     * callers do not publish a convincing set of zero detail fields. */
+    float gaugeTemperature = (float)gauge->Temperature * 0.01f;
+    if (!battman_temperature_is_valid(gaugeTemperature) ||
+        gauge->Voltage == 0 || gauge->FullChargeCapacity == 0 ||
+        gauge->DesignCapacity == 0)
+        requiredReadsOK = false;
 
     /* B0IM(si16): IMAX */
     smc_read_n('B0IM', &gauge->IMAX,2);
@@ -581,6 +673,10 @@ bool get_gas_gauge(gas_gauge_t *gauge) {
 
     /* BMDN(ch8*)[32]: DeviceName (MacBooks Only) */
     smc_read_n('BMDN', &gauge->DeviceName,32);
+    /* BMDN is a fixed-width byte field and is not guaranteed to contain a
+     * terminator.  Keep later strlen/formatting bounded even for a full
+     * non-NUL response. */
+    gauge->DeviceName[sizeof(gauge->DeviceName) - 1] = '\0';
 
     /* B0CU(ui16): DesignCycleCount (MacBooks Only) */
     smc_read_n('B0CU', &gauge->DesignCycleCount,2);
@@ -616,20 +712,28 @@ bool get_gas_gauge(gas_gauge_t *gauge) {
     /* BCFT */
     /* BCFP NeedsPrecharge */
     /* BCFV Voltage */
-    return true;
+    #undef GAUGE_READ_REQUIRED
+	if (!requiredReadsOK)
+		/* Required keys were readable only partially (or carried an invalid
+		 * zero payload).  Do not leave optional fields in the output when the
+		 * aggregate snapshot is reported as unavailable. */
+		memset(gauge, 0, sizeof(gas_gauge_t));
+	return requiredReadsOK;
 }
 
 /* -1: Unknown */
 int batt_cell_num(void) {
     SMC_INIT_CHK(-1);
 
-    int8_t count;
+    int8_t count = 0;
     
     /* BNCB(si8) Number of Battery Cells */
     result = smc_read_n('BNCB', &count,1);
     if (result != kIOReturnSuccess)
         return -1;
     
+    if (count <= 0 || count > 32)
+        return -1;
     return count;
 }
 
@@ -639,6 +743,8 @@ bool get_cells(cell_info_t cells) {
 }
 
 bool battery_serial(char *serial) {
+	if (!serial)
+		return false;
     SMC_INIT_CHK(false);
 
     /* BMSN(ch8*) Battery Serial */

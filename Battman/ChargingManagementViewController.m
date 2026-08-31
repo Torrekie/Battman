@@ -9,6 +9,11 @@
 #import "ObjCExt/UIColor+compat.h"
 
 #include <notify.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 enum sections_cl {
 	CM_SECT_GENERAL,
@@ -20,10 +25,71 @@ enum sections_cl {
 extern uint64_t battman_worker_call(char cmd, void *arg, uint64_t arglen);
 extern void battman_worker_oneshot(char cmd, char arg);
 
+static BOOL CLReadNotifyState(const char *name, BOOL *state) {
+	if (!name || !state)
+		return NO;
+	int token = 0;
+	uint64_t value = 0;
+	if (notify_register_check(name, &token) != NOTIFY_STATUS_OK)
+		return NO;
+	int result = notify_get_state(token, &value);
+	notify_cancel(token);
+	if (result != NOTIFY_STATUS_OK)
+		return NO;
+	*state = value != 0;
+	return YES;
+}
+
+static BOOL CLWriteNotifyState(const char *name, BOOL desired, BOOL *actual) {
+	if (!name)
+		return NO;
+	int token = 0;
+	if (notify_register_check(name, &token) != NOTIFY_STATUS_OK)
+		return NO;
+	uint64_t value = desired ? 1 : 0;
+	int setResult = notify_set_state(token, value);
+	if (setResult == NOTIFY_STATUS_OK)
+		setResult = notify_post(name);
+	int getResult = (setResult == NOTIFY_STATUS_OK) ? notify_get_state(token, &value) : setResult;
+	notify_cancel(token);
+	if (setResult != NOTIFY_STATUS_OK || getResult != NOTIFY_STATUS_OK)
+		return NO;
+	if (actual)
+		*actual = value != 0;
+	return value == (desired ? 1 : 0);
+}
+
+static BOOL CMReadDaemonPID(pid_t *pid_out) {
+	if (!pid_out)
+		return NO;
+	const char *config_dir = battman_config_dir();
+	if (!config_dir)
+		return NO;
+	char path[PATH_MAX];
+	int length = snprintf(path, sizeof(path), "%s/daemon.run", config_dir);
+	if (length <= 0 || (size_t)length >= sizeof(path))
+		return NO;
+	int fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+	if (fd < 0)
+		return NO;
+	struct stat st;
+	BOOL safe = fstat(fd, &st) == 0 && S_ISREG(st.st_mode) &&
+	            st.st_size == (off_t)sizeof(pid_t) && (st.st_mode & 022) == 0;
+	pid_t pid = 0;
+	ssize_t bytes = safe ? pread(fd, &pid, sizeof(pid), 0) : -1;
+	close(fd);
+	if (bytes != (ssize_t)sizeof(pid) || pid <= 1)
+		return NO;
+	if (kill(pid, 0) != 0 && errno != EPERM)
+		return NO;
+	*pid_out = pid;
+	return YES;
+}
+
 #pragma mark - ViewController
 
 @interface ChargingManagementViewController () <SliderTableViewCellDelegate, DatePickerTableViewCellDelegate>
-
+- (BOOL)refreshLowPowerModeSupport;
 @end
 
 @implementation ChargingManagementViewController
@@ -69,22 +135,68 @@ extern void battman_worker_oneshot(char cmd, char arg);
         springboard = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.springboard"];
 	//self.tableView.allowsSelection=NO;
 
-	char  buf[1024];
 	daemon_pid = 0;
-	char *end = stpcpy(stpcpy(buf, battman_config_dir()), "/daemon");
-	strcpy(end, ".run");
-	int drfd = open(buf, O_RDONLY);
-	if (drfd != -1) {
-		int pid;
-		if (read(drfd, &pid, 4) == 4) {
-			if (kill(pid, 0) == 0 || errno != ESRCH) {
-				daemon_pid = pid;
-			}
-		}
-		close(drfd);
-	}
+	lpm_request_generation = 0;
+	pid_t detected_pid = 0;
+	if (CMReadDaemonPID(&detected_pid))
+		daemon_pid = (int)detected_pid;
+	[self refreshLowPowerModeSupport];
 
 	return self;
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+	pid_t detected_pid = 0;
+	daemon_pid = CMReadDaemonPID(&detected_pid) ? (int)detected_pid : 0;
+	[self refreshLowPowerModeSupport];
+	[self.tableView reloadData];
+}
+
+- (BOOL)refreshLowPowerModeSupport {
+	lpm_supported = NO;
+	NSBundle *bundle = nil;
+	if (@available(iOS 16.0, macOS 13.0, *))
+		bundle = [NSBundle systemBundleWithName:@"powerd.LowPowerMode" fallbackExecutable:@"LowPowerMode"];
+	else
+		bundle = [NSBundle systemBundleWithName:@"CoreDuet"];
+	if (!bundle || ![bundle loadAndReturnError:nil]) {
+		/* Older systems exposed the notify state even when CoreDuet was not
+		 * loadable.  Keep that path available for iOS 12/15 instead of hiding
+		 * Low Power Mode solely because the private bundle is absent. */
+		if (@available(iOS 16.0, macOS 13.0, *))
+			return NO;
+		BOOL state = NO;
+		if (system_lpm_notif && CLReadNotifyState(system_lpm_notif, &state)) {
+			lpm_on = state;
+			lpm_supported = YES;
+			return YES;
+		}
+		return NO;
+	}
+
+	if (@available(iOS 16.0, macOS 13.0, *)) {
+		Class cls = [bundle classNamed:@"_PMLowPowerMode"];
+		id object = (cls && [cls respondsToSelector:@selector(sharedInstance)]) ? [cls sharedInstance] : nil;
+		if (!object || ![object respondsToSelector:@selector(getPowerMode)] ||
+			![object respondsToSelector:@selector(setPowerMode:fromSource:withCompletion:)])
+			return NO;
+		lpm_on = ((NSInteger)[object getPowerMode] & 1) != 0;
+	} else {
+		Class cls = [bundle classNamed:@"_CDBatterySaver"];
+		id object = (cls && [cls respondsToSelector:@selector(batterySaver)]) ? [cls batterySaver] : nil;
+		if (!object || ![object respondsToSelector:@selector(setPowerMode:error:)])
+			return NO;
+		BOOL state = NO;
+		if (system_lpm_notif && CLReadNotifyState(system_lpm_notif, &state))
+			lpm_on = state;
+		else if ([object respondsToSelector:@selector(getPowerMode)])
+			lpm_on = ((NSInteger)[object getPowerMode] & 1) != 0;
+		else
+			return NO;
+	}
+	lpm_supported = YES;
+	return YES;
 }
 
 - (void)viewDidLoad {
@@ -113,6 +225,8 @@ extern void battman_worker_oneshot(char cmd, char arg);
     if (sect == CM_SECT_GENERAL) {
 		if (daemon_pid)
 			return _("These values can’t be overridden when the Charging Limit daemon is running.");
+		if (!hasSMC)
+			return _("Charging controls are unavailable because this device does not expose the required power sensor.");
 		uint8_t obc = NO;
 		BOOL has_pwr = NO;
 		smc_read_n('CH0C', &obc, 1);
@@ -131,23 +245,8 @@ extern void battman_worker_oneshot(char cmd, char arg);
     } else if (sect == CM_SECT_SMART_CHARGING) {
 		return _("Smart Charging will start 900 seconds (15 minutes) after power is plugged-in, or the date you scheduled, whichever one comes first.");
     } else if (sect == CM_SECT_LOW_POWER_MODE) {
-        NSUserDefaults *suite = [[NSUserDefaults alloc] initWithSuiteName:batterysaver_state];
-
-#if USE_MOBILEGESTALT && 0
-        /* The problem is, MobileGestalt is returning Apple preferred presets,
-         * but not always the real condition of a device.
-         */
-        void *mobileGestalt = dlopen("/usr/lib/libMobileGestalt.dylib", RTLD_LAZY);
-        if (mobileGestalt) {
-            bool (*MGGetBoolAnswer)(CFStringRef) = (bool(*)(CFStringRef))dlsym(mobileGestalt, "MGGetBoolAnswer");
-            if (MGGetBoolAnswer)
-                lpm_supported = MGGetBoolAnswer(CFSTR("f+PE44W6AO2UENJk3p2s5A"));
-            dlclose(mobileGestalt);
-        }
-#else
-        lpm_supported = 1;
-        /* TODO: Alternative checks if MobileGestalt is unreliable */
-#endif
+        NSUserDefaults *suite = batterysaver_state ? [[NSUserDefaults alloc] initWithSuiteName:batterysaver_state] : nil;
+        [self refreshLowPowerModeSupport];
         if (lpm_supported) {
             NSMutableString *finalStr = [[NSMutableString alloc] init];
             [suite synchronize];
@@ -218,141 +317,179 @@ final:
 #pragma mark - Switches
 
 - (void)setBlockCharging:(UISwitch *)cswitch {
+	if (daemon_pid) {
+		cswitch.on = !cswitch.on;
+		show_alert(L_FAILED, _C("These values can’t be overridden when the Charging Limit daemon is running."), L_OK);
+		return;
+	}
 	BOOL val = cswitch.on;
     /* FIXME: kIOReturnNotPrivileged */
 	int ret = smc_write_safe('CH0C', &val, 1);
-    if (ret)
-    	show_alert(L_FAILED, _C("Something went wrong when setting this property."), L_OK);
-    int new_val;
-	smc_read_n('CH0C', &new_val, 1);
-    DBGLOG(@"setBlockCharging: set: %d, new: %d", val, new_val & 0xFF);
-	new_val &= 0xFF;
+	if (ret) {
+		show_alert(L_FAILED, _C("Something went wrong when setting this property."), L_OK);
+		return;
+	}
+	uint8_t new_val = 0;
+	if (smc_read_n('CH0C', &new_val, 1) != 0) {
+		cswitch.on = !val;
+		show_alert(L_FAILED, _C("Something went wrong when setting this property."), L_OK);
+		return;
+	}
+	DBGLOG(@"setBlockCharging: set: %d, new: %d", val, new_val & 0xFF);
 	if ((new_val != 0) != val) {
 		cswitch.on = (new_val != 0);
 	}
 }
 
 - (void)setBlockPower:(UISwitch *)cswitch {
+	if (daemon_pid) {
+		cswitch.on = !cswitch.on;
+		show_alert(L_FAILED, _C("These values can’t be overridden when the Charging Limit daemon is running."), L_OK);
+		return;
+	}
     BOOL val = cswitch.on;
     /* FIXME: kIOReturnNotPrivileged */
     int ret = smc_write_safe('CH0I', &val, 1);
-    if (ret)
+	if (ret) {
     	show_alert(L_FAILED, _C("Something went wrong when setting this property."), L_OK);
-    int new_val;
-    smc_read_n('CH0I', &new_val, 1);
+		return;
+	}
+	uint8_t new_val = 0;
+	if (smc_read_n('CH0I', &new_val, 1) != 0) {
+		cswitch.on = !val;
+		show_alert(L_FAILED, _C("Something went wrong when setting this property."), L_OK);
+		return;
+	}
     DBGLOG(@"setBlockPower: set: %d, new: %d", val, new_val & 0xFF);
-    new_val &= 0xFF;
     if ((new_val != 0) != val) {
         cswitch.on = (new_val != 0);
     }
 }
 
 - (void)setLPM:(UISwitch *)cswitch {
-    NSError *err = nil;
+	BOOL requested = cswitch ? cswitch.on : lpm_on;
+	if (![self refreshLowPowerModeSupport]) {
+		if (cswitch) {
+			cswitch.on = lpm_on;
+			show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+		}
+		return;
+	}
+	if (!cswitch)
+		return;
+
 	NSBundle *bundle = nil;
-	NSString *bundle_name = nil;
-	BOOL use_notif = NO;
+	if (@available(iOS 16.0, macOS 13.0, *))
+		bundle = [NSBundle systemBundleWithName:@"powerd.LowPowerMode" fallbackExecutable:@"LowPowerMode"];
+	else
+		bundle = [NSBundle systemBundleWithName:@"CoreDuet"];
+	NSError *error = nil;
+	id object = nil;
+	BOOL bundleLoaded = bundle && [bundle loadAndReturnError:nil];
+	if (!bundleLoaded) {
+		if (@available(iOS 16.0, macOS 13.0, *)) {
+			cswitch.on = lpm_on;
+			show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+			return;
+		}
+		BOOL notifyActual = NO;
+		if (CLWriteNotifyState(system_lpm_notif, requested, &notifyActual) && notifyActual == requested) {
+			lpm_on = notifyActual;
+			cswitch.on = notifyActual;
+			return;
+		}
+		cswitch.on = lpm_on;
+		show_alert(L_FAILED, _C("Unable to set Low Power Mode."), L_OK);
+		return;
+	}
 	if (@available(iOS 16.0, macOS 13.0, *)) {
-		bundle_name = @"powerd.LowPowerMode";
-		bundle = [NSBundle systemBundleWithName:bundle_name fallbackExecutable:@"LowPowerMode"];
-	} else {
-		bundle_name = @"CoreDuet";
-		bundle = [NSBundle systemBundleWithName:bundle_name];
-	}
-	
-	if (!bundle) {
-		show_alert(L_FAILED, [NSString stringWithFormat:_("Current device has no builtin LowPowerMode framework (%@)."), bundle_name].UTF8String, L_OK);
-		use_notif = YES;
-	}
-	if (!use_notif && ![bundle loadAndReturnError:&err]) {
-		NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), bundle_name, L_ERR, [err localizedDescription]];
-		show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-		use_notif = YES;
-	}
-
-    BOOL val = NO;
-    if (cswitch) {
-        val = cswitch.on;
-        NSLog(@"%@abling Low Power Mode", val ? @"En" : @"Dis");
-    }
-
-    id LPMClass = nil;
-    id LPMObject = nil;
-    bool get_notif = false;
-    if (@available(iOS 16.0, macOS 13.0, *)) {
-        get_notif = true;
-    } else if (!use_notif) {
-        LPMClass = [bundle classNamed:@"_CDBatterySaver"];
-        LPMObject = [LPMClass batterySaver];
-        if (@available(iOS 15.0, macOS 12.0, *)) {
-            // On iOS 15 we can set LPM by CoreDuet, but cannot get it from.
-            get_notif = true;
-        } else {
-            // We can get LPM state by notify, but I cannot test.
-            // Need someone to confirm if it was available for older OS
-            lpm_on = [LPMObject getPowerMode] & 1;
-        }
-	} else {
-		get_notif = true;
-	}
-
-    if (get_notif) {
-        int token;
-        uint64_t state;
-        if (notify_register_check(system_lpm_notif, &token) == NOTIFY_STATUS_OK) {
-            if (notify_get_state(token, &state) == NOTIFY_STATUS_OK) {
-                lpm_on = state;
-            }
-            notify_cancel(token);
-            DBGLOG(@"LPM is currently %@abled.", lpm_on ? @"en" : @"dis");
-        }
-    }
-
-    if (cswitch) {
-		__block BOOL fallback = NO;
-		// We prefers _PMLowPowerMode/_CDBatterySaver because it logs the date
-		if (!use_notif) {
-			if (@available(iOS 16.0, macOS 13.0, *)) {
-				LPMClass = [bundle classNamed:@"_PMLowPowerMode"];
-				LPMObject = [LPMClass sharedInstance];
-				[LPMObject setPowerMode:val fromSource:@"com.torrekie.Battman" withCompletion:^(BOOL success, NSError *error) {
-					DBGLOG(@"Switching %@ LPM. Success=%d error: %@", val ? @"into" : @"out of", success, error);
-					if (success) self->lpm_on = val;
-					else fallback = YES;
-				}];
-			} else {
-				/* 0 = Normal, 1 = LPM */
-				[LPMObject setPowerMode:val error:&err];
-				lpm_on = [LPMObject getPowerMode] & 1;
-				if (lpm_on != val) {
-					NSString *errorMessage = [NSString stringWithFormat:@"%@\n\n%@: %@", _("Unable to set Low Power Mode."), _("Error"), [err localizedDescription]];
-					//show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-					NSLog(@"%@", errorMessage);
-					fallback = YES;
-				} else {
-					NSLog(@"[batterySaver getPowerMode] = %lld", [LPMObject getPowerMode]);
+		Class cls = [bundle classNamed:@"_PMLowPowerMode"];
+		object = (cls && [cls respondsToSelector:@selector(sharedInstance)]) ? [cls sharedInstance] : nil;
+		if (!object) {
+			cswitch.on = lpm_on;
+			show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+			return;
+		}
+		__weak ChargingManagementViewController *weakSelf = self;
+		__weak id weakLPMObject = object;
+		NSUInteger requestGeneration = ++lpm_request_generation;
+		[object setPowerMode:requested fromSource:@"com.torrekie.Battman" withCompletion:^(BOOL success, NSError *completionError) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				ChargingManagementViewController *strongSelf = weakSelf;
+				id strongLPMObject = weakLPMObject;
+				if (!strongSelf || !strongLPMObject)
+					return;
+				if (strongSelf->lpm_request_generation != requestGeneration)
+					return;
+				(void)success;
+				(void)completionError;
+				BOOL readbackAvailable = [strongLPMObject respondsToSelector:@selector(getPowerMode)];
+				BOOL actual = readbackAvailable && (((NSInteger)[strongLPMObject getPowerMode] & 1) != 0);
+				DBGLOG(@"Switching %@ LPM. Success=%d error: %@ readbackAvailable=%d actual=%d", requested ? @"into" : @"out of", success, completionError, readbackAvailable, actual);
+				/* The completion result only reports whether the request was
+				 * accepted.  Trust the independently read system state, including
+				 * when the callback reports an error after applying the change. */
+				if (readbackAvailable && actual == requested) {
+					strongSelf->lpm_on = actual;
+					cswitch.on = actual;
+					return;
 				}
-			}
+				BOOL notifyActual = NO;
+				if (CLWriteNotifyState(strongSelf->system_lpm_notif, requested, &notifyActual) && notifyActual == requested) {
+					strongSelf->lpm_on = notifyActual;
+					cswitch.on = notifyActual;
+					return;
+				}
+				cswitch.on = strongSelf->lpm_on;
+				show_alert(L_FAILED, _C("Unable to set Low Power Mode."), L_OK);
+			});
+		}];
+		return;
+	}
+
+	Class cls = [bundle classNamed:@"_CDBatterySaver"];
+	object = (cls && [cls respondsToSelector:@selector(batterySaver)]) ? [cls batterySaver] : nil;
+	if (!object || ![object respondsToSelector:@selector(setPowerMode:error:)]) {
+		cswitch.on = lpm_on;
+		show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+		return;
+	}
+	BOOL callSucceeded = [object setPowerMode:requested error:&error];
+	BOOL actual = lpm_on;
+	BOOL readbackAvailable = NO;
+	if ([object respondsToSelector:@selector(getPowerMode)]) {
+		actual = (((NSInteger)[object getPowerMode] & 1) != 0);
+		readbackAvailable = YES;
+	} else if (system_lpm_notif) {
+		BOOL notifyActual = NO;
+		if (CLReadNotifyState(system_lpm_notif, &notifyActual)) {
+			actual = notifyActual;
+			readbackAvailable = YES;
 		}
-		if (use_notif || fallback) {
-			uint64_t state = (uint64_t)val;
-			int      token = 0;
-			if (notify_register_check(system_lpm_notif, &token) == NOTIFY_STATUS_OK) {
-				if (notify_set_state(token, state) == NOTIFY_STATUS_OK)
-					notify_post(system_lpm_notif);
-				else
-					show_alert(L_FAILED, [NSString stringWithFormat:_("This device does not allow setting notify register '%s'."), system_lpm_notif].UTF8String, L_OK);
-			} else
-				show_alert(L_FAILED, [NSString stringWithFormat:_("This device does not seem to be using notify register '%s'."), system_lpm_notif].UTF8String, L_OK);
-			if (notify_get_state(token, &state) == NOTIFY_STATUS_OK)
-				lpm_on = state;
-			notify_cancel(token);
+	}
+	/* A failed setter callback is not proof that the state stayed unchanged;
+	 * use an independent getter/notify readback as the source of truth before
+	 * attempting the legacy notify write fallback. */
+	if (!readbackAvailable || actual != requested) {
+		BOOL notifyActual = NO;
+		if (!CLWriteNotifyState(system_lpm_notif, requested, &notifyActual) || notifyActual != requested) {
+			cswitch.on = lpm_on;
+			show_alert(L_FAILED, _C("Unable to set Low Power Mode."), L_OK);
+			return;
 		}
-        cswitch.on = lpm_on;
-    }
+		actual = notifyActual;
+	}
+	(void)callSucceeded;
+	DBGLOG(@"Synchronous LPM request success=%d error=%@ readback=%d", callSucceeded, error, actual);
+	lpm_on = actual;
+	cswitch.on = actual;
 }
 
 - (void)setLPMAutoDisable:(UISwitch *)cswitch {
+	if (!lpm_supported) {
+		cswitch.on = NO;
+		return;
+	}
 	if (batterysaver || is_simulator()) {
 		[batterysaver setBool:cswitch.on forKey:@"autoDisableWhenPluggedIn"];
 	} else {
@@ -362,6 +499,10 @@ final:
 }
 
 - (void)setAllowThr:(UISwitch *)cswitch {
+	if (!lpm_supported) {
+		cswitch.on = NO;
+		return;
+	}
 	if (!cswitch.on) {
 		if (batterysaver || is_simulator()) {
 			[batterysaver removeObjectForKey:@"autoDisableThreshold"];
@@ -430,13 +571,23 @@ final:
 		if (indexPath.row == 2) {
 			NSError *err = nil;
 			NSBundle *powerUIBundle = [NSBundle systemBundleWithName:@"PowerUI"];
-			if (![powerUIBundle loadAndReturnError:&err]) {
+				if (![powerUIBundle loadAndReturnError:&err]) {
 				NSString *errorMessage = [NSString stringWithFormat:@"%@ %@\n\n%s: %@", _("Failed to load"), @"PowerUI.framework", L_ERR, [err localizedDescription]];
 				show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
-				goto tvend;
-			}
-			id sccClass = [powerUIBundle classNamed:@"PowerUISmartChargeClient"];
-			id sccObject = [[sccClass alloc] initWithClientName:@"ok"];
+					goto tvend;
+				}
+				id sccClass = [powerUIBundle classNamed:@"PowerUISmartChargeClient"];
+				if (!sccClass || ![sccClass instancesRespondToSelector:@selector(initWithClientName:)] ||
+					![sccClass instancesRespondToSelector:@selector(setState:error:)] ||
+					![sccClass instancesRespondToSelector:@selector(engageFrom:until:repeatUntil:overrideAllSignals:)]) {
+					show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+					goto tvend;
+				}
+				id sccObject = [[sccClass alloc] initWithClientName:@"ok"];
+				if (!sccObject) {
+					show_alert(L_FAILED, _C("Not supported on this device"), L_OK);
+					goto tvend;
+				}
 			if(![sccObject setState:1 error:&err]) {
 				NSString *errorMessage = [NSString stringWithFormat:@"%@\n\n%s: %@", _("Failed to enable Smart Charging."), L_ERR, [err localizedDescription]];
 				show_alert(L_FAILED, [errorMessage UTF8String], L_OK);
@@ -474,22 +625,27 @@ tvend:
     if (indexPath.section == CM_SECT_GENERAL) {
         UISwitch *cswitch = [UISwitch new];
         int switchOn = 0;
+		BOOL readOK = hasSMC && !daemon_pid;
         SEL action = nil;
         // TODO: Reduce redundant codes
         if (indexPath.row == 0) {
             cell.textLabel.text = _("Block Charging");
-            smc_read_n('CH0C', &switchOn, 1);
+			readOK = readOK && (smc_read_n('CH0C', &switchOn, 1) == 0);
             action = @selector(setBlockCharging:);
         } else if (indexPath.row == 1) {
             cell.textLabel.text = _("Block Power Supply");
-            smc_read_n('CH0I', &switchOn, 1);
+			readOK = readOK && (smc_read_n('CH0I', &switchOn, 1) == 0);
             action = @selector(setBlockPower:);
         }
         [cswitch addTarget:self action:action forControlEvents:UIControlEventValueChanged];
         cswitch.on = (switchOn & 0xFF) != 0;
+		cswitch.accessibilityLabel = cell.textLabel.text;
+		cswitch.accessibilityValue = cswitch.on ? _("Enabled") : _("Disabled");
         /* 0: disabled, 1: enabled, 2: managed */
         /* while 2, user cannot reset the value */
-        cswitch.enabled = !(switchOn & 0x2);
+		cswitch.enabled = readOK && !(switchOn & 0x2);
+		if (!readOK)
+			cell.detailTextLabel.text = _("Unavailable");
         cell.accessoryView = cswitch;
     } else if (indexPath.section == CM_SECT_SMART_CHARGING) {
 		if (indexPath.row == 0) {
@@ -565,7 +721,10 @@ tvend:
             selector = @selector(setLPM:);
         } else if (indexPath.row == 1) {
             cell.textLabel.text = _("Disable on A/C");
-            if (batterysaver || is_simulator()) {
+            cswitch.enabled = lpm_supported;
+            if (!lpm_supported) {
+                cswitch.on = NO;
+            } else if (batterysaver || is_simulator()) {
                 id state = [batterysaver valueForKey:@"autoDisableWhenPluggedIn"];
                 if (state)
                     cswitch.on = [state boolValue];
@@ -579,7 +738,11 @@ tvend:
             selector = @selector(setLPMAutoDisable:);
         } else if (indexPath.row == 2) {
             cell.textLabel.text = _("Disable When Exceeds");
-            if (batterysaver || is_simulator()) {
+            cswitch.enabled = lpm_supported;
+            if (!lpm_supported) {
+                lpm_thr = 0;
+                cswitch.on = NO;
+            } else if (batterysaver || is_simulator()) {
                 id value = [batterysaver valueForKey:@"autoDisableThreshold"];
                 lpm_thr = [value floatValue];
                 cswitch.on = (value) ? YES : NO;
@@ -596,9 +759,12 @@ tvend:
             
             cell_s.slider.minimumValue = 10.0f;
             cell_s.slider.maximumValue = 100.0f;
+			cell_s.integerOnly = YES;
+			cell_s.slider.accessibilityLabel = _("Disable When Exceeds");
+			cell_s.textField.accessibilityLabel = _("Disable When Exceeds");
 
-            cell_s.slider.enabled = (lpm_thr) ? YES : NO;
-            cell_s.textField.enabled = cell_s.slider.enabled;
+			cell_s.slider.enabled = lpm_supported && (lpm_thr) ? YES : NO;
+			cell_s.textField.enabled = cell_s.slider.enabled;
             cell_s.slider.userInteractionEnabled = cell_s.slider.enabled;
             cell_s.textField.userInteractionEnabled = cell_s.slider.enabled;
             cell_s.userInteractionEnabled = cell_s.slider.enabled;
@@ -617,6 +783,8 @@ tvend:
             selector = @selector(setHideLPMAlerts:);
         }
         [cswitch addTarget:self action:selector forControlEvents:UIControlEventValueChanged];
+		cswitch.accessibilityLabel = cell.textLabel.text;
+		cswitch.accessibilityValue = cswitch.on ? _("Enabled") : _("Disabled");
         cell.accessoryView = cswitch;
     }
 

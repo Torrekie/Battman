@@ -120,6 +120,13 @@
 #define SIM_UNSANDBOX_FMT "^/Users/[^/]+/Library/Developer/CoreSimulator/Devices/[0-9A-Fa-f\\-]{36}/data$"
 #define IOS_ROOTHIDEN_FMT "^/var/containers/Bundle/Application/\\.jbroot-[[:xdigit:]]{16}/var/mobile$"
 
+/*
+ * The charging-limit client and daemon exchange this small shared-memory
+ * record. Keep the size in one place; using sizeof(pointer) when syncing the
+ * mapping can silently hide persistence bugs.
+ */
+#define BATTMAN_DAEMON_SETTINGS_SIZE 3u
+
 #define SFPRO "SFProDisplay-Regular"
 
 typedef enum {

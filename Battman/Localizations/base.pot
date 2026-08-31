@@ -80,17 +80,10 @@ msgstr ""
 msgid "Gonna tell us something?"
 msgstr ""
 
-msgid ""
-"Found a bug or have an idea? Please choose one way to contact us:\n"
-"open a GitHub Issue (public — great for steps/logs)\n"
-"or Send Email (for private info or attachments). We really appreciate your "
-"help!"
+msgid "Use GitHub Issues for ordinary bugs and feature requests. Include steps to reproduce, but do not include personal data, device identifiers, or plug-in files."
 msgstr ""
 
 msgid "Open GitHub Issue"
-msgstr ""
-
-msgid "Send Email"
 msgstr ""
 
 msgid "Cancel"
@@ -2393,4 +2386,76 @@ msgid "Verification"
 msgstr ""
 
 msgid "View Verification Details"
+msgstr ""
+
+msgid "Download Guide"
+msgstr ""
+
+msgid "Use the package that matches how Battman is installed."
+msgstr ""
+
+msgid "Rooted jailbreak (iOS 12+): install the matching host or plug-in iphoneos-arm .deb with APT/dpkg; do not use iphoneos-arm64."
+msgstr ""
+
+msgid "Rootless jailbreak (iOS 15+): install the matching host or plug-in iphoneos-arm64 .deb with APT/dpkg; do not use iphoneos-arm."
+msgstr ""
+
+msgid "TrollStore (iOS 14+): install the replacement Battman.tipa. Native plug-ins must be embedded in that replacement app; newly imported native code is not loaded directly from the app data directory."
+msgstr ""
+
+msgid "A .battman file is an import transport. Battman verifies it before approval; it is not a direct installer."
+msgstr ""
+
+msgid "Havoc is a manually selected Debian-only channel. GitHub Releases is the canonical place for reviewed artifacts. Never install a package for another architecture."
+msgstr ""
+
+msgid "Use Download Guide for architecture-specific package instructions."
+msgstr ""
+
+msgid "Open GitHub Releases"
+msgstr ""
+
+msgid "Open Installation Guide"
+msgstr ""
+
+msgid "Open Havoc"
+msgstr ""
+
+msgid "Temperature is unavailable because no valid hardware reading was returned."
+msgstr ""
+
+msgid "No change detected for several minutes; verify this reading with another sensor if it looks wrong."
+msgstr ""
+
+msgid "Potentially Stale"
+msgstr ""
+
+msgid "Health is calculated from Full Charge Capacity and Designed Capacity; it is not a runtime estimate."
+msgstr ""
+
+msgid "Health is unavailable until both capacity readings are valid."
+msgstr ""
+
+msgid "Cycle count is reported by the battery controller and may be unavailable on some devices."
+msgstr ""
+
+msgid "Cycle count is unavailable because the battery controller did not provide a valid value."
+msgstr ""
+
+msgid "Designed Cycle Count is a manufacturer reference, not a guaranteed service limit."
+msgstr ""
+
+msgid "Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."
+msgstr ""
+
+msgid "Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."
+msgstr ""
+
+msgid "The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."
+msgstr ""
+
+msgid "Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."
+msgstr ""
+
+msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
 msgstr ""

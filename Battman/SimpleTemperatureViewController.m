@@ -7,6 +7,7 @@
 
 #include "scprefs/wrapper.h"
 #include "battery_utils/bin_display.h"
+#include "battery_utils/libsmc.h"
 #include "battery_utils/thermal.h"
 
 // battery_utils/hid.m
@@ -16,7 +17,116 @@ extern NSDictionary        *getSensorTemperatures(void);
 static NSMutableDictionary *knownHIDSensors;
 static NSMutableDictionary *thermalBasics;
 
+@interface SimpleTemperatureViewController () {
+	dispatch_queue_t sensorRefreshQueue;
+	BOOL sensorRefreshInFlight;
+	BOOL sensorRefreshPending;
+}
+@end
+
 @implementation SimpleTemperatureViewController
+
+- (NSDictionary *)readKnownHIDSensorsSnapshot {
+	/* Build the derived HID rows off the main thread.  Each call creates one
+	 * bounded snapshot and never mutates the UI-owned dictionary. */
+	NSMutableDictionary *snapshot = [NSMutableDictionary dictionary];
+	extern float getTemperatureHIDAt(NSString *);
+	extern NSArray *getHIDSkinModelsOf(NSString *);
+	const char *productCString = target_type();
+	NSString *product = productCString ? [NSString stringWithCString:productCString encoding:NSUTF8StringEncoding] : nil;
+	NSArray *deviceAverageModels = product ? getHIDSkinModelsOf(product) : nil;
+	NSDictionary *definitions = @{
+		@"Device Avg.": deviceAverageModels ?: @[],
+		@"Battery Cell 1": @"TG0B",
+		@"Battery Cell 2": @"TG1B",
+		@"Battery Cell 3": @"TG2B",
+		@"Battery Cell 4": @"TG3B",
+		@"Camera Module": @"TSFC",
+	};
+
+	for (NSString *key in definitions) {
+		id descriptor = definitions[key];
+		if ([descriptor isKindOfClass:[NSArray class]]) {
+			float total = 0.0f;
+			NSUInteger validCount = 0;
+			for (id model in (NSArray *)descriptor) {
+				if (![model isKindOfClass:[NSString class]])
+					continue;
+				float temperature = getTemperatureHIDAt(model);
+				if (!battman_temperature_is_valid(temperature))
+					continue;
+				total += temperature;
+				validCount++;
+			}
+			if (validCount) {
+				float average = total / (float)validCount;
+				if (battman_temperature_is_valid(average))
+					snapshot[key] = @(average);
+			}
+		} else if ([descriptor isKindOfClass:[NSString class]]) {
+			float temperature = getTemperatureHIDAt(descriptor);
+			if (battman_temperature_is_valid(temperature))
+				snapshot[key] = @(temperature);
+		}
+	}
+	return [snapshot copy];
+}
+
+- (void)applyTemperatureSnapshots:(NSDictionary *)snapshots {
+	NSAssert([NSThread isMainThread], @"Temperature snapshots are UI state.");
+	NSDictionary *hidData = snapshots[@"hid"];
+	NSDictionary *sensorData = snapshots[@"sensors"];
+	NSDictionary *knownData = snapshots[@"known"];
+	temperatureHIDData = [hidData isKindOfClass:[NSDictionary class]] ? hidData : @{};
+	sensorTemperatures = [sensorData isKindOfClass:[NSDictionary class]] ? sensorData : @{};
+	if (!knownHIDSensors)
+		knownHIDSensors = [[NSMutableDictionary alloc] init];
+	[knownHIDSensors removeAllObjects];
+	if ([knownData isKindOfClass:[NSDictionary class]])
+		[knownHIDSensors addEntriesFromDictionary:knownData];
+}
+
+- (void)scheduleSensorRefresh {
+	NSAssert([NSThread isMainThread], @"Temperature refresh scheduling is main-thread only.");
+	if (!sensorRefreshQueue)
+		sensorRefreshQueue = dispatch_queue_create("com.torrekie.Battman.temperature-sensors", DISPATCH_QUEUE_SERIAL);
+	if (sensorRefreshInFlight) {
+		sensorRefreshPending = YES;
+		return;
+	}
+	sensorRefreshInFlight = YES;
+	__weak SimpleTemperatureViewController *weakSelf = self;
+	dispatch_async(sensorRefreshQueue, ^{
+		@autoreleasepool {
+			SimpleTemperatureViewController *strongSelf = weakSelf;
+			if (!strongSelf)
+				return;
+			NSDictionary *freshHIDData = getTemperatureHIDData() ?: @{};
+			NSDictionary *freshSensorTemperatures = getSensorTemperatures() ?: @{};
+			NSDictionary *freshKnownHIDSensors = [strongSelf readKnownHIDSensorsSnapshot] ?: @{};
+			NSDictionary *snapshots = @{
+				@"hid": freshHIDData,
+				@"sensors": freshSensorTemperatures,
+				@"known": freshKnownHIDSensors,
+			};
+			dispatch_async(dispatch_get_main_queue(), ^{
+				SimpleTemperatureViewController *controller = weakSelf;
+				if (!controller)
+					return;
+				controller->sensorRefreshInFlight = NO;
+				[controller applyTemperatureSnapshots:snapshots];
+				if ([controller isViewLoaded]) {
+					[controller.tableView reloadData];
+					[controller.refreshControl endRefreshing];
+				}
+				if (controller->sensorRefreshPending) {
+					controller->sensorRefreshPending = NO;
+					[controller scheduleSensorRefresh];
+				}
+			});
+		}
+	});
+}
 
 - (instancetype)init {
 	if (@available(iOS 13.0, *)) {
@@ -30,78 +140,12 @@ static NSMutableDictionary *thermalBasics;
 		thermalBasics = [[NSMutableDictionary alloc] init];
 	}
 	[self refreshThermalBasics];
-	temperatureHIDData = getTemperatureHIDData();
-	sensorTemperatures = getSensorTemperatures();
-	if (knownHIDSensors == NULL) {
-		extern float getTemperatureHIDAt(NSString *);
+	temperatureHIDData = @{};
+	sensorTemperatures = @{};
+	if (!knownHIDSensors)
 		knownHIDSensors = [[NSMutableDictionary alloc] init];
-#if 0
-		// Gettext
-		NSArray __unused *knownKeys = @[
-			_("Device Avg."),
-			// _("iPad Skin"),
-			_("Battery Cell 1"),
-			_("Battery Cell 2"),
-			_("Battery Cell 3"),
-			_("Battery Cell 4"),
-			_("Camera Module"),
-		];
-		NSArray __unused *knownBasics = @[
-			/* TRANSLATORS: This is indicating 'Thermal Pressure', please make sure it won't be longer than 'Pressure' to ensure it can be fully displayed */
-			_("Pressure"),
-			/* Thermal Cold Pressure is only for (N112 N66 N66m N69 N69u N71 N71m D10 D101 D11 D111)
-			 * sadly I don't have devices to test, so no such option yet */
-			_("Thermal Notification Level"),
-			_("Max Trigger Temperature"),
-			_("Sunlight Exposure"),
-		];
-#endif
-		extern NSArray *getHIDSkinModelsOf(NSString * prod);
-		// XXX: Try to figure out more
-		// TODO: Warn on invalid VTs
-		// TODO: Show die VTs
-		// TG*B: 15 ~ 46
-		// Die: 17 ~ 75
-		// TSFC: 8 ~ 46
-		NSDictionary   *dict = @{
-            @"Device Avg.": getHIDSkinModelsOf([NSString stringWithCString:target_type() encoding:NSUTF8StringEncoding]),
-			// TODO: Major skin sensor
-            // @"iPad Skin": @"TSBM",
-            @"Battery Cell 1": @"TG0B",
-            @"Battery Cell 2": @"TG1B",
-            @"Battery Cell 3": @"TG2B",
-            @"Battery Cell 4": @"TG3B",
-            @"Camera Module": @"TSFC",
-		};
-
-		NSArray<NSString *> *keys = [dict allKeys];
-		NSArray             *vals = [dict allValues];
-		for (NSUInteger i = 0; i < dict.count; i++) {
-			NSString *className = NSStringFromClass([vals[i] class]);
-			if ([className isEqualToString:@"__NSArrayI"] || [className isEqualToString:@"NSArray"]) {
-				NSArray *buf         = (NSArray *)vals[i];
-				float    avg         = 0;
-				int      valid_count = 0;
-				for (NSUInteger j = 0; j < buf.count; j++) {
-					float temp = getTemperatureHIDAt(buf[j]);
-					if (temp != -1) {
-						avg += temp;
-						valid_count++;
-					}
-				}
-				if (valid_count) {
-					avg /= valid_count;
-					[knownHIDSensors setValue:[NSNumber numberWithFloat:avg] forKey:keys[i]];
-				}
-			}
-			if ([className isEqualToString:@"__NSCFConstantString"] || [className isEqualToString:@"NSString"]) {
-				float temp = getTemperatureHIDAt(vals[i]);
-				if (temp != -1) {
-					[knownHIDSensors setValue:[NSNumber numberWithFloat:temp] forKey:keys[i]];
-				}
-			}
-		}
-	}
+	sensorRefreshQueue = dispatch_queue_create("com.torrekie.Battman.temperature-sensors", DISPATCH_QUEUE_SERIAL);
+	[self scheduleSensorRefresh];
 	return self;
 }
 
@@ -175,11 +219,10 @@ static NSMutableDictionary *thermalBasics;
 	DBGLOG(@"STVC: updateTableView");
 	[self.refreshControl beginRefreshing];
 	[self refreshThermalBasics];
-
-	dispatch_async(dispatch_get_main_queue(), ^{
-		[self.tableView reloadData];
-		[self.refreshControl endRefreshing];
-	});
+	/* HID calls can block while the event system wakes. Keep all three sensor
+	 * snapshots off the main thread and coalesce notifications while a read is
+	 * in flight. */
+	[self scheduleSensorRefresh];
 }
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath {
@@ -360,7 +403,11 @@ static NSMutableDictionary *thermalBasics;
 		label = dict.allKeys[ip.row];
 	}
 	cell.textLabel.text       = label;
-	cell.detailTextLabel.text = battman_temp_display_string([dict[dict.allKeys[ip.row]] floatValue]);
+	NSNumber *rawTemperature = dict[dict.allKeys[ip.row]];
+	BOOL numericTemperature = [rawTemperature isKindOfClass:[NSNumber class]];
+	float temperature = numericTemperature ? rawTemperature.floatValue : -1.0f;
+	BOOL validTemperature = numericTemperature && battman_temperature_is_valid(temperature);
+	cell.detailTextLabel.text = validTemperature ? battman_temp_display_string(temperature) : _("Unavailable");
 
 	/* TODO: thermtune */
 	return cell;

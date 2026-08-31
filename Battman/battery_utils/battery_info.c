@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -47,11 +48,11 @@ void battery_info_unlock(void) {
 }
 
 struct battery_info_node main_battery_template[] = {
-	{ _C("Gas Gauge (Basic)"), _C("All Gas Gauge metrics are dynamically retrieved from the onboard sensor array in real time. Should anomalies be detected in specific readings, this may indicate the presence of unauthorized components or require diagnostics through Apple Authorised Service Provider."), DEFINE_SECTION(10000) },
+	{ _C("Gas Gauge (Basic)"), _C("Gas Gauge values are read from AppleSMC when Battman refreshes this page. A missing value means that the device or sensor did not provide a valid reading; Battman does not estimate it."), DEFINE_SECTION(10000) },
 	{ _C("Device Name"), _C("This indicates the name of the current Gas Gauge IC used by the installed battery."), 0 },
-	{ _C("Health"), NULL, BIN_IS_BACKGROUND | BIN_UNIT_PERCENT },
+	{ _C("Health"), _C("Calculated as Full Charge Capacity divided by Designed Capacity. It is unavailable when either capacity reading is missing and is not a guarantee of runtime."), BIN_IS_BACKGROUND | BIN_UNIT_PERCENT },
 	{ _C("SoC"), NULL, BIN_IS_FLOAT | BIN_UNIT_PERCENT },
-	{ _C("Avg. Temperature"), NULL, BIN_IS_FLOAT | BIN_UNIT_DEGREE_C | BIN_DETAILS_SHARED },
+	{ _C("Avg. Temperature"), _C("The latest valid temperature reported by the battery controller. A missing value means no valid sensor reading was returned; a value that does not change may be stale."), BIN_IS_FLOAT | BIN_UNIT_DEGREE_C | BIN_DETAILS_SHARED },
 	{ _C("Charging"), NULL, BIN_IS_BOOLEAN },
 	{ "ASoC(Hidden)", NULL, BIN_IS_FOREGROUND | BIN_IS_HIDDEN },
 	{ _C("Full Charge Capacity"), NULL, BIN_UNIT_MAH | BIN_IN_DETAILS },
@@ -68,8 +69,8 @@ struct battery_info_node main_battery_template[] = {
 	{ _C("Cell Count"), NULL, BIN_IN_DETAILS },
 	/* TODO: TimeToFull */
 	{ _C("Time to Empty"), NULL, BIN_UNIT_MIN | BIN_IN_DETAILS },
-	{ _C("Cycle Count"), NULL, BIN_IN_DETAILS },
-	{ _C("Designed Cycle Count"), NULL, BIN_IN_DETAILS },
+	{ _C("Cycle Count"), _C("Cumulative charge throughput cycles reported by the battery controller. Some devices do not expose this value, and it is not a direct health percentage."), BIN_IN_DETAILS },
+	{ _C("Designed Cycle Count"), _C("The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."), BIN_IN_DETAILS },
 	{ _C("State of Charge"), NULL, BIN_UNIT_PERCENT | BIN_IN_DETAILS },
 	{ _C("State of Charge (UI)"), _C("The \"Battery Percentage\" displayed exactly on your status bar. This is the SoC that Apple wants to tell you."), BIN_UNIT_PERCENT | BIN_IN_DETAILS },
 	{ _C("Resistance Scale"), NULL, BIN_IN_DETAILS },
@@ -339,12 +340,51 @@ void bi_node_set_hidden(struct battery_info_node *node, int identifier,
     bool hidden) {
 	node += identifier;
 	// assert((node->content & BIN_IN_DETAILS) == BIN_IN_DETAILS);
-	if (!node->content)
+	if (!node->content || !(node->content & BIN_IS_SPECIAL))
 		return;
+	/* Section headers encode their sort priority in bits 16..31.  They use
+	 * this helper for I/O-kit visibility too, but must retain that priority and
+	 * cannot use the row-level dynamic-unavailable marker. */
+	bool isSection = (node->content & BIN_SECTION) == BIN_SECTION;
 	if (hidden) {
-		node->content |= (1 << 5);
+		/* Preserve intrinsic BIN_IS_HIDDEN rows (for example ASoC(Hidden))
+		 * while marking ordinary rows as unavailable for this refresh.  Clear
+		 * the encoded payload so stale numeric values cannot be rendered by a
+		 * consumer that only sees the compact node. */
+		if (!isSection) {
+			/* Once a row has been marked dynamically, BIN_IS_HIDDEN is no
+			 * longer enough to tell whether it was part of the template or was
+			 * added for this refresh. Preserve the provenance marker across
+			 * repeated failed refreshes; otherwise the mask below would erase it
+			 * and the row would remain permanently hidden on recovery. */
+			bool alreadyDynamic = (node->content & BIN_DYNAMIC_HIDDEN) != 0;
+			bool hadIntrinsicHidden = !alreadyDynamic &&
+				(node->content & BIN_IS_HIDDEN) != 0;
+			bool addedVisibility = alreadyDynamic
+				? ((node->content & BIN_DYNAMIC_HIDDEN_VISIBILITY) != 0)
+				: !hadIntrinsicHidden;
+			node->content |= BIN_DYNAMIC_HIDDEN;
+			if (!hadIntrinsicHidden)
+				node->content |= BIN_IS_HIDDEN;
+			/* Clear the old encoded value before reserving bit 31 for the
+			 * visibility provenance marker. */
+			node->content &= 0x0000FFFFU;
+			if (addedVisibility)
+				node->content |= BIN_DYNAMIC_HIDDEN_VISIBILITY;
+		}
+		/* Keep the intrinsic foreground/background bit (bit 5) intact.  It is
+		 * part of the gauge definition, not the dynamic-unavailable state; the
+		 * consumers explicitly suppress gauge updates while BIN_DYNAMIC_HIDDEN
+		 * is set. */
 	} else {
-		node->content &= ~(1L << 5);
+		if (!isSection && (node->content & BIN_DYNAMIC_HIDDEN)) {
+			bool addedVisibility = (node->content & BIN_DYNAMIC_HIDDEN_VISIBILITY) != 0;
+			node->content &= ~BIN_DYNAMIC_HIDDEN;
+			if (addedVisibility)
+				node->content &= ~(BIN_DYNAMIC_HIDDEN_VISIBILITY | BIN_IS_HIDDEN);
+			else
+				node->content &= ~BIN_DYNAMIC_HIDDEN_VISIBILITY;
+		}
 	}
 }
 
@@ -412,6 +452,21 @@ static char *_impl_set_item(struct battery_info_node **head, const char *desc,
 		return NULL;
 	}
 	struct battery_info_node *i = *head;
+	/* A plain BI_SET_ITEM can restore a row that was unavailable in the
+	 * previous refresh.  Remove only the dynamic marker/visibility bits; an
+	 * intrinsically hidden row keeps its original flags. */
+	if (options != 1 && (i->content & BIN_IS_SPECIAL) &&
+	    (i->content & BIN_SECTION) != BIN_SECTION &&
+	    (i->content & BIN_DYNAMIC_HIDDEN)) {
+		/* bit 5 is the intrinsic foreground/background role and is not part of
+		 * the refresh-scoped marker.  Keep it unchanged across recovery. */
+		bool addedVisibility = (i->content & BIN_DYNAMIC_HIDDEN_VISIBILITY) != 0;
+		i->content &= ~BIN_DYNAMIC_HIDDEN;
+		if (addedVisibility)
+			i->content &= ~(BIN_DYNAMIC_HIDDEN_VISIBILITY | BIN_IS_HIDDEN);
+		else
+			i->content &= ~BIN_DYNAMIC_HIDDEN_VISIBILITY;
+	}
 	if (options == 2 || (i->content & BIN_IS_SPECIAL) == 0) {
 		if (options == 1) {
 			if (value && i->content) {
@@ -772,84 +827,130 @@ void adapter_info_update_smc(struct battery_info_section *section) {
 
 void battery_info_update_smc(struct battery_info_section *section) {
 	if (!hasSMC) {
-		abort(); // this section should not have been added
-		/*for(struct battery_info_node *i=head+1;i->name;i++) {
-		    bi_node_set_hidden(i,0,1);
+		/* The section can outlive a failed SMC connection during a refresh.
+		 * Degrade to an empty section instead of aborting the app.  Clear the
+		 * shared snapshot too: hasSMC can become false after an earlier
+		 * successful refresh, and consumers such as the status cell read gGauge
+		 * independently of this section. */
+		memset(&gGauge, 0, sizeof(gGauge));
+		if (section && section->data[0].name) {
+			struct battery_info_node *unavailableHead = section->data;
+			struct battery_info_node *unavailableHeadArr[2] = {
+				unavailableHead, unavailableHead
+			};
+			for (struct battery_info_node *node = unavailableHead + 1; node->name; node++)
+				_impl_set_item(unavailableHeadArr, node->name, 1, 0, 1);
 		}
-		battery_info_update_iokit(head,inDetail);*/
 		return;
 	}
-	if (!section->data[0].name)
+	if (!section || !section->data[0].name)
 		return; // no data need to be freed
 	struct battery_info_node *head = section->data;
 	uint16_t                  remain_cap = 0, full_cap = 0, design_cap = 0;
-	get_capacity(&remain_cap, &full_cap, &design_cap);
+	bool capacityOK = get_capacity(&remain_cap, &full_cap, &design_cap);
+	/* A successful transport read can still contain zero full/design values
+	 * on an unsupported or waking gauge. Treat that as unavailable while
+	 * retaining a legitimate zero remaining capacity when the denominators
+	 * are present. */
+	bool capacitiesValid = capacityOK && full_cap > 0 && design_cap > 0;
 
 	struct battery_info_node *head_arr[2] = { head, head };
 	/* Health = 100.0f * FullChargeCapacity (mAh) / DesignCapacity (mAh) */
-	BI_SET_ITEM(_C("Health"), 100.0f * (float)full_cap / (float)design_cap);
+	float health = (design_cap > 0) ? 100.0f * (float)full_cap / (float)design_cap : 0.0f;
+	bool healthOK = capacitiesValid &&
+	    isfinite(health) && health >= 0.0f && health <= 200.0f;
+	BI_SET_ITEM_IF(healthOK, _C("Health"), health);
 	/* SoC = 100.0f * RemainCapacity (mAh) / FullChargeCapacity (mAh) */
-	if (remain_cap && full_cap)
+	if (capacitiesValid && full_cap)
 		BI_SET_ITEM(_C("SoC"), 100.0f * (float)remain_cap / (float)full_cap);
 	else {
 		uint8_t uisoc = 0;
-		smc_read_n('BUIC', &uisoc, 1);
-		DBGLOG(CFSTR("remain_cap=0, Use UISoC (%d) as SoC instead"), (int)uisoc);
-		BI_SET_ITEM(_C("SoC"), uisoc);
+		if (smc_read_n('BUIC', &uisoc, 1) == kIOReturnSuccess && uisoc <= 100) {
+			DBGLOG(CFSTR("capacity unavailable, use UISoC (%d) as SoC instead"), (int)uisoc);
+			BI_SET_ITEM(_C("SoC"), uisoc);
+		} else {
+			/* No valid capacity or UI percentage: hide the row rather than
+			 * presenting a fabricated zero. */
+			_impl_set_item(head_arr, _C("SoC"), 1, 0, 1);
+		}
 	}
 	// No Imperial units here
-	BI_SET_ITEM(_C("Avg. Temperature"), get_temperature());
+	float averageTemperature = get_temperature();
+	BI_SET_ITEM_IF(battman_temperature_is_valid(averageTemperature),
+	    _C("Avg. Temperature"), averageTemperature);
 	// // TODO: Charging Type Display {"Battery Power", "AC Power", "UPS Power"}
 	charging_state_t charging_stat = is_charging(NULL, NULL);
-	BI_SET_ITEM(_C("Charging"), (charging_stat == kIsCharging));
+	/* kIsUnavail is an SMC read failure, not a definitive "not charging"
+	 * result. Hide the boolean row in that case instead of leaking a false
+	 * value to the details UI. */
+	BI_SET_ITEM_IF(charging_stat != kIsUnavail, _C("Charging"),
+	    charging_stat == kIsCharging);
 	/* ASoC = 100.0f * RemainCapacity (mAh) / DesignCapacity (mAh) */
-	BI_SET_ITEM("ASoC(Hidden)", 100.0f * remain_cap / design_cap);
+	BI_SET_ITEM_IF(capacitiesValid,
+	    "ASoC(Hidden)", 100.0f * (float)remain_cap / (float)design_cap);
 	// if (inDetail) {
-	get_gas_gauge(&gGauge);
-	BI_FORMAT_ITEM_IF(strlen(gGauge.DeviceName), _C("Device Name"), "%s", gGauge.DeviceName);
-	BI_SET_ITEM(_C("Full Charge Capacity"), full_cap);
-	BI_SET_ITEM(_C("Designed Capacity"), design_cap);
-	BI_SET_ITEM(_C("Remaining Capacity"), remain_cap);
+	/* Do not expose the zeroed structure when one of the required gauge reads
+	 * failed.  get_gas_gauge deliberately clears its output before reading;
+	 * publishing that buffer as detail would turn an unavailable sensor into a
+	 * convincing set of zero measurements. */
+	bool gaugeOK = get_gas_gauge(&gGauge);
+	BI_FORMAT_ITEM_IF(gaugeOK && strlen(gGauge.DeviceName), _C("Device Name"), "%s", gGauge.DeviceName);
+	BI_SET_ITEM_IF(capacitiesValid, _C("Full Charge Capacity"), full_cap);
+	BI_SET_ITEM_IF(capacitiesValid, _C("Designed Capacity"), design_cap);
+	BI_SET_ITEM_IF(capacitiesValid, _C("Remaining Capacity"), remain_cap);
 	/* FIXME: bmsUptime uses at least 4 bytes (8 bytes in total), current structure only allow 2 */
 	// second_to_datefmt is a workaround, the "Battery Uptime" should be numeric type
-	BI_FORMAT_ITEM(_C("Battery Uptime"), "%s", second_to_datefmt(gGauge.bmsUpTime));
-	BI_SET_ITEM(_C("Qmax"), gGauge.Qmax * batt_cell_num());
-	BI_SET_ITEM(_C("DOD₀ Reference"), ti_dod_raw_to_percent(gGauge.DOD0));
-	BI_SET_ITEM(_C("Passed Charge"), gGauge.PassedCharge);
-	BI_SET_ITEM(_C("Voltage"), gGauge.Voltage);
-	BI_SET_ITEM(_C("Avg. Current"), gGauge.AverageCurrent);
-	BI_SET_ITEM(_C("Avg. Power"), gGauge.AveragePower);
-	BI_SET_ITEM(_C("Cell Count"), batt_cell_num());
+	BI_FORMAT_ITEM_IF(gaugeOK && gGauge.bmsUpTime > 0, _C("Battery Uptime"), "%s", second_to_datefmt(gGauge.bmsUpTime));
+	int cellCount = batt_cell_num();
+	BI_SET_ITEM_IF(gaugeOK && gGauge.Qmax > 0 && cellCount > 0 && cellCount <= 32,
+	    _C("Qmax"), gGauge.Qmax * cellCount);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.DOD0 <= 16384,
+	    _C("DOD₀ Reference"), ti_dod_raw_to_percent(gGauge.DOD0));
+	BI_SET_ITEM_IF(gaugeOK, _C("Passed Charge"), gGauge.PassedCharge);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.Voltage > 0, _C("Voltage"), gGauge.Voltage);
+	BI_SET_ITEM_IF(gaugeOK, _C("Avg. Current"), gGauge.AverageCurrent);
+	BI_SET_ITEM_IF(gaugeOK, _C("Avg. Power"), gGauge.AveragePower);
+	BI_SET_ITEM_IF(gaugeOK && cellCount > 0 && cellCount <= 32, _C("Cell Count"), cellCount);
 	int timeToEmpty = get_time_to_empty(charging_stat);
 	BI_SET_ITEM_IF(charging_stat != kIsCharging && battery_tte_is_valid(timeToEmpty),
 	    _C("Time to Empty"), timeToEmpty);
-	BI_SET_ITEM(_C("Cycle Count"), gGauge.CycleCount);
-	BI_SET_ITEM_IF(gGauge.DesignCycleCount, _C("Designed Cycle Count"), gGauge.DesignCycleCount)
-	BI_SET_ITEM(_C("State of Charge"), gGauge.StateOfCharge);
-	BI_SET_ITEM(_C("State of Charge (UI)"), gGauge.UISoC);
-	BI_SET_ITEM_IF(gGauge.ResScale, _C("Resistance Scale"), gGauge.ResScale);
+	uint16_t cycleCount = 0;
+	bool cycleCountOK = smc_read_n('B0CT', &cycleCount, 2) == kIOReturnSuccess;
+	if (cycleCountOK)
+		gGauge.CycleCount = cycleCount;
+	BI_SET_ITEM_IF(cycleCountOK, _C("Cycle Count"), cycleCount);
+	uint16_t designCycleCount = 0;
+	bool designCycleCountOK = smc_read_n('B0CU', &designCycleCount, 2) == kIOReturnSuccess && designCycleCount > 0;
+	if (designCycleCountOK)
+		gGauge.DesignCycleCount = designCycleCount;
+	BI_SET_ITEM_IF(designCycleCountOK, _C("Designed Cycle Count"), designCycleCount);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.StateOfCharge <= 100,
+	    _C("State of Charge"), gGauge.StateOfCharge);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.UISoC <= 100,
+	    _C("State of Charge (UI)"), gGauge.UISoC);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.ResScale, _C("Resistance Scale"), gGauge.ResScale);
 	if (!battery_serial(BI_ENSURE_STR(_C("Battery Serial No.")))) {
 		BI_FORMAT_ITEM(_C("Battery Serial No."), "%s", L_NONE);
 	}
-	BI_FORMAT_ITEM("Chemistry ID", "0x%.8X", gGauge.ChemID);
+	BI_FORMAT_ITEM_IF(gaugeOK && gGauge.ChemID != 0, "Chemistry ID", "0x%.8X", gGauge.ChemID);
 
 	/* For Flags, I need at least DeviceName to confirm its format */
 	/* TODO: bq40z651 */
 	/* Confirmed Flags format */
 	/* bq20z45*: Battery Status (0x16):
 	 * https://www.ti.com/lit/er/sluu313a/sluu313a.pdf */
-	BI_FORMAT_ITEM(_C("Flags"), "0x%.4X", gGauge.Flags);
-	BI_SET_ITEM_IF(gGauge.TrueRemainingCapacity,
+	BI_FORMAT_ITEM_IF(gaugeOK, _C("Flags"), "0x%.4X", gGauge.Flags);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.TrueRemainingCapacity,
 	    _C("True Remaining Capacity"),
 	    gGauge.TrueRemainingCapacity);
-	BI_SET_ITEM_IF(gGauge.OCV_Current, _C("OCV Current"), gGauge.OCV_Current);
-	BI_SET_ITEM_IF(gGauge.OCV_Voltage, _C("OCV Voltage"), gGauge.OCV_Voltage);
-	BI_SET_ITEM_IF(gGauge.IMAX, _C("Max Load Current"), gGauge.IMAX);
-	BI_SET_ITEM_IF(gGauge.IMAX2, _C("Max Load Current 2"), gGauge.IMAX2);
-	BI_FORMAT_ITEM_IF(gGauge.ITMiscStatus, _C("IT Misc Status"), "0x%.4X", gGauge.ITMiscStatus);
-	BI_SET_ITEM_IF(gGauge.SimRate, _C("Simulation Rate"), gGauge.SimRate);
-	BI_SET_ITEM_IF(gGauge.DailyMaxSoc, _C("Daily Max SoC"), gGauge.DailyMaxSoc);
-	BI_SET_ITEM_IF(gGauge.DailyMinSoc, _C("Daily Min SoC"), gGauge.DailyMinSoc);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.OCV_Current, _C("OCV Current"), gGauge.OCV_Current);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.OCV_Voltage, _C("OCV Voltage"), gGauge.OCV_Voltage);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.IMAX, _C("Max Load Current"), gGauge.IMAX);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.IMAX2, _C("Max Load Current 2"), gGauge.IMAX2);
+	BI_FORMAT_ITEM_IF(gaugeOK && gGauge.ITMiscStatus, _C("IT Misc Status"), "0x%.4X", gGauge.ITMiscStatus);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.SimRate, _C("Simulation Rate"), gGauge.SimRate);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.DailyMaxSoc <= 100, _C("Daily Max Soc"), gGauge.DailyMaxSoc);
+	BI_SET_ITEM_IF(gaugeOK && gGauge.DailyMinSoc <= 100, _C("Daily Min Soc"), gGauge.DailyMinSoc);
 }
 
 void accessory_info_update(struct battery_info_section *section) {
