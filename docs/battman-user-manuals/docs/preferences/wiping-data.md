@@ -4,22 +4,19 @@ title: Wiping Data
 
 # Wiping Data
 
-This page explains how to clear Battman’s local data and settings.
+**More → Preferences → Wipe All Battman Data** removes Battman's preferences
+and files in the data locations listed by the confirmation sheet. This includes
+saved Analytics layouts, startup readings, completed history caches and locally
+imported plug-in copies held there. Check the displayed scope before confirming.
 
-## What "data" means here
+1. Restore any charging or thermal changes you no longer want to their normal settings.
+2. Open **More → Preferences → Wipe All Battman Data**.
+3. Read the affected locations and confirm. Battman exits after a successful wipe.
+4. Reopen Battman to configure it again.
 
-- Battman’s own preferences (stored in the app container or system preferences).
-- Cached logs or temporary files created by the app.
-
-!!! note "Important"
-    Battman would never reset systemwide configurations (Thermal Tunes, etc.) for stability concerns, please make your own backups when possible.
-
-## Steps to wipe data
-
-1. Open Battman
-2. Tap "More" tab.
-3. Tap "Preferences".
-4. Scroll to bottom, you will see **Wipe all Battman data**.
-5. Tap on it and confirm to wipe all Battman data.
-
-For uninstalling Battman, see **Uninstallation**.
+The wipe stops Analytics workers before deleting their caches. It does not
+erase the system's original Powerlog history, remove app-bundled or
+package-manager-owned plug-ins, or reset global thermal configuration. It also
+does not claim to reset plug-in rollback/trust counters retained in Keychain.
+Use the plug-in screen and the relevant installation channel to manage those
+packages. See [Uninstallation](../uninstallation.md) to remove the app.

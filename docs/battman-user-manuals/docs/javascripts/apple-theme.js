@@ -219,8 +219,8 @@
   // (i.e. there is no storedLang yet). In that case, prefer zh for zh-* browsers.
   if (!storedLang) {
     var navLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-    if ((navLang === 'zh-tw' || navLang === 'zh-hant' || navLang.indexOf('zh-hant-') === 0) && currentLang !== 'zh_TW') {
-      window.location.pathname = buildPathForLang('zh_TW');
+    if (navLang === 'zh-tw' || navLang === 'zh-hant' || navLang.indexOf('zh-hant-') === 0) {
+      if (currentLang !== 'zh_TW') window.location.pathname = buildPathForLang('zh_TW');
     } else if (navLang.indexOf('zh') === 0 && currentLang !== 'zh') {
       window.location.pathname = buildPathForLang('zh');
     }

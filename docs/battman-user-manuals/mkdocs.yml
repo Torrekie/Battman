@@ -1,4 +1,6 @@
 site_name: Battman User Manual
+site_url: https://battman-docs.github.io/
+site_description: Battman 1.1.0 installation, Analytics, native plug-ins, and power-management guide.
  
 nav:
   - Home: index.md
@@ -59,7 +61,8 @@ markdown_extensions:
   - tables
 
 plugins:
-  - search
+  - search:
+      min_search_length: 2
   - i18n:
       docs_structure: suffix
       fallback_to_default: true

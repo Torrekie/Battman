@@ -1,9 +1,11 @@
 # Havoc manual Debian candidate scope
 
 Havoc host packages use the `Battman-havoc` Xcode scheme in `Release`. This
-variant includes the existing private authorization implementation and its
-private definitions. Those inputs must be supplied through the authorized
-private build process; a Public (`Battman`) or GitHub (`Battman (rel-nonfree)`) build
+variant retains its private configuration headers and existing source
+exclusions. `nonfree-havoc.m` is excluded from compilation and
+`DISABLE_PROTECT=1` remains unchanged; channel identification does not enable
+or restore DRM. Required private configuration inputs must be supplied through
+the authorized private build process; a Public (`Battman`) or GitHub (`Battman (rel-nonfree)`) build
 is not a Havoc replacement.
 
 The executable's `__TEXT,__btchannel` marker must be `havoc`. The finalizer
@@ -47,8 +49,9 @@ bytes: exact artifact review and Torrekie's explicit submission approval remain
 required. After publication, download and compare Havoc-processed packages,
 documenting any legitimate repository transformation.
 
-Havoc purchase authorization and Battman plug-in publisher trust are separate.
-Marketplace availability is not Battman publisher trust. Unless an official
+Havoc marketplace distribution and Battman plug-in publisher trust are separate.
+The currently excluded authorization source is not evidence of active purchase
+enforcement. Marketplace availability is not Battman publisher trust. Unless an official
 offline delegation covers the exact publisher/plug-in/extension scope, the
 normal third-party approval flow still applies.
 

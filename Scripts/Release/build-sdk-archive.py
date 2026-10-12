@@ -22,6 +22,25 @@ from release_common import (
 )
 
 
+def require_source_path(relative: str) -> None:
+    """Fail closed when a working SDK contains generated or signing inputs."""
+    path = PurePosixPath(relative)
+    generated_directories = {"build", "dist", ".git", ".venv", "venv", "__pycache__", "Packages"}
+    generated_suffixes = {
+        ".o", ".a", ".dylib", ".so", ".bundle", ".battman", ".pyc", ".pyo",
+        ".ipa", ".tipa", ".deb", ".zip", ".gz", ".pem", ".key", ".p12", ".pfx", ".p256",
+    }
+    if any(
+        part in generated_directories or part == ".DS_Store" or
+        PurePosixPath(part).suffix.lower() in generated_suffixes
+        for part in path.parts
+    ):
+        raise ReleaseError(
+            f"non-source input present in SDK tree: {relative}; "
+            "export a clean SDK source tree before archiving"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sdk", required=True, type=Path)
@@ -64,9 +83,12 @@ def main() -> int:
                     root_info.uname = root_info.gname = "root"
                     archive.addfile(root_info)
                     for relative, path, entry in iter_tree(sdk):
+                        # Strict assembly stages its separately distributed,
+                        # signed example here. It is not SDK source content.
+                        if PurePosixPath(relative).parts[:2] == ("Examples", "Packages"):
+                            continue
+                        require_source_path(relative)
                         name = f"{archive_root}/{relative}"
-                        if PurePosixPath(relative).name == ".DS_Store" or "__pycache__" in PurePosixPath(relative).parts:
-                            raise ReleaseError(f"generated file present in SDK source tree: {relative}")
                         info = tarfile.TarInfo(name)
                         info.mtime = epoch
                         info.uid = info.gid = 0

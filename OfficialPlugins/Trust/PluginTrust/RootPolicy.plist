@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>rootPublicKeys</key>
+	<array>
+		<dict>
+			<key>keyIdentifier</key>
+			<string>18e2f380bed5b18026d0703087e732853931c45ea375d9747c85693004474572</string>
+			<key>publicKeyX963Base64</key>
+			<string>BAQ4iyiZJk63Cu3inK83DX1dntyZqfc+uOlxAnu5HNNATS4QOUtzjLcGBUUAu667qsNkYkyayFFTKPNYFtSP9z0=</string>
+		</dict>
+		<dict>
+			<key>keyIdentifier</key>
+			<string>229b8ff169a6cd33cceb2cf0951d560f462cfdc6cc62eaa55bf10c26a4b8010d</string>
+			<key>publicKeyX963Base64</key>
+			<string>BCDeQSI0bd9B7K0/wkEjJDh7xItsMCwcwjn6TNCsFcTlkW5AQc+0zMLfu+myxwJnjIZRYcmrCsz/y7lwDmKuBVk=</string>
+		</dict>
+		<dict>
+			<key>keyIdentifier</key>
+			<string>9989298a8e4d456f94f282696177d9f1fd4705c1519ec58a34b0119cbb309ae7</string>
+			<key>publicKeyX963Base64</key>
+			<string>BEXOvwQ0okWGfMP4+B6FUKzjFVjtaxScu+82jbB2H6URKwAfxIIIhZH4g0qEOoyydOt9Sj0VOmwWIOywLjsX5aA=</string>
+		</dict>
+	</array>
+	<key>schemaVersion</key>
+	<integer>1</integer>
+	<key>signatureThreshold</key>
+	<integer>2</integer>
+</dict>
+</plist>

@@ -30,3 +30,19 @@ Battman 可以接收来自“文件”或其他应用的 `.battman` 软件包文
 
 普通且不敏感的缺陷可使用公开 issue tracker。安全报告和私密诊断应遵循仓库的
 `SECURITY.md` 政策。
+
+## 安装第一张插件卡片
+
+1. 从发布者或所选 Battman 版本取得插件。`.battman.zip` 是下载包装：解压并保持其中的 `.battman` 目录包完整，不要编辑清单或载荷。
+2. 将 `.battman` 软件包分享给 Battman 或用 Battman 打开。Debian 附加包则应通过软件包管理器安装，并匹配越狱目录布局。
+3. 打开**更多 → 插件**，检查来源、验证状态、发布者指纹、请求的扩展和启用状态。通过发布者的独立渠道核对完整指纹。
+4. 对于你决定信任的第三方代码，批准准确构建或限定范围的发布者，然后开启第三方载入。硬性验证失败需要发布者提供修正后的包。
+5. 重启 Battman，再打开**分析 → 编辑**添加已注册的卡片。如果 TrollStore 环境显示**需要重新安装 Battman**，应先完成替换应用流程。
+
+1.1.0 发布矩阵选定 **Charge Gauge** 作为单独分发的官方插件。越狱附加包区分有根与无根 Debian 布局；GitHub 替换 TIPA 包含所选官方插件。实际可用性仍取决于正式发布及有效签名和信任元数据。SDK 分析示例属于第三方，仍需批准，也不包含在替换 TIPA 中。
+
+## 签名与开发入口
+
+这里有两种独立签名：平台签名覆盖原生 Mach-O bundle；软件包发布者用 ECDSA P-256 密钥签署准确的清单字节。两者不能互相替代，单凭任一种也不能让软件包成为官方包。第三方作者不需要 Battman 离线根密钥；根密钥仅用于授权官方发布者委托。
+
+公开 SDK v1 通过文档规定的 C ABI 和 Objective-C 协议支持原生分析卡片。其完整子树采用 MIT 许可证，与宿主许可证独立。作者可以使用模板生成并构建独立卡片，需要 iPhoneOS SDK、make、Python 3，以及用于签名验证的 `cryptography`。生成、构建、使用已有密钥签名及离线验证的完整命令见 [SDK](https://github.com/Torrekie/Battman/tree/master/PluginSDK) 和[插件开发指南](https://github.com/Torrekie/Battman/blob/master/docs/plugin-authoring.md)。便携验证器不能证明 iOS 可以载入代码；Battman 仍会检查平台载入、ABI、依赖、信任及回滚状态。

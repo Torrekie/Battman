@@ -46,7 +46,8 @@ or appended C tail does not itself require all other numbers to change.
   or revoking takes effect after a restart.
 
 The frozen initial-v1 fixture deliberately has a 24-byte LP64 host table,
-without `log`; the current host table is 32 bytes. Tests build that fixture
+without `log` or `preferredLanguage`; the current host table is 40 bytes.
+The intermediate table with `log` is 32 bytes. Tests build that fixture
 against its old header and load it through the current native loader. Separate
 tests accept appended descriptor/registration tails and reject truncated
 prefixes atomically.

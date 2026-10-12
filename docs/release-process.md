@@ -22,8 +22,8 @@ The executable records `public`, `github`, or `havoc` in its
 `__TEXT,__btchannel` section. Finalization verifies this against the selected
 target, and package inspection reports it separately from source identity.
 Havoc retains its private configuration headers; public CI does not supply
-them. The existing `nonfree-havoc.m` exclusion and `DISABLE_PROTECT` settings
-remain in place. Channel identification must never indirectly compile disabled
+them. `nonfree-havoc.m` remains excluded from compilation, and
+`DISABLE_PROTECT=1` remains unchanged in the configured GitHub/Havoc builds. Channel identification must never indirectly compile disabled
 DRM or change its activation state. Public and GitHub builds require no private
 configuration headers. There is no Havoc TIPA target, and the TIPA builder and inspector
 reject a Havoc executable.

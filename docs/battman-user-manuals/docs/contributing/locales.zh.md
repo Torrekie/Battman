@@ -149,7 +149,7 @@ $ tree ./Battman/Localizations/
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Battman 1.0.4\n"
+"Project-Id-Version: Battman 1.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Torrekie/Battman/issues\n"
 "POT-Creation-Date: 2025-12-02 18:25+0800\n"
 "PO-Revision-Date: 2025-12-02 18:25+0800\n"

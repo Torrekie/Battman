@@ -2,24 +2,40 @@
 title: Home
 ---
 
-# Battman
+# Battman 1.1.0
 
-Welcome to the Battman user manual.
+Battman is a battery and power-management utility for supported jailbroken or
+TrollStore-enabled iPhones and iPads. It reads the measurements exposed by the
+device and provides charging, brightness, and thermal controls where supported.
+Available readings and controls vary by hardware, iOS version, and installation
+environment.
 
-Battman is a power-management utility for AppleSMC–capable devices. By tapping directly into the System Management Controller (SMC), Battman provides professional-grade metrics on battery health, charging cycles, temperature, and power usage. Its deep hardware integration lets you customize charging behaviors, set thresholds to extend battery life, and monitor real-time status — all from a single, intuitive interface.
+## Start here
 
-### Key features
+- [Install Battman](installation/index.md): choose a rooted, rootless, or TrollStore package.
+- [Analytics](features/analytics.md): arrange ten built-in cards and inspect live readings, charging sessions, and available history.
+- [Native plug-ins](features/plugins.md): review, approve, and manage additional native cards.
+- [Charging limits](controls/charging-limits.md): understand the experimental charge-limit process before enabling it.
+- [Wiping data](preferences/wiping-data.md): clear Battman's settings and local caches.
 
-- Professional-level data: Access detailed information on voltage, current, capacity, cycle count, and temperature, etc.
-- Custom charging profiles: Define charge start and stop points to preserve long-term battery health.
-- Real-time monitoring: Observe power and thermal metrics as they happen, with optional logging.
-- Lightweight and open source: Small footprint, fully? open for inspection and contribution.
+## What changed in 1.1.0
 
-Whether you’re a developer, a regular user, or an IT administrator, Battman gives you the tools to make smarter, more efficient power decisions.
+Analytics now includes ten built-in cards covering current battery readings,
+capacity, cell consistency, connected sessions, discharge, charging states,
+power readings, time by battery level, charging comparisons, and discharge
+rhythm. Cards have selectable sizes, saved layouts, and details for supported
+graph selections. Missing observations remain visible as gaps or unavailable
+values.
 
-Use the navigation bar to jump to:
+The native plug-in host and public SDK v1 are implemented. The release matrix
+also selects the separate **Charge Gauge** official plug-in and a third-party
+SDK example. This manual describes the source and packaging contract; download
+availability and production signatures must be checked on the selected release.
 
-- Installation
-- Troubleshooting
+Battman does not certify every A11-or-newer device and iOS combination. Its
+Analytics live graph covers foreground samples; historical cards read available
+system history rather than recording an uninterrupted background timeline.
+A native macOS app is not currently provided.
 
-This site supports light/dark mode and multiple languages. Use the controls in the top-right corner to switch.
+Use the controls at the top of this site to select English, Simplified Chinese,
+or Traditional Chinese and a light, dark, or automatic appearance.

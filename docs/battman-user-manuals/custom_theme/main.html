@@ -69,7 +69,8 @@
           <option value="zh_TW">繁體中文</option>
         </select>
         {% if 'search' in config.plugins %}
-        <form class="bm-search" action="{{ 'search.html' | url }}">
+        {% set search_target = 'search.html' if lang == 'en' else lang ~ '/search.html' %}
+        <form class="bm-search" action="{{ search_target | url }}">
           <input id="mkdocs-search-query" type="search" name="q" placeholder="{{ search_placeholder }}" />
         </form>
         {% endif %}

@@ -20,11 +20,27 @@ Build it from the repository root:
 make -C PluginSDK BUILD_DIR=/tmp/battman-sdk-example -j1 example
 ```
 
+From an extracted SDK archive, run the same command with `-C` pointing to the
+archive root. Source and build output can remain in separate directories.
+
+Start with `BTAnalyticsExampleRegister` and `BTAnalyticsExampleDescriptor` for
+the C ABI, `BTAnalyticsExampleCard` for the card lifecycle and snapshot delivery,
+and `BTAnalyticsExampleContentView` / `BTAnalyticsExampleGaugeLayer` for drawing.
+The example reads `BAAnalyticsMetricStateOfChargePercent`, displays unavailable
+values without inventing a percentage, supports all four card sizes, and
+includes empty schema-v1 restoration methods. It intentionally uses English
+strings; the standalone guide explains host-language support for a localized
+card. Replace the example's identifiers and Objective-C class prefix when
+creating a distinct implementation.
+
 The manifest is deliberately a template. Supply the identifier of an existing
 publisher public key using `Tools/publisher-key-id.py` and
 `Tools/render-example-manifest.py`; do not replace the placeholder with a
-production key in source control. Package/sign steps are in
-[`docs/plugin-authoring.md`](../../../docs/plugin-authoring.md).
+production key in source control. Package/sign steps, the metric table,
+localization, and installation behavior are in
+[`DEVELOPING.md`](../../DEVELOPING.md). This example and the SDK are covered by
+the [MIT license](../../LICENSE); the project generator retains a copy beside
+the generated source.
 
 `BUILD_VERSION`, `Info.plist`, and `ManifestTemplate.json.in` must name the same
 build. Both embedded and bundle builds compile that value into

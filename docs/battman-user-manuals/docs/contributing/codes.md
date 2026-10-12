@@ -4,189 +4,50 @@ title: Contributing Code
 
 # Contributing Code
 
-We welcome code contributions to Battman.
+Read the [project README](https://github.com/Torrekie/Battman) for the current
+build entry points and repository conventions. Battman 1.1.0 uses Objective-C and C, programmatic UI,
+an Xcode project, and a Make-based cross-build path.
 
-## Before you start
+## Find the relevant component
 
-- Read the main `README.md` for an overview of the project layout and build requirements.
-- Make sure you have a suitable iOS toolchain and environment set up.
+| Directory | Purpose |
+| --- | --- |
+| `Battman/` | iOS application and device interfaces |
+| `Battman/Features/Analytics/` | Host data services, card layout, and built-in cards |
+| `Battman/PluginHost/` | Native plug-in discovery, verification, trust, and lifecycle |
+| `PluginSDK/` | Public SDK v1 headers, schemas, templates, tools, and example |
+| `OfficialPlugins/` | Official plug-in source and release inputs |
+| `Scripts/Build/`, `Scripts/Release/`, `Packaging/` | Build finalization, package construction, and release contracts |
+| `Tests/` | Focused host, SDK, Analytics, and release checks |
+| `docs/battman-user-manuals/` | This three-language manual |
 
-## Project Structure
+## Implementation and validation
 
-Battman is written in **Objective-C and C** (no Swift). The main codebase is organized as follows:
+Keep changes focused and preserve the declared iOS 12 deployment baseline.
+Use public SDK contracts for plug-ins; do not depend on private host controllers
+or acquire hardware data from drawing callbacks. See the
+[plug-in authoring guide](https://github.com/Torrekie/Battman/blob/master/docs/plugin-authoring.md)
+for the standalone workflow and signing requirements.
 
-### Directory Layout
+Use existing dependencies and build paths. Xcode's gettext dependency downloads
+a fixed archive, checks its digest, and builds it; its first build needs access
+to GNU. Do not add an automatic dependency upgrade or require a different
+toolchain for an unrelated change. Preserve portable resources and existing
+programmatic UI conventions.
 
-- **`Battman/`** - Main application code
-  - **`battery_utils/`** - Battery information and hardware interaction utilities
-  - **`hw/`** - Hardware-specific interfaces (e.g., IOMFB)
-  - **`cobjc/`** - Custom Objective-C runtime wrappers for C compatibility
-  - **`ObjCExt/`** - Objective-C category extensions
-  - **`CGIconSet/`** - Custom icon generation code
-  - **`brightness/`** - Brightness control functionality
-  - **`scprefs/`** - Preferences integration
-  - **`security/`** - Security and protection code
+Run the smallest relevant checks for your change and describe exactly what was
+validated. Simulator or compile success does not prove every device's hardware
+behavior. Keep credentials, private signing keys, device identifiers, and private
+release records out of commits and public diagnostics.
 
-### File Naming Conventions
+Update English, Simplified Chinese, and Traditional Chinese manual pages when
+user-visible behavior changes. From the repository root, build the manual in
+an isolated environment with:
 
-- View controllers: `*ViewController.h` / `*ViewController.m`
-- Custom views: `*View.h` / `*View.m` or `*Cell.h` / `*Cell.m`
-- C headers: `*.h` with corresponding `*.c` or `*.m` implementations
-- Headers use `#pragma once` or traditional include guards
-
-## Code Style Guidelines
-
-### Language and Architecture
-
-- **Primary languages**: Objective-C and C
-- **No external dependencies**: No CocoaPods, Swift Packages, or third-party frameworks
-- **No Storyboards or XIBs**: UI is built programmatically
-- **No Xcode Assets**: Resources are generated programmatically
-
-#### Why No Xcode Assets and Storyboards?
-
-Battman does not use Xcode Assets (.xcassets) or Storyboards/XIBs for the following reasons:
-
-- **Open-source toolchain compatibility**: Those formats are private commercial formats made by Apple, which are not buildable with open-source toolchains. This prevents the project from being built on non-Apple platforms or with alternative build systems.
-
-- **Cross-platform collaboration**: We have collaborators not using macOS and Xcode. Using those formats will break the maintainability and prevent contributors from working on the project in their preferred environments.
-
-- **Programmatic UI preference**: We always prefer writing UI programmatically, instead of predefining them in some sort of files. This approach provides better version control, easier code review, and more flexibility in UI construction.
-
-#### Why No Third-Party Dependencies?
-
-Battman intentionally avoids third-party dependencies (CocoaPods, Swift Packages, external frameworks) for the following reasons:
-
-- **Control and maintainability**: External code is not under our control, and we cannot respond to potential future changes, breaking updates, or deprecations that may affect the project.
-
-- **Collaboration accessibility**: Not every collaborator is able to pull such dependencies on their build systems. Avoiding external dependencies ensures that all contributors can build and work on the project regardless of their environment setup, facilitating better collaboration.
-
-If you need functionality that would typically come from a third-party library, please implement it directly in the codebase or adapt the necessary code to fit Battman's architecture (For example, we have completely rewritten Swift `UberSegmentedControl` in Objective-C).
-
-#### Why No Swift Code?
-
-Battman uses Objective-C and C exclusively, and does not accept Swift code submissions for the following reasons:
-
-- **Stability and compatibility**: Swift itself has frequent updates with breaking changes, and is always trying to drop support for previous system versions. This creates maintenance burden and compatibility issues that conflict with Battman's goal of supporting iOS 12+.
-
-- **Toolchain size**: The Swift toolchain is much larger than regular LLVM + Clang, which is not friendly for our existing collaborators who may have limited resources or prefer minimal toolchain installations.
-
-- **Exception for unavoidable Swift**: If your submission is not Swift-avoidable (for example, WidgetKit only allows Swift), please create a new subproject to contain it. Otherwise, all logic and UI should be written in Objective-C and C.
-
-  If you must use Swift, your Swift code must meet these requirements:
-  - Your Swift code should have been compiled and tested on iOS 12 or earlier.
-  - Your Swift code should be written in Swift 4 or older.
-  - Your Swift code should at least be buildable with Procursus' Swift toolchain on iOS.
-
-### C / Objective-C Patterns
-
-#### Singleton Pattern
-
-```objc
-+ (instancetype)sharedPrefs {
-    static BattmanPrefs *shared = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        shared = [[self alloc] _init];
-    });
-    return shared;
-}
+```sh
+Scripts/Docs/render-user-manual.sh /tmp/battman-manual-preview
 ```
 
-#### iOS Version Checks
-
-```objc
-if (@available(iOS 13.0, *)) {
-    // iOS 13+ code
-} else {
-    // Fallback code
-}
-```
-```c
-if (__builtin_available(iOS 13.0, *)) {
-    // iOS 13+ code
-} else {
-    // Fallback code
-}
-```
-
-#### Debug Logging
-
-```c
-// DBGLOG is based on NSLog()
-DBGLOG(CFSTR("Debug message: %@"), value);
-```
-```objc
-// DBGLOG is based on NSLog()
-DBGLOG(@"Debug message: %@", value);
-```
-
-#### Localization
-
-```c
-// For NSString
-NSString *localized = _("String to localize");
-
-// For C strings
-const char *localized = _C("String to localize");
-```
-
-#### Static Initialization
-
-```c
-static dispatch_once_t onceToken;
-static bool value;
-
-dispatch_once(&onceToken, ^{
-    // One-time initialization
-    value = compute_value();
-});
-```
-
-### Error Handling
-
-- Check return values from system calls
-- Use `os_log_error` for error conditions
-- Provide fallback paths when possible
-- Avoid crashing on recoverable errors
-
-### Memory Management
-
-- Use ARC for Objective-C code
-- Manual memory management for C code (free what you malloc)
-- Be careful with CF types - use `CFRelease` appropriately
-
-### Build System
-
-Battman can be built with:
-- **Xcode**: Standard Xcode project
-- **Makefile**: Located in `Battman/Makefile`, supports Linux builds
-
-Key build flags:
-- `-fobjc-arc`: Automatic Reference Counting
-- `-target arm64-apple-ios12.0`: iOS 12+ deployment target
-- `-DDEBUG`: Debug builds
-- `-DUSE_GETTEXT`: Optional gettext localization support
-
-## Typical workflow
-
-1. Fork the repository and create a feature branch.
-2. Make your changes with clear, focused commits.
-3. Prefer small, reviewable pull requests rather than large, mixed ones.
-4. Test on as many relevant iOS versions / devices as you can.
-5. Open a pull request and describe:
-   - What you changed.
-   - How you tested it.
-   - Any user‑visible behavior differences.
-
-## Code Review Guidelines
-
-- Follow existing code style and patterns
-- Maintain compatibility with iOS 12+
-- Test on both simulator and real devices when possible
-- Use appropriate logging (DBGLOG for debug, os_log for production)
-- Ensure proper memory management
-- Add comments for complex logic or hardware-specific code
-- Update related documentation if behavior changes
-
-Please avoid introducing private information (such as personal certificates or keys) into the repository or build scripts.
+The output path must not already exist. This uses the existing hash-pinned
+`Requirements/docs.txt`, builds with strict checks, and does not deploy the
+site. Serve the result over HTTP to review navigation and search.

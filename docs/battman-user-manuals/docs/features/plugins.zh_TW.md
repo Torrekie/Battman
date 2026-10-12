@@ -30,3 +30,19 @@ Battman 可以接收來自「檔案」或其他 App 的 `.battman` 套件文件�
 
 一般且不敏感的缺陷可使用公開 issue tracker。安全報告與私密診斷應遵循儲存庫的
 `SECURITY.md` 政策。
+
+## 安裝第一張外掛卡片
+
+1. 從發行者或所選 Battman 版本取得外掛程式。`.battman.zip` 是下載包裝：解壓縮並保持其中的 `.battman` 目錄套件完整，不要編輯資訊清單或承載內容。
+2. 將 `.battman` 套件分享給 Battman 或用 Battman 開啟。Debian 附加套件則應透過套件管理器安裝，並符合越獄目錄配置。
+3. 開啟**更多 → 外掛程式**，檢查來源、驗證狀態、發行者指紋、要求的擴充功能和啟用狀態。透過發行者的獨立管道核對完整指紋。
+4. 對於你決定信任的第三方程式碼，核准確切組建或限定範圍的發行者，然後開啟第三方載入。強制驗證失敗需要發行者提供修正後的套件。
+5. 重新啟動 Battman，再開啟**分析 → 編輯**新增已註冊的卡片。如果 TrollStore 環境顯示**需要重新安裝 Battman**，應先完成替換應用程式流程。
+
+1.1.0 發行矩陣選定 **Charge Gauge** 作為單獨分發的官方外掛程式。越獄附加套件區分有根與無根 Debian 配置；GitHub 替換 TIPA 包含所選官方外掛程式。實際可用性仍取決於正式發行及有效簽章和信任中繼資料。SDK 分析範例屬於第三方，仍需核准，也不包含在替換 TIPA 中。
+
+## 簽署與開發入口
+
+這裡有兩種獨立簽章：平台簽章涵蓋原生 Mach-O bundle；套件發行者用 ECDSA P-256 金鑰簽署確切的資訊清單位元組。兩者不能互相替代，單憑任一種也不能讓套件成為官方套件。第三方作者不需要 Battman 離線根金鑰；根金鑰僅用於授權官方發行者委派。
+
+公開 SDK v1 透過文件規定的 C ABI 和 Objective-C 協定支援原生分析卡片。其完整子樹採用 MIT 授權條款，與宿主授權條款獨立。作者可以使用範本產生並建置獨立卡片，需要 iPhoneOS SDK、make、Python 3，以及用於簽署驗證的 `cryptography`。產生、建置、使用既有金鑰簽署及離線驗證的完整命令見 [SDK](https://github.com/Torrekie/Battman/tree/master/PluginSDK) 和[外掛程式開發指南](https://github.com/Torrekie/Battman/blob/master/docs/plugin-authoring.md)。可攜式驗證器不能證明 iOS 可以載入程式碼；Battman 仍會檢查平台載入、ABI、相依性、信任及回復舊版狀態。

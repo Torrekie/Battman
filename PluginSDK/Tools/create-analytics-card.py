@@ -100,6 +100,12 @@ def main() -> int:
         for path in output.iterdir():
             if path.is_file():
                 replace_text(path, replacements)
+        # Generated projects contain substantial MIT-licensed example source.
+        # Keep its notice with the copy even when the SDK is not redistributed.
+        license_path = sdk_root / "LICENSE"
+        if license_path.is_symlink() or not license_path.is_file():
+            raise RuntimeError("SDK license is missing or unsafe")
+        shutil.copy2(license_path, output / "LICENSE", follow_symlinks=False)
         if author_metadata:
             manifest_path = output / "ManifestTemplate.json.in"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

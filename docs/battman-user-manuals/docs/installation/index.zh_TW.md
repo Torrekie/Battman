@@ -1,43 +1,45 @@
+---
 title: 安裝
 ---
 
-# 安裝
+# 在 iOS 上安裝 Battman
 
-本頁介紹如何安裝和配置 Battman。
+## 要求與涵蓋範圍
 
-## 環境要求
+- Apple A11 或更新的裝置，iOS 12 或更新版本。
+- 受支援的越獄環境，或已經正常運作的 TrollStore。
 
-- A11 及以上設備。
-- iOS 12 及以上系統。
-- 設備已越獄，或已安裝 TrollStore。
+A11/iOS 12 是產品邊界，依據 arm64/iOS 12 編譯及目前模擬器和裝置檢查；這並不表示已逐一獨立驗證所有 A11 或更新裝置與每個 iOS 版本的組合。裝置未提供所需資料時，相關讀數會顯示**無法使用**。安裝管道還有自己的系統限制，下表不表示其間所有 iOS 版本都支援越獄或 TrollStore。
 
-A11 / iOS 12 是依據 arm64/iOS 12 編譯證據與目前模擬器/裝置檢查所聲明的產品邊界，並不表示每一款 A11 及更新裝置與每一個 iOS 版本都已完成獨立實機測試。若裝置未提供所需遙測，個別硬體指標可能顯示為**無法使用**。
+不支援普通憑證或描述檔側載。Battman 需要普通描述檔不能提供的特權權限和私有系統介面；僅重新簽署封存檔不會授予這些能力。
 
-Battman 目前僅提供 TrollStore 版本和越獄版。其他安裝方式不受支持，且無法成功安裝。這是因為 Battman 嚴重依賴 iOS/macOS 私有 API。
+## 選擇相符的套件
 
-> 如果你仍想用證書/描述文件來安裝，請確保你的開發配置描述文件允許使用 [Battman 的 entitlements](https://github.com/Torrekie/Battman/blob/master/Battman.entitlements)。（這真的可行嗎？）
+請下載某個明確 [GitHub 發行版本](https://github.com/Torrekie/Battman/releases)所附的檔案，並核對該版本的說明、版本號碼和校驗和。原始碼版本為 1.1.0 並不表示正式發行已經上線。校驗和簽章中的公開金鑰指紋需要與獨立審核的指紋比較，才能確認簽署者身分。
 
-## 安裝（TrollStore，iOS 14+）
+| 環境 | 套件 | 文件規定的最低版本 |
+| --- | --- | --- |
+| 有根越獄 | `com.torrekie.battman_<version>_iphoneos-arm.deb` | iOS 12+ |
+| 無根越獄 | `com.torrekie.battman_<version>_iphoneos-arm64.deb` | iOS 15+ |
+| TrollStore | `Battman.tipa` | iOS 14+，且你的 TrollStore 支援該確切版本 |
 
-如果你的設備尚未安裝 TrollStore，請參閱 [ios.cfw.guide](https://ios.cfw.guide/installing-trollstore/) 的教程。
+Debian 架構名稱對應越獄目錄配置，兩種宿主套件都包含 arm64 程式碼；不能僅憑處理器的「64 位元」選擇。無根環境應選擇 `iphoneos-arm64.deb`，不要選擇 `iphoneos-arm`。
 
-1. 下載最新的 [Battman.tipa](https://github.com/Torrekie/Battman/releases/download/latest/Battman.tipa)，或從 [Releases](https://github.com/Torrekie/Battman/releases/latest) 頁面選擇所需版本。
-2. 長按（或點擊「共享」）下載的 `Battman.tipa`，選擇「分享」，然後點擊「TrollStore」。
-3. 在 TrollStore 彈出的窗口中點擊「Install」完成安裝。
+## 越獄安裝
 
-## 越獄安裝（rooted，iOS 12+）
+1. 下載與有根或無根環境相符的套件。
+2. 用套件管理器開啟，並檢查套件資訊。
+3. 讓套件管理器透過正常的 bootstrap 軟體來源解決相依性，包括套件要求時的 `libintl8` 或 `libintl`。
+4. 完成安裝並開啟 Battman。
 
-1. 打開包管理器（Cydia、Sileo、Zebra 等），從 bootstrap 源（Elucubratus 或 Procursus）安裝 `libintl8`。
-2. 從 [Releases](https://github.com/Torrekie/Battman/releases/latest) 頁面下載 `com.torrekie.battman_<version>_iphoneos-arm.deb`，請務必選擇 `iphoneos-arm`，不要選擇 `iphoneos-arm64`。
-3. 長按下載的 deb，點擊「共享」，選擇包管理器（或 Filza）進行安裝（或使用你偏好的 deb 安裝方式）。
+使用 Havoc 時，請透過該管道的套件管理器說明安裝 Havoc 版。Havoc 使用單獨建置的宿主，只分發 Debian 套件，沒有 Havoc TIPA。商店分發不會授予原生外掛程式信任。避免同時安裝來自不同管道、互相衝突的宿主套件。
 
-## 越獄安裝（rootless，iOS 15+）
+## TrollStore 安裝
 
-1. 打開包管理器（Cydia、Sileo、Zebra 等），從 bootstrap 源（Elucubratus 或 Procursus）安裝 `libintl8`。
-2. 從 [Releases](https://github.com/Torrekie/Battman/releases/latest) 頁面下載 `com.torrekie.battman_<version>_iphoneos-arm64.deb`，請務必選擇 `iphoneos-arm64`，不要選擇 `iphoneos-arm`。
-3. 長按下載的 deb，點擊「共享」，選擇包管理器（或 Filza）進行安裝（或使用你偏好的 deb 安裝方式）。
+1. 確認 TrollStore 已在你的確切 iOS 版本上正常運作。
+2. 下載所選版本的 `Battman.tipa`，分享給 TrollStore，並查看安裝提示。
+3. 完成安裝並開啟 Battman。
 
-## 後續步驟
+自行準備替換 TIPA 時，應檢查發行報告的 `requiresOuterResign` 狀態。封裝工具不執行最終外層簽署或安裝。新增外掛程式會改變應用程式套件，需要正確簽署的替換應用程式；將原生程式碼複製到應用程式資料目錄不是受支援的 TrollStore 啟用方法。
 
-- 如果安裝失敗，請查看「故障排除」章節。
-- 安裝完成後，可以從首頁瞭解更多功能。
+接下來可閱讀[分析](../features/analytics.md)或[原生外掛程式](../features/plugins.md)。

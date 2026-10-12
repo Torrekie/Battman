@@ -35,6 +35,8 @@ for relative in \
 	test -s "$OUTPUT_DIR/$relative"
 done
 
+"$PYTHON_BIN" "$REPO_ROOT/docs/battman-user-manuals/post_build_fix_search.py" "$OUTPUT_DIR"
+
 grep -q 'Diagnostics and support' "$OUTPUT_DIR/features/plugins/index.html"
 grep -q '诊断与支持' "$OUTPUT_DIR/zh/features/plugins/index.html"
 grep -q '診斷與支援' "$OUTPUT_DIR/zh_TW/features/plugins/index.html"

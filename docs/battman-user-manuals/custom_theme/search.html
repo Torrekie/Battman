@@ -1,67 +1,5 @@
 <!DOCTYPE html>
-{# Derive language: prefer page/lang metadata; fallback to URL prefix (i18n suffix build) #}
-{# Normalize URLs to detect localized prefixes #}
-{% set page_url = (page.url if page else '') | trim %}
-{% set abs_url = (page.abs_url if page else '') | trim %}
-{% set normalized_url = page_url.lstrip('/') %}
-
-{# Detect language from multiple sources: plugin lang, page meta, URL prefix #}
-{# For search.html, we need to detect from the current file path since page.url might be empty #}
-{% set url_lang = 'en' %}
-
-{# Try to detect from config - i18n plugin might set this #}
-{% if config.extra and config.extra.i18n and config.extra.i18n.current_language %}
-  {% set url_lang = config.extra.i18n.current_language %}
-{% endif %}
-
-{# Detect from absolute URL path (most reliable for /zh/search.html) #}
-{% if abs_url %}
-  {% if '/zh_TW/' in abs_url or abs_url.startswith('/zh_TW') or abs_url.startswith('zh_TW/') %}
-    {% set url_lang = 'zh_TW' %}
-  {% elif '/zh/' in abs_url or abs_url.startswith('/zh') or abs_url.startswith('zh/') %}
-    {% set url_lang = 'zh' %}
-  {% endif %}
-{% endif %}
-
-{# Also check normalized URL #}
-{% if normalized_url.startswith('zh_TW/') or normalized_url.startswith('zh_TW') %}
-  {% set url_lang = 'zh_TW' %}
-{% elif normalized_url.startswith('zh/') or normalized_url.startswith('zh') %}
-  {% set url_lang = 'zh' %}
-{% endif %}
-
-{# Check page file language attribute #}
-{% if page and page.file and page.file.lang %}
-  {% set url_lang = page.file.lang %}
-{% endif %}
-
-{# Check page metadata #}
-{% if page and page.meta and page.meta.lang %}
-  {% set url_lang = page.meta.lang %}
-{% endif %}
-
-{# Check page.lang directly #}
-{% if page and page.lang %}
-  {% set url_lang = page.lang %}
-{% endif %}
-
-{# Check if we're in a language subdirectory by examining the output path #}
-{# When search.html is in /zh/, the base_url or page.url should reflect this #}
-{% if base_url and url_lang == 'en' %}
-  {# base_url might be '../' for /zh/search.html or '.' for /search.html #}
-  {% if '/zh_TW' in base_url %}
-    {% set url_lang = 'zh_TW' %}
-  {% elif base_url == '../' or '/zh' in base_url %}
-    {% set url_lang = 'zh' %}
-  {% endif %}
-{% endif %}
-
-{# Final language determination - prioritize detected language #}
-{% set lang = url_lang or (page.lang if page else None) or (page.meta.lang if page and page.meta else None) or config.site_language or 'en' %}
-
-{# Debug: Uncomment to see detected language
-{{ '<!-- Detected lang: ' ~ lang ~ ', url_lang: ' ~ url_lang ~ ', abs_url: ' ~ abs_url ~ ' -->' }}
-#}
+{% set lang = i18n_current_language | default('en', true) %}
 
 {# Localized strings #}
 {% set site_label = config.site_name %}
@@ -160,7 +98,7 @@
                 {% elif nav_url.startswith('ko/') %}
                   {% set nav_url = nav_url[3:] %}
                 {% endif %}
-                <a href="{{ nav_url }}" class="bm-nav-link{% if item.active %} bm-nav-link--active{% endif %}">{{ item.title }}</a>
+                <a href="{{ nav_url or './' }}" class="bm-nav-link{% if item.active %} bm-nav-link--active{% endif %}">{{ item.title }}</a>
               {% elif item.is_link %}
                 <a href="{{ item.url }}" class="bm-nav-link" target="_blank" rel="noopener">{{ item.title }}</a>
               {% endif %}
@@ -176,7 +114,7 @@
 
       <article class="bm-content bm-squircle">
         <h1>{{ search_title }}</h1>
-        <div id="mkdocs-search-results" class="bm-search-results">
+        <div id="mkdocs-search-results" class="bm-search-results" data-no-results-text="{{ search_no_results }}">
           <p class="bm-search-no-results">{{ search_no_results }}</p>
         </div>
       </article>
@@ -189,91 +127,8 @@
     </footer>
 
     {% if 'search' in config.plugins %}
-    {# Use relative path - search directory is copied to each language subdirectory #}
-    {# main.js will load search_index.json automatically #}
-    <script src="{{ 'search/main.js' | url }}"></script>
-    {# Ensure base_url is correctly set for search functionality and translate UI #}
-    <script>
-      (function() {
-        // Detect locale from current path and update base_url if needed
-        var path = window.location.pathname;
-        var pathParts = path.split('/').filter(function(p) { return p; });
-        var currentLang = 'en';
-        
-        // Check if we're in a language subdirectory (e.g., /zh/search.html)
-        if (pathParts.length >= 1) {
-          var firstPart = pathParts[0];
-          var knownLangs = ['zh', 'zh_TW', 'fr', 'de', 'es', 'ja', 'ko'];
-          
-          if (knownLangs.indexOf(firstPart) !== -1) {
-            currentLang = firstPart;
-            // We're in a language subdirectory
-            if (typeof base_url !== 'undefined') {
-              // Update base_url to point to the language directory
-              base_url = '/' + firstPart + '/';
-            }
-          }
-        }
-        
-        // Translate UI elements based on detected language
-        // Use DOMContentLoaded to ensure elements exist, or run immediately if DOM is ready
-        function translateUI() {
-          if (currentLang === 'zh') {
-            // Update page title in header
-            var pageTitle = document.querySelector('.bm-page-title');
-            if (pageTitle && pageTitle.textContent.trim() === 'Search Results') {
-              pageTitle.textContent = '搜索结果';
-            }
-            
-            // Update main heading
-            var mainHeading = document.querySelector('article h1');
-            if (mainHeading && mainHeading.textContent.trim() === 'Search Results') {
-              mainHeading.textContent = '搜索结果';
-            }
-            
-            // Update page title in document
-            if (document.title && document.title.includes('Search Results')) {
-              document.title = document.title.replace('Search Results', '搜索结果');
-            }
-            
-            // Update "No results found" message
-            var noResults = document.querySelector('.bm-search-no-results');
-            if (noResults && noResults.textContent.trim() === 'No results found') {
-              noResults.textContent = '未找到结果';
-            }
-          } else if (currentLang === 'zh_TW') {
-            var pageTitle = document.querySelector('.bm-page-title');
-            if (pageTitle && pageTitle.textContent.trim() === 'Search Results') {
-              pageTitle.textContent = '搜尋結果';
-            }
-
-            var mainHeading = document.querySelector('article h1');
-            if (mainHeading && mainHeading.textContent.trim() === 'Search Results') {
-              mainHeading.textContent = '搜尋結果';
-            }
-
-            if (document.title && document.title.includes('Search Results')) {
-              document.title = document.title.replace('Search Results', '搜尋結果');
-            }
-
-            var noResults = document.querySelector('.bm-search-no-results');
-            if (noResults && noResults.textContent.trim() === 'No results found') {
-              noResults.textContent = '找不到結果';
-            }
-          }
-        }
-        
-        // Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', translateUI);
-        } else {
-          translateUI();
-        }
-        
-        // Also run after a short delay to catch any dynamically loaded content
-        setTimeout(translateUI, 100);
-      })();
-    </script>
+    <script>var base_url = ".";</script>
+    <script src="./search/main.js"></script>
     {% endif %}
     {%- for script in config.extra_javascript %}
     {{ script | script_tag }}

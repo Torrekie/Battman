@@ -28,21 +28,33 @@ gates.
   offline verification;
 - `SDKContractV1.json`: checked ABI/layout/interface and public-file hashes;
 - `COMPATIBILITY.md`: the v1 evolution and support policy.
+- `DEVELOPING.md`: standalone build, metrics, localization, signing, and
+  installation instructions, also usable from an extracted SDK archive;
+- `requirements.txt`: the pinned Python package-tool dependencies.
 
 ## Build without Battman source
 
-Requirements are Xcode command-line tools with an iPhoneOS SDK, `make`, Python
-3, and `cryptography` for package signing/verification. The default toolchain
-comes from `xcode-select`; override it explicitly when needed.
+Requirements are a macOS Xcode installation with an iPhoneOS SDK, `make`, and
+Python 3.10 or newer. The separately installed Command Line Tools package does
+not supply the iPhoneOS SDK. Package signing/verification also needs Python
+`cryptography`; [the standalone guide](DEVELOPING.md#toolchain-and-dependencies)
+provides the pinned dependency setup. The default toolchain comes from
+`xcode-select`; override `DEVELOPER_DIR` explicitly when needed.
 
 ```sh
 make -C PluginSDK BUILD_DIR=/tmp/battman-sdk-build -j1 example
 ```
 
+From an extracted `BattmanPluginSDK-1.1.0` archive, change into that directory
+and use `make BUILD_DIR=/tmp/battman-sdk-build -j1 example`. The archive root
+is the SDK itself; a nested `PluginSDK/` directory is not required.
+
 The result contains `BTAnalyticsExample.bundle` and
-`BTAnalyticsExample.embedded.o`. The bundle validator requires the one
-documented entry symbol, an arm64 iOS payload, a valid platform signature, and
-only approved system dependencies.
+`BTAnalyticsExample.embedded.o`. The default build targets arm64 and iOS 12.0.
+The bundle validator checks the one documented entry symbol, the bundle
+identity, platform signature, and system-library dependency paths. Battman
+performs the additional native architecture, deployment, dependency-policy,
+and loadability checks at import.
 
 `Examples/AnalyticsCard/BUILD_VERSION` is the example's canonical native build
 version. The Makefiles bind that value into the plug-in descriptor and require
@@ -65,10 +77,16 @@ python3 PluginSDK/Tools/create-analytics-card.py \
 make -C /tmp/ChargeCard SDK_ROOT="$PWD/PluginSDK" -j1
 ```
 
-The generator creates no keys and performs no publisher signing. Follow
-[`docs/plugin-authoring.md`](../docs/plugin-authoring.md) for the complete
-package flow and [`docs/plugin-security.md`](../docs/plugin-security.md) before
-distributing native code.
+The generator creates no keys and performs no publisher signing. It includes
+the MIT license with the copied example source. Follow
+[`DEVELOPING.md`](DEVELOPING.md) for the complete package flow, host contract,
+and trust behavior. The Analytics example is included as editable source;
+neither its source nor a signed example package grants official publisher trust.
+
+Release maintainers export the SDK from a clean source staging directory.
+`Scripts/Release/build-sdk-archive.py` in the full repository rejects build
+products, caches, and signing inputs. The separately released signed example
+under `Examples/Packages/` is excluded from the SDK source archive.
 
 `build-plugin-package.py` inventories exact payload bytes and automatically
 adds the bounded `macho-codesign-independent-sha256-v1` identity. Authors must

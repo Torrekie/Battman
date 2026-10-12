@@ -63,3 +63,46 @@ text and recipient before sharing.
 
 Use the public issue tracker only for ordinary non-sensitive defects. Security
 reports and private diagnostics follow the repository's `SECURITY.md` policy.
+
+## Install your first card
+
+1. Obtain the plug-in from its publisher or the selected Battman release. A
+   `.battman.zip` is a download wrapper: extract it and keep the enclosed
+   `.battman` directory package intact. Do not edit its manifest or payload.
+2. Share/open the `.battman` package with Battman. For a Debian add-on, install
+   the package matching your jailbreak layout through your package manager.
+3. Open **More → Plug-ins** and review source, verification status, publisher
+   fingerprint, requested extensions, and activation state. Compare the full
+   fingerprint through an independent publisher channel.
+4. If it is third-party code you choose to trust, approve the exact build or
+   scoped publisher, then enable third-party loading. A hard verification
+   failure requires a corrected package from its publisher.
+5. Restart Battman, then open **Analytics → Edit** and add the registered card.
+   On TrollStore, complete the replacement-app process first when Battman says
+   **Requires Battman Reinstall**.
+
+The 1.1.0 release matrix selects **Charge Gauge** as a separate official
+plug-in. Jailbreak add-ons use the rooted or rootless Debian layout; the GitHub
+replacement TIPA includes the selected official plug-in. Actual availability
+still depends on the release being published with valid signatures and trust
+metadata. The SDK Analytics example remains third-party and requires approval;
+it is not included in the replacement TIPA.
+
+## Signing and developer entry point
+
+There are two separate signatures. A platform signature covers the native
+Mach-O bundle; the package publisher signs the exact manifest with an ECDSA
+P-256 key. Neither signature substitutes for the other, and neither alone
+makes a package official. A third-party author does not need Battman's offline
+root keys: those keys authorize official publisher delegations only.
+
+The public SDK v1 supports native Analytics cards through the documented C ABI
+and Objective-C protocols. Its full subtree is MIT licensed, independently of
+the host license. Authors can generate and build a standalone card with the
+SDK's template, using an iPhoneOS SDK, make, Python 3, and `cryptography` for
+package signing and verification. See the
+[SDK](https://github.com/Torrekie/Battman/tree/master/PluginSDK) and the complete
+[authoring guide](https://github.com/Torrekie/Battman/blob/master/docs/plugin-authoring.md)
+for generation, build, existing-key signing, and offline verification commands.
+The portable verifier does not prove that iOS can load the code; Battman still
+checks platform loading, ABI, dependencies, trust, and rollback state.

@@ -11,12 +11,14 @@ upload, contact a device, invoke TrollStore, or generate a production key.
 | --- | --- | --- |
 | Public | `Battman` | Public-source app and CI validation |
 | GitHub | `Battman (rel-nonfree)` | Rooted/rootless host Debian and replacement TIPA |
-| Havoc | `Battman-havoc` | Rooted/rootless host Debian only, with the existing private authorization implementation |
+| Havoc | `Battman-havoc` | Rooted/rootless host Debian only, preserving existing private configuration and source exclusions |
 
 The GitHub scheme's underlying target is `Battman-nonfree`; command-line
 builds must quote the full `Battman (rel-nonfree)` scheme name. Build and
-inspection tools validate the executable's `__TEXT,__btchannel` marker. A Havoc host must retain its private authorization source and
-definitions; there is no Havoc TIPA target. `build-tipa.py` and TIPA inspection
+inspection tools validate the executable's `__TEXT,__btchannel` marker. The Havoc variant retains its private configuration headers, but
+`nonfree-havoc.m` remains excluded from compilation and `DISABLE_PROTECT=1`
+remains unchanged. The channel marker does not enable or restore DRM. There is
+no Havoc TIPA target. `build-tipa.py` and TIPA inspection
 reject the `havoc` channel, while the Havoc host validator requires it.
 
 Routine CI runs the Linux Debug cross-build, followed by the native regression
