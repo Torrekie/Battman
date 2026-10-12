@@ -43,8 +43,18 @@ owner separately confirms the final generation step.
 Remote iOS storage is restricted to:
 
 ```text
-/private/var/root/BattmanKeyBackups/battman-1.1.0-production-keys-1
+/private/var/root/BattmanKeyBackups/<ceremony-identifier>
 ```
+
+The default identity is `battman-1.1.0-production-keys-1`. To replace an
+unrecoverable key set before its first publication, select a new positive
+number with `--ceremony-identifier battman-1.1.0-production-keys-2`. Use that
+same identifier in the private target configuration, both remote directory
+paths, and every generation/backup invocation. Use a new local output
+directory, preserve the previous records, and regenerate all related public
+trust metadata and signatures. A new identity cannot resume an old pending
+record or reuse an old backup destination. Once keys have shipped, replacement
+also requires the published trust-rotation protocol.
 
 Never use `/var/jb` for durable backup storage. After a successful ceremony,
 power down and physically separate the two devices before an independent

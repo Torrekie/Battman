@@ -37,6 +37,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 
 CEREMONY_IDENTIFIER = "battman-1.1.0-production-keys-1"
+CEREMONY_IDENTIFIER_PATTERN = re.compile(r"^battman-1\.1\.0-production-keys-[1-9][0-9]{0,8}$")
 CONFIRMATION = "GENERATE BATTMAN 1.1.0 PRODUCTION KEYS"
 BACKUP_CONFIRMATION = "BACK UP ENCRYPTED PRODUCTION KEYS"
 NETWORK_POLICY = "trusted-private-lan-permitted"
@@ -64,6 +65,12 @@ REMOTE_PATH = (
 
 class CeremonyError(RuntimeError):
     pass
+
+
+def require_ceremony_identifier(value: str) -> str:
+    if not CEREMONY_IDENTIFIER_PATTERN.fullmatch(value):
+        raise CeremonyError("ceremony identifier must use battman-1.1.0-production-keys-<positive number>")
+    return value
 
 
 def canonical_json(value: object) -> bytes:
@@ -802,7 +809,12 @@ def preflight(arguments: argparse.Namespace) -> tuple[list[dict[str, str]], Path
 
 
 def main() -> int:
+    global CEREMONY_IDENTIFIER
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--ceremony-identifier", default=CEREMONY_IDENTIFIER,
+        help="unique identity for this key set; must match the target configuration",
+    )
     parser.add_argument("--target-config", required=True, type=Path)
     parser.add_argument("--output-directory", required=True, type=Path)
     parser.add_argument("--operator-identifier", required=True)
@@ -821,6 +833,7 @@ def main() -> int:
     phases.add_argument("--generate", action="store_true")
     phases.add_argument("--backup", action="store_true")
     arguments = parser.parse_args()
+    CEREMONY_IDENTIFIER = require_ceremony_identifier(arguments.ceremony_identifier)
     if not OPERATOR.fullmatch(arguments.operator_identifier):
         raise CeremonyError("operator identifier is malformed")
     targets, openssl, script = preflight(arguments)

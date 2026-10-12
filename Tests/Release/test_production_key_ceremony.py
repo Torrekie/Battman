@@ -57,6 +57,24 @@ def pending_fixture() -> dict[str, object]:
 
 
 def main() -> None:
+    for identifier in ("battman-1.1.0-production-keys-1", "battman-1.1.0-production-keys-2"):
+        assert CEREMONY.require_ceremony_identifier(identifier) == identifier
+    for identifier in ("../private", "battman-1.1.0-production-keys-0", "battman-1.1.0-production-keys-01", "battman-1.1.0-production-keys-2/child"):
+        expect_failure(
+            lambda: CEREMONY.require_ceremony_identifier(identifier),
+            "unsafe or ambiguous ceremony identity was accepted",
+        )
+    old_identifier = CEREMONY.CEREMONY_IDENTIFIER
+    pending_before_rotation = pending_fixture()
+    try:
+        CEREMONY.CEREMONY_IDENTIFIER = "battman-1.1.0-production-keys-2"
+        assert len(CEREMONY.validate_pending_record(pending_fixture(), "test-operator", "3" * 64)) == 6
+        expect_failure(
+            lambda: CEREMONY.validate_pending_record(pending_before_rotation, "test-operator", "3" * 64),
+            "a rotated identity accepted the old key set's pending record",
+        )
+    finally:
+        CEREMONY.CEREMONY_IDENTIFIER = old_identifier
     openssl_raw = subprocess.run(
         ["/usr/bin/which", "openssl"], check=True, capture_output=True, text=True
     ).stdout.strip()
