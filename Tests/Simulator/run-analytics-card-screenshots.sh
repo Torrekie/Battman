@@ -59,17 +59,22 @@ for path in CALayer+smoothCorners UIColor+compat UIScreen+Auto; do SOURCES+=("$R
     -Wall -Wextra -Werror -Wno-deprecated-declarations -Wno-unused-parameter -Wno-sign-compare -Wno-incomplete-implementation \
     -DDEBUG=1 -DBATTMAN_SIMULATOR_UI_FIXTURE=1 -DBATTMAN_VERSION_STRING=\"1.1.0\" \
     -I"$REPO_ROOT/Battman" -I"$REPO_ROOT/PluginSDK/include" \
-    "${SOURCES[@]}" -framework Foundation -framework UIKit -framework QuartzCore -framework CoreGraphics -lsqlite3 -o "$APP_DIR/AnalyticsV3Fixture"
+    "${SOURCES[@]}" -framework Foundation -framework UIKit -framework QuartzCore -framework CoreGraphics -lsqlite3 -lz -o "$APP_DIR/AnalyticsV3Fixture"
 codesign --force --sign - --timestamp=none "$APP_DIR" >/dev/null
 xcrun simctl install "$SIMULATOR_UDID" "$APP_DIR"
 INSTALLED=1
 CONTAINER="$(xcrun simctl get_app_container "$SIMULATOR_UDID" "$BUNDLE_ID" data)"
+touch "$TEST_TMP/fixture.stdout" "$TEST_TMP/fixture.stderr"
 SIMCTL_CHILD_BATTMAN_ANALYTICS_PERFORMANCE_ONLY="${BATTMAN_ANALYTICS_PERFORMANCE_ONLY:-0}" \
 SIMCTL_CHILD_BATTMAN_ANALYTICS_HISTORY_ONLY="${BATTMAN_ANALYTICS_HISTORY_ONLY:-0}" \
-    xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID" >/dev/null
+    xcrun simctl launch --stdout="$TEST_TMP/fixture.stdout" --stderr="$TEST_TMP/fixture.stderr" "$SIMULATOR_UDID" "$BUNDLE_ID"
 STATUS_PATH="$CONTAINER/Documents/analytics-v3.status"
 for _ in $(seq 1 600); do [[ -f "$STATUS_PATH" ]] && break; sleep 0.1; done
-if [[ ! -f "$STATUS_PATH" ]]; then echo 'Fixture did not finish within 60 seconds' >&2; exit 1; fi
+if [[ ! -f "$STATUS_PATH" ]]; then
+    echo 'Fixture did not finish within 60 seconds' >&2
+    tail -n 30 "$TEST_TMP/fixture.stderr" >&2 || true
+    exit 1
+fi
 if [[ "$(cat "$STATUS_PATH")" != PASS ]]; then cat "$STATUS_PATH" >&2; exit 1; fi
 python3 - "$OUTPUT_DIR/fixture.json" "$BUNDLE_ID" "$SIMULATOR_UDID" <<'PY'
 import json,sys
@@ -77,7 +82,7 @@ with open(sys.argv[1],'w') as f:json.dump({'bundleID':sys.argv[2],'simulatorUDID
 PY
 cp "$CONTAINER/Documents/validation.json" "$OUTPUT_DIR/"
 # Focused history checks produce no screenshots; performance mode captures
-# at most eight dense Capacity/Cells geometry and language examples.
+# a finite set of dense/cached canvases and changed process geometries.
 shopt -s nullglob
 SCREENSHOTS=("$CONTAINER"/Documents/*.png)
 if (( ${#SCREENSHOTS[@]} )); then cp "${SCREENSHOTS[@]}" "$OUTPUT_DIR/"; fi

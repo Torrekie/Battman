@@ -69,6 +69,8 @@ FOUNDATION_EXPORT BOOL BAAnalyticsHistoryHasGap(NSArray<BAAnalyticsHistoryGap *>
 @end
 
 @interface BAAnalyticsReport : NSObject <NSCopying>
+// A restored report retains its original evidence timestamp and provenance.
+@property (nonatomic, readonly, getter=isCached) BOOL cached;
 @property (nonatomic, readonly) uint64_t sequenceNumber;
 @property (nonatomic, copy, readonly) NSDate *generatedAt;
 @property (nonatomic, copy, readonly) NSString *sourceProfileIdentifier;
@@ -83,6 +85,14 @@ FOUNDATION_EXPORT BOOL BAAnalyticsHistoryHasGap(NSArray<BAAnalyticsHistoryGap *>
 								 error:(nullable NSError *)error NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 - (nullable BAAnalyticsFamilyReport *)reportForFamily:(NSString *)family;
+- (BAAnalyticsReport *)reportByMarkingCached;
 @end
+
+// Host-only bounded binary property-list graph. Invoke off the main thread.
+// A cache contains completed evidence, never a loading or failed acquisition.
+FOUNDATION_EXPORT NSData * _Nullable BAAnalyticsEncodeCachedReport(BAAnalyticsReport *report, NSError * _Nullable * _Nullable error);
+FOUNDATION_EXPORT BAAnalyticsReport * _Nullable BAAnalyticsDecodeCachedReport(NSData *data, NSDate *now, NSError * _Nullable * _Nullable error);
+FOUNDATION_EXPORT NSData * _Nullable BAAnalyticsEncodeCachedReportCancellable(BAAnalyticsReport *report, NSError * _Nullable * _Nullable error, BOOL (^cancelled)(void));
+FOUNDATION_EXPORT BAAnalyticsReport * _Nullable BAAnalyticsDecodeCachedReportCancellable(NSData *data, NSDate *now, NSError * _Nullable * _Nullable error, BOOL (^cancelled)(void));
 
 NS_ASSUME_NONNULL_END

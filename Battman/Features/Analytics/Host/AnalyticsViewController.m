@@ -68,7 +68,9 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 - (instancetype)init {
 	NSArray *cards = [BTPluginPlatform.sharedPlatform.registry extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
-	return [self initWithCards:cards metricService:[[BAAnalyticsMetricService alloc] initWithSource:[BAAnalyticsSystemMetricSource new]]
+	BAAnalyticsMetricService *metrics = [[BAAnalyticsMetricService alloc] initWithSource:[BAAnalyticsSystemMetricSource new]];
+	[metrics enableStartupCache];
+	return [self initWithCards:cards metricService:metrics
 		historyService:BAAnalyticsHistoryService.sharedService userDefaults:NSUserDefaults.standardUserDefaults];
 }
 
@@ -96,6 +98,8 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	self.availableCards = [cards copy];
 	self.metricService = metricService;
 	self.historyService = historyService;
+	[NSNotificationCenter.defaultCenter addObserver:self selector:@selector(historyReportPublished:)
+		name:BAAnalyticsHistoryServiceDidPublishNotification object:historyService];
 	self.layoutDefaults = userDefaults;
 	for (id<BAAnalyticsCard> card in cards)
 		if ([card isKindOfClass:BAAnalyticsCanvasCard.class]) ((BAAnalyticsCanvasCard *)card).historyService = historyService;
@@ -116,6 +120,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	self.addCardButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(showAddCardMenu:)];
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 	[self updateEditingButtons];
+	[self updateCachedHistoryPrompt];
 	self.view.backgroundColor = [UIColor compatBackgroundColor];
 
 	self.collectionLayout = [BAAnalyticsCardGridLayout new];
@@ -209,12 +214,24 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 - (void)applicationDidReceiveMemoryWarning:(NSNotification *)notification {
 	[self.metricService handleMemoryPressure];
 	[self.historyService handleMemoryPressure];
+	[self updateCachedHistoryPrompt];
 	for (id<BAAnalyticsCard> card in self.availableCards) {
 		if ([card respondsToSelector:@selector(analyticsCardDidReceiveMemoryWarning)])
 			[card analyticsCardDidReceiveMemoryWarning];
 	}
 	if (!self.movingCard)
 		[self.collectionView reloadData];
+}
+
+- (void)historyReportPublished:(NSNotification *)notification {
+	if (self.isViewLoaded) [self updateCachedHistoryPrompt];
+}
+
+- (void)updateCachedHistoryPrompt {
+	// One page-level provenance line leaves every card's canvas and controls intact.
+	BAAnalyticsReport *report = self.historyService.latestReport;
+	NSString *prompt = report.isCached ? _("Showing cached history; refreshing in background") : nil;
+	if (![self.navigationItem.prompt isEqualToString:prompt]) self.navigationItem.prompt = prompt;
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {

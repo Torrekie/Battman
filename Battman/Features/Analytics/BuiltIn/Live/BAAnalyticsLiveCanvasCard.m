@@ -179,6 +179,7 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     for (BALiveTrack *track in self.tracks)
         [sampleCounts addObject:[NSString stringWithFormat:@"%@ n=%lu", track.label, (unsigned long)track.points.count]];
     self.accessibilityLabel = [self.accessibilityLabel stringByAppendingFormat:@" %@", [sampleCounts componentsJoinedByString:@"; "]];
+    if (snapshot.isCached) self.accessibilityLabel = [NSString stringWithFormat:_("Cached · %@"), self.accessibilityLabel];
     [self setNeedsLayout]; [self setNeedsDisplay];
 }
 
@@ -362,7 +363,13 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     [muted setStroke]; battery.lineWidth = 1; [battery stroke];
     [muted setFill];
     [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(CGRectGetMaxX(self.batteryRect) + 1, CGRectGetMidY(self.batteryRect) - 7, 3, 14) cornerRadius:1] fill];
-    BALiveDrawText(BALiveAge(self.latestSnapshot.timestamp), self.ageRect, small, muted, NSTextAlignmentRight);
+    NSString *age = BALiveAge(self.latestSnapshot.timestamp);
+    if (self.latestSnapshot.isCached) age = [NSString stringWithFormat:_("Cached · %@"), age];
+    CGFloat ageWidth = [age sizeWithAttributes:@{NSFontAttributeName:small}].width;
+    UIFont *ageFont = small;
+    if (ageWidth > self.ageRect.size.width && ageWidth > 0)
+        ageFont = [UIFont systemFontOfSize:MAX(9, small.pointSize * self.ageRect.size.width / ageWidth)];
+    BALiveDrawText(age, self.ageRect, ageFont, muted, NSTextAlignmentRight);
     UIFont *metricFont = BALiveGraphicFont(13, 17, UIFontWeightMedium);
     BALiveDrawText([NSString stringWithFormat:@"%@%@", self.instantaneousCurrent ? @"" : _("avg "), [self currentText]], self.currentRect, metricFont, UIColor.compatBlueColor, NSTextAlignmentRight);
     BAAnalyticsDrawGlyph(BAAnalyticsGlyphThermometer, CGRectMake(self.temperatureRect.origin.x, self.temperatureRect.origin.y + 2, 13, 15), UIColor.compatOrangeColor);

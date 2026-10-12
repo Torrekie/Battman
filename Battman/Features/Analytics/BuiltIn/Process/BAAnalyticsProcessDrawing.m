@@ -2,6 +2,7 @@
 #import "BAAnalyticsProcessDrawing.h"
 #include <math.h>
 #include <float.h>
+#import <objc/runtime.h>
 
 NSNumber *BAProcessValue(BAAnalyticsObservation *observation, NSString *metric) {
     if (!observation.timestampValidated) return nil;
@@ -221,6 +222,155 @@ static CGRect BAProcessSpan(NSDate *first, NSDate *last, NSDate *start, NSDate *
     return CGRectMake(x, CGRectGetMinY(plot), MAX(0.0, BAProcessTimeX(last, start, end, plot) - x), CGRectGetHeight(plot));
 }
 
+typedef struct {
+    NSTimeInterval time;
+    double value;
+    NSUInteger run;
+} BAProcessDisplaySample;
+
+@interface BAProcessPreparedTrace : NSObject
+@property (nonatomic, weak) NSArray *observations;
+@property (nonatomic, weak) NSArray *intervals;
+@property (nonatomic, weak) NSArray *gaps;
+@property (nonatomic, copy) NSDate *start;
+@property (nonatomic, copy) NSDate *end;
+@property (nonatomic) double divisor;
+@property (nonatomic, copy) NSData *segments;
+@property (nonatomic, copy) NSData *points;
+@property (nonatomic, copy) NSData *missing;
+@property (nonatomic) NSUInteger columns;
+@property (nonatomic, copy) NSArray<NSNumber *> *lineIndices;
+@property (nonatomic, copy) NSArray<NSNumber *> *markerIndices;
+@end
+@implementation BAProcessPreparedTrace
+@end
+
+// This affects the presentation only. The report and time-slice selections
+// still contain every original reading and every trusted interval.
+static NSArray<NSNumber *> *BAProcessDisplayEnvelope(NSData *data, NSTimeInterval start,
+        NSTimeInterval end, NSUInteger columns, BOOL preserveRuns) {
+    const BAProcessDisplaySample *samples = data.bytes;
+    NSUInteger count = data.length / sizeof(BAProcessDisplaySample);
+    if (!count) return @[];
+    NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
+    NSUInteger first = 0, low = 0, high = 0, last = 0, priorColumn = NSNotFound, zero = NSNotFound;
+    for (NSUInteger i = 0; i < count; i++) {
+        double fraction = end > start ? (samples[i].time - start) / (end - start) : .5;
+        NSUInteger column = MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns)));
+        // A short trusted run must survive even if it shares a display column
+        // with another run. Its endpoints cannot be bridged across a gap.
+        if (column != priorColumn || (preserveRuns && i && samples[i].run != samples[i - 1].run)) {
+            if (priorColumn != NSNotFound) {
+                [kept addIndex:first]; [kept addIndex:low]; [kept addIndex:high]; [kept addIndex:last];
+            }
+            first = low = high = i; priorColumn = column; zero = NSNotFound;
+        }
+        if (samples[i].value < samples[low].value) low = i;
+        if (samples[i].value > samples[high].value) high = i;
+        last = i;
+        // Keep one real zero per bucket. The extrema retain both signs
+        // without repeating every baseline point in a flat dense series.
+        if (samples[i].value == 0 && zero == NSNotFound) { zero = i; [kept addIndex:i]; }
+    }
+    [kept addIndex:first]; [kept addIndex:low]; [kept addIndex:high]; [kept addIndex:last];
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:kept.count];
+    [kept enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:@(index)]; }];
+    return result;
+}
+
+static BAProcessPreparedTrace *BAProcessPrepareDisplayTrace(BAAnalyticsCanvasView *view,
+        NSArray *observations, NSArray *intervals, NSArray *gaps, NSString *metric,
+        NSDate *start, NSDate *end, double divisor, NSUInteger columns) {
+    static char tracesKey;
+    NSMutableDictionary *traces = objc_getAssociatedObject(view, &tracesKey);
+    if (!traces) {
+        traces = [NSMutableDictionary dictionary];
+        objc_setAssociatedObject(view, &tracesKey, traces, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    BAProcessPreparedTrace *trace = traces[metric];
+    if (!trace || trace.observations != observations || trace.intervals != intervals || trace.gaps != gaps ||
+        ![trace.start isEqualToDate:start] || ![trace.end isEqualToDate:end] || trace.divisor != divisor) {
+        trace = [BAProcessPreparedTrace new];
+        trace.observations = observations; trace.intervals = intervals; trace.gaps = gaps;
+        trace.start = start; trace.end = end; trace.divisor = divisor;
+        NSMutableData *segments = [NSMutableData data], *points = [NSMutableData data], *missing = [NSMutableData data];
+        NSDate *cursor = start; BAAnalyticsHistoryInterval *previous = nil; NSUInteger run = 0;
+        for (BAAnalyticsHistoryInterval *interval in BAProcessOrderedIntervals(intervals)) {
+            if (!BAProcessIntervalUsable(interval, @[metric], gaps)) continue;
+            NSDate *first = [interval.startDate compare:start] == NSOrderedAscending ? start : interval.startDate;
+            NSDate *last = [interval.endDate compare:end] == NSOrderedDescending ? end : interval.endDate;
+            if ([last compare:first] != NSOrderedDescending) continue;
+            if ([first compare:cursor] == NSOrderedDescending) {
+                double range[] = {cursor.timeIntervalSince1970, first.timeIntervalSince1970};
+                [missing appendBytes:range length:sizeof(range)];
+            }
+            if ([last compare:cursor] == NSOrderedDescending) cursor = last;
+            BOOL joined = previous && [previous.endDate isEqualToDate:first] &&
+                [previous.endObservation.identifier isEqualToString:interval.startObservation.identifier];
+            if (!joined && previous) run++;
+            BAProcessDisplaySample pair[] = {
+                {first.timeIntervalSince1970, BAProcessInterpolate(interval, metric, first) / divisor, run},
+                {last.timeIntervalSince1970, BAProcessInterpolate(interval, metric, last) / divisor, run}
+            };
+            [segments appendBytes:pair length:sizeof(pair)]; previous = interval;
+        }
+        if ([end compare:cursor] == NSOrderedDescending) {
+            double range[] = {cursor.timeIntervalSince1970, end.timeIntervalSince1970};
+            [missing appendBytes:range length:sizeof(range)];
+        }
+        for (BAAnalyticsObservation *observation in observations) {
+            NSNumber *value = BAProcessValue(observation, metric);
+            if (!value || [observation.timestamp compare:start] == NSOrderedAscending || [observation.timestamp compare:end] == NSOrderedDescending) continue;
+            BAProcessDisplaySample point = {observation.timestamp.timeIntervalSince1970, value.doubleValue / divisor, 0};
+            [points appendBytes:&point length:sizeof(point)];
+        }
+        trace.segments = segments; trace.points = points; trace.missing = missing;
+        traces[metric] = trace;
+    }
+    if (trace.columns != columns) {
+        trace.columns = columns;
+        trace.lineIndices = BAProcessDisplayEnvelope(trace.segments, start.timeIntervalSince1970, end.timeIntervalSince1970, columns, YES);
+        trace.markerIndices = BAProcessDisplayEnvelope(trace.points, start.timeIntervalSince1970, end.timeIntervalSince1970,
+            MAX(1, columns / 4), NO);
+    }
+    return trace;
+}
+
+static void BAProcessDrawDenseTrace(BAAnalyticsCanvasView *view, NSArray *observations, NSArray *intervals,
+        NSArray *gaps, NSString *metric, NSDate *start, NSDate *end, CGRect plot,
+        double minimum, double maximum, double divisor, UIColor *color, BOOL dashed) {
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(plot.size.width / 3)));
+    BAProcessPreparedTrace *trace = BAProcessPrepareDisplayTrace(view, observations, intervals, gaps, metric, start, end, divisor, columns);
+    double firstTime = start.timeIntervalSince1970, duration = [end timeIntervalSinceDate:start];
+    CGFloat (^x)(double) = ^CGFloat(double time) { return plot.origin.x + (duration > 0 ? (time - firstTime) / duration : .5) * plot.size.width; };
+    CGFloat (^y)(double) = ^CGFloat(double value) { return CGRectGetMaxY(plot) - (value - minimum) / (maximum - minimum) * plot.size.height; };
+    const double *missing = trace.missing.bytes;
+    for (NSUInteger i = 0; i < trace.missing.length / (2 * sizeof(double)); i++)
+        BAProcessHatch(CGRectMake(x(missing[2 * i]), plot.origin.y, MAX(0, x(missing[2 * i + 1]) - x(missing[2 * i])), plot.size.height), UIColor.compatSecondaryLabelColor);
+    CGContextSetStrokeColorWithColor(context, color.CGColor); CGContextSetLineWidth(context, 1.8);
+    CGContextSetLineCap(context, kCGLineCapRound); CGFloat pattern[] = {4, 3};
+    CGContextSetLineDash(context, 0, dashed ? pattern : NULL, dashed ? 2 : 0);
+    const BAProcessDisplaySample *samples = trace.segments.bytes;
+    NSUInteger previous = NSNotFound;
+    for (NSNumber *number in trace.lineIndices) {
+        NSUInteger index = number.unsignedIntegerValue;
+        if (previous != NSNotFound && samples[index].run == samples[previous].run) {
+            CGContextMoveToPoint(context, x(samples[previous].time), y(samples[previous].value));
+            CGContextAddLineToPoint(context, x(samples[index].time), y(samples[index].value));
+        }
+        previous = index;
+    }
+    CGContextStrokePath(context); CGContextSetLineDash(context, 0, NULL, 0);
+    CGContextSetFillColorWithColor(context, color.CGColor);
+    samples = trace.points.bytes;
+    for (NSNumber *number in trace.markerIndices) {
+        NSUInteger index = number.unsignedIntegerValue;
+        CGContextAddEllipseInRect(context, CGRectMake(x(samples[index].time) - 1.5, y(samples[index].value) - 1.5, 3, 3));
+    }
+    CGContextFillPath(context);
+}
+
 NSArray<BAAnalyticsCanvasHitRegion *> *BAProcessTrace(BAAnalyticsCanvasView *view,
         NSArray<BAAnalyticsObservation *> *observations, NSArray<BAAnalyticsHistoryInterval *> *intervals,
         NSArray<BAAnalyticsHistoryGap *> *gaps, NSString *metric, NSString *unit,
@@ -231,6 +381,13 @@ NSArray<BAAnalyticsCanvasHitRegion *> *BAProcessTrace(BAAnalyticsCanvasView *vie
     CGContextRef context = UIGraphicsGetCurrentContext();
     BOOL collect = context == NULL;
     BOOL dense = observations.count + intervals.count > 192;
+    if (dense && context) {
+        CGContextSaveGState(context); CGContextClipToRect(context, plot);
+        BAProcessDrawDenseTrace(view, observations, intervals, gaps, metric, start, end, plot,
+            minimum, maximum, divisor, color, dashed);
+        CGContextRestoreGState(context);
+        return regions;
+    }
     NSUInteger slices = MAX(1, MIN(64, (NSUInteger)ceil(CGRectGetWidth(plot) / 6)));
     NSMutableIndexSet *pointSlices = [NSMutableIndexSet indexSet], *gapSlices = [NSMutableIndexSet indexSet];
     if (context) {

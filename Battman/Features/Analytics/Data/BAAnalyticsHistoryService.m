@@ -1,8 +1,117 @@
 #import "BAAnalyticsHistoryService.h"
 #import "BAAnalyticsHistoryReader.h"
 #include <math.h>
+#include <sys/stat.h>
+#include <zlib.h>
 
 static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
+NSString *const BAAnalyticsHistoryServiceDidPublishNotification = @"BAAnalyticsHistoryServiceDidPublish";
+
+static NSURL *BAHistoryCacheDirectory(void) {
+	if (!NSBundle.mainBundle.bundleIdentifier.length) return nil;
+	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+	return [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES];
+}
+
+static BOOL BAHistoryHasCompletedEvidence(BAAnalyticsReport *report) {
+	if (!report || report.error) return NO;
+	for (BAAnalyticsFamilyReport *family in report.familyReports.allValues)
+		if (family.availability == BAAnalyticsReportAvailabilityReady || family.availability == BAAnalyticsReportAvailabilityPartial) return YES;
+	return NO;
+}
+
+static NSString *BAArchiveToken(struct stat info) {
+	NSString *input = [NSString stringWithFormat:@"%llu:%llu:%lld:%lld:%lld:%ld", (unsigned long long)info.st_dev,
+		(unsigned long long)info.st_ino, (long long)info.st_birthtimespec.tv_sec, (long long)info.st_size,
+		(long long)info.st_mtimespec.tv_sec, info.st_mtimespec.tv_nsec];
+	uint64_t hash = UINT64_C(14695981039346656037);
+	NSData *bytes = [input dataUsingEncoding:NSUTF8StringEncoding];
+	for (NSUInteger i = 0; i < bytes.length; i++) { hash ^= ((const uint8_t *)bytes.bytes)[i]; hash *= UINT64_C(1099511628211); }
+	return [NSString stringWithFormat:@"%016llx", (unsigned long long)hash];
+}
+
+// Only the known Powerlog archive directory is inspected. Inflation is streamed
+// into app-owned storage, never performed by a card or on the main thread.
+static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory, BOOL (^cancelled)(void)) {
+	if (!current.isFileURL || !cacheDirectory || cancelled()) return @[];
+	NSFileManager *fm = NSFileManager.defaultManager;
+	NSURL *archiveDirectory = [current.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"Archives" isDirectory:YES];
+	NSMutableArray<NSDictionary *> *candidates = [NSMutableArray array];
+	for (NSURL *url in [fm contentsOfDirectoryAtURL:archiveDirectory includingPropertiesForKeys:nil options:NSDirectoryEnumerationSkipsHiddenFiles error:NULL]) {
+		if (cancelled()) return @[];
+		NSString *name = url.lastPathComponent.uppercaseString;
+		if (![name hasSuffix:@".PLSQL"] && ![name hasSuffix:@".PLSQL.GZ"]) continue;
+		struct stat info;
+		if (lstat(url.path.fileSystemRepresentation, &info) || !S_ISREG(info.st_mode) || info.st_size <= 0 ||
+			info.st_size > ([name hasSuffix:@".GZ"] ? 64 : 192) * 1024 * 1024) continue;
+		[candidates addObject:@{@"url": url, @"token": BAArchiveToken(info), @"modified": @(info.st_mtimespec.tv_sec)}];
+		if (candidates.count >= 128) break;
+	}
+	[candidates sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) { return [b[@"modified"] compare:a[@"modified"]]; }];
+	if (candidates.count > 8) [candidates removeObjectsInRange:NSMakeRange(8, candidates.count - 8)];
+	NSURL *storage = [cacheDirectory URLByAppendingPathComponent:@"Archives" isDirectory:YES];
+	if (![fm createDirectoryAtURL:storage withIntermediateDirectories:YES attributes:nil error:NULL]) return @[];
+	[storage setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:NULL];
+	NSMutableSet *validNames = [NSMutableSet set];
+	for (NSDictionary *candidate in candidates) [validNames addObject:[candidate[@"token"] stringByAppendingString:@".sqlite"]];
+	for (NSURL *old in [fm contentsOfDirectoryAtURL:storage includingPropertiesForKeys:nil options:0 error:NULL])
+		if (![validNames containsObject:old.lastPathComponent]) [fm removeItemAtURL:old error:NULL];
+	NSMutableArray *sources = [NSMutableArray array];
+	NSUInteger diskBytes = 0;
+	NSTimeInterval deadline = NSProcessInfo.processInfo.systemUptime + 8;
+	for (NSDictionary *candidate in candidates) @autoreleasepool {
+		if (cancelled() || NSProcessInfo.processInfo.systemUptime > deadline) break;
+		NSURL *original = candidate[@"url"], *url = original;
+		if ([original.pathExtension caseInsensitiveCompare:@"gz"] == NSOrderedSame) {
+			url = [storage URLByAppendingPathComponent:[candidate[@"token"] stringByAppendingString:@".sqlite"]];
+			struct stat cached;
+			if (stat(url.path.fileSystemRepresentation, &cached) || cached.st_size <= 0 || cached.st_size > 192 * 1024 * 1024) {
+				NSURL *partial = [url URLByAppendingPathExtension:@"partial"];
+				FILE *output = fopen(partial.path.fileSystemRepresentation, "wb");
+				gzFile input = gzopen(original.path.fileSystemRepresentation, "rb");
+				NSUInteger count = 0;
+				BOOL complete = NO, ioGood = YES;
+				if (input && output) {
+					uint8_t buffer[65536];
+					int read = 0;
+					while (!cancelled() && NSProcessInfo.processInfo.systemUptime <= deadline && (read = gzread(input, buffer, sizeof buffer)) > 0) {
+						count += (NSUInteger)read;
+						if (count > 192 * 1024 * 1024 || count + diskBytes > 512 * 1024 * 1024 || fwrite(buffer, 1, (size_t)read, output) != (size_t)read) { ioGood = NO; break; }
+					}
+					int gzipError = Z_OK; (void)gzerror(input, &gzipError);
+					complete = ioGood && read == 0 && (gzipError == Z_OK || gzipError == Z_STREAM_END) &&
+						!cancelled() && NSProcessInfo.processInfo.systemUptime <= deadline && count > 0 &&
+						count <= 192 * 1024 * 1024 && count + diskBytes <= 512 * 1024 * 1024 && gzeof(input);
+				}
+				if (input && gzclose(input) != Z_OK) complete = NO;
+				if (output && fclose(output) != 0) complete = NO;
+				if (complete) { [fm removeItemAtURL:url error:NULL]; complete = [fm moveItemAtURL:partial toURL:url error:NULL]; }
+				if (!complete) { [fm removeItemAtURL:partial error:NULL]; continue; }
+			}
+		}
+		struct stat info;
+		if (stat(url.path.fileSystemRepresentation, &info) || info.st_size > 192 * 1024 * 1024 || info.st_size <= 0) continue;
+		if (diskBytes + (NSUInteger)info.st_size > 512 * 1024 * 1024) { if (![url isEqual:original]) [fm removeItemAtURL:url error:NULL]; continue; }
+		uint8_t header[16]; FILE *handle = fopen(url.path.fileSystemRepresentation, "rb");
+		size_t headerLength = handle ? fread(header, 1, sizeof header, handle) : 0;
+		if (handle) fclose(handle);
+		if (headerLength != sizeof header || memcmp(header, "SQLite format 3\0", sizeof header)) { if (![url isEqual:original]) [fm removeItemAtURL:url error:NULL]; continue; }
+		struct stat originalInfo;
+		if (lstat(original.path.fileSystemRepresentation, &originalInfo) || ![BAArchiveToken(originalInfo) isEqual:candidate[@"token"]]) {
+			if (![url isEqual:original]) [fm removeItemAtURL:url error:NULL]; continue;
+		}
+		diskBytes += (NSUInteger)info.st_size;
+		NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+		components.fragment = [@"ba-powerlog-source:" stringByAppendingString:candidate[@"token"]];
+		[sources addObject:components.URL];
+	}
+	// Remove unvisited/deadline-aborted cache files too, keeping total storage bounded.
+	NSMutableSet *retained = [NSMutableSet set];
+	for (NSURL *source in sources) if ([source.URLByDeletingLastPathComponent.path isEqual:storage.path]) [retained addObject:source.lastPathComponent];
+	for (NSURL *old in [fm contentsOfDirectoryAtURL:storage includingPropertiesForKeys:nil options:0 error:NULL])
+		if (![retained containsObject:old.lastPathComponent]) [fm removeItemAtURL:old error:NULL];
+	return sources;
+}
 
 @interface BAHistoryReadCancellation : NSObject
 @property (atomic) BOOL cancelled;
@@ -22,6 +131,10 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 @property (nonatomic) BOOL acquisitionPending;
 @property (nonatomic) BOOL memoryPressureDefersRetry;
 @property (nonatomic) uint64_t nextSequenceNumber;
+@property (nonatomic, copy, nullable) NSURL *cacheDirectoryURL;
+@property (nonatomic) BOOL cacheRestorePending;
+@property (nonatomic, strong, nullable) BAHistoryReadCancellation *cacheRestoreCancellation;
+@property (nonatomic, strong, nullable) BAHistoryReadCancellation *cacheWriteCancellation;
 @end
 
 @implementation BAAnalyticsHistoryService
@@ -33,6 +146,9 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 }
 - (instancetype)init { return [self initWithDatabaseURL:nil]; }
 - (instancetype)initWithDatabaseURL:(NSURL *)databaseURL {
+	return [self initWithDatabaseURL:databaseURL cacheDirectoryURL:databaseURL ? nil : BAHistoryCacheDirectory()];
+}
+- (instancetype)initWithDatabaseURL:(NSURL *)databaseURL cacheDirectoryURL:(NSURL *)cacheDirectoryURL {
 	self = [super init];
 	if (!self) return nil;
 	_databaseURL = [databaseURL copy];
@@ -41,10 +157,65 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 		dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0));
 	_applicationActive = YES;
 	_nextSequenceNumber = 1;
+	_cacheDirectoryURL = [cacheDirectoryURL copy];
+	if (_cacheDirectoryURL) [self restoreCompletedReport];
 	return self;
+}
+- (void)publishReport:(BAAnalyticsReport *)report {
+	self.latestReport = report;
+	for (id<BAAnalyticsHistoryServiceSubscriber> subscriber in self.subscribers.allObjects)
+		[subscriber analyticsHistoryService:self didPublishReport:report];
+	[NSNotificationCenter.defaultCenter postNotificationName:BAAnalyticsHistoryServiceDidPublishNotification object:self];
+}
+- (void)restoreCompletedReport {
+	self.cacheRestorePending = YES;
+	BAHistoryReadCancellation *cancellation = [BAHistoryReadCancellation new];
+	self.cacheRestoreCancellation = cancellation;
+	NSURL *file = [self.cacheDirectoryURL URLByAppendingPathComponent:@"completed.plist"];
+	NSURL *requestedURL = self.databaseURL;
+	__weak typeof(self) weakSelf = self;
+	dispatch_async(self.workerQueue, ^{
+		@autoreleasepool {
+			NSURL *source = requestedURL ?: BAAnalyticsResolveHistoryURL(^BOOL { return cancellation.cancelled; });
+			NSString *identity = BAAnalyticsHistorySourceIdentity(source);
+			NSNumber *size = nil;
+			[file getResourceValue:&size forKey:NSURLFileSizeKey error:NULL];
+			NSData *bytes = !cancellation.cancelled && size.unsignedLongLongValue <= 17 * 1024 * 1024 ? [NSData dataWithContentsOfURL:file options:0 error:NULL] : nil;
+			id envelope = bytes ? [NSPropertyListSerialization propertyListWithData:bytes options:NSPropertyListImmutable format:NULL error:NULL] : nil;
+			BAAnalyticsReport *cached = nil;
+			if ([envelope isKindOfClass:NSDictionary.class] && [envelope[@"version"] isEqual:@1] &&
+				identity && [envelope[@"source"] isEqual:identity] && [envelope[@"report"] isKindOfClass:NSData.class])
+				cached = BAAnalyticsDecodeCachedReportCancellable(envelope[@"report"], NSDate.date, NULL, ^BOOL { return cancellation.cancelled; });
+			dispatch_async(dispatch_get_main_queue(), ^{
+				BAAnalyticsHistoryService *service = weakSelf;
+				if (!service) return;
+				service.cacheRestorePending = NO;
+				service.cacheRestoreCancellation = nil;
+				if (!cancellation.cancelled && cached && !service.latestReport && !service.memoryPressureDefersRetry) {
+					if (cached.sequenceNumber < UINT64_MAX - 2) service.nextSequenceNumber = MAX(service.nextSequenceNumber, cached.sequenceNumber + 1);
+					[service publishReport:cached];
+				}
+				if (service.polling && !service.memoryPressureDefersRetry) [service refreshNow];
+			});
+		}
+	});
+}
+- (void)storeCompletedReport:(BAAnalyticsReport *)report sourceURL:(NSURL *)sourceURL cancellation:(BAHistoryReadCancellation *)cancellation {
+	if (cancellation.cancelled || !self.cacheDirectoryURL || !BAHistoryHasCompletedEvidence(report)) return;
+	NSString *identity = BAAnalyticsHistorySourceIdentity(sourceURL);
+	NSData *encoded = identity ? BAAnalyticsEncodeCachedReportCancellable(report, NULL, ^BOOL { return cancellation.cancelled; }) : nil;
+	if (!encoded || cancellation.cancelled) return;
+	NSFileManager *fm = NSFileManager.defaultManager;
+	if (![fm createDirectoryAtURL:self.cacheDirectoryURL withIntermediateDirectories:YES attributes:nil error:NULL]) return;
+	[self.cacheDirectoryURL setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:NULL];
+	NSData *envelope = [NSPropertyListSerialization dataWithPropertyList:@{@"version": @1, @"source": identity, @"report": encoded}
+		format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+	if (!cancellation.cancelled) [envelope writeToURL:[self.cacheDirectoryURL URLByAppendingPathComponent:@"completed.plist"] options:NSDataWritingAtomic error:NULL];
 }
 - (void)dealloc {
 	_readCancellation.cancelled = YES;
+	_cacheRestoreCancellation.cancelled = YES;
+	_cacheWriteCancellation.cancelled = YES;
 	if (_timer) dispatch_source_cancel(_timer);
 }
 - (NSUInteger)subscriberCount {
@@ -74,7 +245,7 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 	NSTimeInterval age = [NSDate.date timeIntervalSinceDate:self.latestReport.generatedAt];
 	// A clock rollback does not establish freshness. Explicit refreshNow below
 	// always remains available even while the cached report is recent.
-	return isfinite(age) && age >= 0 && age <= BAHistoryRefreshInterval ? BAHistoryRefreshInterval - age : -1;
+	return !self.latestReport.isCached && isfinite(age) && age >= 0 && age <= BAHistoryRefreshInterval ? BAHistoryRefreshInterval - age : -1;
 }
 - (void)updatePollingState {
 	BOOL active = self.applicationActive && self.subscribers.allObjects.count > 0;
@@ -99,6 +270,20 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 	dispatch_resume(timer);
 	if (remaining < 0) [self refreshNow];
 }
+- (void)deliverReport:(BAAnalyticsReport *)report cancellation:(BAHistoryReadCancellation *)cancellation finished:(BOOL)finished {
+	NSAssert(NSThread.isMainThread, @"History delivery is main-thread only.");
+	if (finished) self.acquisitionPending = NO;
+	[self updatePollingState];
+	if (cancellation.cancelled || self.readCancellation != cancellation || !self.polling) {
+		if (finished && self.polling && !self.memoryPressureDefersRetry && self.readCancellation == nil && [self freshCacheRemainingInterval] < 0) [self refreshNow];
+		return;
+	}
+	if (finished) self.readCancellation = nil;
+	// Keep the wider completed cache visible while archive enrichment is pending.
+	if (!finished && BAHistoryHasCompletedEvidence(self.latestReport)) return;
+	BAAnalyticsReport *display = report.error && BAHistoryHasCompletedEvidence(self.latestReport) ? [self.latestReport reportByMarkingCached] : report;
+	if (display) [self publishReport:display];
+}
 - (void)refreshNow {
 	NSParameterAssert(NSThread.isMainThread);
 	self.memoryPressureDefersRetry = NO;
@@ -106,12 +291,16 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 #if DEBUG
 	NSLog(@"[AnalyticsHistory] refresh active=%d polling=%d subscribers=%lu pending=%d", self.applicationActive, self.polling, (unsigned long)self.subscriberCount, self.acquisitionPending);
 #endif
-	if (!self.polling || self.acquisitionPending) return;
+	if (!self.polling || self.acquisitionPending || self.cacheRestorePending) return;
 	self.acquisitionPending = YES;
 	BAHistoryReadCancellation *cancellation = [BAHistoryReadCancellation new];
 	self.readCancellation = cancellation;
-	uint64_t sequence = self.nextSequenceNumber++;
+	self.cacheWriteCancellation.cancelled = YES;
+	self.cacheWriteCancellation = cancellation;
+	uint64_t sequence = self.nextSequenceNumber;
+	self.nextSequenceNumber += 2; // Current and enriched reports are separate generations.
 	NSURL *url = self.databaseURL;
+	NSURL *cacheDirectory = self.cacheDirectoryURL;
 	__weak typeof(self) weakSelf = self;
 	dispatch_async(self.workerQueue, ^{
 		@autoreleasepool {
@@ -119,28 +308,25 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 			NSTimeInterval started = NSProcessInfo.processInfo.systemUptime;
 			NSLog(@"[AnalyticsHistory] read begin sequence=%llu cancelled=%d", (unsigned long long)sequence, cancellation.cancelled);
 #endif
-			BAAnalyticsReport *report = cancellation.cancelled ? nil : BAAnalyticsReadHistoryReport(url, NSDate.date, sequence, ^BOOL { return cancellation.cancelled; });
+			NSURL *sourceURL = url ?: BAAnalyticsResolveHistoryURL(^BOOL { return cancellation.cancelled; });
+			BAAnalyticsReport *report = cancellation.cancelled ? nil : BAAnalyticsReadHistoryReport(sourceURL, NSDate.date, sequence, ^BOOL { return cancellation.cancelled; });
 #if DEBUG
 			NSLog(@"[AnalyticsHistory] read returned sequence=%llu elapsed=%.2f report=%d error=%ld", (unsigned long long)sequence, NSProcessInfo.processInfo.systemUptime - started, report != nil, (long)report.error.code);
 #endif
-			dispatch_async(dispatch_get_main_queue(), ^{
-				BAAnalyticsHistoryService *service = weakSelf;
-				if (!service) return;
-				service.acquisitionPending = NO;
-				[service updatePollingState];
-#if DEBUG
-				NSLog(@"[AnalyticsHistory] delivery sequence=%llu subscribers=%lu polling=%d cancelled=%d current=%d", (unsigned long long)sequence, (unsigned long)service.subscriberCount, service.polling, cancellation.cancelled, service.readCancellation == cancellation);
-#endif
-				if (cancellation.cancelled || service.readCancellation != cancellation || !service.polling) {
-					// If activation changed during a cancelled read, acquire the new generation now.
-					if (service.polling && !service.memoryPressureDefersRetry && service.readCancellation == nil && [service freshCacheRemainingInterval] < 0) [service refreshNow];
-					return;
+			BOOL enrich = cacheDirectory && sourceURL && !cancellation.cancelled;
+			if (enrich) {
+				dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf deliverReport:report cancellation:cancellation finished:NO]; });
+				NSArray *archives = BAArchiveSources(sourceURL, cacheDirectory, ^BOOL { return cancellation.cancelled; });
+				if (archives.count && !cancellation.cancelled) {
+					NSMutableArray *sources = [NSMutableArray arrayWithObject:sourceURL]; [sources addObjectsFromArray:archives];
+					// Release the first graph before constructing the bounded enriched graph.
+					report = nil;
+					report = BAAnalyticsReadHistoryReportFromSources(sources, NSDate.date, sequence + 1, ^BOOL { return cancellation.cancelled; });
 				}
-				service.readCancellation = nil;
-				service.latestReport = report;
-				for (id<BAAnalyticsHistoryServiceSubscriber> subscriber in service.subscribers.allObjects)
-					[subscriber analyticsHistoryService:service didPublishReport:report];
-			});
+			}
+			BAAnalyticsReport *completed = report;
+			dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf deliverReport:completed cancellation:cancellation finished:YES]; });
+			if (!cancellation.cancelled) [weakSelf storeCompletedReport:completed sourceURL:sourceURL cancellation:cancellation];
 		}
 	});
 }
@@ -148,6 +334,8 @@ static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 	NSParameterAssert(NSThread.isMainThread);
 	self.latestReport = nil;
 	self.memoryPressureDefersRetry = YES;
+	self.cacheRestoreCancellation.cancelled = YES;
+	self.cacheWriteCancellation.cancelled = YES;
 	self.readCancellation.cancelled = YES;
 	self.readCancellation = nil;
 	// Keep the minute-scale timer, but do not immediately recreate a large

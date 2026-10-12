@@ -3507,3 +3507,9 @@ msgstr "≈ min"
 #, objc-format
 msgid "≈%@ · n=%lu%@"
 msgstr "≈%@ · n=%lu%@"
+
+msgid "Showing cached history; refreshing in background"
+msgstr "Gespeicherter Verlauf; Aktualisierung im Hintergrund"
+
+msgid "Cached · %@"
+msgstr "Cache · %@"

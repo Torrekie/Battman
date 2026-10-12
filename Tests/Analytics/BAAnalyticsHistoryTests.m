@@ -6,6 +6,8 @@
 #include <math.h>
 #include <sqlite3.h>
 #include <stdio.h>
+#include <string.h>
+#include <zlib.h>
 
 // These databases contain only synthetic structural fixtures, never exported Powerlog data.
 static double const FixtureEpoch = 1791690000.0;
@@ -361,16 +363,265 @@ static void TestWirelessCandidateUnits(void) {
 			"unknown input and budget encodings did not publish false units");
 }
 
+
+
+static BAAnalyticsReport *ReadSources(NSArray<NSURL *> *sources, double seconds, uint64_t sequence) {
+    BAAnalyticsReport *report = BAAnalyticsReadHistoryReportFromSources(sources,
+        [NSDate dateWithTimeIntervalSince1970:FixtureEpoch + seconds], sequence, ^BOOL { return NO; });
+    Assert(report.error == nil && report.sequenceNumber == sequence, "compatible selected sources produce a successful immutable report");
+    return report;
+}
+
+static void TestRotatedHistorySources(void) {
+    NSURL *current = Fixture(YES, @[
+        OffsetRow(1, -3600, 30), BatteryRow(1, 120, @20, @400, @1, @1, @0),
+        BatteryRow(2, 180, @21, @400, @1, @1, @0), BatteryRow(3, 240, @22, @400, @1, @1, @0),
+    ]);
+    NSURL *archive = Fixture(YES, @[
+        OffsetRow(1, -3600, 30), BatteryRow(1, 0, @0, @400, @1, @1, @0),
+        BatteryRow(2, 60, @10, @400, @1, @1, @0), BatteryRow(3, 120, @80, @400, @1, @1, @0),
+        BatteryRow(4, 180, @90, @400, @1, @1, @0),
+    ]);
+    NSData *currentBytes = [NSData dataWithContentsOfURL:current], *archiveBytes = [NSData dataWithContentsOfURL:archive];
+    BAAnalyticsReport *report = ReadSources(@[current, archive], 1000, 50);
+    BAAnalyticsHistoryWindow *window = report.familyReports[BAAnalyticsFamilyDwell].window;
+    Assert(window.observations.count == 5, "rotation overlap keeps only newer-source observations at and after its earliest wall-clock time");
+    AssertNear([Observation(report, BatteryTable, 120).values[BAAnalyticsHistorySOCPercent] doubleValue], 20,
+        "newer database is authoritative for conflicting overlap values");
+    AssertNear([Observation(report, BatteryTable, 0).values[BAAnalyticsHistorySOCPercent] doubleValue], 0,
+        "older observed zero remains a valid reading");
+    AssertNear(window.coverageSecondsByMetric[BAAnalyticsHistorySOCPercent].doubleValue, 180,
+        "source boundary contributes no invented continuous coverage");
+    Assert(window.intervals.count == 3, "matching source cadence does not bridge rotated files");
+    BOOL boundaryGap = NO;
+    for (BAAnalyticsHistoryGap *gap in window.gaps)
+        if (fabs(gap.startDate.timeIntervalSince1970 - FixtureEpoch - 90) < .001 &&
+            fabs(gap.endDate.timeIntervalSince1970 - FixtureEpoch - 150) < .001) boundaryGap = YES;
+    Assert(boundaryGap, "source boundary is explicitly represented as a gap");
+    NSArray<BAAnalyticsHistorySession *> *sessions = report.familyReports[BAAnalyticsFamilySession].payload[BAAnalyticsPayloadSessions];
+    Assert(sessions.count == 2 && !sessions[0].endBoundaryKnown && !sessions[1].startBoundaryKnown,
+        "rotation splits connected sessions and keeps boundary uncertainty");
+    NSArray<BAAnalyticsHistorySession *> *comparison = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+    Assert(comparison.count == 1 && [comparison[0].identifier isEqual:sessions[1].identifier],
+        "comparison excludes old-file segments whose compatibility cannot be established");
+    for (BAAnalyticsObservation *point in window.observations) {
+        Assert(point.values[BAAnalyticsHistoryTemperatureCelsius] == nil && !point.fieldMetadata[BAAnalyticsHistoryTemperatureCelsius].unitValidated,
+            "archive composition cannot promote unverified units");
+        AssertNear(point.timestamp.timeIntervalSince1970 - point.sourceTimestamp, 30, "each source uses its own preceding time offset");
+    }
+    Assert([currentBytes isEqual:[NSData dataWithContentsOfURL:current]] && [archiveBytes isEqual:[NSData dataWithContentsOfURL:archive]],
+        "rotated history composition remains read-only");
+    BAAnalyticsReport *duplicate = ReadSources(@[current, current, archive, archive], 1000, 51);
+    Assert(duplicate.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 5,
+        "same database identity is acquired once");
+
+    NSURL *missing = [archive.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"missing.sqlite"];
+    NSURL *corrupt = [archive.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"corrupt.sqlite"];
+    Assert([[@"synthetic invalid SQLite bytes" dataUsingEncoding:NSUTF8StringEncoding] writeToURL:corrupt atomically:YES],
+        "created a synthetic corrupt archive");
+    BAAnalyticsReport *partial = ReadSources(@[current, missing, corrupt, archive], 1000, 52);
+    Assert(partial.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 5 &&
+        partial.familyReports[BAAnalyticsFamilyDwell].availability == BAAnalyticsReportAvailabilityPartial,
+        "missing or corrupt old source retains valid current and archive evidence as partial");
+    BAAnalyticsReport *fallback = ReadSources(@[missing, archive], 1000, 53);
+    Assert(fallback.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 4,
+        "an available archive can retain historical evidence when the current file is unavailable");
+    NSURL *incompatible = Fixture(NO, @[OffsetRow(1, -3600, 30), BatteryRow(1, 0, @99, @0, @0, @0, @0)]);
+    BAAnalyticsReport *excluded = ReadSources(@[current, incompatible], 1000, 54);
+    Assert(excluded.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 3 &&
+        [excluded.sourceProfileIdentifier isEqual:@"powerlog.mac-battery.v1"], "incompatible schema archives cannot contaminate the current profile");
+    __block NSUInteger cancellationChecks = 0;
+    BAAnalyticsReport *cancelled = BAAnalyticsReadHistoryReportFromSources(@[current, archive],
+        [NSDate dateWithTimeIntervalSince1970:FixtureEpoch + 1000], 55, ^BOOL { return ++cancellationChecks > 10; });
+    Assert(cancelled.error.code == SQLITE_INTERRUPT && cancelled.familyReports.count == 0,
+        "explicit multi-source cancellation discards the incomplete generation");
+
+    NSURLComponents *tagged = [NSURLComponents componentsWithURL:archive resolvingAgainstBaseURL:NO];
+    tagged.fragment = @"ba-powerlog-source:0123456789abcdef";
+    BAAnalyticsReport *taggedA = ReadSources(@[current, tagged.URL], 1000, 56);
+    NSURL *copyURL = [archive.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"extracted-copy.sqlite"];
+    Assert([NSFileManager.defaultManager copyItemAtURL:archive toURL:copyURL error:NULL], "copied synthetic extracted archive");
+    tagged = [NSURLComponents componentsWithURL:copyURL resolvingAgainstBaseURL:NO]; tagged.fragment = @"ba-powerlog-source:0123456789abcdef";
+    BAAnalyticsReport *taggedB = ReadSources(@[current, tagged.URL], 1000, 57);
+    Assert([Observation(taggedA, BatteryTable, 0).identifier isEqual:Observation(taggedB, BatteryTable, 0).identifier],
+        "extracted archive identity follows original source token instead of temporary inode");
+}
+
+static void TestRotatedSourceBounds(void) {
+    NSMutableArray<NSURL *> *sources = [NSMutableArray array];
+    for (NSUInteger i = 0; i < 10; i++) [sources addObject:Fixture(YES, @[
+        OffsetRow(1, -3600, 0), BatteryRow(1, -(double)i * 60, @(i), @0, @0, @0, @0),
+    ])];
+    BAAnalyticsReport *bounded = ReadSources(sources, 1000, 60);
+    Assert(bounded.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 9 &&
+        Observation(bounded, BatteryTable, -540) == nil, "selected source count is capped at nine databases");
+
+    NSMutableArray *configSources = [NSMutableArray array];
+    for (NSUInteger source = 0; source < 3; source++) {
+        NSInteger beginning = source == 0 ? 1024 : source == 1 ? 0 : -1024;
+        NSString *rows = [NSString stringWithFormat:@"WITH RECURSIVE records(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM records WHERE i<1024) "
+            "INSERT INTO PLBatteryAgent_EventNone_BatteryConfig SELECT i,%.3f+(i+%ld)*60,6000,12 FROM records", FixtureEpoch, (long)beginning];
+        [configSources addObject:Fixture(YES, @[OffsetRow(1, -1000000, 0),
+            @"CREATE TABLE PLBatteryAgent_EventNone_BatteryConfig (ID INTEGER PRIMARY KEY,timestamp REAL,AppleRawMaxCapacity INTEGER,CycleCount INTEGER)", rows])];
+    }
+    BAAnalyticsReport *config = ReadSources(configSources, 300000, 61);
+    BAAnalyticsFamilyReport *capacity = config.familyReports[BAAnalyticsFamilyCapacity];
+    Assert(capacity.window.observations.count == 2048, "combined configuration evidence obeys total record budget across archives");
+    AssertNear(capacity.window.coveredDuration, 0, "bounded sparse configuration history does not fabricate continuous coverage");
+}
+
+static NSData *CacheFixtureData(NSDictionary *propertyList) {
+    NSData *data = [NSPropertyListSerialization dataWithPropertyList:propertyList format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+    Assert(data != nil, "serialized cache fixture");
+    return data;
+}
+
+static NSMutableDictionary *MutableCacheFixture(NSData *data) {
+    return [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:NULL error:NULL];
+}
+
+static BAAnalyticsObservation *CachedObservation(BAAnalyticsReport *report, NSString *identifier) {
+    for (BAAnalyticsFamilyReport *family in report.familyReports.allValues)
+        for (BAAnalyticsObservation *point in family.window.observations)
+            if ([point.identifier isEqual:identifier]) return point;
+    return nil;
+}
+
+static void TestCachedReportGraph(void) {
+    NSURL *url = Fixture(YES, @[
+        OffsetRow(1, -3600, 30),
+        BatteryRow(1, 0, @20, @-200, @0, @0, @0), BatteryRow(2, 60, @19, @-200, @0, @0, @0),
+        BatteryRow(3, 120, @20, @400, @1, @1, @0), BatteryRow(4, 180, @21, @400, @1, @1, @0),
+        BatteryRow(5, 1200, @30, @400, @1, @1, @0),
+    ]);
+    BAAnalyticsReport *report = Read(url, 1800, UINT64_MAX);
+    NSError *error = nil;
+    NSData *data = BAAnalyticsEncodeCachedReport(report, &error);
+    Assert(data != nil && error == nil, "completed report encoded without acquisition failure");
+    Assert(BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return YES; }) == nil,
+        "cancelled cache write returns before serializing a generation");
+    Assert(BAAnalyticsDecodeCachedReportCancellable(data, report.generatedAt, &error, ^BOOL { return YES; }) == nil,
+        "cancelled bootstrap returns before decoding a graph");
+    __block NSUInteger encodeChecks = 0;
+    Assert(BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return ++encodeChecks > 2; }) == nil && encodeChecks > 2,
+        "cooperative cancellation interrupts a cache graph encode");
+    __block NSUInteger decodeChecks = 0;
+    Assert(BAAnalyticsDecodeCachedReportCancellable(data, report.generatedAt, &error, ^BOOL { return ++decodeChecks > 2; }) == nil && decodeChecks > 2,
+        "cooperative cancellation interrupts cache graph reconstruction");
+    BAAnalyticsReport *restored = BAAnalyticsDecodeCachedReport(data, [report.generatedAt dateByAddingTimeInterval:60], &error);
+    Assert(restored != nil && error == nil && restored.isCached && !report.isCached, "restored report is marked cached without mutating fresh evidence");
+    Assert([restored.generatedAt isEqual:report.generatedAt] && restored.sequenceNumber == UINT64_MAX &&
+        [restored.sourceProfileIdentifier isEqual:report.sourceProfileIdentifier], "cache retained original time sequence and profile");
+    Assert(restored.reportByMarkingCached == restored && report.reportByMarkingCached.isCached,
+        "marking immutable evidence cached is idempotent");
+    for (NSString *key in report.familyReports) {
+        BAAnalyticsFamilyReport *original = report.familyReports[key], *copy = restored.familyReports[key];
+        Assert(copy.availability == original.availability && [copy.limitations isEqual:original.limitations] &&
+            [copy.window.startDate isEqual:original.window.startDate] && [copy.window.endDate isEqual:original.window.endDate],
+            "family source limitations and original windows survived cache roundtrip");
+        AssertNear(copy.window.coveredDuration, original.window.coveredDuration, "roundtrip retained independently computed coverage");
+        AssertNear(copy.window.missingDuration, original.window.missingDuration, "roundtrip retained missing time");
+        Assert([copy.window.coverageSecondsByMetric isEqual:original.window.coverageSecondsByMetric] &&
+            copy.window.observations.count == original.window.observations.count && copy.window.gaps.count == original.window.gaps.count,
+            "cache did not drop dense evidence or fabricate coverage");
+        for (BAAnalyticsObservation *point in copy.window.observations) {
+            Assert(CachedObservation(restored, point.identifier) == point, "shared record references remain one immutable object across families");
+            Assert(point.values[BAAnalyticsHistoryTemperatureCelsius] == nil && !point.fieldMetadata[BAAnalyticsHistoryTemperatureCelsius].unitValidated,
+                "cache retained unverified provenance without introducing a reading");
+        }
+        for (BAAnalyticsHistoryInterval *interval in copy.window.intervals) {
+            Assert(CachedObservation(restored, interval.startObservation.identifier) == interval.startObservation &&
+                CachedObservation(restored, interval.endObservation.identifier) == interval.endObservation,
+                "trusted interval endpoints share the restored observation graph");
+        }
+        BAAnalyticsHistorySession *selected = copy.payload[BAAnalyticsPayloadSelectedSession];
+        if (selected) {
+            Assert([copy.payload[BAAnalyticsPayloadSessions] containsObject:selected], "selected session shares its restored collection object");
+            BAAnalyticsHistorySession *prior = original.payload[BAAnalyticsPayloadSelectedSession];
+            Assert(selected.startBoundaryKnown == prior.startBoundaryKnown && selected.endBoundaryKnown == prior.endBoundaryKnown &&
+                selected.transitions.count == prior.transitions.count && [selected.kind isEqual:prior.kind],
+                "session sampled boundary certainty and transitions survived roundtrip");
+        }
+    }
+    BAAnalyticsFamilyReport *events = restored.familyReports[BAAnalyticsFamilyEvents];
+    Assert([events.payload[BAAnalyticsPayloadTransitions] count] == [report.familyReports[BAAnalyticsFamilyEvents].payload[BAAnalyticsPayloadTransitions] count],
+        "cached event transitions retained exact sampled bounds");
+    Assert(BAAnalyticsDecodeCachedReport(data, report.generatedAt, NULL) != nil, "zero-age cache is valid");
+    Assert(BAAnalyticsDecodeCachedReport(data, [report.generatedAt dateByAddingTimeInterval:24 * 3600], NULL) != nil, "24-hour age boundary is valid");
+    Assert(BAAnalyticsDecodeCachedReport(data, [report.generatedAt dateByAddingTimeInterval:24 * 3600 + .001], &error) == nil && error != nil,
+        "over-age cache is rejected");
+    Assert(BAAnalyticsDecodeCachedReport(data, [report.generatedAt dateByAddingTimeInterval:-.001], &error) == nil && error != nil,
+        "future report cannot be labelled fresh by a clock rollback");
+    Assert(BAAnalyticsDecodeCachedReport([data subdataWithRange:NSMakeRange(0, data.length / 2)], report.generatedAt, &error) == nil && error != nil,
+        "truncated cache is rejected");
+    Assert(BAAnalyticsDecodeCachedReport([NSMutableData dataWithLength:16 * 1024 * 1024 + 1], report.generatedAt, &error) == nil && error != nil,
+        "oversized cache is rejected before parsing");
+
+    NSMutableDictionary *fixture = MutableCacheFixture(data);
+    fixture[@"version"] = @2;
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "unknown cache format is rejected");
+    fixture = MutableCacheFixture(data);
+    fixture[@"sequence"] = @1e100;
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "sequence overflow is rejected");
+    fixture = MutableCacheFixture(data);
+    NSArray *nodes = fixture[@"objects"];
+    NSMutableDictionary *observationNode = nil, *familyNode = nil;
+    for (NSMutableDictionary *node in nodes) {
+        if ([node[@"kind"] isEqual:@"observation"]) observationNode = node;
+        if ([node[@"kind"] isEqual:@"family"]) familyNode = node;
+    }
+    Assert(observationNode != nil && familyNode != nil, "fixture has explicit typed graph objects");
+    observationNode[@"date"] = [report.generatedAt dateByAddingTimeInterval:1];
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "future record date is rejected");
+    fixture = MutableCacheFixture(data);
+    for (NSMutableDictionary *node in fixture[@"objects"]) if ([node[@"kind"] isEqual:@"observation"]) {
+        node[@"values"][@"value"][BAAnalyticsHistoryTemperatureCelsius] = @32;
+        break;
+    }
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil,
+        "unverified unit values invalidate cache instead of bypassing normalization");
+    fixture = MutableCacheFixture(data);
+    for (NSMutableDictionary *node in fixture[@"objects"]) if ([node[@"kind"] isEqual:@"interval"]) {
+        node[@"start"] = [node[@"end"] dateByAddingTimeInterval:1];
+        break;
+    }
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "reversed or clipped evidence dates are rejected");
+    fixture = MutableCacheFixture(data);
+    fixture[@"families"] = @{@"type": @"reference", @"value": @999999};
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "out-of-range object reference is rejected");
+    fixture = MutableCacheFixture(data);
+    ((NSMutableDictionary *)[fixture[@"objects"] firstObject])[@"kind"] = @"arbitrary-object-class";
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "unrecognized graph class cannot be decoded");
+    fixture = MutableCacheFixture(data);
+    NSMutableArray *excessive = [NSMutableArray arrayWithCapacity:60001];
+    for (NSDictionary *node in fixture[@"objects"]) if ([node[@"kind"] isEqual:@"observation"]) { observationNode = [node mutableCopy]; break; }
+    for (NSUInteger i = 0; i <= 60000; i++) [excessive addObject:observationNode];
+    fixture[@"objects"] = excessive;
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "record count cap is enforced before object construction");
+
+    BAAnalyticsFamilyReport *family = report.familyReports[BAAnalyticsFamilyDwell];
+    BAAnalyticsFamilyReport *loading = [[BAAnalyticsFamilyReport alloc] initWithFamily:family.family availability:BAAnalyticsReportAvailabilityLoading
+        window:family.window payload:family.payload limitations:family.limitations];
+    BAAnalyticsReport *incomplete = [[BAAnalyticsReport alloc] initWithSequenceNumber:1 generatedAt:report.generatedAt sourceProfileIdentifier:report.sourceProfileIdentifier
+        fieldMetadata:report.fieldMetadata familyReports:@{family.family: loading} error:nil];
+    Assert(BAAnalyticsEncodeCachedReport(incomplete, &error) == nil && error != nil, "loading reports never overwrite completed cache");
+    BAAnalyticsReport *failed = [[BAAnalyticsReport alloc] initWithSequenceNumber:1 generatedAt:report.generatedAt sourceProfileIdentifier:report.sourceProfileIdentifier
+        fieldMetadata:report.fieldMetadata familyReports:report.familyReports error:[NSError errorWithDomain:@"fixture" code:SQLITE_INTERRUPT userInfo:nil]];
+    Assert(BAAnalyticsEncodeCachedReport(failed, &error) == nil && error != nil, "failed and cancelled reports cannot be cached");
+}
+
 @interface HistorySubscriber : NSObject <BAAnalyticsHistoryServiceSubscriber>
 @property (nonatomic) NSUInteger deliveries;
 @property (nonatomic) BOOL allDeliveriesOnMainThread;
+@property (nonatomic, strong) NSMutableArray<BAAnalyticsReport *> *reports;
 @end
 @implementation HistorySubscriber
-- (instancetype)init { self = [super init]; if (self) _allDeliveriesOnMainThread = YES; return self; }
+- (instancetype)init { self = [super init]; if (self) { _allDeliveriesOnMainThread = YES; _reports = [NSMutableArray array]; } return self; }
 - (void)analyticsHistoryService:(BAAnalyticsHistoryService *)service didPublishReport:(BAAnalyticsReport *)report {
 	(void)service;
 	Assert(report != nil, "service published an immutable report");
 	self.deliveries++;
+	if (self.reports.count < 8) [self.reports addObject:report];
 	self.allDeliveriesOnMainThread = self.allDeliveriesOnMainThread && NSThread.isMainThread;
 }
 @end
@@ -380,6 +631,207 @@ static BOOL WaitUntil(BOOL (^condition)(void), NSTimeInterval timeout) {
 	while (!condition() && limit.timeIntervalSinceNow > 0)
 		[[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
 	return condition();
+}
+
+
+// Test-only phase observation makes asynchronous rejection deterministic; no
+// production API is added merely to expose private lifecycle implementation.
+@interface BAAnalyticsHistoryService (HistoryTestPhases)
+@property (nonatomic, readonly) BOOL cacheRestorePending;
+@property (nonatomic, readonly) BOOL acquisitionPending;
+@end
+
+static NSURL *IsolatedHistoryCache(void) {
+    NSURL *directory = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES]
+        URLByAppendingPathComponent:[@"battman-cache-fixture-" stringByAppendingString:NSUUID.UUID.UUIDString] isDirectory:YES];
+    [FixtureDirectories addObject:directory];
+    Assert([NSFileManager.defaultManager createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:NULL],
+        "created app-owned isolated cache fixture");
+    return directory;
+}
+
+static BAAnalyticsHistoryService *InactiveCachedService(NSURL *source, NSURL *cache, HistorySubscriber *subscriber) {
+    BAAnalyticsHistoryService *service = [[BAAnalyticsHistoryService alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+    [service setApplicationActive:NO];
+    [service addSubscriber:subscriber];
+    Assert(WaitUntil(^BOOL { return !service.cacheRestorePending; }, 5), "inactive cache bootstrap completed asynchronously");
+    Assert(!service.isPolling && !service.acquisitionPending, "inactive bootstrap does not launch a SQL refresh");
+    return service;
+}
+
+static NSDictionary<NSString *, BAAnalyticsObservation *> *CacheRecordMap(BAAnalyticsReport *report) {
+    NSMutableDictionary *records = [NSMutableDictionary dictionary];
+    for (BAAnalyticsFamilyReport *family in report.familyReports.allValues)
+        for (BAAnalyticsObservation *point in family.window.observations) records[point.identifier] = point;
+    return records;
+}
+
+static void TestPersistentHistoryService(void) {
+    double recent = NSDate.date.timeIntervalSince1970 - FixtureEpoch - 300;
+    NSURL *source = Fixture(YES, @[OffsetRow(1, recent - 3600, 30),
+        BatteryRow(1, recent, @40, @100, @1, @1, @0), BatteryRow(2, recent + 60, @41, @100, @1, @1, @0)]);
+    NSData *sourceBytes = [NSData dataWithContentsOfURL:source];
+    NSURL *cache = IsolatedHistoryCache(), *completed = [cache URLByAppendingPathComponent:@"completed.plist"];
+    HistorySubscriber *subscriber = [HistorySubscriber new];
+    __weak BAAnalyticsHistoryService *weakWarm;
+    BAAnalyticsReport *original = nil;
+    @autoreleasepool {
+        BAAnalyticsHistoryService *warm = [[BAAnalyticsHistoryService alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+        weakWarm = warm;
+        [warm addSubscriber:subscriber];
+        Assert(WaitUntil(^BOOL { return warm.latestReport && !warm.acquisitionPending &&
+            [NSFileManager.defaultManager fileExistsAtPath:completed.path]; }, 8), "warm service completed and atomically wrote reusable evidence");
+        original = warm.latestReport;
+        Assert(!original.isCached && subscriber.allDeliveriesOnMainThread, "first successful SQL result is fresh and delivered on main");
+        [warm removeSubscriber:subscriber];
+        warm = nil;
+    }
+    Assert(WaitUntil(^BOOL { return weakWarm == nil; }, 3), "warm service released after unsubscribing without polling backlog");
+    NSData *validEnvelope = [NSData dataWithContentsOfURL:completed];
+    Assert(validEnvelope.length > 0, "completed cache is present on disk before cold bootstrap");
+    HistorySubscriber *coldSubscriber = [HistorySubscriber new];
+    BAAnalyticsHistoryService *cold = InactiveCachedService(source, cache, coldSubscriber);
+    Assert(cold.latestReport.isCached && [cold.latestReport.generatedAt isEqual:original.generatedAt] && coldSubscriber.deliveries == 1,
+        "inactive cold process restores exactly one cached generation with its original acquisition time");
+    NSDictionary *records = CacheRecordMap(cold.latestReport), *prior = CacheRecordMap(original);
+    Assert([NSSet setWithArray:records.allKeys].count == prior.count && [NSSet setWithArray:records.allKeys].count == 2,
+        "restored service retains the complete independent source records");
+    for (NSString *identifier in prior) {
+        BAAnalyticsObservation *point = records[identifier], *previous = prior[identifier];
+        Assert(point != nil && [point.values isEqual:previous.values] && [point.timestamp isEqual:previous.timestamp],
+            "cold startup values and exact source times equal the prior completed graph");
+        Assert(point.values[BAAnalyticsHistoryTemperatureCelsius] == nil && !point.fieldMetadata[BAAnalyticsHistoryTemperatureCelsius].unitValidated,
+            "service disk bootstrap preserves unverified provenance without a physical-unit reading");
+        for (BAAnalyticsFamilyReport *family in cold.latestReport.familyReports.allValues)
+            for (BAAnalyticsObservation *shared in family.window.observations)
+                if ([shared.identifier isEqual:identifier]) Assert(shared == point, "cold restored families share one immutable source point");
+    }
+    AssertNear(cold.latestReport.familyReports[BAAnalyticsFamilyDwell].window.coveredDuration,
+        original.familyReports[BAAnalyticsFamilyDwell].window.coveredDuration, "cold bootstrap preserves independently validated coverage");
+
+    Assert([NSFileManager.defaultManager removeItemAtURL:source error:NULL], "temporarily removed only the owned source fixture");
+    NSUInteger deliveries = coldSubscriber.deliveries;
+    [cold setApplicationActive:YES];
+    Assert(WaitUntil(^BOOL { return !cold.acquisitionPending && coldSubscriber.deliveries > deliveries; }, 8),
+        "failed active refresh completed without replacing cached evidence with unavailable data");
+    Assert(cold.latestReport.isCached && [cold.latestReport.generatedAt isEqual:original.generatedAt] && CacheRecordMap(cold.latestReport).count == 2,
+        "deleted source retains the last complete cached report with honest age");
+    Assert([validEnvelope isEqual:[NSData dataWithContentsOfURL:completed]], "source failure did not overwrite the good persisted cache");
+    Assert([[@"synthetic invalid SQLite bytes" dataUsingEncoding:NSUTF8StringEncoding] writeToURL:source atomically:YES],
+        "replaced only the test source with malformed bytes");
+    deliveries = coldSubscriber.deliveries;
+    [cold refreshNow];
+    Assert(WaitUntil(^BOOL { return !cold.acquisitionPending && coldSubscriber.deliveries > deliveries; }, 8), "corrupt source refresh completed");
+    Assert(cold.latestReport.isCached && [cold.latestReport.generatedAt isEqual:original.generatedAt] &&
+        [validEnvelope isEqual:[NSData dataWithContentsOfURL:completed]], "corrupt source cannot destroy displayed or persisted complete history");
+    [cold setApplicationActive:NO]; [cold removeSubscriber:coldSubscriber]; cold = nil;
+    Assert([sourceBytes writeToURL:source atomically:YES], "restored original owned fixture bytes");
+
+    NSURL *otherSource = Fixture(YES, @[OffsetRow(1, recent - 3600, 30), BatteryRow(1, recent, @90, @0, @0, @0, @0)]);
+    HistorySubscriber *rejectedSubscriber = [HistorySubscriber new];
+    BAAnalyticsHistoryService *rejected = InactiveCachedService(otherSource, cache, rejectedSubscriber);
+    Assert(rejected.latestReport == nil && rejectedSubscriber.deliveries == 0, "cache from a different source directory identity is rejected");
+    [rejected removeSubscriber:rejectedSubscriber]; rejected = nil;
+
+    for (NSUInteger invalidKind = 0; invalidKind < 3; invalidKind++) {
+        NSMutableDictionary *envelope = MutableCacheFixture(validEnvelope);
+        if (invalidKind == 2) Assert([[NSData dataWithBytes:"bad" length:3] writeToURL:completed atomically:YES], "wrote synthetic corrupt cache");
+        else {
+            NSMutableDictionary *report = MutableCacheFixture(envelope[@"report"]);
+            report[@"generatedAt"] = [NSDate.date dateByAddingTimeInterval:invalidKind == 0 ? 3600 : -(24 * 3600 + 10)];
+            envelope[@"report"] = CacheFixtureData(report);
+            Assert([CacheFixtureData(envelope) writeToURL:completed atomically:YES], "wrote synthetic invalid-age cache envelope");
+        }
+        rejectedSubscriber = [HistorySubscriber new]; rejected = InactiveCachedService(source, cache, rejectedSubscriber);
+        Assert(rejected.latestReport == nil && rejectedSubscriber.deliveries == 0, "future expired or corrupt disk cache produces no false completed state");
+        [rejected removeSubscriber:rejectedSubscriber]; rejected = nil;
+    }
+    Assert([validEnvelope writeToURL:completed atomically:YES], "restored valid cache for memory-pressure test");
+    HistorySubscriber *pressureSubscriber = [HistorySubscriber new];
+    BAAnalyticsHistoryService *pressure = [[BAAnalyticsHistoryService alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+    [pressure setApplicationActive:NO]; [pressure addSubscriber:pressureSubscriber]; [pressure handleMemoryPressure];
+    Assert(WaitUntil(^BOOL { return !pressure.cacheRestorePending; }, 5), "cancelled bootstrap completed its bounded task");
+    Assert(pressure.latestReport == nil && pressureSubscriber.deliveries == 0 && !pressure.isPolling && !pressure.acquisitionPending,
+        "memory pressure suppresses cached bootstrap publication and immediate retries");
+    [pressure removeSubscriber:pressureSubscriber];
+}
+
+static void WriteGzipFixture(NSData *bytes, NSURL *url) {
+    gzFile stream = gzopen(url.path.fileSystemRepresentation, "wb");
+    Assert(stream != NULL, "opened synthetic archive stream");
+    BOOL written = gzwrite(stream, bytes.bytes, (unsigned int)bytes.length) == (int)bytes.length;
+    int closed = gzclose(stream);
+    Assert(written && closed == Z_OK, "wrote complete synthetic gzip archive");
+}
+
+static void TestArchiveEnrichmentService(void) {
+    double base = NSDate.date.timeIntervalSince1970 - FixtureEpoch - 630;
+    NSURL *source = Fixture(YES, @[OffsetRow(1, base - 3600, 30),
+        BatteryRow(1, base + 120, @20, @400, @1, @1, @0), BatteryRow(2, base + 180, @21, @400, @1, @1, @0),
+        BatteryRow(3, base + 240, @22, @400, @1, @1, @0)]);
+    NSURL *archiveSource = Fixture(YES, @[OffsetRow(1, base - 3600, 30),
+        BatteryRow(1, base, @0, @400, @1, @1, @0), BatteryRow(2, base + 60, @10, @400, @1, @1, @0),
+        BatteryRow(3, base + 120, @80, @400, @1, @1, @0), BatteryRow(4, base + 180, @90, @400, @1, @1, @0)]);
+    NSURL *archives = [source.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"Archives" isDirectory:YES];
+    Assert([NSFileManager.defaultManager createDirectoryAtURL:archives withIntermediateDirectories:YES attributes:nil error:NULL], "created source-owned synthetic Archives directory");
+    NSURL *compressed = [archives URLByAppendingPathComponent:@"older.PLSQL.gz"];
+    WriteGzipFixture([NSData dataWithContentsOfURL:archiveSource], compressed);
+    NSURL *bad = [archives URLByAppendingPathComponent:@"invalid.PLSQL.gz"];
+    WriteGzipFixture([@"synthetic non-SQLite archive" dataUsingEncoding:NSUTF8StringEncoding], bad);
+    NSURL *truncated = [archives URLByAppendingPathComponent:@"truncated.PLSQL.gz"];
+    NSData *fullGzip = [NSData dataWithContentsOfURL:compressed];
+    Assert([[fullGzip subdataWithRange:NSMakeRange(0, fullGzip.length / 2)] writeToURL:truncated atomically:YES], "created synthetic truncated gzip");
+    NSData *sourceBytes = [NSData dataWithContentsOfURL:source], *archiveBytes = [NSData dataWithContentsOfURL:compressed];
+    NSURL *cache = IsolatedHistoryCache(); HistorySubscriber *subscriber = [HistorySubscriber new];
+    BAAnalyticsHistoryService *service = [[BAAnalyticsHistoryService alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+    [service addSubscriber:subscriber];
+    NSURL *completed = [cache URLByAppendingPathComponent:@"completed.plist"];
+    Assert(WaitUntil(^BOOL { return !service.acquisitionPending && service.latestReport.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 5 &&
+        [NSFileManager.defaultManager fileExistsAtPath:completed.path]; }, 10), "service publishes archive-enriched evidence and stores it after a current-only generation");
+    Assert(subscriber.reports.count >= 2 && subscriber.reports.firstObject.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 3 &&
+        subscriber.reports.lastObject.familyReports[BAAnalyticsFamilyDwell].window.observations.count == 5 &&
+        subscriber.reports.lastObject.sequenceNumber > subscriber.reports.firstObject.sequenceNumber,
+        "current database becomes visible before archive enrichment as a separate generation");
+    AssertNear([Observation(service.latestReport, BatteryTable, base + 120).values[BAAnalyticsHistorySOCPercent] doubleValue], 20,
+        "compressed archive overlap cannot replace current values or double count readings");
+    AssertNear(service.latestReport.familyReports[BAAnalyticsFamilyDwell].window.coverageSecondsByMetric[BAAnalyticsHistorySOCPercent].doubleValue, 180,
+        "archive enrichment preserves source-discontinuity missing duration");
+    Assert([sourceBytes isEqual:[NSData dataWithContentsOfURL:source]] && [archiveBytes isEqual:[NSData dataWithContentsOfURL:compressed]],
+        "system-owned synthetic current and compressed archives are not modified");
+    NSURL *extracted = [cache URLByAppendingPathComponent:@"Archives" isDirectory:YES];
+    NSArray<NSURL *> *files = [NSFileManager.defaultManager contentsOfDirectoryAtURL:extracted includingPropertiesForKeys:nil options:0 error:NULL];
+    NSString *actualParent = files.firstObject.URLByDeletingLastPathComponent.URLByResolvingSymlinksInPath.path.stringByStandardizingPath;
+    NSString *expectedParent = extracted.URLByResolvingSymlinksInPath.path.stringByStandardizingPath;
+    if (files.count != 1 || ![files.firstObject.pathExtension isEqual:@"sqlite"] ||
+        ![actualParent isEqual:expectedParent]) {
+        NSMutableArray *extensions = [NSMutableArray array];
+        for (NSURL *file in files) [extensions addObject:file.pathExtension ?: @""];
+        fprintf(stderr, "Synthetic archive cache: files=%lu extensions=%s parentURLMatches=%d parentPathMatches=%d\n",
+            (unsigned long)files.count, [extensions componentsJoinedByString:@","].UTF8String,
+            [files.firstObject.URLByDeletingLastPathComponent isEqual:extracted],
+            [actualParent isEqual:expectedParent]);
+    }
+    Assert(files.count == 1, "exactly one validated gzip leaves an extracted cache file; invalid and truncated archives leave none");
+    Assert([files.firstObject.pathExtension isEqual:@"sqlite"], "extraction cache contains a completed SQLite rather than a partial file");
+    Assert([actualParent isEqual:expectedParent], "extracted SQLite resides in exactly the app-owned archive storage");
+    Assert([[NSFileManager.defaultManager contentsOfDirectoryAtURL:archives includingPropertiesForKeys:nil options:0 error:NULL] count] == 3,
+        "decompression creates no database or partial file in the original archive directory");
+    NSData *extractedBytes = [NSData dataWithContentsOfURL:files.firstObject];
+    Assert(extractedBytes.length >= 16 && !memcmp(extractedBytes.bytes, "SQLite format 3\0", 16), "completed extraction retains a valid SQLite header");
+    NSDictionary *before = CacheRecordMap(service.latestReport);
+    NSUInteger oldDeliveries = subscriber.deliveries;
+    uint64_t oldSequence = service.latestReport.sequenceNumber;
+    [service refreshNow];
+    Assert(WaitUntil(^BOOL { return !service.acquisitionPending && subscriber.deliveries > oldDeliveries &&
+        service.latestReport.sequenceNumber > oldSequence; }, 10), "explicit refresh reuses archives while updating report generation");
+    NSDictionary *after = CacheRecordMap(service.latestReport);
+    Assert([NSSet setWithArray:before.allKeys].count == after.count, "repeated enrichment retains complete record count");
+    for (NSString *identifier in before) Assert(after[identifier] != nil, "gzip source IDs remain stable across decompression cache reuse");
+    NSArray<NSURL *> *reused = [NSFileManager.defaultManager contentsOfDirectoryAtURL:extracted includingPropertiesForKeys:nil options:0 error:NULL];
+    Assert(reused.count == 1 && [reused.firstObject isEqual:files.firstObject] &&
+        [extractedBytes isEqual:[NSData dataWithContentsOfURL:reused.firstObject]], "valid archive extraction is reused without transient-file residue");
+    Assert(subscriber.allDeliveriesOnMainThread, "both current and archive generations deliver UIKit-facing state on main");
+    [service removeSubscriber:subscriber];
 }
 
 static void TestVisibleActiveWeakSubscriptions(void) {
@@ -422,7 +874,12 @@ int main(void) {
 			TestConfigurationEpochBoundaries();
 			TestPlatformCadenceUnvalidatedTimeAndSparseCapacity();
 			TestWirelessCandidateUnits();
+			TestRotatedHistorySources();
+			TestRotatedSourceBounds();
+			TestCachedReportGraph();
 			TestVisibleActiveWeakSubscriptions();
+			TestPersistentHistoryService();
+			TestArchiveEnrichmentService();
 			printf("Analytics history synthetic SQLite and lifecycle tests passed.\n");
 		} @catch (NSException *exception) {
 			fprintf(stderr, "%s: %s\n", exception.name.UTF8String, exception.reason.UTF8String);

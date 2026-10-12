@@ -1,10 +1,26 @@
 #import "BAStatisticsDrawing.h"
+static NSString *BASCalendarSignature(NSCalendar *calendar);
+NSDateFormatter *BASDateFormatter(NSString *format) {
+    NSMutableDictionary *thread = NSThread.currentThread.threadDictionary;
+    NSMutableDictionary *formats = thread[@"Battman.statistics.dateFormatters"];
+    if (!formats) { formats = [NSMutableDictionary dictionary]; thread[@"Battman.statistics.dateFormatters"] = formats; }
+    NSCalendar *calendar = NSCalendar.currentCalendar;
+    NSLocale *locale = NSLocale.currentLocale;
+    NSString *signature = [NSString stringWithFormat:@"%@/%@", locale.localeIdentifier, BASCalendarSignature(calendar)];
+    NSDictionary *entry = formats[format];
+    if (![entry[@"signature"] isEqualToString:signature]) {
+        NSDateFormatter *formatter = [NSDateFormatter new];
+        formatter.locale = locale; formatter.calendar = calendar; formatter.timeZone = calendar.timeZone; formatter.dateFormat = format;
+        entry = @{@"signature":signature, @"formatter":formatter}; formats[format] = entry;
+    }
+    return entry[@"formatter"];
+}
 NSString *BASTime(NSTimeInterval seconds) {
     return seconds >= 3600 ? [NSString stringWithFormat:_("%.1f h"), seconds / 3600] : [NSString stringWithFormat:_("%.1f min"), seconds / 60];
 }
 NSString *BASWindow(BAAnalyticsHistoryWindow *window) {
     if (!window) return _("History unavailable");
-    NSDateFormatter *f = [NSDateFormatter new]; f.dateFormat = @"M/d HH:mm";
+    NSDateFormatter *f = BASDateFormatter(@"M/d HH:mm");
     return [NSString stringWithFormat:@"%@ – %@", [f stringFromDate:window.startDate], [f stringFromDate:window.endDate]];
 }
 UIFont *BASFont(CGFloat size) {
@@ -42,9 +58,7 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
 // Drawing consumes an already derived immutable result. No I/O or statistics in layout.
 @implementation BASStatisticalView
 - (BOOL)isPreparingHistory {
-    return self.familyReport && !self.analysis &&
-        (self.familyReport.availability == BAAnalyticsReportAvailabilityReady ||
-         self.familyReport.availability == BAAnalyticsReportAvailabilityPartial);
+    return self.preparingAnalysis;
 }
 - (instancetype)initWithFrame:(CGRect)frame {
     if ((self = [super initWithFrame:frame])) {
@@ -60,6 +74,11 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
 }
 - (void)setAnalysis:(NSDictionary *)analysis {
     _analysis = [analysis copy]; self.largeTextRows = nil; self.hitRegions = @[]; [self setNeedsLayout]; [self setNeedsDisplay];
+}
+- (void)setFamilyReport:(BAAnalyticsFamilyReport *)familyReport {
+    if (_familyReport == familyReport) return;
+    _familyReport = familyReport;
+    self.largeTextRows = nil;
 }
 - (BOOL)usesLargeText {
     // Preserve readable text by offering a scrollable evidence list at larger sizes.
@@ -100,7 +119,7 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
             NSMutableArray *rows = [NSMutableArray array];
             [rows addObject:@{@"text":self.accessibilityLabel ?: self.familyIdentifier, @"kind":@"overview", @"item":@{}}];
             [rows addObjectsFromArray:[self summaryRows]];
-            if (rows.count == 1) [rows addObject:@{@"text":_("No validated history"), @"kind":@"coverage", @"item":@{}}];
+            if (rows.count == 1) [rows addObject:@{@"text":self.isPreparingHistory ? _("Loading history…") : _("No validated history"), @"kind":@"coverage", @"item":@{}}];
             self.largeTextRows = rows;
             for (NSDictionary *row in rows) {
                 BASSelectionButton *button = [BASSelectionButton buttonWithType:UIButtonTypeSystem];
@@ -133,7 +152,7 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
     if ([self usesLargeText]) return;
     NSMutableArray *hits = [NSMutableArray array];
     if (!self.analysis || self.familyReport.availability == BAAnalyticsReportAvailabilityLoading || self.familyReport.availability == BAAnalyticsReportAvailabilityUnavailable) {
-        BOOL loading = !self.familyReport || self.familyReport.availability == BAAnalyticsReportAvailabilityLoading;
+        BOOL loading = self.isPreparingHistory || !self.familyReport || self.familyReport.availability == BAAnalyticsReportAvailabilityLoading;
         BASHatch(CGRectInset(self.bounds, 12, 40));
         BASText(self.accessibilityLabel ?: self.familyIdentifier, CGRectMake(12,10,self.bounds.size.width-24,30), BASFont(13), [UIColor compatLabelColor], NSTextAlignmentLeft);
         BASText(loading ? _("Loading history…") : _("No validated history"), CGRectMake(12,self.bounds.size.height-38,self.bounds.size.width-24,32), BASFont(12), [UIColor compatSecondaryLabelColor], NSTextAlignmentLeft);
@@ -168,6 +187,8 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
 @end
 
 @implementation BASStatisticalCard
+- (BAAnalyticsReport *)displayedReport { return self.analysis && self.derivedReport ? self.derivedReport : self.latestReport; }
+- (void)dealloc { _analysisCancellation.cancelled = YES; }
 - (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family { return nil; }
 - (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family calendar:(NSCalendar *)calendar {
     return [self deriveAnalysisForFamilyReport:family];
@@ -181,21 +202,19 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
         self.requestedReport = report;
         self.requestedCalendarSignature = signature;
         self.analysisCancellation.cancelled = YES;
-        self.derivedReport = nil;
-        self.calendarSignature = nil;
-        // Never attach an earlier report's values or selections to newer evidence.
-        self.analysis = nil;
     }
     if (self.derivedReport == report && [self.calendarSignature isEqualToString:signature]) return;
     BAAnalyticsFamilyReport *family = [report reportForFamily:self.familyIdentifier];
+    if (family && family.availability == BAAnalyticsReportAvailabilityLoading && self.analysis && self.derivedReport)
+        return;
     if (!family || family.availability == BAAnalyticsReportAvailabilityLoading || family.availability == BAAnalyticsReportAvailabilityUnavailable) {
         self.derivedReport = report;
         self.calendarSignature = signature;
         self.analysis = nil;
         return;
     }
-    // Keep the current report plus one in-flight generation, without retaining a
-    // backlog of superseded reports when history or the local calendar changes.
+    // Continue showing the published report/analysis while one new generation is
+    // prepared. Both the picture and its exact-reading actions switch together.
     if (self.analysisCancellation) return;
     BASAnalysisCancellation *cancellation = [BASAnalysisCancellation new];
     self.analysisCancellation = cancellation;
@@ -219,7 +238,7 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
                 current.calendarSignature = signature;
                 current.analysis = analysis;
                 for (BASStatisticalView *view in current.statisticalViews.allObjects)
-                    if (view.latestReport == report) [current updateCanvasView:view];
+                    [current updateCanvasView:view];
             });
         }
     });
@@ -228,10 +247,16 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
     [self deriveIfNeeded]; BASStatisticalView *statistical=(id)view;
     if (!self.statisticalViews) self.statisticalViews = [NSHashTable weakObjectsHashTable];
     [self.statisticalViews addObject:statistical];
-    BAAnalyticsFamilyReport *family = [self.latestReport reportForFamily:self.familyIdentifier];
-    BOOL changed = statistical.familyReport != family || statistical.analysis != self.analysis;
+    BAAnalyticsReport *displayedReport = self.displayedReport;
+    BAAnalyticsFamilyReport *family = [displayedReport reportForFamily:self.familyIdentifier];
+    BOOL preparing = !self.analysis && self.analysisCancellation && family &&
+        (family.availability == BAAnalyticsReportAvailabilityReady || family.availability == BAAnalyticsReportAvailabilityPartial);
+    BOOL changed = statistical.familyReport != family || statistical.analysis != self.analysis || statistical.preparingAnalysis != preparing;
+    statistical.latestReport=displayedReport;
     statistical.familyReport=family;
     if (statistical.analysis!=self.analysis) statistical.analysis=self.analysis;
+    if (statistical.preparingAnalysis != preparing) statistical.largeTextRows = nil;
+    statistical.preparingAnalysis = preparing;
     statistical.detailEnabled = self.supportsDetails && !statistical.isPreparingHistory;
     if (changed) { [statistical setNeedsLayout]; [statistical setNeedsDisplay]; }
 }
@@ -246,10 +271,21 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
 }
 - (BAAnalyticsDetailSelection *)defaultDetailSelection {
     [self deriveIfNeeded];
-    BAAnalyticsFamilyReport *family=[self.latestReport reportForFamily:self.familyIdentifier];
+    BAAnalyticsReport *report=self.displayedReport;
+    BAAnalyticsFamilyReport *family=[report reportForFamily:self.familyIdentifier];
     NSMutableDictionary *context=[NSMutableDictionary dictionaryWithDictionary:self.analysis[@"context"] ?: @{}];
-    context[@"reportSequence"]=@(self.latestReport.sequenceNumber);
+    context[@"reportSequence"]=@(report.sequenceNumber);
+    if (report.sourceProfileIdentifier) context[@"sourceProfile"]=report.sourceProfileIdentifier;
     if (family.limitations.count) context[@"limitations"]=[family.limitations subarrayWithRange:NSMakeRange(0,MIN(12,family.limitations.count))];
     return [BAAnalyticsDetailSelection selectionForFamily:self.familyIdentifier kind:@"overview" recordIdentifiers:nil metricIdentifiers:nil startDate:family.window.startDate endDate:family.window.endDate context:BAStatisticsBoundedDetailContext(context)];
+}
+- (BAAnalyticsDetailSelection *)selectionForDisplayedReport:(BAAnalyticsDetailSelection *)selection {
+    BAAnalyticsReport *report=self.displayedReport;
+    NSString *sourceProfile=selection.context[@"sourceProfile"];
+    if (selection && [selection.context[@"reportSequence"] unsignedLongLongValue] == report.sequenceNumber &&
+        (!sourceProfile || [sourceProfile isEqualToString:report.sourceProfileIdentifier]))
+        return selection;
+    // A queued touch/VoiceOver action can outlive the frame from which it came.
+    return [self defaultDetailSelection];
 }
 @end

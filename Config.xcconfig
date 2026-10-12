@@ -2,9 +2,9 @@ BATTMAN_VERSION = 1.1.0
 
 BATTMAN_BUILD_IDENTITY_LDFLAGS = -Wl,-sectcreate,__TEXT,__btidentity,$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json
 
-OLDFL[sdk=iphonesimulator*] = -Wl,-sectcreate,__TEXT,__entitlements,$(PROJECT_DIR)/Battman.entitlements -Wl,-weak_library,$(PROJECT_DIR)/libIOAccessoryManager-sim.tbd
+OLDFL[sdk=iphonesimulator*] = -lz -Wl,-sectcreate,__TEXT,__entitlements,$(PROJECT_DIR)/Battman.entitlements -Wl,-weak_library,$(PROJECT_DIR)/libIOAccessoryManager-sim.tbd
 
-OLDFL[sdk=iphoneos*] = -Wl,-weak_library,$(PROJECT_DIR)/libintl.tbd -Wl,-weak_library,$(PROJECT_DIR)/libintl-rootless.tbd -Wl,-weak_library,$(PROJECT_DIR)/libintl-framework.tbd -lIOAccessoryManager
+OLDFL[sdk=iphoneos*] = -lz -Wl,-weak_library,$(PROJECT_DIR)/libintl.tbd -Wl,-weak_library,$(PROJECT_DIR)/libintl-rootless.tbd -Wl,-weak_library,$(PROJECT_DIR)/libintl-framework.tbd -lIOAccessoryManager
 
 NO_WARN_CFLAGS = -Wno-multichar
 

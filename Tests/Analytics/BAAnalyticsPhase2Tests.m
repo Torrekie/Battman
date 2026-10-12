@@ -97,6 +97,10 @@ static void TestSnapshotImmutability(void) {
 	Assert([snapshot historyForMetricIdentifier:BAAnalyticsMetricStateOfChargePercent].count == 1, "snapshot copied mutable histories");
 	Assert([snapshot valueForMetricIdentifier:@"invalid.nan"] == nil, "snapshot discarded non-finite metric");
 	Assert([snapshot copy] == snapshot, "immutable snapshot copy returns itself");
+	BAAnalyticsMetricSnapshot *cached = [snapshot snapshotByMarkingCached];
+	Assert(!snapshot.isCached && cached.isCached, "cached provenance did not mutate the original snapshot");
+	Assert([cached.timestamp isEqual:snapshot.timestamp] && [cached.values isEqual:snapshot.values], "cached provenance preserved the captured timestamp and values");
+	Assert([cached historyForMetricIdentifier:BAAnalyticsMetricStateOfChargePercent].firstObject == point, "cached provenance preserved immutable history points");
 }
 
 static void TestSystemTemperatureMetricMapping(void) {
@@ -201,13 +205,165 @@ static void TestVisibleOnlyMetricService(void) {
 	[service removeSubscriber:subscriber];
 }
 
+static dispatch_queue_t MetricWorkerQueue(BAAnalyticsMetricService *service) {
+	return (dispatch_queue_t)[service valueForKey:@"workerQueue"];
+}
+
+static void DrainMetricWorker(BAAnalyticsMetricService *service) {
+	__block BOOL complete = NO;
+	dispatch_async(MetricWorkerQueue(service), ^{
+		dispatch_async(dispatch_get_main_queue(), ^{ complete = YES; });
+	});
+	Assert(WaitUntil(^BOOL{ return complete; }, 2.0), "metric worker completed its bounded cache work");
+}
+
+static NSURL *MakeMetricCacheDirectory(void) {
+	NSURL *directory = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:
+		[@"BattmanMetricCacheTests." stringByAppendingString:NSUUID.UUID.UUIDString]] isDirectory:YES];
+	Assert([NSFileManager.defaultManager createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:NULL], "created isolated metric cache fixture directory");
+	return directory;
+}
+
+static void AssertCachedHistoriesMatchDocument(BAAnalyticsMetricSnapshot *snapshot, NSDictionary *document) {
+	Assert([snapshot.timestamp isEqual:document[@"timestamp"]], "startup cache preserved original evidence time");
+	Assert([snapshot.values isEqual:document[@"values"]], "startup cache preserved all captured values");
+	NSDictionary *histories = document[@"histories"];
+	Assert(snapshot.histories.count == histories.count, "startup cache preserved available history fields");
+	for (NSString *identifier in histories) {
+		NSArray *encoded = histories[identifier];
+		NSArray<BAAnalyticsMetricPoint *> *decoded = [snapshot historyForMetricIdentifier:identifier];
+		Assert(decoded.count == encoded.count, "startup cache preserved history point count");
+		for (NSUInteger index = 0; index < decoded.count; index++) {
+			Assert([decoded[index].timestamp isEqual:encoded[index][0]], "startup cache preserved each history timestamp");
+			Assert(decoded[index].value == [encoded[index][1] doubleValue], "startup cache preserved each history value");
+		}
+	}
+}
+
+static void TestMetricStartupCacheLifecycle(void) {
+	NSURL *directory = MakeMetricCacheDirectory();
+	NSURL *file = [directory URLByAppendingPathComponent:@"instant.plist"];
+	@try {
+		FakeMetricSource *warmSource = [FakeMetricSource new];
+		MetricSubscriber *warmSubscriber = [MetricSubscriber new];
+		BAAnalyticsMetricService *warm = [[BAAnalyticsMetricService alloc] initWithSource:warmSource sampleInterval:30 maxHistoryPoints:3];
+		[warm enableStartupCacheAtURL:file];
+		__block BOOL writeHeartbeat = NO;
+		dispatch_async(dispatch_get_main_queue(), ^{ writeHeartbeat = YES; });
+		[warm addSubscriber:warmSubscriber];
+		Assert(WaitUntil(^BOOL{ return warm.latestSnapshot && [NSFileManager.defaultManager fileExistsAtPath:file.path]; }, 2.0), "completed live acquisition persisted a startup snapshot");
+		Assert(writeHeartbeat && warmSubscriber.allDeliveriesWereOnMainThread, "main-thread heartbeat and snapshot delivery progressed during cache write");
+		Assert(!warm.latestSnapshot.isCached, "new acquisition carried live provenance");
+		[warm removeSubscriber:warmSubscriber];
+		DrainMetricWorker(warm);
+		NSDictionary *stored = [NSPropertyListSerialization propertyListWithData:[NSData dataWithContentsOfURL:file] options:NSPropertyListImmutable format:NULL error:NULL];
+		Assert([stored isKindOfClass:NSDictionary.class] && [stored[@"values"] count] > 0, "startup cache contained the completed values");
+		AssertCachedHistoriesMatchDocument(warm.latestSnapshot, stored);
+
+		FakeMetricSource *coldSource = [FakeMetricSource new];
+		MetricSubscriber *coldSubscriber = [MetricSubscriber new];
+		BAAnalyticsMetricService *cold = [[BAAnalyticsMetricService alloc] initWithSource:coldSource sampleInterval:30 maxHistoryPoints:3];
+		[cold setApplicationActive:NO];
+		// Hold the existing worker briefly: a synchronous restore would either
+		// block the heartbeat or publish before that worker can consume the file.
+		dispatch_semaphore_t release = dispatch_semaphore_create(0);
+		__block BOOL workerHeld = NO, readHeartbeat = NO;
+		dispatch_async(MetricWorkerQueue(cold), ^{
+			dispatch_async(dispatch_get_main_queue(), ^{ workerHeld = YES; });
+			dispatch_semaphore_wait(release, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC));
+		});
+		Assert(WaitUntil(^BOOL{ return workerHeld; }, 1.0), "held the metric cache worker for the async lifecycle check");
+		NSTimeInterval started = NSProcessInfo.processInfo.systemUptime;
+		[cold enableStartupCacheAtURL:file];
+		[cold addSubscriber:coldSubscriber];
+		Assert(NSProcessInfo.processInfo.systemUptime - started < .25, "startup cache scheduling did not wait for disk worker");
+		dispatch_async(dispatch_get_main_queue(), ^{
+			readHeartbeat = YES;
+			Assert(cold.latestSnapshot == nil, "cache restoration stayed behind the held worker");
+			dispatch_semaphore_signal(release);
+		});
+		Assert(WaitUntil(^BOOL{ return readHeartbeat; }, .5), "main-thread heartbeat progressed while cache read was pending");
+		Assert(WaitUntil(^BOOL{ return cold.latestSnapshot.isCached; }, 2.0), "inactive service restored completed startup evidence");
+		Assert(!cold.isPolling && coldSource.safeReadCount == 0, "startup restore did not acquire hardware while inactive");
+		Assert(coldSubscriber.snapshots.count == 1 && coldSubscriber.allDeliveriesWereOnMainThread, "cached snapshot was published once on the main thread");
+		BAAnalyticsMetricSnapshot *cached = cold.latestSnapshot;
+		AssertCachedHistoriesMatchDocument(cached, stored);
+
+		[cold setApplicationActive:YES];
+		Assert(WaitUntil(^BOOL{ return cold.latestSnapshot && !cold.latestSnapshot.isCached; }, 2.0), "activation replaced startup evidence with a new live snapshot");
+		BAAnalyticsMetricSnapshot *fresh = cold.latestSnapshot;
+		Assert(coldSource.safeReadCount == 1 && fresh.sequenceNumber > cached.sequenceNumber, "fresh acquisition resumed the live sequence");
+		NSArray<BAAnalyticsMetricPoint *> *live = [fresh historyForMetricIdentifier:BAAnalyticsMetricStateOfChargePercent];
+		Assert(live.count == 1 && [live.firstObject.timestamp isEqual:fresh.timestamp], "cached history did not join the new foreground run");
+		Assert(![live.firstObject.timestamp isEqual:cached.timestamp], "new foreground run did not relabel an old cached point");
+		Assert(cached.isCached && [cached.timestamp isEqual:stored[@"timestamp"]], "fresh publication did not mutate cached evidence");
+		[cold removeSubscriber:coldSubscriber];
+		DrainMetricWorker(cold);
+	} @finally {
+		[NSFileManager.defaultManager removeItemAtURL:directory error:NULL];
+	}
+}
+
+static BAAnalyticsMetricSnapshot *RestoreMetricCacheFixture(NSURL *directory, NSString *name, id document) {
+	NSURL *file = [directory URLByAppendingPathComponent:[name stringByAppendingPathExtension:@"plist"]];
+	NSData *data = [document isKindOfClass:NSData.class] ? document : [NSPropertyListSerialization dataWithPropertyList:document format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+	Assert(data && [data writeToURL:file options:NSDataWritingAtomic error:NULL], "wrote isolated startup cache fixture");
+	FakeMetricSource *source = [FakeMetricSource new];
+	MetricSubscriber *subscriber = [MetricSubscriber new];
+	BAAnalyticsMetricService *service = [[BAAnalyticsMetricService alloc] initWithSource:source sampleInterval:30 maxHistoryPoints:3];
+	[service setApplicationActive:NO];
+	[service addSubscriber:subscriber];
+	[service enableStartupCacheAtURL:file];
+	DrainMetricWorker(service);
+	Assert(source.safeReadCount == 0 && !service.isPolling && subscriber.allDeliveriesWereOnMainThread, "fixture cache decode remained independent of hardware acquisition");
+	Assert(subscriber.snapshots.count == (service.latestSnapshot ? 1 : 0), "fixture cache published only accepted evidence");
+	[service removeSubscriber:subscriber];
+	return service.latestSnapshot;
+}
+
+static void TestMetricStartupCacheValidation(void) {
+	NSURL *directory = MakeMetricCacheDirectory();
+	@try {
+		NSDate *timestamp = [NSDate dateWithTimeIntervalSinceNow:-60];
+		NSDate *previous = [timestamp dateByAddingTimeInterval:-30];
+		NSDictionary *valid = @{@"version":@1, @"timestamp":timestamp,
+			@"values":@{BAAnalyticsMetricStateOfChargePercent:@73, BAAnalyticsMetricAverageTemperatureCelsius:@31.25},
+			@"histories":@{BAAnalyticsMetricStateOfChargePercent:@[@[previous,@72], @[timestamp,@73]]}};
+		BAAnalyticsMetricSnapshot *restored = RestoreMetricCacheFixture(directory, @"valid", valid);
+		Assert(restored.isCached, "valid synthetic startup evidence was marked cached");
+		AssertCachedHistoriesMatchDocument(restored, valid);
+		Assert([restored historyForMetricIdentifier:BAAnalyticsMetricAverageTemperatureCelsius].count == 0, "cache did not invent history for a value-only metric");
+
+		NSArray<NSDictionary *> *invalid = @[
+			@{@"name":@"version", @"changes":@{@"version":@2}},
+			@{@"name":@"future", @"changes":@{@"timestamp":[NSDate dateWithTimeIntervalSinceNow:120]}},
+			@{@"name":@"expired", @"changes":@{@"timestamp":[NSDate dateWithTimeIntervalSinceNow:-90000]}},
+			@{@"name":@"invalid-value", @"changes":@{@"values":@{BAAnalyticsMetricStateOfChargePercent:@"73"}}},
+			@{@"name":@"nonfinite-value", @"changes":@{@"values":@{BAAnalyticsMetricStateOfChargePercent:@(NAN)}}},
+			@{@"name":@"reversed-history", @"changes":@{@"histories":@{BAAnalyticsMetricStateOfChargePercent:@[@[timestamp,@73], @[previous,@72]]}}},
+			@{@"name":@"future-point", @"changes":@{@"histories":@{BAAnalyticsMetricStateOfChargePercent:@[@[[timestamp dateByAddingTimeInterval:1],@73]]}}},
+			@{@"name":@"oversized", @"changes":@{@"padding":[@"x" stringByPaddingToLength:512*1024 withString:@"x" startingAtIndex:0]}},
+		];
+		for (NSDictionary *fixture in invalid) {
+			NSMutableDictionary *document = valid.mutableCopy;
+			[document addEntriesFromDictionary:fixture[@"changes"]];
+			Assert(RestoreMetricCacheFixture(directory, fixture[@"name"], document) == nil, "invalid, future, expired or oversized startup cache was rejected");
+		}
+		Assert(RestoreMetricCacheFixture(directory, @"malformed", [@"not a property list" dataUsingEncoding:NSUTF8StringEncoding]) == nil, "malformed startup cache was rejected");
+	} @finally {
+		[NSFileManager.defaultManager removeItemAtURL:directory error:NULL];
+	}
+}
+
 int main(void) {
 	@autoreleasepool {
 		TestSnapshotImmutability();
 		TestSystemTemperatureMetricMapping();
 		TestLayoutMigrationAndBounds();
 		TestVisibleOnlyMetricService();
-		printf("Analytics snapshot, layout, and visible-only metric service tests passed.\n");
+		TestMetricStartupCacheLifecycle();
+		TestMetricStartupCacheValidation();
+		printf("Analytics snapshot, layout, visible-only metric service, and startup cache lifecycle tests passed.\n");
 	}
 	return 0;
 }

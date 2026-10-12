@@ -151,6 +151,32 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
     CGContextRestoreGState(context);
 }
 
+// Keep independent positive input, negative output extrema and a real zero
+// in each display column. Energy and coverage still use the original intervals.
+static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *session, NSUInteger columns) {
+    NSMutableDictionary<NSNumber *, NSMutableDictionary *> *buckets = [NSMutableDictionary dictionary];
+    NSTimeInterval duration = [session.endDate timeIntervalSinceDate:session.startDate];
+    for (NSUInteger i = 0; i < session.observations.count; i++) {
+        BAAnalyticsObservation *observation = session.observations[i];
+        NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
+        if (!power || [observation.timestamp compare:session.startDate] == NSOrderedAscending ||
+            [observation.timestamp compare:session.endDate] == NSOrderedDescending) continue;
+        double fraction = duration > 0 ? [observation.timestamp timeIntervalSinceDate:session.startDate] / duration : .5;
+        NSNumber *column = @(MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns))));
+        NSMutableDictionary *bucket = buckets[column];
+        if (!bucket) { bucket = [NSMutableDictionary dictionaryWithObject:@(i) forKey:@"first"]; buckets[column] = bucket; }
+        bucket[@"last"] = @(i);
+        NSString *kind = power.doubleValue < 0 ? @"output" : power.doubleValue > 0 ? @"input" : @"zero";
+        NSNumber *prior = bucket[kind];
+        NSNumber *priorPower = prior ? BAProcessValue(session.observations[prior.unsignedIntegerValue], BAAnalyticsHistoryBatteryPowerWatts) : nil;
+        if (!prior || (power.doubleValue < 0 && power.doubleValue < priorPower.doubleValue) ||
+            (power.doubleValue > 0 && power.doubleValue > priorPower.doubleValue)) bucket[kind] = @(i);
+    }
+    NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
+    for (NSDictionary *bucket in buckets.allValues) for (NSNumber *index in bucket.allValues) [kept addIndex:index.unsignedIntegerValue];
+    return kept;
+}
+
 @interface BAAnalyticsDischargeCanvasView : BAAnalyticsCanvasView
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderCanvas;
 @end
@@ -186,6 +212,7 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderPower:(BAAnalyticsHistorySession *)session
         intervals:(NSArray<BAAnalyticsHistoryInterval *> *)intervals plot:(CGRect)plot {
     NSMutableArray *regions = [NSMutableArray array];
+    if (CGRectIsEmpty(plot)) return regions;
     NSDictionary *base = @{@"sessionIdentifier":session.identifier, @"displayConvention":_("Battery output magnitude |W|; detail preserves signed W.")};
     BOOL collect = UIGraphicsGetCurrentContext() == NULL;
     BOOL dense = session.observations.count + intervals.count > 192;
@@ -206,13 +233,15 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
                 [NSString stringWithFormat:_("Battery power unavailable, %@"), BAProcessWindow(cursor, first)])];
         }
         cursor = last;
-        NSMutableDictionary *details = [base mutableCopy];
-        details[@"clippedStartTimestamp"] = @(first.timeIntervalSince1970);
-        details[@"clippedEndTimestamp"] = @(last.timeIntervalSince1970);
-        if (collect && !dense) [regions addObject:BAProcessRegion(CGRectMake(x0, plot.origin.y, MAX(1, x1 - x0), plot.size.height),
-            BAProcessSelection(self, @"interval", @[interval.startObservation.identifier, interval.endObservation.identifier],
-                @[BAAnalyticsHistoryBatteryPowerWatts], interval.startObservation.timestamp, interval.endObservation.timestamp, details),
-            [NSString stringWithFormat:_("Trusted unplugged battery power, approximately %@"), BAProcessWindow(first, last)])];
+        if (collect && !dense) {
+            NSMutableDictionary *details = [base mutableCopy];
+            details[@"clippedStartTimestamp"] = @(first.timeIntervalSince1970);
+            details[@"clippedEndTimestamp"] = @(last.timeIntervalSince1970);
+            [regions addObject:BAProcessRegion(CGRectMake(x0, plot.origin.y, MAX(1, x1 - x0), plot.size.height),
+                BAProcessSelection(self, @"interval", @[interval.startObservation.identifier, interval.endObservation.identifier],
+                    @[BAAnalyticsHistoryBatteryPowerWatts], interval.startObservation.timestamp, interval.endObservation.timestamp, details),
+                [NSString stringWithFormat:_("Trusted unplugged battery power, approximately %@"), BAProcessWindow(first, last)])];
+        }
     }
     if ([session.endDate compare:cursor] == NSOrderedDescending) {
         CGFloat x = BAProcessTimeX(cursor, session.startDate, session.endDate, plot);
@@ -235,7 +264,13 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
     CGFloat barWidth = MIN(8, MAX(2, plot.size.width / MAX((NSUInteger)1, count) * 0.6));
     CGContextRef context = UIGraphicsGetCurrentContext();
     BADischargeLine(plot.origin, CGPointMake(CGRectGetMaxX(plot), plot.origin.y), UIColor.compatSeparatorColor, NO);
-    for (BAAnalyticsObservation *observation in session.observations) {
+    NSIndexSet *displayIndices = dense && context ? BADischargePowerDisplayIndices(session,
+        MAX(1, MIN(512, (NSUInteger)ceil(plot.size.width / 3)))) : nil;
+    CGMutablePathRef outputPath = dense && context ? CGPathCreateMutable() : NULL;
+    CGMutablePathRef inputPath = dense && context ? CGPathCreateMutable() : NULL;
+    for (NSUInteger index = 0; index < session.observations.count; index++) {
+        if (displayIndices && ![displayIndices containsIndex:index]) continue;
+        BAAnalyticsObservation *observation = session.observations[index];
         NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
         if (!power || [observation.timestamp compare:session.startDate] == NSOrderedAscending ||
             [observation.timestamp compare:session.endDate] == NSOrderedDescending) continue;
@@ -247,12 +282,18 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
             // the sign in its exact selection instead of turning it into |W|.
             bar.size.height = MIN(5, plot.size.height);
             if (context) {
-                CGContextSetStrokeColorWithColor(context, UIColor.compatOrangeColor.CGColor);
-                CGContextStrokeRect(context, CGRectInset(bar, 0.5, 0.5));
+                if (inputPath) CGPathAddRect(inputPath, NULL, CGRectInset(bar, 0.5, 0.5));
+                else {
+                    CGContextSetStrokeColorWithColor(context, UIColor.compatOrangeColor.CGColor);
+                    CGContextStrokeRect(context, CGRectInset(bar, 0.5, 0.5));
+                }
             }
         } else if (context) {
-            CGContextSetFillColorWithColor(context, UIColor.compatBlueColor.CGColor);
-            CGContextFillRect(context, bar);
+            if (outputPath) CGPathAddRect(outputPath, NULL, bar);
+            else {
+                CGContextSetFillColorWithColor(context, UIColor.compatBlueColor.CGColor);
+                CGContextFillRect(context, bar);
+            }
         }
         if (!collect || dense) continue;
         NSMutableDictionary *details = [base mutableCopy];
@@ -262,6 +303,14 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
             @[BAAnalyticsHistoryBatteryPowerWatts], observation.timestamp, observation.timestamp, details),
             [NSString stringWithFormat:_("%@, signed battery power %+.3g W%@"), BAProcessClock(observation.timestamp), power.doubleValue,
                 power.doubleValue > 0 ? _(", net input, not output") : @""])];
+    }
+    if (outputPath) {
+        CGContextSetFillColorWithColor(context, UIColor.compatBlueColor.CGColor);
+        CGContextAddPath(context, outputPath); CGContextFillPath(context); CGPathRelease(outputPath);
+    }
+    if (inputPath) {
+        CGContextSetStrokeColorWithColor(context, UIColor.compatOrangeColor.CGColor);
+        CGContextAddPath(context, inputPath); CGContextStrokePath(context); CGPathRelease(inputPath);
     }
     return regions;
 }

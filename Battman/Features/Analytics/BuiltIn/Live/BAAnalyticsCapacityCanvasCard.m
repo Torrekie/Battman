@@ -172,7 +172,13 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     NSUInteger first = 0, minimum = 0, maximum = 0, last = 0, priorColumn = NSNotFound;
     for (NSUInteger i = 0; i < count; i++) {
         NSUInteger column = span > 0 ? MIN(columns - 1, (NSUInteger)floor((samples[i].time - samples[0].time) / span * columns)) : 0;
-        if (column != priorColumn) {
+        BOOL runChanged = i && samples[i].run != samples[i - 1].run;
+        BOOL previousConnected = i > 1 && samples[i - 1].run == samples[i - 2].run;
+        BOOL currentConnected = i + 1 < count && samples[i].run == samples[i + 1].run;
+        // Keep both endpoints of a drawable trusted run. Isolated untrusted
+        // points share an envelope column, but their distinct run IDs prevent
+        // any line from being invented between the retained scatter points.
+        if (column != priorColumn || (runChanged && (previousConnected || currentConnected))) {
             if (priorColumn != NSNotFound) { [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last]; }
             first = minimum = maximum = i; priorColumn = column;
         }
@@ -196,6 +202,9 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 @property (nonatomic, strong) UIScrollView *largeTypeScrollView;
 @property (nonatomic, strong) UILabel *largeTypeLabel;
 @property (nonatomic, strong) BAAnalyticsFamilyReport *requestedFamily;
+@property (nonatomic, strong) BAAnalyticsReport *incomingReport;
+@property (nonatomic, strong) BAAnalyticsReport *requestedReport;
+@property (nonatomic, strong) BAAnalyticsReport *displayedReport;
 @property (nonatomic, strong) BACapacityPreparedHistory *preparedHistory;
 @property (nonatomic, getter=isPreparingHistory) BOOL preparingHistory;
 @property (nonatomic) NSUInteger preparationGeneration;
@@ -251,10 +260,30 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         [self requestDetailForSelection:nil];
 }
 
+- (void)setLatestReport:(BAAnalyticsReport *)report {
+    // The base card may receive a newer report while this canvas is preparing.
+    // Keep geometry, field metadata and selection sequence on the displayed
+    // generation until its replacement is complete.
+    self.incomingReport = report;
+    if (!self.preparedHistory) [self adoptDisplayedReport:report];
+}
+
+- (void)adoptDisplayedReport:(BAAnalyticsReport *)report {
+    self.displayedReport = report;
+    [super setLatestReport:report];
+}
+
+- (void)requestDetailForSelection:(BAAnalyticsDetailSelection *)selection {
+    [super requestDetailForSelection:selection ?: [self overviewSelection]];
+}
+
 - (void)startHistoryPreparation {
-    if (self.preparingHistory || !self.requestedFamily) return;
+    if (self.preparingHistory || !self.requestedFamily ||
+        self.requestedFamily.availability == BAAnalyticsReportAvailabilityLoading ||
+        self.requestedFamily.availability == BAAnalyticsReportAvailabilityUnavailable) return;
     self.preparingHistory = YES;
     BAAnalyticsFamilyReport *family = self.requestedFamily;
+    BAAnalyticsReport *report = self.requestedReport;
     NSUInteger generation = self.preparationGeneration;
     BACapacityPreparationToken *token = [BACapacityPreparationToken new]; self.preparationToken = token;
     __weak BAAnalyticsCapacityCanvasView *weakSelf = self;
@@ -266,8 +295,9 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
                 if (!view) return;
                 view.preparingHistory = NO;
                 view.preparationToken = nil;
-                if (prepared && !token.isCancelled && generation == view.preparationGeneration && family == view.requestedFamily) {
+                if (prepared && !token.isCancelled && generation == view.preparationGeneration && family == view.requestedFamily && report == view.requestedReport) {
                     view.preparedHistory = prepared;
+                    [view adoptDisplayedReport:report];
                     view.capacityObservations = prepared.points;
                     view.displayWidth = -1;
                     [view refreshCapacity];
@@ -278,12 +308,20 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 }
 
 - (void)refreshCapacity {
-    BAAnalyticsFamilyReport *family = BALiveFamilyReport(self, BAAnalyticsFamilyCapacity);
-    if (self.requestedFamily != family) {
+    BAAnalyticsFamilyReport *family = [self.incomingReport reportForFamily:BAAnalyticsFamilyCapacity];
+    if (self.requestedReport != self.incomingReport) {
         self.preparationToken.cancelled = YES;
+        self.requestedReport = self.incomingReport;
         self.requestedFamily = family; self.preparationGeneration++;
-        self.preparedHistory = nil; self.capacityObservations = @[];
-        self.displayIndices = @[]; self.boundaryIndices = @[]; self.displayGaps = @[]; self.displayWidth = -1;
+        BOOL sameSource = [self.displayedReport.sourceProfileIdentifier isEqualToString:self.incomingReport.sourceProfileIdentifier];
+        BOOL retainDisplayed = self.preparedHistory && sameSource && family &&
+            family.availability != BAAnalyticsReportAvailabilityUnavailable;
+        if (!retainDisplayed) {
+            self.preparedHistory = nil; self.capacityObservations = @[];
+            self.displayIndices = @[]; self.boundaryIndices = @[]; self.displayGaps = @[]; self.displayWidth = -1;
+            self.hitRegions = @[];
+            [self adoptDisplayedReport:self.incomingReport];
+        }
         [self startHistoryPreparation];
     }
     BAAnalyticsObservation *latest = self.capacityObservations.lastObject;
@@ -481,7 +519,7 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         return span > 0 ? graph.origin.x + (time - first) / span * graph.size.width : CGRectGetMidX(graph);
     };
     CGFloat (^y)(double) = ^CGFloat(double value) { return CGRectGetMaxY(graph) - (value - low) / (high - low) * graph.size.height; };
-    NSUInteger columns = MAX(1, MIN(1024, (NSUInteger)ceil(graph.size.width)));
+    NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(graph.size.width / 3)));
     if (self.displayWidth != columns) {
         self.displayWidth = columns;
         self.displayIndices = BACapacityEnvelope(prepared, columns);
@@ -524,11 +562,23 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         }
         CGContextStrokePath(c);
         CGContextSetFillColorWithColor(c, UIColor.compatBackgroundColor.CGColor);
+        BOOL dense = points.count > 192; CGFloat previousMarkerX = -CGFLOAT_MAX;
+        BOOL markedMinimum = NO, markedMaximum = NO;
+        CGMutablePathRef markerPath = CGPathCreateMutable();
         for (NSNumber *number in self.displayIndices) {
             NSUInteger index = number.unsignedIntegerValue;
-            CGRect mark = CGRectMake(x(samples[index].time) - 3, y(samples[index].value) - 3, 6, 6);
-            CGContextFillEllipseInRect(c, mark); CGContextStrokeEllipseInRect(c, mark);
+            BOOL endpoint = !index || index + 1 == points.count ||
+                samples[index].run != samples[index - 1].run || samples[index].run != samples[index + 1].run;
+            CGFloat markerX = x(samples[index].time);
+            BOOL extreme = (!markedMinimum && samples[index].value == prepared.minimum) ||
+                (!markedMaximum && samples[index].value == prepared.maximum);
+            if (dense && !endpoint && !extreme && fabs(markerX - previousMarkerX) < 12) continue;
+            if (samples[index].value == prepared.minimum) markedMinimum = YES;
+            if (samples[index].value == prepared.maximum) markedMaximum = YES;
+            CGPathAddEllipseInRect(markerPath, NULL, CGRectMake(markerX - 3, y(samples[index].value) - 3, 6, 6));
+            previousMarkerX = markerX;
         }
+        CGContextAddPath(c, markerPath); CGContextDrawPath(c, kCGPathFillStroke); CGPathRelease(markerPath);
         CGContextSetStrokeColorWithColor(c, UIColor.compatSecondaryLabelColor.CGColor);
         CGFloat dash[] = {3, 3}; CGContextSetLineDash(c, 0, dash, 2);
         for (NSNumber *number in self.boundaryIndices) {
@@ -590,6 +640,7 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 @end
 
 @interface BAAnalyticsCapacityCanvasCard : BAAnalyticsCanvasCard
+@property (nonatomic, strong) NSHashTable<BAAnalyticsCapacityCanvasView *> *capacityViews;
 @end
 
 @interface BACapacityDetailViewController : BAAnalyticsDetailViewController
@@ -628,7 +679,16 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 @implementation BAAnalyticsCapacityCanvasCard
 - (BOOL)supportsDetails { return YES; }
 - (UIViewController *)detailViewControllerForSelection:(BAAnalyticsDetailSelection *)selection size:(BAAnalyticsCardSize)size {
-    (void)size;
+    BAAnalyticsReport *report = nil;
+    NSNumber *sequence = selection.context[@"reportSequence"];
+    for (BAAnalyticsCapacityCanvasView *view in self.capacityViews.allObjects) {
+        if (sequence ? view.displayedReport.sequenceNumber == sequence.unsignedLongLongValue : view.cardSize == size) {
+            report = view.displayedReport; if (report) break;
+        }
+    }
+    if (!report && (!sequence || self.latestReport.sequenceNumber == sequence.unsignedLongLongValue)) report = self.latestReport;
+    // A stale hit target may outlive a frame, but must never query newer evidence.
+    if (sequence && !report) return nil;
     BOOL current = !selection || [selection.kind isEqual:@"overview"] ||
         ([selection.kind isEqual:@"capacity-ratio"] && [selection.context[@"source"] isEqual:@"metricSnapshot"]);
     BOOL hasFrozenSnapshot = [selection.context[@"source"] isEqual:@"metricSnapshot"] &&
@@ -649,10 +709,15 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
             startDate:selection.startDate endDate:selection.endDate context:context];
     }
     return [[BACapacityDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier
-         report:self.latestReport snapshot:self.latestSnapshot selection:selection];
+         report:report snapshot:self.latestSnapshot selection:selection];
 }
 
-- (BAAnalyticsCanvasView *)makeCanvasView { return [BAAnalyticsCapacityCanvasView new]; }
+- (BAAnalyticsCanvasView *)makeCanvasView {
+    BAAnalyticsCapacityCanvasView *view = [BAAnalyticsCapacityCanvasView new];
+    if (!self.capacityViews) self.capacityViews = [NSHashTable weakObjectsHashTable];
+    [self.capacityViews addObject:view];
+    return view;
+}
 - (void)updateCanvasView:(BAAnalyticsCanvasView *)view { [(BAAnalyticsCapacityCanvasView *)view refreshCapacity]; }
 @end
 

@@ -2,6 +2,47 @@
 #import "BAAnalyticsEventsCanvasCard.h"
 #import "BAAnalyticsProcessDrawing.h"
 #include <math.h>
+#include <stdlib.h>
+
+typedef struct {
+    NSTimeInterval start;
+    NSTimeInterval end;
+} BAEventTimeRange;
+
+static int BAEventCompareRanges(const void *left, const void *right) {
+    const BAEventTimeRange *a = left, *b = right;
+    return a->start == b->start ? 0 : a->start < b->start ? -1 : 1;
+}
+
+static NSData *BAEventMergedRanges(NSMutableData *storage) {
+    NSUInteger count = storage.length / sizeof(BAEventTimeRange), merged = 0;
+    BAEventTimeRange *ranges = storage.mutableBytes;
+    for (NSUInteger index = 1; index < count; index++) {
+        if (ranges[index - 1].start > ranges[index].start) {
+            qsort(ranges, count, sizeof(BAEventTimeRange), BAEventCompareRanges);
+            break;
+        }
+    }
+    for (NSUInteger index = 0; index < count; index++) {
+        BAEventTimeRange range = ranges[index];
+        if (merged && range.start <= ranges[merged - 1].end)
+            ranges[merged - 1].end = MAX(ranges[merged - 1].end, range.end);
+        else ranges[merged++] = range;
+    }
+    [storage setLength:merged * sizeof(BAEventTimeRange)];
+    return storage.copy;
+}
+
+static BOOL BAEventPointInClosedRanges(NSDate *date, NSData *storage) {
+    const BAEventTimeRange *ranges = storage.bytes;
+    NSTimeInterval point = date.timeIntervalSince1970;
+    NSUInteger lo = 0, hi = storage.length / sizeof(BAEventTimeRange);
+    while (lo < hi) {
+        NSUInteger middle = lo + (hi - lo) / 2;
+        if (ranges[middle].end < point) lo = middle + 1; else hi = middle;
+    }
+    return lo < storage.length / sizeof(BAEventTimeRange) && ranges[lo].start <= point;
+}
 
 static NSArray<NSString *> *BAEventStateMetrics(void) {
     return @[BAAnalyticsHistoryExternalConnected, BAAnalyticsHistoryIsCharging, BAAnalyticsHistoryFullyCharged];
@@ -50,10 +91,6 @@ static NSDate *BAEventEarlier(NSDate *a, NSDate *b) {
     return [a compare:b] == NSOrderedDescending ? b : a;
 }
 
-static BOOL BAEventOverlap(NSDate *start, NSDate *end, NSDate *otherStart, NSDate *otherEnd) {
-    return [end compare:otherStart] == NSOrderedDescending && [start compare:otherEnd] == NSOrderedAscending;
-}
-
 static NSString *BAEventDate(NSDate *date) {
     NSDateFormatter *formatter = [NSDateFormatter new];
     formatter.locale = NSLocale.currentLocale;
@@ -78,10 +115,31 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 }
 
 @interface BAAnalyticsEventsCanvasView : BAAnalyticsCanvasView
+@property (nonatomic, weak) BAAnalyticsFamilyReport *preparedFamily;
+@property (nonatomic, copy) NSArray<BAAnalyticsStateTransition *> *preparedTransitions;
+@property (nonatomic, copy) NSArray<BAAnalyticsHistoryInterval *> *preparedIntervals;
+@property (nonatomic, copy) NSData *transitionRanges;
+@property (nonatomic, copy) NSData *closedGapRanges;
+@property (nonatomic, copy) NSNumber *preparedKnownDuration;
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderEvidence;
 @end
 
 @implementation BAAnalyticsEventsCanvasView
+
+- (void)clearPreparedEvidence {
+    self.preparedFamily = nil;
+    self.preparedTransitions = nil;
+    self.preparedIntervals = nil;
+    self.transitionRanges = nil;
+    self.closedGapRanges = nil;
+    self.preparedKnownDuration = nil;
+}
+
+- (void)setLatestReport:(BAAnalyticsReport *)latestReport {
+    BAAnalyticsFamilyReport *family = [latestReport reportForFamily:self.familyIdentifier];
+    if (!family || family != self.preparedFamily) [self clearPreparedEvidence];
+    [super setLatestReport:latestReport];
+}
 
 - (void)layoutSubviews {
     [super layoutSubviews];
@@ -100,40 +158,62 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 }
 
 - (NSArray<BAAnalyticsStateTransition *> *)transitionsForFamily:(BAAnalyticsFamilyReport *)family {
+    if (family == self.preparedFamily && self.preparedTransitions) return self.preparedTransitions;
+    [self clearPreparedEvidence];
+    self.preparedFamily = family;
+    self.preparedIntervals = BAProcessOrderedIntervals(family.window.intervals);
     id payload = family.payload[BAAnalyticsPayloadTransitions];
-    if (![payload isKindOfClass:NSArray.class]) return @[];
     NSMutableArray *transitions = [NSMutableArray array];
-    for (id item in payload) {
+    for (id item in [payload isKindOfClass:NSArray.class] ? payload : @[]) {
         if (![item isKindOfClass:BAAnalyticsStateTransition.class]) continue;
         BAAnalyticsStateTransition *transition = item;
         if ([transition.latestDate compare:transition.earliestDate] == NSOrderedAscending ||
             [transition.latestDate compare:family.window.startDate] == NSOrderedAscending ||
             [transition.earliestDate compare:family.window.endDate] == NSOrderedDescending ||
             transition.previousState == transition.nextState) continue;
-        BOOL intersectsGap = NO;
-        for (BAAnalyticsHistoryGap *gap in family.window.gaps) {
-            if (BAEventOverlap(transition.earliestDate, transition.latestDate, gap.startDate, gap.endDate) ||
-                ([transition.earliestDate isEqualToDate:transition.latestDate] &&
-                 [transition.earliestDate compare:gap.startDate] != NSOrderedAscending &&
-                 [transition.latestDate compare:gap.endDate] != NSOrderedDescending)) {
-                intersectsGap = YES;
-                break;
+        BOOL point = [transition.earliestDate isEqualToDate:transition.latestDate];
+        BOOL intersectsGap = BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, NO);
+        if (point) {
+            if (!self.closedGapRanges) {
+                NSMutableData *ranges = [NSMutableData dataWithCapacity:family.window.gaps.count * sizeof(BAEventTimeRange)];
+                for (BAAnalyticsHistoryGap *gap in family.window.gaps) {
+                    BAEventTimeRange range = {gap.startDate.timeIntervalSince1970, gap.endDate.timeIntervalSince1970};
+                    [ranges appendBytes:&range length:sizeof range];
+                }
+                self.closedGapRanges = BAEventMergedRanges(ranges);
             }
+            // Point transitions keep the original inclusive gap-boundary rule.
+            intersectsGap = BAEventPointInClosedRanges(transition.earliestDate, self.closedGapRanges);
         }
         // A missing sample span cannot establish a cable change or a pause.
         if (!intersectsGap) [transitions addObject:transition];
     }
-    return [transitions sortedArrayUsingComparator:^NSComparisonResult(BAAnalyticsStateTransition *a, BAAnalyticsStateTransition *b) {
-        return [a.earliestDate compare:b.earliestDate];
-    }];
+    for (NSUInteger index = 1; index < transitions.count; index++) {
+        if ([((BAAnalyticsStateTransition *)transitions[index - 1]).earliestDate compare:((BAAnalyticsStateTransition *)transitions[index]).earliestDate] == NSOrderedDescending) {
+            [transitions sortUsingComparator:^NSComparisonResult(BAAnalyticsStateTransition *a, BAAnalyticsStateTransition *b) { return [a.earliestDate compare:b.earliestDate]; }];
+            break;
+        }
+    }
+    self.preparedTransitions = transitions;
+    NSMutableData *ranges = [NSMutableData dataWithCapacity:transitions.count * sizeof(BAEventTimeRange)];
+    for (BAAnalyticsStateTransition *transition in transitions) {
+        BAEventTimeRange range = {transition.earliestDate.timeIntervalSince1970, transition.latestDate.timeIntervalSince1970};
+        [ranges appendBytes:&range length:sizeof range];
+    }
+    self.transitionRanges = BAEventMergedRanges(ranges);
+    return self.preparedTransitions;
 }
 
 - (BAAnalyticsObservedState)stateForInterval:(BAAnalyticsHistoryInterval *)interval
-                               transitions:(NSArray<BAAnalyticsStateTransition *> *)transitions {
-    for (BAAnalyticsStateTransition *transition in transitions) {
-        if (BAEventOverlap(interval.startDate, interval.endDate, transition.earliestDate, transition.latestDate))
-            return BAAnalyticsObservedStateUnknown;
-    }
+                           transitionCursor:(NSUInteger *)cursor {
+    const BAEventTimeRange *ranges = self.transitionRanges.bytes;
+    NSUInteger count = self.transitionRanges.length / sizeof(BAEventTimeRange);
+    NSTimeInterval start = interval.startDate.timeIntervalSince1970, end = interval.endDate.timeIntervalSince1970;
+    // Interval starts are ordered; their ends may be nested or overlap. Only
+    // advance by start, so a long earlier interval cannot hide a later boundary.
+    while (*cursor < count && ranges[*cursor].end <= start) (*cursor)++;
+    if (*cursor < count && ranges[*cursor].start < end && ranges[*cursor].end > start)
+        return BAAnalyticsObservedStateUnknown;
     return interval.state;
 }
 
@@ -169,15 +249,27 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 
 - (void)stateStrip:(CGRect)plot vertical:(BOOL)vertical family:(BAAnalyticsFamilyReport *)family
        transitions:(NSArray<BAAnalyticsStateTransition *> *)transitions regions:(NSMutableArray *)regions {
+    (void)transitions;
     BAAnalyticsHistoryWindow *window = family.window;
     BOOL collect = UIGraphicsGetCurrentContext() == NULL, dense = window.intervals.count + window.gaps.count > 192;
-    if (dense) [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, BAEventStateMetrics(), window.startDate, window.endDate,
-        plot, vertical, nil, @{@"stateBoundaries":_("Sampled ranges; mixed and unknown states remain separate in the evidence")})];
+    if (collect && dense) {
+        [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, BAEventStateMetrics(), window.startDate, window.endDate,
+            plot, vertical, nil, @{@"stateBoundaries":_("Sampled ranges; mixed and unknown states remain separate in the evidence")})];
+        return;
+    }
     BAProcessHatch(plot, UIColor.compatSecondaryLabelColor);
-    NSArray *ordered = BAProcessOrderedIntervals(window.intervals);
+    NSArray *ordered = self.preparedIntervals;
     NSDate *cursor = window.startDate;
+    NSUInteger transitionCursor = 0;
+    NSDate *runFirst = nil, *runLast = nil;
+    BAAnalyticsObservedState runState = BAAnalyticsObservedStateUnknown;
+    BAAnalyticsHistoryInterval *previous = nil;
     for (BAAnalyticsHistoryInterval *interval in ordered) {
-        if (!BAProcessIntervalUsable(interval, @[], window.gaps)) continue;
+        if (!BAProcessIntervalUsable(interval, @[], window.gaps)) {
+            if (runFirst) [self drawState:runState inRect:BAEventSpan(runFirst, runLast, window, plot, vertical) vertical:vertical];
+            runFirst = nil; previous = nil;
+            continue;
+        }
         NSDate *first = BAEventLater(interval.startDate, window.startDate);
         NSDate *last = BAEventEarlier(interval.endDate, window.endDate);
         if ([last compare:first] != NSOrderedDescending) continue;
@@ -188,18 +280,34 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
                 [NSString stringWithFormat:_("Unknown state, %@; events in this gap are unknown"), BAProcessWindow(cursor, first)])];
         }
         if ([last compare:cursor] == NSOrderedDescending) cursor = last;
-        BAAnalyticsObservedState state = [self stateForInterval:interval transitions:transitions];
-        CGRect band = BAEventSpan(first, last, window, plot, vertical);
-        [self drawState:state inRect:band vertical:vertical];
-        NSDictionary *evidence = @{@"state":@(state), @"reportedState":@(interval.state), @"boundaryEstimate":@YES,
-            @"clippedStartTimestamp":@([first timeIntervalSince1970]), @"clippedEndTimestamp":@([last timeIntervalSince1970]),
-            @"intervalIdentifier":[NSString stringWithFormat:@"%@:%@", interval.startObservation.identifier, interval.endObservation.identifier]};
-        if (collect && !dense) [regions addObject:BAProcessRegion(band, BAProcessSelection(self, @"interval",
-            @[interval.startObservation.identifier, interval.endObservation.identifier], BAEventStateMetrics(),
-            interval.startObservation.timestamp, interval.endObservation.timestamp, evidence),
-            [NSString stringWithFormat:_("%@, approximately %@, sampled interval %@"), BAProcessStateName(state),
-             BAProcessDuration([last timeIntervalSinceDate:first]), BAProcessWindow(first, last)])];
+        BAAnalyticsObservedState state = [self stateForInterval:interval transitionCursor:&transitionCursor];
+        CGRect band = CGRectZero;
+        if (dense) {
+            BOOL adjacent = runFirst && runState == state && [runLast isEqualToDate:first] &&
+                [previous.endObservation.identifier isEqualToString:interval.startObservation.identifier] &&
+                !BAAnalyticsHistoryHasGap(window.gaps, runFirst, last, NO);
+            if (runFirst && !adjacent) {
+                [self drawState:runState inRect:BAEventSpan(runFirst, runLast, window, plot, vertical) vertical:vertical];
+                runFirst = nil;
+            }
+            if (!runFirst) { runFirst = first; runState = state; }
+            runLast = last; previous = interval;
+        } else {
+            band = BAEventSpan(first, last, window, plot, vertical);
+            [self drawState:state inRect:band vertical:vertical];
+        }
+        if (collect && !dense) {
+            NSDictionary *evidence = @{@"state":@(state), @"reportedState":@(interval.state), @"boundaryEstimate":@YES,
+                @"clippedStartTimestamp":@([first timeIntervalSince1970]), @"clippedEndTimestamp":@([last timeIntervalSince1970]),
+                @"intervalIdentifier":[NSString stringWithFormat:@"%@:%@", interval.startObservation.identifier, interval.endObservation.identifier]};
+            [regions addObject:BAProcessRegion(band, BAProcessSelection(self, @"interval",
+                @[interval.startObservation.identifier, interval.endObservation.identifier], BAEventStateMetrics(),
+                interval.startObservation.timestamp, interval.endObservation.timestamp, evidence),
+                [NSString stringWithFormat:_("%@, approximately %@, sampled interval %@"), BAProcessStateName(state),
+                 BAProcessDuration([last timeIntervalSinceDate:first]), BAProcessWindow(first, last)])];
+        }
     }
+    if (runFirst) [self drawState:runState inRect:BAEventSpan(runFirst, runLast, window, plot, vertical) vertical:vertical];
     if ([window.endDate compare:cursor] == NSOrderedDescending) {
         CGRect gapRect = BAEventSpan(cursor, window.endDate, window, plot, vertical);
         if (collect && !dense) [regions addObject:BAProcessRegion(gapRect, BAProcessSelection(self, @"gap", @[], BAEventStateMetrics(), cursor, window.endDate,
@@ -234,8 +342,11 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
              transitions:(NSArray<BAAnalyticsStateTransition *> *)transitions regions:(NSMutableArray *)regions {
     CGContextRef context = UIGraphicsGetCurrentContext();
     BOOL collect = context == NULL, dense = transitions.count > 128;
-    if (dense) [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, [BAEventStateMetrics() arrayByAddingObject:BAAnalyticsHistoryNotChargingReasonCode],
-        family.window.startDate, family.window.endDate, track, vertical, nil, @{@"transitionBoundaries":_("earliest/latest sampled ranges")})];
+    if (collect && dense) {
+        [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, [BAEventStateMetrics() arrayByAddingObject:BAAnalyticsHistoryNotChargingReasonCode],
+            family.window.startDate, family.window.endDate, track, vertical, nil, @{@"transitionBoundaries":_("earliest/latest sampled ranges")})];
+        return;
+    }
     for (BAAnalyticsStateTransition *transition in transitions) {
         NSDate *first = BAEventLater(transition.earliestDate, family.window.startDate);
         NSDate *last = BAEventEarlier(transition.latestDate, family.window.endDate);
@@ -294,8 +405,35 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     BAAnalyticsHistoryWindow *window = family.window;
     CGContextRef context = UIGraphicsGetCurrentContext();
     BOOL collect = context == NULL, dense = window.observations.count + window.intervals.count > 192;
-    if (dense) [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, @[BAAnalyticsHistoryCurrentMilliamps],
-        window.startDate, window.endDate, plot, YES, nil, @{@"unit":@"A", @"signed":@YES})];
+    if (dense) {
+        if (collect) {
+            [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, @[BAAnalyticsHistoryCurrentMilliamps],
+                window.startDate, window.endDate, plot, YES, nil, @{@"unit":@"A", @"signed":@YES})];
+            return;
+        }
+        CGContextSaveGState(context);
+        CGContextClipToRect(context, plot);
+        CGContextSetFillColorWithColor(context, UIColor.compatBackgroundColor.CGColor);
+        CGContextFillRect(context, plot);
+        // Reuse the bounded trace envelope. The orthogonal transform maps its
+        // time axis to y and signed current to x; existing labels stay outside.
+        CGContextTranslateCTM(context, plot.origin.x, plot.origin.y);
+        CGContextConcatCTM(context, CGAffineTransformMake(0, 1, -1, 0, plot.size.width, 0));
+        BAProcessTrace(self, window.observations, window.intervals, window.gaps, BAAnalyticsHistoryCurrentMilliamps, @"A",
+            window.startDate, window.endDate, CGRectMake(0, 0, plot.size.height, plot.size.width), minimum, maximum,
+            1000, UIColor.compatBlueColor, NO, nil);
+        CGContextRestoreGState(context);
+        CGContextSaveGState(context);
+        CGFloat zeroX = CGRectGetMinX(plot) + (0 - minimum) / (maximum - minimum) * CGRectGetWidth(plot);
+        CGFloat dash[] = {2, 3};
+        CGContextSetStrokeColorWithColor(context, UIColor.compatSeparatorColor.CGColor);
+        CGContextSetLineDash(context, 0, dash, 2);
+        CGContextMoveToPoint(context, zeroX, CGRectGetMinY(plot));
+        CGContextAddLineToPoint(context, zeroX, CGRectGetMaxY(plot));
+        CGContextStrokePath(context);
+        CGContextRestoreGState(context);
+        return;
+    }
     if (context) {
         CGContextSaveGState(context);
         CGContextClipToRect(context, plot);
@@ -370,22 +508,21 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 }
 
 - (NSTimeInterval)knownStateDuration:(BAAnalyticsFamilyReport *)family transitions:(NSArray *)transitions {
-    NSMutableArray *intervals = [NSMutableArray array];
-    for (BAAnalyticsHistoryInterval *interval in family.window.intervals) {
-        if (BAProcessIntervalUsable(interval, @[], family.window.gaps) &&
-            [self stateForInterval:interval transitions:transitions] != BAAnalyticsObservedStateUnknown) [intervals addObject:interval];
-    }
-    [intervals sortUsingComparator:^NSComparisonResult(BAAnalyticsHistoryInterval *a, BAAnalyticsHistoryInterval *b) {
-        return [a.startDate compare:b.startDate];
-    }];
+    (void)transitions;
+    [self transitionsForFamily:family];
+    if (self.preparedKnownDuration) return self.preparedKnownDuration.doubleValue;
     NSTimeInterval duration = 0;
     NSDate *cursor = family.window.startDate;
-    for (BAAnalyticsHistoryInterval *interval in intervals) {
+    NSUInteger transitionCursor = 0;
+    for (BAAnalyticsHistoryInterval *interval in self.preparedIntervals) {
+        if (!BAProcessIntervalUsable(interval, @[], family.window.gaps) ||
+            [self stateForInterval:interval transitionCursor:&transitionCursor] == BAAnalyticsObservedStateUnknown) continue;
         NSDate *first = BAEventLater(BAEventLater(interval.startDate, family.window.startDate), cursor);
         NSDate *last = BAEventEarlier(interval.endDate, family.window.endDate);
         if ([last compare:first] == NSOrderedDescending) duration += [last timeIntervalSinceDate:first];
         if ([last compare:cursor] == NSOrderedDescending) cursor = last;
     }
+    self.preparedKnownDuration = @(duration);
     return duration;
 }
 

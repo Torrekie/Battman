@@ -25,7 +25,18 @@
 
 @end
 
+@interface BAAnalyticsMetricSnapshot ()
+@property (nonatomic, readwrite, getter=isCached) BOOL cached;
+@end
+
 @implementation BAAnalyticsMetricSnapshot
+
+- (BAAnalyticsMetricSnapshot *)snapshotByMarkingCached {
+	BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:self.sequenceNumber
+		timestamp:self.timestamp values:self.values histories:self.histories];
+	snapshot.cached = YES;
+	return snapshot;
+}
 
 - (instancetype)initWithSequenceNumber:(uint64_t)sequenceNumber
 						  timestamp:(NSDate *)timestamp

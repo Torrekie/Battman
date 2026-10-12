@@ -67,11 +67,13 @@ static NSString *BAConfigurationEpochForTimestamp(double timestamp, NSArray<NSDi
 	return lo ? epochs[lo - 1][@"token"] : nil;
 }
 
-static NSURL *BAResolveHistoryURL(BOOL (^cancelled)(void)) {
+NSURL *BAAnalyticsResolveHistoryURL(BOOL (^cancelled)(void)) {
 #if TARGET_OS_SIMULATOR || TARGET_OS_OSX
 	// A Simulator reading the host's log must use the Mac profile, not the simulated phone.
 	NSString *macPath = @"/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL";
-	if (access(macPath.fileSystemRepresentation, R_OK) == 0) return [NSURL fileURLWithPath:macPath];
+	if (access(macPath.fileSystemRepresentation, R_OK) == 0 ||
+		access([[macPath stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"Archives"].fileSystemRepresentation, R_OK) == 0)
+		return [NSURL fileURLWithPath:macPath];
 #endif
 	NSFileManager *fm = NSFileManager.defaultManager;
 	for (NSString *root in @[@"/var/containers/Shared/SystemGroup", @"/private/var/containers/Shared/SystemGroup"]) {
@@ -81,12 +83,24 @@ static NSURL *BAResolveHistoryURL(BOOL (^cancelled)(void)) {
 			NSDictionary *metadata = [NSDictionary dictionaryWithContentsOfFile:[container stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"]];
 			if (![metadata[@"MCMMetadataIdentifier"] isEqual:@"systemgroup.com.apple.powerlog"]) continue;
 			NSString *path = [container stringByAppendingPathComponent:@"Library/BatteryLife/CurrentPowerlog.PLSQL"];
-			if (access(path.fileSystemRepresentation, R_OK) == 0) return [NSURL fileURLWithPath:path];
+			if (access(path.fileSystemRepresentation, R_OK) == 0 ||
+				access([[path stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"Archives"].fileSystemRepresentation, R_OK) == 0)
+				return [NSURL fileURLWithPath:path];
 		}
 	}
 	for (NSString *path in @[@"/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL", @"/private/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL"])
-		if (access(path.fileSystemRepresentation, R_OK) == 0) return [NSURL fileURLWithPath:path];
+		if (access(path.fileSystemRepresentation, R_OK) == 0 ||
+			access([[path stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"Archives"].fileSystemRepresentation, R_OK) == 0)
+			return [NSURL fileURLWithPath:path];
 	return nil;
+}
+
+NSString *BAAnalyticsHistorySourceIdentity(NSURL *databaseURL) {
+	struct stat info;
+	NSURL *parent = databaseURL.URLByDeletingLastPathComponent;
+	if (!databaseURL.isFileURL || stat(parent.path.fileSystemRepresentation, &info) || !S_ISDIR(info.st_mode)) return nil;
+	return [NSString stringWithFormat:@"%llu:%llu:%lld", (unsigned long long)info.st_dev,
+		(unsigned long long)info.st_ino, (long long)info.st_birthtimespec.tv_sec];
 }
 
 static NSSet<NSString *> *BAColumns(sqlite3 *db, NSString *table) {
@@ -282,7 +296,8 @@ static NSArray<BAHistoryRecord *> *BANormalize(NSArray<NSDictionary *> *rows, NS
 		if ([seen containsObject:identifier]) continue;
 		[seen addObject:identifier];
 		// Offset changes, gauge resets and battery/configuration changes prohibit interpolation.
-		NSMutableString *segment = [NSMutableString stringWithFormat:@"offset:%.9f@%.9f", [offset[@"system"] doubleValue], [offset[@"segmentStart"] doubleValue]];
+		NSMutableString *segment = [NSMutableString stringWithFormat:@"source:%@/offset:%.9f@%.9f", databaseIdentity,
+			[offset[@"system"] doubleValue], [offset[@"segmentStart"] doubleValue]];
 		for (NSString *column in @[@"ChemID", @"PMUConfiguration", @"DesignCapacity", @"GaugeResetCounter"])
 			if (row[column]) [segment appendFormat:@"/%@:%@", column, row[column]];
 		if (cycleEpoch) [segment appendFormat:@"/cycle-epoch:%@", cycleEpoch];
@@ -515,111 +530,209 @@ static NSArray *BAFilterSessions(NSArray<BAAnalyticsHistorySession *> *sessions,
 	return filtered;
 }
 
+
+static NSUInteger BATableRecordLimit(NSString *table) {
+    if ([table isEqual:BABatteryTable]) return 40000;
+    if ([table isEqual:BAConfigTable]) return 2048;
+    return 8192;
+}
+
 BAAnalyticsReport *BAAnalyticsReadHistoryReport(NSURL *databaseURL, NSDate *endDate, uint64_t sequenceNumber, BOOL (^cancelled)(void)) {
-	sqlite3 *db = NULL;
-	BOOL (^sourceCancellation)(void) = cancelled;
-	__block BOOL cancellationObserved = NO;
-	cancelled = ^BOOL {
-		if (!cancellationObserved) cancellationObserved = sourceCancellation();
-		return cancellationObserved;
-	};
-	// Only explicit cancellation stops CPU work. The SQLite progress handler's
-	// four-second I/O deadline still allows already-read rows to be normalized.
-	@try {
-	if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-	NSURL *url = databaseURL ?: BAResolveHistoryURL(cancelled);
-	if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-	NSMutableArray *limitations = [NSMutableArray array];
-	NSMutableDictionary *allMetadata = [NSMutableDictionary dictionary], *tableRecords = [NSMutableDictionary dictionary];
-	NSMutableArray *allObservations = [NSMutableArray array], *discontinuities = [NSMutableArray array];
-	NSString *profile = @"powerlog.unknown";
-	NSError *error = nil;
-	struct stat fileInfo;
-	NSString *databaseIdentity = @"unavailable";
-	if (!url.isFileURL || stat(url.path.fileSystemRepresentation, &fileInfo) != 0 || !S_ISREG(fileInfo.st_mode)) {
-		error = [NSError errorWithDomain:@"BAAnalyticsHistory" code:SQLITE_CANTOPEN userInfo:@{NSLocalizedDescriptionKey: @"Powerlog database is unavailable."}];
-	} else {
-		databaseIdentity = [NSString stringWithFormat:@"%llu:%llu:%lld", (unsigned long long)fileInfo.st_dev, (unsigned long long)fileInfo.st_ino, (long long)fileInfo.st_birthtimespec.tv_sec];
-		int result = sqlite3_open_v2(url.path.fileSystemRepresentation, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
-		if (result != SQLITE_OK) error = [NSError errorWithDomain:@"BAAnalyticsHistory" code:result userInfo:@{NSLocalizedDescriptionKey:@"Powerlog read-only connection failed."}];
-	}
-	// SQLite borrows the callback pointer; ARC must keep the context alive
-	// throughout the transaction even after its last Objective-C message.
-	__attribute__((objc_precise_lifetime)) BAHistoryReadContext *context = [BAHistoryReadContext new];
-	context.cancelled = cancelled;
-	context.deadline = NSProcessInfo.processInfo.systemUptime + 4;
-	NSTimeInterval cadence = 90;
-	if (db && !error) {
-		sqlite3_busy_timeout(db, 250);
-		sqlite3_progress_handler(db, 1000, BAReadProgress, (__bridge void *)context);
-		int result = sqlite3_exec(db, "PRAGMA query_only=ON; BEGIN DEFERRED", NULL, NULL, NULL);
-		if (result != SQLITE_OK) error = [NSError errorWithDomain:@"BAAnalyticsHistory" code:result userInfo:@{NSLocalizedDescriptionKey:@"Powerlog read transaction could not begin."}];
-		NSMutableDictionary *schemas = [NSMutableDictionary dictionary];
-		for (NSString *table in @[BABatteryTable, BABatteryUITable, BAConfigTable, BAOffsetTable, BAChargingTable, BAThermalTable]) {
-			if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-			schemas[table] = BAColumns(db, table);
-		}
-		NSSet *batterySchema = schemas[BABatteryTable];
-		if ([batterySchema containsObject:@"CellVoltage0"] && ([schemas[BAThermalTable] count] || ![schemas[BAChargingTable] count])) { profile = @"powerlog.mac-battery.v1"; cadence = 180; }
-		else if ([schemas[BAChargingTable] count]) profile = @"powerlog.ios-battery.v1";
-		NSArray *offsets = BAOffsets(db, schemas[BAOffsetTable], endDate.timeIntervalSince1970, limitations, cancelled);
-		if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-		if (!offsets.count) [limitations addObject:@"No validated TimeOffset.system segments; wall-clock observations are unavailable."];
-		NSArray *configRows = BARows(db, BAConfigTable, schemas[BAConfigTable], @[@"AppleRawMaxCapacity", @"CycleCount", @"BatterySerialChanged", @"AlgoChemID", @"calibrationFlags"],
-			endDate.timeIntervalSince1970 - 31 * BADay, endDate.timeIntervalSince1970 + BADay, 1024, limitations, cancelled);
-		if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-		NSMutableArray *boundaries = [NSMutableArray array];
-		NSDictionary *previousConfig = nil;
-		for (NSDictionary *row in configRows) {
-			if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-			BOOL changed = [row[@"BatterySerialChanged"] boolValue] && ![previousConfig[@"BatterySerialChanged"] boolValue];
-			for (NSString *key in @[@"AlgoChemID", @"calibrationFlags"])
-				if (previousConfig[key] && row[key] && ![previousConfig[key] isEqual:row[key]]) changed = YES;
-			if (previousConfig[@"CycleCount"] && row[@"CycleCount"] && [row[@"CycleCount"] doubleValue] < [previousConfig[@"CycleCount"] doubleValue]) changed = YES;
-			if (changed) [boundaries addObject:row];
-			previousConfig = row;
-		}
-		NSArray *configurationEpochs = BAConfigurationEpochs(boundaries, cancelled);
-		for (NSString *table in @[BABatteryTable, BABatteryUITable, BAConfigTable, BAChargingTable]) @autoreleasepool {
-			if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-			NSDictionary *metadata = BAFieldMap(table, schemas[table], profile);
-			for (NSString *metric in metadata) {
-				// Preserve every source without silently replacing another table's provenance.
-				allMetadata[[NSString stringWithFormat:@"%@/%@", table, metric]] = metadata[metric];
-				if (!allMetadata[metric]) allMetadata[metric] = metadata[metric];
-			}
-			NSMutableArray *requested = [NSMutableArray arrayWithObjects:@"ChemID", @"PMUConfiguration", @"DesignCapacity", @"GaugeResetCounter", nil];
-			for (BAAnalyticsFieldMetadata *field in metadata.allValues) [requested addObject:field.sourceColumn];
-			double duration = [table isEqual:BAConfigTable] ? 30 * BADay : [table isEqual:BAChargingTable] ? 6 * 3600 : 7 * BADay;
-			NSArray *rows = [table isEqual:BAConfigTable] ? configRows : BARows(db, table, schemas[table], requested,
-				endDate.timeIntervalSince1970 - duration - BADay, endDate.timeIntervalSince1970 + BADay,
-				[table isEqual:BABatteryTable] ? 40000 : 8192, limitations, cancelled);
-			NSArray *records = BANormalize(rows, table, metadata, offsets, configurationEpochs, databaseIdentity,
-				[endDate dateByAddingTimeInterval:-duration], endDate, limitations, cancelled);
-			if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-			tableRecords[table] = records;
-			NSUInteger checked = 0;
-			for (BAHistoryRecord *record in records) {
-				if ((checked++ & 63) == 0 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-				[allObservations addObject:record.observation];
-			}
-			// Config and conditional input rows are points; no sparse continuous coverage.
-			if ([table isEqual:BABatteryTable] || [table isEqual:BABatteryUITable]) {
-				NSTimeInterval maxCadence = [table isEqual:BABatteryUITable] ? 900 : cadence;
-				for (NSUInteger i = 1; i < records.count; i++) @autoreleasepool {
-					if ((i & 63) == 1 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-					BAHistoryRecord *a = records[i - 1], *b = records[i];
-					if (!BAPairTrusted(a, b, maxCadence) && [b.observation.timestamp compare:a.observation.timestamp] == NSOrderedDescending)
-						[discontinuities addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a.observation.timestamp endDate:b.observation.timestamp reason:
-							[a.segment isEqual:b.segment] ? @"Source sampling gap or gauge reset" : @"Clock or battery/configuration discontinuity"]];
-				}
-			}
-		}
-		sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
-	}
-	if (db) { sqlite3_close(db); db = NULL; }
-	if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-	if (error) [limitations addObject:error.localizedDescription];
+    if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+    NSURL *url = databaseURL ?: BAAnalyticsResolveHistoryURL(cancelled);
+    return BAAnalyticsReadHistoryReportFromSources(url ? @[url] : @[], endDate, sequenceNumber, cancelled);
+}
+
+BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *databaseURLs, NSDate *endDate, uint64_t sequenceNumber, BOOL (^cancelled)(void)) {
+    BOOL (^sourceCancellation)(void) = cancelled;
+    __block BOOL cancellationObserved = NO;
+    cancelled = ^BOOL {
+        if (!cancellationObserved) cancellationObserved = sourceCancellation();
+        return cancellationObserved;
+    };
+    if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+    NSMutableArray *limitations = [NSMutableArray array];
+    NSMutableDictionary *allMetadata = [NSMutableDictionary dictionary], *tableRecords = [NSMutableDictionary dictionary];
+    NSMutableArray *allObservations = [NSMutableArray array], *discontinuities = [NSMutableArray array];
+    NSString *profile = @"powerlog.unknown";
+    NSError *error = nil, *firstSourceError = nil;
+    BOOL openedCompatibleSource = NO, selectedProfile = NO, acquisitionPartial = NO;
+    NSTimeInterval cadence = 90;
+    NSTimeInterval totalDeadline = NSProcessInfo.processInfo.systemUptime + 12;
+    NSUInteger sourceCount = [databaseURLs isKindOfClass:NSArray.class] ? MIN(databaseURLs.count, (NSUInteger)9) : 0;
+    if ([databaseURLs isKindOfClass:NSArray.class] && databaseURLs.count > sourceCount) {
+        [limitations addObject:@"Older databases beyond the bounded source count are not included."];
+        acquisitionPartial = YES;
+    }
+    NSMutableSet *seenSources = [NSMutableSet set];
+    for (NSUInteger sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++) @autoreleasepool {
+        if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+        if (NSProcessInfo.processInfo.systemUptime >= totalDeadline) {
+            [limitations addObject:@"History source acquisition reached its overall time budget; older coverage is unavailable."];
+            acquisitionPartial = YES; break;
+        }
+        NSURL *url = databaseURLs[sourceIndex];
+        struct stat fileInfo;
+        if (![url isKindOfClass:NSURL.class] || !url.isFileURL || stat(url.path.fileSystemRepresentation, &fileInfo) || !S_ISREG(fileInfo.st_mode)) {
+            if (!firstSourceError) firstSourceError = [NSError errorWithDomain:@"BAAnalyticsHistory" code:SQLITE_CANTOPEN
+                userInfo:@{NSLocalizedDescriptionKey: @"Powerlog database is unavailable."}];
+            [limitations addObject:@"A selected Powerlog source is unavailable; its historical coverage is missing."];
+            acquisitionPartial = YES; continue;
+        }
+        // Extracted archives may carry their original opaque file identity in
+        // a URL fragment. SQLite uses only the decoded filesystem path.
+        NSString *archiveIdentity = [url.fragment hasPrefix:@"ba-powerlog-source:"] ? [url.fragment substringFromIndex:@"ba-powerlog-source:".length] : nil;
+        if (archiveIdentity && (archiveIdentity.length != 16 || [archiveIdentity rangeOfCharacterFromSet:
+            [[NSCharacterSet characterSetWithCharactersInString:@"0123456789abcdefABCDEF"] invertedSet]].location != NSNotFound)) {
+            [limitations addObject:@"An extracted Powerlog source has an invalid identity and is excluded."];
+            acquisitionPartial = YES; continue;
+        }
+        NSString *databaseIdentity = archiveIdentity ?:
+            [NSString stringWithFormat:@"%llu:%llu:%lld", (unsigned long long)fileInfo.st_dev,
+                (unsigned long long)fileInfo.st_ino, (long long)fileInfo.st_birthtimespec.tv_sec];
+        if (!databaseIdentity.length || databaseIdentity.length > 256 || [seenSources containsObject:databaseIdentity]) continue;
+        [seenSources addObject:databaseIdentity];
+        sqlite3 *db = NULL;
+        // The callback context must outlive SQLite's borrowed pointer.
+        __attribute__((objc_precise_lifetime)) BAHistoryReadContext *context = [BAHistoryReadContext new];
+        context.cancelled = cancelled;
+        context.deadline = MIN(totalDeadline, NSProcessInfo.processInfo.systemUptime + 4);
+        @try {
+            int result = sqlite3_open_v2(url.path.fileSystemRepresentation, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, NULL);
+            if (result == SQLITE_OK) {
+                sqlite3_busy_timeout(db, 250);
+                sqlite3_progress_handler(db, 1000, BAReadProgress, (__bridge void *)context);
+                result = sqlite3_exec(db, "PRAGMA query_only=ON; BEGIN DEFERRED", NULL, NULL, NULL);
+            }
+            if (result != SQLITE_OK) {
+                if (!firstSourceError) firstSourceError = [NSError errorWithDomain:@"BAAnalyticsHistory" code:result
+                    userInfo:@{NSLocalizedDescriptionKey: @"Powerlog read-only connection failed."}];
+                [limitations addObject:@"A selected Powerlog source could not be read; other sources retain their evidence."];
+                acquisitionPartial = YES; continue;
+            }
+            NSMutableDictionary *schemas = [NSMutableDictionary dictionary];
+            for (NSString *table in @[BABatteryTable, BABatteryUITable, BAConfigTable, BAOffsetTable, BAChargingTable, BAThermalTable]) {
+                if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                schemas[table] = BAColumns(db, table);
+            }
+            NSSet *batterySchema = schemas[BABatteryTable];
+            NSString *sourceProfile = @"powerlog.unknown";
+            NSTimeInterval sourceCadence = 90;
+            if ([batterySchema containsObject:@"CellVoltage0"] && ([schemas[BAThermalTable] count] || ![schemas[BAChargingTable] count])) {
+                sourceProfile = @"powerlog.mac-battery.v1"; sourceCadence = 180;
+            } else if ([schemas[BAChargingTable] count]) sourceProfile = @"powerlog.ios-battery.v1";
+            if (![batterySchema count] && ![schemas[BABatteryUITable] count] && ![schemas[BAConfigTable] count]) {
+                [limitations addObject:@"A selected Powerlog source has no recognized battery tables; its coverage is unavailable."];
+                acquisitionPartial = YES; continue;
+            }
+            if (selectedProfile && ![sourceProfile isEqual:profile]) {
+                [limitations addObject:@"An older Powerlog source has an incompatible platform schema and is excluded."];
+                acquisitionPartial = YES; continue;
+            }
+            if (!selectedProfile) { selectedProfile = YES; profile = sourceProfile; cadence = sourceCadence; }
+            openedCompatibleSource = YES;
+            NSArray *offsets = BAOffsets(db, schemas[BAOffsetTable], endDate.timeIntervalSince1970, limitations, cancelled);
+            if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+            if (!offsets.count) {
+                [limitations addObject:@"No validated TimeOffset.system segments; wall-clock observations are unavailable."];
+                acquisitionPartial = YES;
+            }
+            NSArray *configRows = BARows(db, BAConfigTable, schemas[BAConfigTable],
+                @[@"AppleRawMaxCapacity", @"CycleCount", @"BatterySerialChanged", @"AlgoChemID", @"calibrationFlags"],
+                endDate.timeIntervalSince1970 - 31 * BADay, endDate.timeIntervalSince1970 + BADay, 1024, limitations, cancelled);
+            if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+            NSMutableArray *boundaries = [NSMutableArray array];
+            NSDictionary *previousConfig = nil;
+            for (NSDictionary *row in configRows) {
+                if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                BOOL changed = [row[@"BatterySerialChanged"] boolValue] && ![previousConfig[@"BatterySerialChanged"] boolValue];
+                for (NSString *key in @[@"AlgoChemID", @"calibrationFlags"])
+                    if (previousConfig[key] && row[key] && ![previousConfig[key] isEqual:row[key]]) changed = YES;
+                if (previousConfig[@"CycleCount"] && row[@"CycleCount"] && [row[@"CycleCount"] doubleValue] < [previousConfig[@"CycleCount"] doubleValue]) changed = YES;
+                if (changed) [boundaries addObject:row];
+                previousConfig = row;
+            }
+            NSArray *configurationEpochs = BAConfigurationEpochs(boundaries, cancelled);
+            for (NSString *table in @[BABatteryTable, BABatteryUITable, BAConfigTable, BAChargingTable]) @autoreleasepool {
+                if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                if (NSProcessInfo.processInfo.systemUptime >= totalDeadline) {
+                    [limitations addObject:@"History source acquisition reached its overall time budget; older coverage is unavailable."];
+                    acquisitionPartial = YES; break;
+                }
+                NSDictionary *metadata = BAFieldMap(table, schemas[table], profile);
+                for (NSString *metric in metadata) {
+                    NSString *key = [NSString stringWithFormat:@"%@/%@", table, metric];
+                    if (!allMetadata[key]) allMetadata[key] = metadata[metric];
+                    if (!allMetadata[metric]) allMetadata[metric] = metadata[metric];
+                }
+                NSMutableArray *selected = tableRecords[table];
+                if (!selected) { selected = [NSMutableArray array]; tableRecords[table] = selected; }
+                NSUInteger cap = BATableRecordLimit(table);
+                if (selected.count >= cap) {
+                    acquisitionPartial = YES;
+                    [limitations addObject:[NSString stringWithFormat:@"%@ reached its total bounded record count; older coverage is unavailable.", table]];
+                    continue;
+                }
+                NSDate *cutoff = ((BAHistoryRecord *)selected.firstObject).observation.timestamp;
+                NSMutableArray *requested = [NSMutableArray arrayWithObjects:@"ChemID", @"PMUConfiguration", @"DesignCapacity", @"GaugeResetCounter", nil];
+                for (BAAnalyticsFieldMetadata *field in metadata.allValues) [requested addObject:field.sourceColumn];
+                double duration = [table isEqual:BAConfigTable] ? 30 * BADay : [table isEqual:BAChargingTable] ? 6 * 3600 : 7 * BADay;
+                double queryEnd = endDate.timeIntervalSince1970 + BADay;
+                if (cutoff && offsets.count) {
+                    double minimumOffset = INFINITY;
+                    for (NSDictionary *offset in offsets) minimumOffset = MIN(minimumOffset, [offset[@"system"] doubleValue]);
+                    if (isfinite(minimumOffset)) queryEnd = MIN(queryEnd, cutoff.timeIntervalSince1970 - minimumOffset);
+                }
+                NSArray *rows = [table isEqual:BAConfigTable] ? configRows : BARows(db, table, schemas[table], requested,
+                    endDate.timeIntervalSince1970 - duration - BADay, queryEnd, cap - selected.count, limitations, cancelled);
+                NSArray *normalized = BANormalize(rows, table, metadata, offsets, configurationEpochs, databaseIdentity,
+                    [endDate dateByAddingTimeInterval:-duration], endDate, limitations, cancelled);
+                if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                NSMutableArray *older = [NSMutableArray array];
+                NSUInteger checked = 0;
+                for (BAHistoryRecord *record in normalized) {
+                    if ((checked++ & 63) == 0 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                    if (cutoff && [record.observation.timestamp compare:cutoff] != NSOrderedAscending) continue;
+                    [older addObject:record];
+                }
+                // BANormalize orders ascending. If config rows exceed the total
+                // budget, retain the newest eligible old records, not an arbitrary prefix.
+                NSUInteger remaining = cap - selected.count;
+                if (older.count > remaining) {
+                    [older removeObjectsInRange:NSMakeRange(0, older.count - remaining)];
+                    acquisitionPartial = YES;
+                }
+                [selected insertObjects:older atIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, older.count)]];
+            }
+            sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+        } @finally {
+            if (db) { sqlite3_progress_handler(db, 0, NULL, NULL); sqlite3_close(db); }
+        }
+    }
+    if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+    if (!openedCompatibleSource) error = firstSourceError ?: [NSError errorWithDomain:@"BAAnalyticsHistory" code:SQLITE_CANTOPEN
+        userInfo:@{NSLocalizedDescriptionKey: @"Powerlog database is unavailable."}];
+    if (error) [limitations addObject:error.localizedDescription];
+    for (NSString *table in @[BABatteryTable, BABatteryUITable, BAConfigTable, BAChargingTable]) @autoreleasepool {
+        NSArray *records = tableRecords[table] ?: @[];
+        NSUInteger checked = 0;
+        for (BAHistoryRecord *record in records) {
+            if ((checked++ & 63) == 0 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+            [allObservations addObject:record.observation];
+        }
+        // Config/input values remain sparse points. Across a file boundary,
+        // matching sampling cadence is insufficient to establish continuity.
+        if ([table isEqual:BABatteryTable] || [table isEqual:BABatteryUITable]) {
+            NSTimeInterval maxCadence = [table isEqual:BABatteryUITable] ? 900 : cadence;
+            for (NSUInteger i = 1; i < records.count; i++) @autoreleasepool {
+                if ((i & 63) == 1 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
+                BAHistoryRecord *a = records[i - 1], *b = records[i];
+                if (!BAPairTrusted(a, b, maxCadence) && [b.observation.timestamp compare:a.observation.timestamp] == NSOrderedDescending)
+                    [discontinuities addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a.observation.timestamp endDate:b.observation.timestamp reason:
+                        [a.segment isEqual:b.segment] ? @"Source sampling gap or gauge reset" : @"Clock or source/battery/configuration discontinuity"]];
+            }
+        }
+    }
 	[limitations addObject:@"Powerlog temperature, wireless input/budgets and float-bit adapter/system power remain unverified and unavailable. Different tables retain independent records."];
 	if ([profile isEqual:@"powerlog.unknown"]) [limitations addObject:@"Unrecognized platform schema; physical-unit fields are withheld."];
 	[allObservations sortUsingComparator:^NSComparisonResult(BAAnalyticsObservation *a, BAAnalyticsObservation *b) {
@@ -693,7 +806,7 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReport(NSURL *databaseURL, NSDate *endD
 			hasValues = [window.coverageSecondsByMetric[BAAnalyticsHistoryExternalConnected] doubleValue] > 0;
 		}
 		BAAnalyticsReportAvailability availability = !hasValues ? BAAnalyticsReportAvailabilityUnavailable :
-			(window.missingDuration < 1 && !error ? BAAnalyticsReportAvailabilityReady : BAAnalyticsReportAvailabilityPartial);
+			(window.missingDuration < 1 && !error && !acquisitionPartial ? BAAnalyticsReportAvailabilityReady : BAAnalyticsReportAvailabilityPartial);
 		NSMutableArray *familyLimitations = [limitations mutableCopy];
 		if (capacity) [familyLimitations addObject:@"FCC/configuration records are sparse point observations, not continuous 30-day coverage."];
 		if ([family isEqual:BAAnalyticsFamilyLive]) [familyLimitations addObject:@"This is a historical Powerlog window, not evidence of the current device state; use the live metric snapshot and its age."];
@@ -706,10 +819,4 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReport(NSURL *databaseURL, NSDate *endD
 	if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
 	return [[BAAnalyticsReport alloc] initWithSequenceNumber:sequenceNumber generatedAt:endDate sourceProfileIdentifier:profile
 		fieldMetadata:allMetadata familyReports:families error:error];
-	} @finally {
-		if (db) {
-			sqlite3_progress_handler(db, 0, NULL, NULL);
-			sqlite3_close(db);
-		}
-	}
 }

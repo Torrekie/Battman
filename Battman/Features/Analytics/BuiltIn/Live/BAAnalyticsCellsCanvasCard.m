@@ -234,7 +234,12 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         for (NSUInteger i = 0; i < count; i++) {
             double fraction = end > start ? (samples[i].time - start) / (end - start) : .5;
             NSUInteger column = MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns)));
-            if (column != priorColumn) {
+            BOOL runChanged = i && samples[i].run != samples[i - 1].run;
+            BOOL previousConnected = i > 1 && samples[i - 1].run == samples[i - 2].run;
+            BOOL currentConnected = i + 1 < count && samples[i].run == samples[i + 1].run;
+            // Singleton readings remain scatter points; only trusted runs
+            // need explicit endpoints in addition to the column extrema.
+            if (column != priorColumn || (runChanged && (previousConnected || currentConnected))) {
                 if (priorColumn != NSNotFound) { [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last]; }
                 first = minimum = maximum = i; priorColumn = column;
             }
@@ -284,6 +289,9 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 @property (nonatomic, copy) NSString *windowText;
 @property (nonatomic, strong) BALiveSummaryScrollView *largeTypeSummary;
 @property (nonatomic, strong) BAAnalyticsFamilyReport *requestedFamily;
+@property (nonatomic, strong) BAAnalyticsReport *incomingReport;
+@property (nonatomic, strong) BAAnalyticsReport *requestedReport;
+@property (nonatomic, strong) BAAnalyticsReport *displayedReport;
 @property (nonatomic, strong) NSDictionary *requestedMetadata;
 @property (nonatomic, strong) BACellsPreparedHistory *preparedHistory;
 @property (nonatomic, getter=isPreparingHistory) BOOL preparingHistory;
@@ -320,10 +328,27 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     [super traitCollectionDidChange:previousTraitCollection]; self.geometryRect = CGRectNull; [self setNeedsLayout]; [self setNeedsDisplay];
 }
 
+- (void)setLatestReport:(BAAnalyticsReport *)report {
+    self.incomingReport = report;
+    if (!self.preparedHistory) [self adoptDisplayedReport:report];
+}
+
+- (void)adoptDisplayedReport:(BAAnalyticsReport *)report {
+    self.displayedReport = report;
+    [super setLatestReport:report];
+}
+
+- (void)requestDetailForSelection:(BAAnalyticsDetailSelection *)selection {
+    [super requestDetailForSelection:selection ?: [self selectionForObservation:self.latestCellObservation metric:nil]];
+}
+
 - (void)startHistoryPreparation {
-    if (self.preparingHistory || !self.requestedFamily) return;
+    if (self.preparingHistory || !self.requestedFamily ||
+        self.requestedFamily.availability == BAAnalyticsReportAvailabilityLoading ||
+        self.requestedFamily.availability == BAAnalyticsReportAvailabilityUnavailable) return;
     self.preparingHistory = YES;
     BAAnalyticsFamilyReport *family = self.requestedFamily;
+    BAAnalyticsReport *report = self.requestedReport;
     NSDictionary *metadata = self.requestedMetadata;
     NSUInteger generation = self.preparationGeneration;
     BACellsPreparationToken *token = [BACellsPreparationToken new]; self.preparationToken = token;
@@ -336,8 +361,9 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
                 if (!view) return;
                 view.preparingHistory = NO;
                 view.preparationToken = nil;
-                if (prepared && !token.isCancelled && generation == view.preparationGeneration && family == view.requestedFamily) {
+                if (prepared && !token.isCancelled && generation == view.preparationGeneration && family == view.requestedFamily && report == view.requestedReport) {
                     view.preparedHistory = prepared; view.geometryRect = CGRectNull;
+                    [view adoptDisplayedReport:report];
                     [view reloadReport];
                 } else [view startHistoryPreparation];
             });
@@ -346,16 +372,24 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 }
 
 - (void)reloadReport {
-    BAAnalyticsFamilyReport *family = BALiveFamilyReport(self, BAAnalyticsFamilyCells);
-    NSDictionary *metadata = self.latestReport.fieldMetadata;
-    if (self.requestedFamily != family || self.requestedMetadata != metadata) {
+    BAAnalyticsFamilyReport *family = [self.incomingReport reportForFamily:BAAnalyticsFamilyCells];
+    NSDictionary *metadata = self.incomingReport.fieldMetadata;
+    if (self.requestedReport != self.incomingReport || self.requestedMetadata != metadata) {
         self.preparationToken.cancelled = YES;
+        self.requestedReport = self.incomingReport;
         self.requestedFamily = family; self.requestedMetadata = metadata; self.preparationGeneration++;
-        self.preparedHistory = nil; self.geometryRect = CGRectNull;
-        self.displayIndices = @{}; self.marks = @[]; self.untrustedRects = @[];
+        BOOL sameSource = [self.displayedReport.sourceProfileIdentifier isEqualToString:self.incomingReport.sourceProfileIdentifier];
+        BOOL retainDisplayed = self.preparedHistory && sameSource && family &&
+            family.availability != BAAnalyticsReportAvailabilityUnavailable;
+        if (!retainDisplayed) {
+            self.preparedHistory = nil; self.geometryRect = CGRectNull;
+            self.displayIndices = @{}; self.marks = @[]; self.untrustedRects = @[]; self.hitRegions = @[];
+            [self adoptDisplayedReport:self.incomingReport];
+        }
         [self startHistoryPreparation];
     }
-    self.cellsReport = family;
+    self.cellsReport = [self.displayedReport reportForFamily:BAAnalyticsFamilyCells];
+    family = self.cellsReport;
     BACellsPreparedHistory *prepared = self.preparedHistory;
     self.latestCellObservation = prepared.latest;
     self.cellMetrics = prepared.metrics ?: @[];
@@ -509,7 +543,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         }
     } else {
         NSTimeInterval start = self.cellsReport.window.startDate.timeIntervalSince1970, end = self.cellsReport.window.endDate.timeIntervalSince1970;
-        NSUInteger columns = MAX(1, MIN(1024, (NSUInteger)ceil(self.plotRect.size.width)));
+        NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(self.plotRect.size.width / 3)));
         for (NSUInteger ordinal = 0; ordinal < self.visibleMetrics.count; ordinal++) {
             NSString *metric = self.visibleMetrics[ordinal]; NSData *data = self.preparedHistory.samplesByMetric[metric];
             NSArray<BAAnalyticsObservation *> *points = self.preparedHistory.pointsByMetric[metric];
@@ -520,8 +554,14 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
                 // Clipped original endpoints contribute to lines, not to a
                 // claimed observation at the visible window boundary.
                 if (samples[index].time < start || samples[index].time > end) continue;
+                BOOL endpoint = !index || index + 1 == points.count ||
+                    samples[index].run != samples[index - 1].run || samples[index].run != samples[index + 1].run;
+                CGPoint point = CGPointMake([self xForDate:points[index].timestamp], [self yForValue:samples[index].value]);
+                BACellsMark *priorMark = marks.lastObject;
+                if (dense && !endpoint && samples[index].value != self.preparedHistory.minimum && samples[index].value != self.preparedHistory.maximum &&
+                    [priorMark.metric isEqualToString:metric] && fabs(point.x - priorMark.point.x) < 12) continue;
                 BACellsMark *mark = [BACellsMark new]; mark.observation = points[index]; mark.metric = metric; mark.ordinal = ordinal;
-                mark.point = CGPointMake([self xForDate:points[index].timestamp], [self yForValue:samples[index].value]); [marks addObject:mark];
+                mark.point = point; [marks addObject:mark];
                 if (self.detailEnabled && !dense) [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(mark.point.x - 3, mark.point.y - 3, 6, 6)
                     selection:[self selectionForObservation:mark.observation metric:metric] accessibilityLabel:[self labelForObservation:mark.observation metric:metric]]];
             }
@@ -554,7 +594,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 - (void)rebuildUntrustedRects {
     if (self.compact || self.largeType || CGRectIsEmpty(self.plotRect)) { self.untrustedRects = @[]; return; }
     NSTimeInterval start = self.cellsReport.window.startDate.timeIntervalSince1970, span = [self.cellsReport.window.endDate timeIntervalSinceDate:self.cellsReport.window.startDate];
-    NSUInteger columns = MAX(1, MIN(1024, (NSUInteger)ceil(self.plotRect.size.width)));
+    NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(self.plotRect.size.width / 3)));
     NSMutableIndexSet *missing = [NSMutableIndexSet indexSet];
     const double *ranges = self.preparedHistory.missingRanges.bytes;
     for (NSUInteger i = 0; span > 0 && i < self.preparedHistory.missingRanges.length / (2 * sizeof(double)); i++) {
@@ -653,6 +693,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 @end
 
 @interface BAAnalyticsCellsCanvasCard : BAAnalyticsCanvasCard
+@property (nonatomic, strong) NSHashTable<BAAnalyticsCellsCanvasView *> *cellViews;
 @end
 @interface BACellsDetailViewController : BAAnalyticsDetailViewController
 @end
@@ -681,12 +722,25 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 @implementation BAAnalyticsCellsCanvasCard
 - (BOOL)supportsDetails { return YES; }
 - (UIViewController *)detailViewControllerForSelection:(BAAnalyticsDetailSelection *)selection size:(BAAnalyticsCardSize)size {
-    (void)size;
+    BAAnalyticsReport *report = nil;
+    NSNumber *sequence = selection.context[@"reportSequence"];
+    for (BAAnalyticsCellsCanvasView *view in self.cellViews.allObjects) {
+        if (sequence ? view.displayedReport.sequenceNumber == sequence.unsignedLongLongValue : view.cardSize == size) {
+            report = view.displayedReport; if (report) break;
+        }
+    }
+    if (!report && (!sequence || self.latestReport.sequenceNumber == sequence.unsignedLongLongValue)) report = self.latestReport;
+    if (sequence && !report) return nil;
     return [[BACellsDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier
-         report:self.latestReport snapshot:self.latestSnapshot selection:selection];
+         report:report snapshot:self.latestSnapshot selection:selection];
 }
 
-- (BAAnalyticsCanvasView *)makeCanvasView { return [[BAAnalyticsCellsCanvasView alloc] initWithFrame:CGRectZero]; }
+- (BAAnalyticsCanvasView *)makeCanvasView {
+    BAAnalyticsCellsCanvasView *view = [[BAAnalyticsCellsCanvasView alloc] initWithFrame:CGRectZero];
+    if (!self.cellViews) self.cellViews = [NSHashTable weakObjectsHashTable];
+    [self.cellViews addObject:view];
+    return view;
+}
 - (void)updateCanvasView:(BAAnalyticsCanvasView *)view { [(BAAnalyticsCellsCanvasView *)view reloadReport]; }
 @end
 

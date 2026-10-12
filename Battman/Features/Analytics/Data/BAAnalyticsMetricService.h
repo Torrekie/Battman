@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setApplicationActive:(BOOL)applicationActive;
 - (void)refreshNow;
 - (void)handleMemoryPressure;
+// The host opts its system source into persistence; arbitrary plug-in/test sources do not.
+- (void)enableStartupCache;
+- (void)enableStartupCacheAtURL:(NSURL *)cacheURL;
 @end
 
 NS_ASSUME_NONNULL_END

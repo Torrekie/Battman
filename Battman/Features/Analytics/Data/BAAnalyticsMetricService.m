@@ -26,9 +26,85 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 @property (nonatomic) BOOL sampleScheduled;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSMutableArray<BAAnalyticsMetricPoint *> *> *historyStorage;
 @property (nonatomic, strong, readwrite, nullable) BAAnalyticsMetricSnapshot *latestSnapshot;
+@property (nonatomic, copy, nullable) NSURL *startupCacheURL;
+@property (nonatomic) NSTimeInterval lastCacheWriteUptime;
 @end
 
 @implementation BAAnalyticsMetricService
+
+- (void)enableStartupCache {
+	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+	[self enableStartupCacheAtURL:[[support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES] URLByAppendingPathComponent:@"instant.plist"]];
+}
+
+- (void)enableStartupCacheAtURL:(NSURL *)cacheURL {
+	NSParameterAssert(NSThread.isMainThread);
+	if (!cacheURL.isFileURL || self.startupCacheURL) return;
+	self.startupCacheURL = cacheURL;
+	__weak typeof(self) weakSelf = self;
+	dispatch_async(self.workerQueue, ^{
+		@autoreleasepool {
+			NSNumber *size = nil;
+			[cacheURL getResourceValue:&size forKey:NSURLFileSizeKey error:NULL];
+			NSData *bytes = size.unsignedLongLongValue <= 512 * 1024 ? [NSData dataWithContentsOfURL:cacheURL options:0 error:NULL] : nil;
+			id root = bytes ? [NSPropertyListSerialization propertyListWithData:bytes options:NSPropertyListImmutable format:NULL error:NULL] : nil;
+			BAAnalyticsMetricSnapshot *snapshot = nil;
+			if ([root isKindOfClass:NSDictionary.class] && [root[@"version"] isEqual:@1] && [root[@"timestamp"] isKindOfClass:NSDate.class]) {
+				NSTimeInterval age = [NSDate.date timeIntervalSinceDate:root[@"timestamp"]];
+				NSDictionary *values = root[@"values"], *encodedHistories = root[@"histories"];
+				BOOL valid = isfinite(age) && age >= 0 && age <= 86400 && [values isKindOfClass:NSDictionary.class] && values.count <= 64 &&
+					[encodedHistories isKindOfClass:NSDictionary.class] && encodedHistories.count <= 64;
+				NSMutableDictionary *histories = [NSMutableDictionary dictionary];
+				for (id key in valid ? values : @{}) {
+					if (![key isKindOfClass:NSString.class] || [key length] > 128 || ![values[key] isKindOfClass:NSNumber.class] || !isfinite([values[key] doubleValue])) valid = NO;
+				}
+				for (id key in valid ? encodedHistories : @{}) {
+					id points = encodedHistories[key];
+					if (![key isKindOfClass:NSString.class] || [key length] > 128 || ![points isKindOfClass:NSArray.class] || [points count] > 240) { valid = NO; break; }
+					NSMutableArray *decoded = [NSMutableArray array];
+					NSDate *previous = nil;
+					for (id point in points) {
+						if (![point isKindOfClass:NSArray.class] || [point count] != 2 || ![point[0] isKindOfClass:NSDate.class] ||
+							![point[1] isKindOfClass:NSNumber.class] || !isfinite([point[1] doubleValue]) ||
+							!isfinite([root[@"timestamp"] timeIntervalSinceDate:point[0]]) ||
+							[point[0] compare:root[@"timestamp"]] == NSOrderedDescending ||
+							(previous && [point[0] compare:previous] != NSOrderedDescending) ||
+							[root[@"timestamp"] timeIntervalSinceDate:point[0]] > 86400) { valid = NO; break; }
+						[decoded addObject:[[BAAnalyticsMetricPoint alloc] initWithTimestamp:point[0] value:[point[1] doubleValue]]];
+						previous = point[0];
+					}
+					histories[key] = decoded;
+				}
+				if (valid) snapshot = [[[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:0 timestamp:root[@"timestamp"] values:values histories:histories] snapshotByMarkingCached];
+			}
+			dispatch_async(dispatch_get_main_queue(), ^{
+				BAAnalyticsMetricService *service = weakSelf;
+				if (!snapshot || !service || service.latestSnapshot) return;
+				service.latestSnapshot = snapshot;
+				for (id<BAAnalyticsMetricServiceSubscriber> subscriber in service.subscribers.allObjects)
+					[subscriber analyticsMetricService:service didPublishSnapshot:snapshot];
+			});
+		}
+	});
+}
+
+- (void)storeSnapshot:(BAAnalyticsMetricSnapshot *)snapshot {
+	NSTimeInterval uptime = NSProcessInfo.processInfo.systemUptime;
+	if (!self.startupCacheURL || !snapshot.values.count || (self.lastCacheWriteUptime && uptime - self.lastCacheWriteUptime < 30)) return;
+	NSMutableDictionary *histories = [NSMutableDictionary dictionary];
+	for (NSString *key in snapshot.histories) {
+		NSMutableArray *points = [NSMutableArray array];
+		for (BAAnalyticsMetricPoint *point in snapshot.histories[key]) [points addObject:@[point.timestamp, @(point.value)]];
+		histories[key] = points;
+	}
+	NSData *data = [NSPropertyListSerialization dataWithPropertyList:@{@"version": @1, @"timestamp": snapshot.timestamp, @"values": snapshot.values, @"histories": histories}
+		format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
+	if (!data || data.length > 512 * 1024) return;
+	NSURL *directory = self.startupCacheURL.URLByDeletingLastPathComponent;
+	if (![NSFileManager.defaultManager createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:NULL]) return;
+	[directory setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:NULL];
+	if ([data writeToURL:self.startupCacheURL options:NSDataWritingAtomic error:NULL]) self.lastCacheWriteUptime = uptime;
+}
 
 - (instancetype)initWithSource:(id<BAAnalyticsMetricSource>)source {
 	return [self initWithSource:source
@@ -216,9 +292,11 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 		}
 		if (!snapshot)
 			return;
-		self.latestSnapshot = snapshot;
+		BAAnalyticsMetricSnapshot *display = !snapshot.values.count && self.latestSnapshot.values.count ?
+			[self.latestSnapshot snapshotByMarkingCached] : snapshot;
+		self.latestSnapshot = display;
 		for (id<BAAnalyticsMetricServiceSubscriber> subscriber in self.subscribers.allObjects)
-			[subscriber analyticsMetricService:self didPublishSnapshot:snapshot];
+			[subscriber analyticsMetricService:self didPublishSnapshot:display];
 	});
 }
 
@@ -232,6 +310,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 		}
 		NSDate *timestamp = [NSDate date];
 		NSDictionary<NSString *, NSNumber *> *values = [self.source readAnalyticsMetricValues] ?: @{};
+		BAAnalyticsMetricSnapshot *snapshot;
 		@synchronized(self) {
 			if (!self.polling || generation != self.pollingGeneration) {
 				[self finishSample:nil generation:generation];
@@ -269,12 +348,14 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 				histories[key] = [history copy];
 			}];
 
-			BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:self.nextSequenceNumber++
+			snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:self.nextSequenceNumber++
 															 timestamp:timestamp
 																values:values
 															 histories:histories];
 			[self finishSample:snapshot generation:generation];
 		}
+		// Persistence runs outside the polling lock used by foreground lifecycle calls.
+		[self storeSnapshot:snapshot];
 	}
 }
 

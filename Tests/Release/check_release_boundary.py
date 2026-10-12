@@ -207,7 +207,7 @@ analytics_simctl_commands = {
     "uninstall": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
     "get_app_container": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
     "install": '"$SIMULATOR_UDID" "$APP_DIR"',
-    "launch": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
+    "launch": '--stdout="$TEST_TMP/fixture.stdout" --stderr="$TEST_TMP/fixture.stderr" "$SIMULATOR_UDID" "$BUNDLE_ID"',
 }
 for match in re.finditer(r"\bxcrun\s+simctl\s+(\S+)\s+([^\n]+)", analytics_runner_text):
     expected = analytics_simctl_commands.get(match.group(1))

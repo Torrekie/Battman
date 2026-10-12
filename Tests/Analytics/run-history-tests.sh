@@ -12,7 +12,7 @@ ANALYTICS_MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)
 "$ANALYTICS_CLANG" \
 	-isysroot "$ANALYTICS_MACOS_SDK" \
 	-fobjc-arc -fblocks -Wall -Wextra -Werror \
-	-framework Foundation -lsqlite3 \
+	-framework Foundation -lsqlite3 -lz \
 	"$ANALYTICS_REPO_ROOT/Tests/Analytics/BAAnalyticsHistoryTests.m" \
 	"$ANALYTICS_REPO_ROOT/Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.m" \
 	"$ANALYTICS_REPO_ROOT/Battman/Features/Analytics/Data/BAAnalyticsReport.m" \

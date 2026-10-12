@@ -1,16 +1,107 @@
 #import "BAStatisticsDrawing.h"
 #import "../Canvas/BAAnalyticsDetailViewController.h"
-static NSString *BASSampleLabel(NSDictionary *sample) {
-    NSDateFormatter *f = [NSDateFormatter new]; f.dateFormat = @"M/d HH:mm";
+static NSString *BASSampleLabel(NSDictionary *sample, NSDateFormatter *f) {
     NSString *peak = sample[@"peakCelsius"] ? [NSString stringWithFormat:@" · %@ %.1f °C",_("observed peak"),[sample[@"peakCelsius"] doubleValue]] : [NSString stringWithFormat:@" · %@",_("temperature unavailable")];
     return [NSString stringWithFormat:_("%@ · ≈ %.1f min%@"),[f stringFromDate:sample[@"startDate"]],[sample[@"minutes"] doubleValue],peak];
+}
+
+static const NSUInteger BASComparePlotSampleLimit = 30;
+
+static NSArray<NSDictionary *> *BASCompareSamplesAtIndexes(NSArray<NSDictionary *> *samples, NSIndexSet *indexes) {
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:indexes.count];
+    [indexes enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:samples[index]]; }];
+    return result.copy;
+}
+
+// One min/max pair per elapsed-time bucket preserves duration excursions. This
+// affects only marks, not the full sample population or its descriptive statistics.
+static NSArray<NSDictionary *> *BASCompareDurationEnvelope(NSArray<NSDictionary *> *samples) {
+    if (samples.count <= BASComparePlotSampleLimit) return samples;
+    enum { bucketCount = 13 };
+    NSUInteger minima[bucketCount], maxima[bucketCount];
+    for (NSUInteger bucket = 0; bucket < bucketCount; bucket++) minima[bucket] = maxima[bucket] = NSNotFound;
+    NSDate *first = samples.firstObject[@"startDate"], *last = samples.lastObject[@"startDate"];
+    NSTimeInterval elapsed = [last timeIntervalSinceDate:first];
+    for (NSUInteger index = 0; index < samples.count; index++) {
+        NSDictionary *sample = samples[index];
+        double fraction = elapsed > 0 ? [sample[@"startDate"] timeIntervalSinceDate:first] / elapsed : (double)index / MAX(1, samples.count - 1);
+        NSUInteger bucket = MIN(bucketCount - 1, (NSUInteger)(MAX(0, MIN(1, fraction)) * bucketCount));
+        double minutes = [sample[@"minutes"] doubleValue];
+        if (minima[bucket] == NSNotFound || minutes < [samples[minima[bucket]][@"minutes"] doubleValue]) minima[bucket] = index;
+        if (maxima[bucket] == NSNotFound || minutes > [samples[maxima[bucket]][@"minutes"] doubleValue]) maxima[bucket] = index;
+    }
+    NSMutableIndexSet *indexes = [NSMutableIndexSet indexSetWithIndex:0];
+    [indexes addIndex:samples.count - 1];
+    for (NSUInteger bucket = 0; bucket < bucketCount; bucket++) {
+        if (minima[bucket] != NSNotFound) [indexes addIndex:minima[bucket]];
+        if (maxima[bucket] != NSNotFound) [indexes addIndex:maxima[bucket]];
+    }
+    return BASCompareSamplesAtIndexes(samples, indexes); // At most 28 real samples.
+}
+
+// Occupied cells represent the scatter shape without drawing repeated dense
+// marks. Keep global duration/temperature extrema even outside cell representatives.
+static NSDictionary *BASCompareTemperatureDrawing(NSArray<NSDictionary *> *samples) {
+    double tlo = INFINITY, thi = -INFINITY, durationLo = INFINITY, durationHi = -INFINITY;
+    NSUInteger count = 0, tmin = NSNotFound, tmax = NSNotFound, dmin = NSNotFound, dmax = NSNotFound;
+    for (NSUInteger index = 0; index < samples.count; index++) {
+        NSDictionary *sample = samples[index];
+        if (!sample[@"peakCelsius"]) continue;
+        double temperature = [sample[@"peakCelsius"] doubleValue], duration = [sample[@"minutes"] doubleValue];
+        if (!isfinite(temperature) || !isfinite(duration)) continue;
+        if (temperature < tlo) { tlo = temperature; tmin = index; }
+        if (temperature > thi) { thi = temperature; tmax = index; }
+        if (duration < durationLo) { durationLo = duration; dmin = index; }
+        if (duration > durationHi) { durationHi = duration; dmax = index; }
+        count++;
+    }
+    if (!count) return @{@"samples":@[], @"count":@0};
+    NSMutableIndexSet *indexes = [NSMutableIndexSet indexSet];
+    for (NSNumber *index in @[@(tmin), @(tmax), @(dmin), @(dmax)]) [indexes addIndex:index.unsignedIntegerValue];
+    enum { columns = 5, rows = 5, cellCount = columns * rows };
+    NSUInteger representatives[cellCount]; double distances[cellCount];
+    for (NSUInteger cell = 0; cell < cellCount; cell++) { representatives[cell] = NSNotFound; distances[cell] = -1; }
+    for (NSUInteger index = 0; index < samples.count; index++) {
+        NSDictionary *sample = samples[index];
+        if (!sample[@"peakCelsius"]) continue;
+        double temperature = [sample[@"peakCelsius"] doubleValue], duration = [sample[@"minutes"] doubleValue];
+        if (!isfinite(temperature) || !isfinite(duration)) continue;
+        if (count <= BASComparePlotSampleLimit) { [indexes addIndex:index]; continue; }
+        double x = durationHi > durationLo ? (duration - durationLo) / (durationHi - durationLo) : .5;
+        double y = thi > tlo ? (temperature - tlo) / (thi - tlo) : .5;
+        NSUInteger column = MIN(columns - 1, (NSUInteger)(MAX(0, MIN(1, x)) * columns));
+        NSUInteger row = MIN(rows - 1, (NSUInteger)(MAX(0, MIN(1, y)) * rows));
+        NSUInteger cell = row * columns + column;
+        double dx = x - ((double)column + .5) / columns, dy = y - ((double)row + .5) / rows;
+        double distance = dx * dx + dy * dy;
+        if (distance > distances[cell]) { distances[cell] = distance; representatives[cell] = index; }
+    }
+    if (count > BASComparePlotSampleLimit) for (NSUInteger cell = 0; cell < cellCount; cell++)
+        if (representatives[cell] != NSNotFound) [indexes addIndex:representatives[cell]];
+    return @{@"samples":BASCompareSamplesAtIndexes(samples, indexes), @"count":@(count), @"minimum":@(tlo), @"maximum":@(thi)};
+}
+
+static NSDictionary *BASComparePreparedDrawing(NSDictionary *analysis) {
+    NSArray *samples = analysis[@"samples"] ?: @[];
+    NSArray *duration = BASCompareDurationEnvelope(samples);
+    NSDictionary *temperature = BASCompareTemperatureDrawing(samples);
+    NSMutableDictionary *prepared = [analysis mutableCopy];
+    prepared[@"durationDrawingSamples"] = duration;
+    prepared[@"temperatureDrawing"] = temperature;
+    NSMutableOrderedSet *summary = [NSMutableOrderedSet orderedSetWithArray:duration];
+    [summary addObjectsFromArray:temperature[@"samples"]];
+    prepared[@"summaryDrawingSamples"] = [summary.array sortedArrayUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) { return [a[@"startDate"] compare:b[@"startDate"]]; }];
+    return prepared.copy;
 }
 @interface BASCompareView : BASStatisticalView
 @end
 
 @interface BASCompareDetailChart : UIView
 @property (nonatomic, copy) NSArray<NSDictionary *> *samples;
-@property (nonatomic, copy) NSString *selectedIdentifier;
+@property (nonatomic, copy) NSArray<NSDictionary *> *drawingSamples;
+@property (nonatomic, copy) NSDictionary *selectedSample;
+@property (nonatomic) double minimum;
+@property (nonatomic) double maximum;
 @end
 @implementation BASCompareDetailChart
 - (CGSize)sizeThatFits:(CGSize)size { return CGSizeMake(size.width, 326); }
@@ -21,8 +112,7 @@ static NSString *BASSampleLabel(NSDictionary *sample) {
     UIColor *muted=[UIColor compatSecondaryLabelColor], *blue=[UIColor compatBlueColor];
     BASText(_("20 → 80% · ≈ min"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
     CGRect plot=CGRectMake(54,top,w-74,MAX(32,bottom-top));
-    double maximum=0,minimum=INFINITY;
-    for (NSDictionary *sample in self.samples) { double value=[sample[@"minutes"] doubleValue]; maximum=MAX(maximum,value); minimum=MIN(minimum,value); }
+    double maximum=self.maximum,minimum=self.minimum;
     if (!self.samples.count) {
         BASHatch(plot); BASText(_("No complete 20–80% crossings"),CGRectInset(plot,8,8),font,muted,NSTextAlignmentLeft); return;
     }
@@ -33,14 +123,16 @@ static NSString *BASSampleLabel(NSDictionary *sample) {
     BASText([NSString stringWithFormat:@"%.0f",lower],CGRectMake(4,bottom-line/2,42,line+4),font,muted,NSTextAlignmentRight);
     NSDate *first=self.samples.firstObject[@"startDate"], *last=self.samples.lastObject[@"startDate"];
     double elapsed=[last timeIntervalSinceDate:first];
-    for (NSDictionary *sample in self.samples) {
+    NSMutableArray *drawing=[self.drawingSamples mutableCopy] ?: [NSMutableArray array];
+    if (self.selectedSample && ![drawing containsObject:self.selectedSample]) [drawing addObject:self.selectedSample];
+    for (NSDictionary *sample in drawing) {
         CGFloat x=elapsed>0 ? plot.origin.x+[sample[@"startDate"] timeIntervalSinceDate:first]/elapsed*plot.size.width : CGRectGetMidX(plot);
         CGFloat y=CGRectGetMaxY(plot)-([sample[@"minutes"] doubleValue]-lower)/(upper-lower)*plot.size.height;
-        BOOL selected=[sample[@"identifier"] isEqualToString:self.selectedIdentifier];
+        BOOL selected=[sample[@"identifier"] isEqualToString:self.selectedSample[@"identifier"]];
         if (selected) { BASDot(CGPointMake(x,y),[blue colorWithAlphaComponent:.15],10); BASDot(CGPointMake(x,y),blue,5); }
         else BASDot(CGPointMake(x,y),[blue colorWithAlphaComponent:.62],3.5);
     }
-    NSDateFormatter *format=[NSDateFormatter new]; format.dateFormat=@"M/d";
+    NSDateFormatter *format=BASDateFormatter(@"M/d");
     BASText([format stringFromDate:first],CGRectMake(plot.origin.x,bottom+6,plot.size.width/2,line+4),font,muted,NSTextAlignmentLeft);
     BASText([format stringFromDate:last],CGRectMake(plot.origin.x+plot.size.width/2,bottom+6,plot.size.width/2,line+4),font,muted,NSTextAlignmentRight);
     BASText(_("Each dot is one independent session"),CGRectMake(16,bottom+line+14,w-32,line*2+4),font,muted,NSTextAlignmentLeft);
@@ -80,7 +172,9 @@ static NSString *BASComparisonExclusionTitle(NSString *reason) {
     BASCompareDetailChart *chart=[[BASCompareDetailChart alloc] initWithFrame:CGRectMake(0,0,320,326)];
     chart.backgroundColor=[UIColor compatBackgroundColor]; chart.autoresizingMask=UIViewAutoresizingFlexibleWidth;
     chart.samples=analysis[@"samples"] ?: @[];
-    chart.selectedIdentifier=[self selectedSample:analysis][@"identifier"];
+    chart.drawingSamples=analysis[@"durationDrawingSamples"] ?: @[];
+    chart.minimum=[analysis[@"minimum"] doubleValue]; chart.maximum=[analysis[@"maximum"] doubleValue];
+    chart.selectedSample=[self selectedSample:analysis];
     chart.isAccessibilityElement=YES;
     chart.accessibilityLabel=[NSString stringWithFormat:_("20–80%% charge duration, %lu independent sessions"),(unsigned long)chart.samples.count];
     return chart;
@@ -89,7 +183,7 @@ static NSString *BASComparisonExclusionTitle(NSString *reason) {
     NSDictionary *analysis=[self comparisonAnalysis], *selected=[self selectedSample:analysis];
     NSMutableArray *rows=[NSMutableArray array];
     if (selected) {
-        NSDateFormatter *format=[NSDateFormatter new]; format.dateFormat=@"M/d HH:mm";
+        NSDateFormatter *format=BASDateFormatter(@"M/d HH:mm");
         [rows addObject:@{@"title":_("Selected session"),@"value":[NSString stringWithFormat:@"%@ – %@",[format stringFromDate:selected[@"startDate"]],[format stringFromDate:selected[@"endDate"]]]}];
         [rows addObject:@{@"title":_("20–80% duration"),@"value":[NSString stringWithFormat:_("≈ %.2f min"),[selected[@"minutes"] doubleValue]]}];
         [rows addObject:@{@"title":_("Observed peak temperature"),@"value":selected[@"peakCelsius"] ? [NSString stringWithFormat:@"%.1f °C",[selected[@"peakCelsius"] doubleValue]] : _("Temperature unavailable")}];
@@ -102,7 +196,7 @@ static NSString *BASComparisonExclusionTitle(NSString *reason) {
         NSDictionary *counts=analysis[@"exclusionCounts"];
         for (NSString *reason in [counts.allKeys sortedArrayUsingSelector:@selector(compare:)]) [rows addObject:@{@"title":BASComparisonExclusionTitle(reason),@"value":[counts[reason] stringValue]}];
     } else {
-        NSDateFormatter *format=[NSDateFormatter new]; format.dateFormat=@"M/d HH:mm";
+        NSDateFormatter *format=BASDateFormatter(@"M/d HH:mm");
         NSUInteger shown=0;
         for (NSDictionary *sample in analysis[@"samples"]) {
             if (shown++>=24) break;
@@ -120,12 +214,13 @@ static NSString *BASComparisonExclusionTitle(NSString *reason) {
 @implementation BASCompareCard
 - (BOOL)supportsDetails { return YES; }
 - (BAAnalyticsCanvasView *)makeCanvasView { BASCompareView *view=[BASCompareView new]; view.accessibilityLabel=self.analyticsCardDisplayName; return view; }
-- (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family { return BAStatisticsComparison(family); }
+- (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family { return BASComparePreparedDrawing(BAStatisticsComparison(family)); }
 - (UIViewController *)detailViewControllerForSelection:(BAAnalyticsDetailSelection *)selection size:(BAAnalyticsCardSize)size {
     [self deriveIfNeeded];
-    BAAnalyticsFamilyReport *family=[self.latestReport reportForFamily:self.familyIdentifier];
+    BAAnalyticsReport *report=self.displayedReport;
+    BAAnalyticsFamilyReport *family=[report reportForFamily:self.familyIdentifier];
     if (!self.analysis && (family.availability==BAAnalyticsReportAvailabilityReady || family.availability==BAAnalyticsReportAvailabilityPartial)) return nil;
-    BASCompareDetailViewController *detail=[[BASCompareDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier report:self.latestReport snapshot:self.latestSnapshot selection:selection ?: [self defaultDetailSelection]];
+    BASCompareDetailViewController *detail=[[BASCompareDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier report:report snapshot:self.latestSnapshot selection:[self selectionForDisplayedReport:selection]];
     detail.frozenAnalysis=self.analysis;
     return detail;
 }
@@ -135,18 +230,34 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
     return [[BASCompareCard alloc] initWithIdentifier:@"com.torrekie.battman.analytics.compare" displayName:_("Charging comparison") familyIdentifier:BAAnalyticsFamilyCompare supportedSizes:BAAnalyticsCardSizeMask1x2|BAAnalyticsCardSizeMask2x1|BAAnalyticsCardSizeMask2x2 defaultSize:BAAnalyticsCardSize2x1];
 }
 @implementation BASCompareView
+- (void)addSampleHit:(NSMutableArray *)hits point:(CGPoint)point sample:(NSDictionary *)sample
+              labels:(NSMutableDictionary *)labels selections:(NSMutableDictionary *)selections formatter:(NSDateFormatter *)formatter {
+    NSString *identifier=sample[@"identifier"];
+    BAAnalyticsDetailSelection *selection=selections[identifier];
+    if (!selection) {
+        selection=[self selection:@"session" item:sample metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]];
+        selections[identifier]=selection;
+    }
+    NSString *label=labels[identifier];
+    if (!label) { label=BASSampleLabel(sample,formatter); labels[identifier]=label; }
+    [hits addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(point.x-4,point.y-4,8,8) selection:selection accessibilityLabel:label]];
+}
 - (NSArray *)summaryRows {
     if (!self.analysis) return @[];
     NSMutableArray *rows = [NSMutableArray array];
     [rows addObject:@{@"text":[NSString stringWithFormat:_("20 → 80%% · n=%lu · %@"),(unsigned long)[self.analysis[@"samples"] count],_("estimated minutes")],@"kind":@"distribution",@"item":@{}}];
     if ([self.analysis[@"hasBox"] boolValue]) [rows addObject:@{@"text":[NSString stringWithFormat:_("min %.1f · Q1 %.1f · median %.1f · Q3 %.1f · max %.1f min"),[self.analysis[@"minimum"] doubleValue],[self.analysis[@"q1"] doubleValue],[self.analysis[@"median"] doubleValue],[self.analysis[@"q3"] doubleValue],[self.analysis[@"maximum"] doubleValue]],@"kind":@"distribution",@"item":@{}}];
-    for (NSDictionary *sample in self.analysis[@"samples"]) [rows addObject:@{@"text":BASSampleLabel(sample),@"kind":@"session",@"item":sample,@"metrics":@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]}];
+    NSDateFormatter *formatter=BASDateFormatter(@"M/d HH:mm");
+    for (NSDictionary *sample in self.analysis[@"summaryDrawingSamples"]) [rows addObject:@{@"text":BASSampleLabel(sample,formatter),@"kind":@"session",@"item":sample,@"metrics":@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]}];
     [rows addObject:@{@"text":[NSString stringWithFormat:@"%@ · %lu",_("Excluded sessions"),(unsigned long)[[[self.analysis[@"exclusionCounts"] allValues] valueForKeyPath:@"@sum.self"] unsignedIntegerValue]],@"kind":@"exclusions",@"item":@{}}];
     return rows;
 }
 - (void)drawStatistics:(NSMutableArray *)hits {
     CGFloat w=self.bounds.size.width,h=self.bounds.size.height; UIFont *font=BASFont(11); CGFloat line=ceil(font.lineHeight);
     NSArray *samples=self.analysis[@"samples"] ?: @[]; BOOL hasBox=[self.analysis[@"hasBox"] boolValue];
+    NSArray *drawingSamples=self.analysis[@"durationDrawingSamples"] ?: @[];
+    NSMutableDictionary *labels=[NSMutableDictionary dictionary], *selections=[NSMutableDictionary dictionary];
+    NSDateFormatter *formatter=BASDateFormatter(@"M/d HH:mm");
     BOOL vertical=self.cardSize == BAAnalyticsCardSize1x2;
     BASText(vertical ? @"20 → 80%" : _("20 → 80% · ≈ min"),CGRectMake(12,10,w-66,line+6),BASFont(13),[UIColor compatLabelColor],NSTextAlignmentLeft);
     BASText([NSString stringWithFormat:@"n=%lu",(unsigned long)samples.count],CGRectMake(w-60,10,48,line+6),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentRight);
@@ -201,16 +312,17 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
         }
     }
     NSUInteger index=0;
-    for (NSDictionary *sample in samples) {
+    for (NSDictionary *sample in drawingSamples) {
         CGFloat v=position([sample[@"minutes"] doubleValue]);
         CGPoint p=vertical ? CGPointMake(center+22+(index%3)*7,v) : CGPointMake(v,MIN(CGRectGetMaxY(chart)-7,center+boxHalf+8)+(index%2)*3);
         BASDot(p,blue,3);
-        [self addHit:hits rect:CGRectMake(p.x-4,p.y-4,8,8) kind:@"session" item:sample metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius] label:BASSampleLabel(sample)]; index++;
+        [self addSampleHit:hits point:p sample:sample labels:labels selections:selections formatter:formatter]; index++;
     }
     if (scatter) {
         CGFloat sy=chartBottom+line+20, sh=MAX(8,bottom-sy-line-8); CGRect plot=CGRectMake(48,sy,w-64,sh);
-        double tlo=INFINITY,thi=-INFINITY; NSUInteger temperatureCount=0;
-        for (NSDictionary *sample in samples) if (sample[@"peakCelsius"]) { double t=[sample[@"peakCelsius"] doubleValue]; tlo=MIN(tlo,t); thi=MAX(thi,t); temperatureCount++; }
+        NSDictionary *temperature=self.analysis[@"temperatureDrawing"];
+        double tlo=[temperature[@"minimum"] doubleValue],thi=[temperature[@"maximum"] doubleValue];
+        NSUInteger temperatureCount=[temperature[@"count"] unsignedIntegerValue];
         BAAnalyticsDrawGlyph(BAAnalyticsGlyphThermometer,CGRectMake(12,sy-line-8,13,line),muted);
         BASText(@"°C",CGRectMake(30,sy-line-8,w-42,line+4),font,muted,NSTextAlignmentLeft);
         if (!temperatureCount) {
@@ -224,10 +336,10 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
             BASText([NSString stringWithFormat:@"%.1f",axisLo],CGRectMake(plot.origin.x,CGRectGetMaxY(plot)+2,plot.size.width/2,line+3),font,muted,NSTextAlignmentLeft);
             BASText([NSString stringWithFormat:_("%.1f ≈ min"),axisHi],CGRectMake(plot.origin.x+plot.size.width/2,CGRectGetMaxY(plot)+2,plot.size.width/2,line+3),font,muted,NSTextAlignmentRight);
             // Sessions remain independent marks. No line or causal inference between them.
-            for (NSDictionary *sample in samples) if (sample[@"peakCelsius"]) {
+            for (NSDictionary *sample in temperature[@"samples"]) {
                 CGPoint p=CGPointMake(plot.origin.x+([sample[@"minutes"] doubleValue]-axisLo)/(axisHi-axisLo)*plot.size.width,CGRectGetMaxY(plot)-([sample[@"peakCelsius"] doubleValue]-tlo)/(thi-tlo)*plot.size.height);
                 BASDot(p,[UIColor compatOrangeColor],3.5);
-                [self addHit:hits rect:CGRectMake(p.x-4,p.y-4,8,8) kind:@"session" item:sample metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius] label:BASSampleLabel(sample)];
+                [self addSampleHit:hits point:p sample:sample labels:labels selections:selections formatter:formatter];
             }
         }
     }

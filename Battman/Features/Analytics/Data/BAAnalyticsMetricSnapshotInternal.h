@@ -60,6 +60,8 @@ static inline void BAAnalyticsRecordObservedChargingMetrics(NSMutableDictionary<
 @end
 
 @interface BAAnalyticsMetricSnapshot (BAAnalyticsHostConstruction)
+@property (nonatomic, readonly, getter=isCached) BOOL cached;
+- (BAAnalyticsMetricSnapshot *)snapshotByMarkingCached;
 // Missing/non-finite values are discarded while the host builds a snapshot.
 - (instancetype)initWithSequenceNumber:(uint64_t)sequenceNumber
 						  timestamp:(NSDate *)timestamp

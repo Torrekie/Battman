@@ -7,6 +7,8 @@
 // Small drawing and immutable-analysis facilities shared by the three cards.
 FOUNDATION_EXPORT NSString *BASTime(NSTimeInterval seconds);
 FOUNDATION_EXPORT NSString *BASWindow(BAAnalyticsHistoryWindow *window);
+// Per-thread reuse; refreshes formatting when the locale or calendar changes.
+FOUNDATION_EXPORT NSDateFormatter *BASDateFormatter(NSString *format);
 FOUNDATION_EXPORT UIFont *BASFont(CGFloat size);
 FOUNDATION_EXPORT void BASText(NSString *text, CGRect rect, UIFont *font, UIColor *color, NSTextAlignment alignment);
 FOUNDATION_EXPORT void BASFill(CGRect rect, UIColor *color);
@@ -18,6 +20,7 @@ FOUNDATION_EXPORT NSString *BASCoverage(NSDictionary *analysis, NSString *validK
 @interface BASStatisticalView : BAAnalyticsCanvasView
 @property (nonatomic, copy) NSDictionary *analysis;
 @property (nonatomic, strong) BAAnalyticsFamilyReport *familyReport;
+@property (nonatomic) BOOL preparingAnalysis;
 @property (nonatomic, strong) UIScrollView *largeTextScroll;
 @property (nonatomic, copy) NSArray<NSDictionary *> *largeTextRows;
 - (BAAnalyticsDetailSelection *)selection:(NSString *)kind item:(NSDictionary *)item metrics:(NSArray *)metrics;
@@ -27,7 +30,9 @@ FOUNDATION_EXPORT NSString *BASCoverage(NSDictionary *analysis, NSString *validK
 @end
 
 @interface BASStatisticalCard : BAAnalyticsCanvasCard
-@property (nonatomic, weak) BAAnalyticsReport *derivedReport;
+// Published evidence stays paired with analysis until the next generation is ready.
+@property (nonatomic, strong) BAAnalyticsReport *derivedReport;
+@property (nonatomic, strong, readonly) BAAnalyticsReport *displayedReport;
 @property (nonatomic, copy) NSDictionary *analysis;
 @property (nonatomic, copy) NSString *calendarSignature;
 - (void)deriveIfNeeded;
@@ -35,6 +40,7 @@ FOUNDATION_EXPORT NSString *BASCoverage(NSDictionary *analysis, NSString *validK
 // Runs on the shared serial analysis queue with a captured calendar/time zone.
 - (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family calendar:(NSCalendar *)calendar;
 - (BAAnalyticsDetailSelection *)defaultDetailSelection;
+- (BAAnalyticsDetailSelection *)selectionForDisplayedReport:(BAAnalyticsDetailSelection *)selection;
 @end
 
 FOUNDATION_EXPORT id<BAAnalyticsCard> BAAnalyticsCreateDwellCanvasCard(void);

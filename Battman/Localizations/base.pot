@@ -3466,3 +3466,9 @@ msgstr ""
 #, objc-format
 msgid "≈%@ · n=%lu%@"
 msgstr ""
+
+msgid "Showing cached history; refreshing in background"
+msgstr ""
+
+msgid "Cached · %@"
+msgstr ""

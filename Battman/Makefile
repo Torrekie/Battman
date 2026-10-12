@@ -19,7 +19,7 @@ LOCAL_IP := $(shell if command -v ip >/dev/null 2>&1; then \
 THEOS ?= $(HOME)/theos
 SDKROOT := ${THEOS}/sdks/iPhoneOS13.7.sdk
 
-LIBS := -lobjc -Wl,-weak-lIOAccessoryManager -lsqlite3 -lc++
+LIBS := -lobjc -Wl,-weak-lIOAccessoryManager -lsqlite3 -lz -lc++
 FRAMEWORKS := -framework UIKit \
 	      -framework Foundation \
 	      -framework CoreGraphics \

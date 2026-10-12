@@ -3508,3 +3508,9 @@ msgstr "≈ 分"
 #, objc-format
 msgid "≈%@ · n=%lu%@"
 msgstr "≈%@ · n=%lu%@"
+
+msgid "Showing cached history; refreshing in background"
+msgstr "正在显示历史缓存，后台刷新中"
+
+msgid "Cached · %@"
+msgstr "缓存 · %@"

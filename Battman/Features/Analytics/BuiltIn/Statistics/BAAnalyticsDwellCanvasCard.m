@@ -101,9 +101,10 @@
 - (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family { return BAStatisticsDwell(family.window); }
 - (UIViewController *)detailViewControllerForSelection:(BAAnalyticsDetailSelection *)selection size:(BAAnalyticsCardSize)size {
     [self deriveIfNeeded];
-    BAAnalyticsFamilyReport *family=[self.latestReport reportForFamily:self.familyIdentifier];
+    BAAnalyticsReport *report=self.displayedReport;
+    BAAnalyticsFamilyReport *family=[report reportForFamily:self.familyIdentifier];
     if (!self.analysis && (family.availability==BAAnalyticsReportAvailabilityReady || family.availability==BAAnalyticsReportAvailabilityPartial)) return nil;
-    BASDwellDetailViewController *detail=[[BASDwellDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier report:self.latestReport snapshot:self.latestSnapshot selection:selection ?: [self defaultDetailSelection]];
+    BASDwellDetailViewController *detail=[[BASDwellDetailViewController alloc] initWithDisplayName:self.analyticsCardDisplayName familyIdentifier:self.familyIdentifier report:report snapshot:self.latestSnapshot selection:[self selectionForDisplayedReport:selection]];
     detail.frozenAnalysis=self.analysis;
     return detail;
 }
