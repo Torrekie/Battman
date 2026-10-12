@@ -1,7 +1,9 @@
 #import <Foundation/Foundation.h>
 #import "../BAStatisticsAnalysis.h"
+#import "BAAnalyticsHistoryReader.h"
 #include <assert.h>
 #include <math.h>
+#include <sqlite3.h>
 
 static void near(double a,double b) {assert(fabs(a-b)<1e-6*MAX(1,fabs(b)));}
 static NSDate *at(double seconds) {return [NSDate dateWithTimeIntervalSince1970:seconds];}
@@ -86,6 +88,50 @@ static void comparisonTests(void) {
     result=BAStatisticsComparison(comparisonReport(@[gapped]));assert([result[@"n"] unsignedIntegerValue]==0);assert([result[@"exclusionCounts"][@"missing-trusted-pair"] integerValue]==1);
     result=BAStatisticsComparison(comparisonReport(@[good,good]));assert([result[@"n"] integerValue]==1);assert([result[@"exclusionCounts"][@"duplicate-session"] integerValue]==1);
 }
+static void readerComparisonTest(NSURL *directory) {
+    NSURL *source=[directory URLByAppendingPathComponent:@"synthetic-reader.sqlite"];
+    sqlite3 *database=NULL;
+    assert(sqlite3_open(source.path.fileSystemRepresentation,&database)==SQLITE_OK);
+    const double epoch=1700000000;
+    @try {
+        NSArray *schema=@[
+            @"CREATE TABLE PLStorageOperator_EventForward_TimeOffset (ID INTEGER PRIMARY KEY,timestamp REAL,system REAL)",
+            @"CREATE TABLE PLBatteryAgent_EventBackward_Battery (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,ExternalConnected INTEGER,IsCharging INTEGER,FullyCharged INTEGER,PMUConfiguration INTEGER,DesignCapacity INTEGER DEFAULT 2200,ChemID INTEGER DEFAULT 10,GaugeResetCounter INTEGER DEFAULT 2,Voltage INTEGER DEFAULT 4000,InstantAmperage INTEGER,AppleRawMaxCapacity INTEGER,CycleCount INTEGER DEFAULT 12)",
+            @"CREATE TABLE PLBatteryAgent_EventPoint_ChargingInfo (ID INTEGER PRIMARY KEY,timestamp REAL)",
+            [NSString stringWithFormat:@"INSERT INTO PLStorageOperator_EventForward_TimeOffset VALUES (1,%.0f,0)",epoch-3600],
+        ];
+        for (NSString *statement in schema) assert(sqlite3_exec(database,statement.UTF8String,NULL,NULL,NULL)==SQLITE_OK);
+        NSMutableArray *rows=[NSMutableArray array];
+        [rows addObject:@[@0,@18,@0]];
+        [rows addObject:@[@20,@18,@1]];
+        for (NSUInteger index=0;index<=12;index++) [rows addObject:@[@(80+index*60),@(20+index*5),@1]];
+        [rows addObjectsFromArray:@[@[@860,@85,@1],@[@880,@84,@0],@[@900,@83,@0],@[@920,@19,@1]]];
+        NSUInteger identifier=0;
+        for (NSArray<NSNumber *> *row in rows) {
+            identifier++;
+            BOOL connected=row[2].boolValue;
+            NSString *statement=[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_Battery (ID,timestamp,Level,ExternalConnected,IsCharging,FullyCharged,PMUConfiguration,InstantAmperage,AppleRawMaxCapacity) VALUES (%lu,%.0f,%@,%d,%d,0,%lu,%d,%lu)",
+                (unsigned long)identifier,epoch+row[0].doubleValue,row[1],connected,connected,
+                (unsigned long)(identifier*200),connected?1200:-100,(unsigned long)(2100+identifier%2)];
+            assert(sqlite3_exec(database,statement.UTF8String,NULL,NULL,NULL)==SQLITE_OK);
+        }
+    } @finally {sqlite3_close(database);}
+    @try {
+        BAAnalyticsReport *report=BAAnalyticsReadHistoryReport(source,at(epoch+1000),1,^BOOL{return NO;});
+        assert(!report.error && [report.sourceProfileIdentifier isEqual:@"powerlog.ios-battery.v1"]);
+        BAAnalyticsFamilyReport *family=report.familyReports[BAAnalyticsFamilyCompare];
+        NSDictionary *result=BAStatisticsComparison(family);
+        assert([result[@"n"] unsignedIntegerValue]==1 && ![result[@"hasBox"] boolValue]);
+        near([result[@"median"] doubleValue],12);
+        NSDictionary *sample=[result[@"samples"] firstObject];
+        near([sample[@"startDate"] timeIntervalSince1970],epoch+80);
+        near([sample[@"endDate"] timeIntervalSince1970],epoch+800);
+        assert([sample[@"context"][@"completeBoundaries"] boolValue]);
+        assert([result[@"exclusionCounts"][@"incomplete-session-boundaries"] unsignedIntegerValue]==1);
+        assert(!sample[@"peakCelsius"]); // No historical temperature units were verified.
+        propertyList(result);
+    } @finally {assert([NSFileManager.defaultManager removeItemAtURL:source error:NULL]);}
+}
 static NSDate *date(NSString *text) {NSDateFormatter *f=[NSDateFormatter new];f.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];f.dateFormat=@"yyyy-MM-dd HH:mm:ss Z";return [f dateFromString:text];}
 static void calendarTest(NSString *startText,NSString *endText,double elapsed,NSUInteger expectedHours,NSUInteger expectedLastDayHours) {
     NSDate *start=date(startText),*end=date(endText);double aTime=start.timeIntervalSince1970,bTime=end.timeIntervalSince1970;
@@ -113,4 +159,4 @@ static void rhythmTests(void) {
     near([result[@"validSeconds"] doubleValue],600);near([result[@"connectedSeconds"] doubleValue],600);near([result[@"missingSeconds"] doubleValue],2400);near([result[@"rate"] doubleValue],60);propertyList(result);
     result=BAStatisticsRhythm(window(0,60,@[a,b],@[pair(a,b,0,60,BAAnalyticsObservedStateUnknown)],@[]),calendar);near([result[@"validSeconds"] doubleValue],0);near([result[@"missingSeconds"] doubleValue],60);assert(!result[@"rate"]);
 }
-int main(void) {@autoreleasepool {dwellTests();comparisonTests();rhythmTests();boundedContextTest();puts("BAStatisticsAnalysisTests: clipped time weighting, field unions, gaps, complete crossings, observed peaks, quartiles, DST, zero/unknown states and property-list details passed");}return 0;}
+int main(int argc,const char *argv[]) {@autoreleasepool {assert(argc==2);dwellTests();comparisonTests();readerComparisonTest([NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[1]] isDirectory:YES]);rhythmTests();boundedContextTest();puts("BAStatisticsAnalysisTests: clipped time weighting, field unions, gaps, complete reader crossings, observed peaks, quartiles, DST, zero/unknown states and property-list details passed");}return 0;}

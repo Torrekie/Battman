@@ -403,6 +403,152 @@ static BAAnalyticsReport *ReadSources(NSArray<NSURL *> *sources, double seconds,
     return report;
 }
 
+static void TestRuntimePowerStateAndSelectedSession(void) {
+    NSURL *url = Fixture(NO, @[
+        OffsetRow(1, -3600, 0),
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN PMUConfiguration INTEGER",
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN ChemID INTEGER DEFAULT 10",
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN GaugeResetCounter INTEGER DEFAULT 2",
+        BatteryRow(1, 0, @17, @-100, @0, @0, @0),
+        BatteryRow(2, 20, @18, @1200, @1, @1, @0),
+        BatteryRow(3, 40, @50, @900, @1, @1, @0),
+        BatteryRow(4, 60, @85, @400, @1, @1, @0),
+        BatteryRow(5, 80, @84, @-100, @0, @0, @0),
+        BatteryRow(6, 100, @83, @-100, @0, @0, @0),
+        BatteryRow(7, 120, @20, @1200, @1, @1, @0),
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET PMUConfiguration=ID*200,AppleRawMaxCapacity=6000+(ID%2)",
+    ]);
+    BAAnalyticsReport *report = Read(url, 121, 46);
+    BAAnalyticsFamilyReport *family = report.familyReports[BAAnalyticsFamilySession];
+    NSArray<BAAnalyticsHistorySession *> *sessions = family.payload[BAAnalyticsPayloadSessions];
+    Assert(sessions.count == 2, "runtime PMU changes and FCC oscillation do not fragment observed cable sessions");
+    Assert(sessions[0].startBoundaryKnown && sessions[0].endBoundaryKnown && sessions[0].intervals.count == 2,
+        "PMU changes at cable edges retain a complete independently bounded charging session");
+    AssertNear([sessions[0].endDate timeIntervalSinceDate:sessions[0].startDate], 40,
+        "complete session retains its measured time range");
+    Assert(sessions[1].observations.count == 1 && [sessions[1].startDate isEqual:sessions[1].endDate],
+        "latest one-point connection remains available as separate evidence");
+    Assert(family.payload[BAAnalyticsPayloadSelectedSession] == sessions[0],
+        "newest singleton does not conceal the last drawable history");
+    NSArray *comparison = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+    Assert(comparison.count == 2 && [comparison containsObject:sessions[0]],
+        "ordinary regulator state does not exclude compatible complete charging evidence");
+    NSArray *transitions = report.familyReports[BAAnalyticsFamilyEvents].payload[BAAnalyticsPayloadTransitions];
+    Assert(transitions.count == 3, "runtime PMU changes do not erase connect and disconnect events");
+
+    sqlite3 *database = NULL;
+    Assert(sqlite3_open(url.path.fileSystemRepresentation, &database) == SQLITE_OK, "opened singleton fixture for its next sample");
+    @try {
+        Execute(database, BatteryRow(8, 140, @25, @1100, @1, @1, @0));
+        Execute(database, @"UPDATE PLBatteryAgent_EventBackward_Battery SET PMUConfiguration=1600 WHERE ID=8");
+    } @finally { sqlite3_close(database); }
+    family = Read(url, 141, 47).familyReports[BAAnalyticsFamilySession];
+    sessions = family.payload[BAAnalyticsPayloadSessions];
+    Assert(family.payload[BAAnalyticsPayloadSelectedSession] == sessions.lastObject && sessions.lastObject.intervals.count == 1,
+        "newest connection becomes selected as soon as a trusted drawable pair exists");
+}
+
+static NSURL *ComparisonSource(double first, double offset, NSArray<NSString *> *changes) {
+    NSMutableArray *statements = [NSMutableArray arrayWithObjects:
+        OffsetRow(1, first - 3600, offset),
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN ChemID INTEGER DEFAULT 10",
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN GaugeResetCounter INTEGER DEFAULT 2",
+        @"CREATE TABLE PLBatteryAgent_EventNone_BatteryConfig (ID INTEGER,timestamp REAL,AlgoChemID INTEGER,calibrationFlags INTEGER,BatterySerialChanged INTEGER,CycleCount INTEGER)",
+        [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (1,%.3f,10,0,0,12)", FixtureEpoch + first - 60],
+        BatteryRow(1, first, @17, @-100, @0, @0, @0),
+        BatteryRow(2, first + 60, @18, @1200, @1, @1, @0),
+        BatteryRow(3, first + 120, @50, @900, @1, @1, @0),
+        BatteryRow(4, first + 180, @85, @400, @1, @1, @0),
+        BatteryRow(5, first + 240, @84, @-100, @0, @0, @0), nil];
+    [statements addObjectsFromArray:changes ?: @[]];
+    return Fixture(YES, statements);
+}
+
+static void TestIndependentComparisonConfiguration(void) {
+    NSURL *current = ComparisonSource(600, 90, nil), *archive = ComparisonSource(0, 30, nil);
+    BAAnalyticsReport *report = ReadSources(@[current, archive], 1200, 48);
+    NSArray<BAAnalyticsHistorySession *> *sessions = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+    Assert(sessions.count == 2, "compatible complete sessions survive different database and clock segments");
+    for (BAAnalyticsHistorySession *session in sessions)
+        Assert(session.startBoundaryKnown && session.endBoundaryKnown && session.intervals.count == 2,
+            "each comparison candidate independently retains complete cable boundaries and trusted pairs");
+    for (BAAnalyticsHistoryInterval *interval in report.familyReports[BAAnalyticsFamilyDwell].window.intervals)
+        Assert(interval.duration <= 60, "cross-source comparison eligibility never joins a rotated-file gap");
+    report = ReadSources(@[current, ComparisonSource(0, 30, @[
+        [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (2,%.3f,20,1,1,1)", FixtureEpoch + 800],
+    ])], 1200, 49);
+    Assert([report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions] count] == 2,
+        "superseded archive configuration rows cannot invent a barrier in authoritative newer-source history");
+    NSURL *missingConnection = Fixture(YES, @[
+        OffsetRow(1, -3600, 30),
+        @"ALTER TABLE PLBatteryAgent_EventBackward_Battery RENAME TO SyntheticPriorBattery",
+        @"CREATE TABLE PLBatteryAgent_EventBackward_Battery (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,DesignCapacity INTEGER,CellVoltage0 INTEGER)",
+        [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_Battery VALUES (1,%.3f,18,6200,4000),(2,%.3f,85,6200,4100)",
+            FixtureEpoch + 60, FixtureEpoch + 180],
+    ]);
+    report = ReadSources(@[current, missingConnection], 1200, 50);
+    Assert([report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions] count] == 1,
+        "an older same-profile source missing connection metadata does not erase valid current complete sessions");
+
+    NSArray<NSString *> *archiveChanges = @[
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET ChemID=20",
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET ChemID=NULL",
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET DesignCapacity=6000",
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET GaugeResetCounter=1",
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET CycleCount=13",
+        @"UPDATE PLBatteryAgent_EventNone_BatteryConfig SET AlgoChemID=20",
+        @"UPDATE PLBatteryAgent_EventNone_BatteryConfig SET calibrationFlags=1",
+    ];
+    uint64_t sequence = 100;
+    for (NSString *change in archiveChanges) {
+        report = ReadSources(@[current, ComparisonSource(0, 30, @[change])], 1200, sequence++);
+        sessions = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+        Assert(sessions.count == 1 && sessions[0].startDate.timeIntervalSince1970 > FixtureEpoch + 600,
+            "known chemical, design, reset or config mismatch and missing optional identity exclude older candidates");
+    }
+
+    NSArray<NSArray<NSString *> *> *barriers = @[
+        @[[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (2,%.3f,20,0,0,12),(3,%.3f,10,0,0,12)",
+            FixtureEpoch + 560, FixtureEpoch + 580]],
+        @[[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (2,%.3f,10,1,0,12),(3,%.3f,10,0,0,12)",
+            FixtureEpoch + 560, FixtureEpoch + 580]],
+        @[[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (2,%.3f,10,0,1,12),(3,%.3f,10,0,0,12)",
+            FixtureEpoch + 560, FixtureEpoch + 580]],
+        @[[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES (2,%.3f,10,0,0,11),(3,%.3f,10,0,0,12)",
+            FixtureEpoch + 560, FixtureEpoch + 580]],
+    ];
+    for (NSArray<NSString *> *changes in barriers) {
+        report = ReadSources(@[ComparisonSource(600, 90, changes), archive], 1200, sequence++);
+        sessions = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+        Assert(sessions.count == 1 && sessions[0].startBoundaryKnown && sessions[0].endBoundaryKnown,
+            "configuration change and reversion across a source gap do not resurrect the previous comparison epoch");
+    }
+    report = ReadSources(@[ComparisonSource(600, 90, @[
+        [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventNone_BatteryConfig VALUES "
+            "(7,%.3f,20,0,0,12),(7,%.3f,10,0,0,12),(7,%.3f,20,0,0,12)",
+            FixtureEpoch + 560, FixtureEpoch + 560, FixtureEpoch + 560],
+    ]), archive], 1200, sequence++);
+    NSUInteger tiedEvents = 0;
+    for (BAAnalyticsObservation *observation in report.familyReports[BAAnalyticsFamilyCapacity].window.observations)
+        if (ObservationIsFromTable(observation, @"PLBatteryAgent_EventNone_BatteryConfig") &&
+            fabs(observation.sourceTimestamp - FixtureEpoch - 560) < .001) tiedEvents++;
+    Assert(tiedEvents == 2, "distinct configuration events with reused ID and timestamp survive while identical duplicates deduplicate");
+    sessions = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
+    Assert(sessions.count == 1 && sessions[0].startBoundaryKnown && sessions[0].endBoundaryKnown,
+        "same-ID same-timestamp configuration change and reversion exclude the earlier comparison epoch");
+    report = ReadSources(@[ComparisonSource(600, 90, @[@"UPDATE PLBatteryAgent_EventBackward_Battery SET DesignCapacity=NULL"]), archive], 1200, sequence++);
+    Assert([report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions] count] == 0,
+        "missing current design capacity cannot establish cross-session configuration compatibility");
+
+    NSURL *revertedArchive = ComparisonSource(0, 30, @[
+        BatteryRow(6, 300, @83, @-100, @0, @0, @0),
+        @"UPDATE PLBatteryAgent_EventBackward_Battery SET ChemID=20 WHERE ID=6",
+    ]);
+    report = ReadSources(@[current, revertedArchive], 1200, sequence++);
+    Assert([report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions] count] == 1,
+        "a matching chemical signature before a later changed signature remains excluded after reversion");
+}
+
 static void TestRotatedHistorySources(void) {
     NSURL *current = Fixture(YES, @[
         OffsetRow(1, -3600, 30), BatteryRow(1, 120, @20, @400, @1, @1, @0),
@@ -433,8 +579,9 @@ static void TestRotatedHistorySources(void) {
     Assert(sessions.count == 2 && !sessions[0].endBoundaryKnown && !sessions[1].startBoundaryKnown,
         "rotation splits connected sessions and keeps boundary uncertainty");
     NSArray<BAAnalyticsHistorySession *> *comparison = report.familyReports[BAAnalyticsFamilyCompare].payload[BAAnalyticsPayloadSessions];
-    Assert(comparison.count == 1 && [comparison[0].identifier isEqual:sessions[1].identifier],
-        "comparison excludes old-file segments whose compatibility cannot be established");
+    Assert(comparison.count == 2 && [comparison[0].identifier isEqual:sessions[0].identifier] &&
+        [comparison[1].identifier isEqual:sessions[1].identifier],
+        "measurement-compatible source fragments retain their separate incomplete boundaries for comparison exclusions");
     for (BAAnalyticsObservation *point in window.observations) {
         Assert(point.values[BAAnalyticsHistoryTemperatureCelsius] == nil && !point.fieldMetadata[BAAnalyticsHistoryTemperatureCelsius].unitValidated,
             "archive composition cannot promote unverified units");
@@ -879,6 +1026,18 @@ static void TestPersistentHistoryService(void) {
     Assert(WaitUntil(^BOOL { return weakWarm == nil; }, 3), "warm service released after unsubscribing without polling backlog");
     NSData *validEnvelope = [NSData dataWithContentsOfURL:completed];
     Assert(validEnvelope.length > 0, "completed cache is present on disk before cold bootstrap");
+    for (NSUInteger revision = 0; revision < 3; revision++) {
+        NSMutableDictionary *legacyEnvelope = MutableCacheFixture(validEnvelope);
+        if (!revision) [legacyEnvelope removeObjectForKey:@"interpretationVersion"];
+        else legacyEnvelope[@"interpretationVersion"] = revision == 1 ? @1 : @99;
+        Assert([CacheFixtureData(legacyEnvelope) writeToURL:completed atomically:YES], "wrote synthetic incompatible reader interpretation");
+        HistorySubscriber *legacySubscriber = [HistorySubscriber new];
+        BAAnalyticsHistoryService *legacyService = InactiveCachedService(source, cache, legacySubscriber);
+        Assert(legacyService.latestReport == nil && legacySubscriber.deliveries == 0,
+            "old or unknown reader interpretations cannot restore obsolete session eligibility");
+        [legacyService removeSubscriber:legacySubscriber];
+    }
+    Assert([validEnvelope writeToURL:completed atomically:YES], "restored current interpretation cache after migration checks");
     HistorySubscriber *coldSubscriber = [HistorySubscriber new];
     BAAnalyticsHistoryService *cold = InactiveCachedService(source, cache, coldSubscriber);
     Assert(cold.latestReport.isCached && [cold.latestReport.generatedAt isEqual:original.generatedAt] && coldSubscriber.deliveries == 1,
@@ -1064,6 +1223,8 @@ int main(void) {
 			TestConfigurationEpochBoundaries();
 			TestPlatformCadenceUnvalidatedTimeAndSparseCapacity();
 			TestWirelessCandidateUnits();
+			TestRuntimePowerStateAndSelectedSession();
+			TestIndependentComparisonConfiguration();
 			TestRotatedHistorySources();
 			TestRotatedSourceBounds();
 			TestCachedReportGraph();

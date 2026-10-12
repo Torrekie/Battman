@@ -24,6 +24,8 @@ static BAAnalyticsReport *BACancelledHistoryReport(NSDate *endDate, uint64_t seq
 @interface BAHistoryRecord : NSObject
 @property (nonatomic, strong) BAAnalyticsObservation *observation;
 @property (nonatomic, copy) NSString *segment;
+@property (nonatomic, copy) NSDictionary<NSString *, id> *comparisonConfiguration;
+@property (nonatomic, strong) NSDate *cycleResetDate;
 @property (nonatomic) BOOL ambiguousTimestamp;
 @end
 @implementation BAHistoryRecord
@@ -266,6 +268,7 @@ static NSArray<BAHistoryRecord *> *BANormalize(NSArray<NSDictionary *> *rows, NS
 	NSMutableSet *seen = [NSMutableSet set];
 	BOOL unvalidatedTimestamp = NO;
 	NSNumber *previousCycle = nil, *cycleEpoch = nil;
+	NSDictionary *previousComparisonConfiguration = nil;
 	NSUInteger checked = 0;
 	for (NSDictionary *row in rows) @autoreleasepool {
 		if ((checked++ & 63) == 0 && cancelled()) return nil;
@@ -289,22 +292,43 @@ static NSArray<BAHistoryRecord *> *BANormalize(NSArray<NSDictionary *> *rows, NS
 		NSNumber *current = values[BAAnalyticsHistoryCurrentMilliamps], *voltage = values[BAAnalyticsHistoryVoltageMillivolts];
 		if (current && voltage) values[BAAnalyticsHistoryBatteryPowerWatts] = @(current.doubleValue * voltage.doubleValue / 1000000.0);
 		NSMutableString *fallbackKey = [NSMutableString string];
-		if (!row[@"ID"])
+		BOOL configurationRecord = [table isEqual:BAConfigTable];
+		if (!row[@"ID"] || configurationRecord)
 			for (NSString *column in [row.allKeys sortedArrayUsingSelector:@selector(compare:)]) [fallbackKey appendFormat:@"%@=%@;", column, row[column]];
 		NSString *key = [NSString stringWithFormat:@"%@/%@/%@/%.9f", databaseIdentity, table, row[@"ID"] ?: BAStableIdentifier(fallbackKey), raw];
+		// Config IDs and timestamps can be reused by distinct change events.
+		// Preserve those events without changing Battery record identities;
+		// equal complete rows still deduplicate normally.
+		if (configurationRecord && row[@"ID"]) key = [key stringByAppendingFormat:@"/values:%@", BAStableIdentifier(fallbackKey)];
 		NSString *identifier = BAStableIdentifier(key);
 		if ([seen containsObject:identifier]) continue;
 		[seen addObject:identifier];
 		// Offset changes, gauge resets and battery/configuration changes prohibit interpolation.
 		NSMutableString *segment = [NSMutableString stringWithFormat:@"source:%@/offset:%.9f@%.9f", databaseIdentity,
 			[offset[@"system"] doubleValue], [offset[@"segmentStart"] doubleValue]];
-		for (NSString *column in @[@"ChemID", @"PMUConfiguration", @"DesignCapacity", @"GaugeResetCounter"])
+		// PMUConfiguration changes during ordinary charging and is not a
+		// battery identity or sampling-continuity signal.
+		for (NSString *column in @[@"ChemID", @"DesignCapacity", @"GaugeResetCounter"])
 			if (row[column]) [segment appendFormat:@"/%@:%@", column, row[column]];
 		if (cycleEpoch) [segment appendFormat:@"/cycle-epoch:%@", cycleEpoch];
 		NSString *configurationEpoch = BAConfigurationEpochForTimestamp(raw, configurationEpochs);
 		if (configurationEpoch) [segment appendFormat:@"/configuration:%@", configurationEpoch];
 		BAHistoryRecord *record = [BAHistoryRecord new];
 		record.segment = segment;
+		if ([table isEqual:BABatteryTable] || [table isEqual:BAConfigTable]) {
+			NSMutableDictionary *configuration = [NSMutableDictionary dictionary];
+			NSArray *configurationColumns = [table isEqual:BAConfigTable] ?
+				@[@"AlgoChemID", @"calibrationFlags", @"BatterySerialChanged", @"CycleCount"] :
+				@[@"ChemID", @"DesignCapacity", @"GaugeResetCounter"];
+			for (NSString *column in configurationColumns) configuration[column] = row[column] ?: NSNull.null;
+			if (![configuration isEqual:previousComparisonConfiguration]) previousComparisonConfiguration = configuration.copy;
+			record.comparisonConfiguration = previousComparisonConfiguration;
+		}
+		if (cycleEpoch && [table isEqual:BABatteryTable]) {
+			NSDictionary *resetOffset = BAOffsetForTimestamp(cycleEpoch.doubleValue, offsets);
+			if (resetOffset) record.cycleResetDate = [NSDate dateWithTimeIntervalSince1970:
+				cycleEpoch.doubleValue + [resetOffset[@"system"] doubleValue]];
+		}
 		record.observation = [[BAAnalyticsObservation alloc] initWithIdentifier:identifier timestamp:timestamp sourceTimestamp:raw
 			timestampValidated:YES values:values fieldMetadata:metadata];
 		[records addObject:record];
@@ -534,6 +558,99 @@ static NSArray *BAFilterSessions(NSArray<BAAnalyticsHistorySession *> *sessions,
 	return filtered;
 }
 
+static BAAnalyticsHistorySession *BASelectedSession(NSArray<BAAnalyticsHistorySession *> *sessions) {
+	// A newly sampled cable state can contain just one point. Keep it in the
+	// session collection, while showing the latest observed drawable history.
+	for (BAAnalyticsHistorySession *session in sessions.reverseObjectEnumerator) {
+		if ([session.endDate compare:session.startDate] != NSOrderedDescending) continue;
+		for (BAAnalyticsHistoryInterval *interval in session.intervals)
+			if ([interval.coveredMetricIdentifiers containsObject:BAAnalyticsHistorySOCPercent] ||
+				[interval.coveredMetricIdentifiers containsObject:BAAnalyticsHistoryCurrentMilliamps]) return session;
+	}
+	return sessions.lastObject;
+}
+
+static NSNumber *BAConfigurationNumber(id value) {
+	return [value isKindOfClass:NSNumber.class] && isfinite([value doubleValue]) ? value : nil;
+}
+
+static NSSet<NSString *> *BAComparisonRecordIdentifiers(NSArray<BAHistoryRecord *> *records,
+	NSArray<BAHistoryRecord *> *configRecords, NSString *profile, BOOL (^cancelled)(void)) {
+	if (!records.count || [profile isEqual:@"powerlog.unknown"]) return [NSSet set];
+	NSDictionary *latestFields = records.lastObject.observation.fieldMetadata;
+	NSArray *requiredMetrics = @[BAAnalyticsHistorySOCPercent, BAAnalyticsHistoryExternalConnected];
+	NSMutableDictionary *descriptors = [NSMutableDictionary dictionary];
+	for (NSString *metric in requiredMetrics) {
+		BAAnalyticsFieldMetadata *field = latestFields[metric];
+		if (!field.unitValidated || ![field.sourceTable isEqual:BABatteryTable]) return [NSSet set];
+		descriptors[metric] = @[field.sourceTable, field.sourceColumn, field.unit, field.decoderIdentifier];
+	}
+	// The composed Config collection has already applied newer-source overlap
+	// authority. Detect its actual wall-clock events, not per-file epoch hashes.
+	NSDate *latestDate = records.lastObject.observation.timestamp, *barrier = nil;
+	NSDictionary *previousConfig = nil;
+	for (BAHistoryRecord *record in configRecords) {
+		if (cancelled()) return nil;
+		if ([record.observation.timestamp compare:latestDate] == NSOrderedDescending) break;
+		NSDictionary *config = record.comparisonConfiguration;
+		BOOL changed = BAConfigurationNumber(config[@"BatterySerialChanged"]).boolValue &&
+			!BAConfigurationNumber(previousConfig[@"BatterySerialChanged"]).boolValue;
+		for (NSString *key in @[@"AlgoChemID", @"calibrationFlags"]) {
+			NSNumber *previous = BAConfigurationNumber(previousConfig[key]), *current = BAConfigurationNumber(config[key]);
+			if (previous && current && ![previous isEqual:current]) changed = YES;
+		}
+		NSNumber *previousCycle = BAConfigurationNumber(previousConfig[@"CycleCount"]);
+		NSNumber *currentCycle = BAConfigurationNumber(config[@"CycleCount"]);
+		if (previousCycle && currentCycle && currentCycle.doubleValue < previousCycle.doubleValue) changed = YES;
+		if (changed) barrier = record.observation.timestamp;
+		previousConfig = config;
+	}
+	NSUInteger configIndex = 0, checked = 0;
+	NSDictionary *config = nil;
+	NSDictionary *previousCompatibility = nil;
+	NSNumber *previousCycle = nil;
+	for (BAHistoryRecord *record in records) {
+		if ((checked++ & 63) == 0 && cancelled()) return nil;
+		while (configIndex < configRecords.count &&
+			[configRecords[configIndex].observation.timestamp compare:record.observation.timestamp] != NSOrderedDescending)
+			config = configRecords[configIndex++].comparisonConfiguration;
+		NSMutableDictionary *compatibility = [record.comparisonConfiguration mutableCopy];
+		for (NSString *key in @[@"AlgoChemID", @"calibrationFlags"])
+			compatibility[key] = config[key] ?: NSNull.null;
+		for (NSString *metric in requiredMetrics) {
+			BAAnalyticsFieldMetadata *field = record.observation.fieldMetadata[metric];
+			BAAnalyticsFieldMetadata *latest = latestFields[metric];
+			BOOL matches = field.unitValidated && [field.sourceTable isEqual:latest.sourceTable] &&
+				[field.sourceColumn isEqual:latest.sourceColumn] && [field.unit isEqual:latest.unit] &&
+				[field.decoderIdentifier isEqual:latest.decoderIdentifier];
+			// Unknown older metadata is a cohort boundary, not a reason to erase
+			// valid newer sessions. Reuse the two immutable descriptor arrays.
+			compatibility[metric] = matches ? descriptors[metric] : NSNull.null;
+		}
+		if (![compatibility isEqual:previousCompatibility]) previousCompatibility = compatibility.copy;
+		record.comparisonConfiguration = previousCompatibility;
+		NSNumber *cycle = record.observation.values[BAAnalyticsHistoryCycleCount];
+		NSDate *reset = record.cycleResetDate;
+		if (cycle && previousCycle && cycle.doubleValue < previousCycle.doubleValue)
+			reset = reset ? [reset laterDate:record.observation.timestamp] : record.observation.timestamp;
+		if (reset && (!barrier || [reset compare:barrier] == NSOrderedDescending)) barrier = reset;
+		if (cycle) previousCycle = cycle;
+	}
+	NSDictionary *latest = records.lastObject.comparisonConfiguration;
+	NSNumber *design = BAConfigurationNumber(records.lastObject.observation.values[BAAnalyticsHistoryDesignCapacityMilliampHours]);
+	if (!design || design.doubleValue <= 0) return [NSSet set];
+	NSMutableSet *compatible = [NSMutableSet set];
+	for (BAHistoryRecord *record in records.reverseObjectEnumerator) {
+		if ((checked++ & 63) == 0 && cancelled()) return nil;
+		// Stop permanently at the first proved change. A later reversion must
+		// never make earlier batteries/configurations compatible again.
+		if ((barrier && [record.observation.timestamp compare:barrier] == NSOrderedAscending) ||
+			![record.comparisonConfiguration isEqual:latest]) break;
+		[compatible addObject:record.observation.identifier];
+	}
+	return compatible;
+}
+
 
 static NSUInteger BATableRecordLimit(NSString *table) {
     if ([table isEqual:BABatteryTable]) return 40000;
@@ -748,13 +865,9 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
 	NSArray *batteryIntervals = BAIntervals(batteryRecords, cadence, cancelled), *transitions = BATransitions(batteryRecords, cadence, cancelled);
 	NSArray *canonicalIntervals = BACanonicalIntervals(batteryIntervals, BAIntervals(tableRecords[BABatteryUITable] ?: @[], 900, cancelled), cancelled);
 	NSArray *sessions = BASessions(batteryRecords, batteryIntervals, transitions, cadence, cancelled);
-	NSMutableSet *compatibleStarts = [NSMutableSet set];
-	NSString *currentSegment = [batteryRecords.lastObject segment];
+	NSSet *compatibleStarts = BAComparisonRecordIdentifiers(batteryRecords, tableRecords[BAConfigTable] ?: @[], profile, cancelled);
 	NSUInteger checked = 0;
-	for (BAHistoryRecord *record in batteryRecords) {
-		if ((checked++ & 63) == 0 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
-		if ([record.segment isEqual:currentSegment]) [compatibleStarts addObject:record.observation.identifier];
-	}
+	if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
 	NSMutableDictionary *families = [NSMutableDictionary dictionary];
 	for (NSString *family in @[BAAnalyticsFamilyLive, BAAnalyticsFamilyCapacity, BAAnalyticsFamilyCells, BAAnalyticsFamilySession, BAAnalyticsFamilyDischarge,
 		BAAnalyticsFamilyEvents, BAAnalyticsFamilyPath, BAAnalyticsFamilyDwell, BAAnalyticsFamilyCompare, BAAnalyticsFamilyRhythm]) @autoreleasepool {
@@ -797,7 +910,7 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
 				ownedSessions = compatible;
 			}
 			payload[BAAnalyticsPayloadSessions] = ownedSessions;
-			if (ownedSessions.count && ![family isEqual:BAAnalyticsFamilyCompare]) payload[BAAnalyticsPayloadSelectedSession] = ownedSessions.lastObject;
+			if (ownedSessions.count && ![family isEqual:BAAnalyticsFamilyCompare]) payload[BAAnalyticsPayloadSelectedSession] = BASelectedSession(ownedSessions);
 			hasValues = ownedSessions.count > 0;
 		}
 		if ([family isEqual:BAAnalyticsFamilyEvents]) {
@@ -815,7 +928,7 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
 		if (capacity) [familyLimitations addObject:@"FCC/configuration records are sparse point observations, not continuous 30-day coverage."];
 		if ([family isEqual:BAAnalyticsFamilyLive]) [familyLimitations addObject:@"This is a historical Powerlog window, not evidence of the current device state; use the live metric snapshot and its age."];
 		if ([family isEqual:BAAnalyticsFamilyRhythm]) [familyLimitations addObject:@"BatteryUI.IsCharging does not prove unplugged state; rhythm uses only validated Battery connection intervals."];
-		if ([family isEqual:BAAnalyticsFamilyCompare]) [familyLimitations addObject:@"Comparison candidates are limited to the latest recognized clock/battery/configuration segment; other segments are excluded. Schema/configuration compatibility cannot prove physical battery identity. Normal FCC fluctuations do not establish replacement."];
+		if ([family isEqual:BAAnalyticsFamilyCompare]) [familyLimitations addObject:@"Comparison candidates require compatible primary-battery measurement decoders and positive matching design capacity, with no observed chemical, configuration, gauge or cycle-reset boundary. Missing optional identity fields do not establish physical battery identity. Each session retains its own clock/source gaps; normal FCC fluctuations and PMU runtime state do not establish replacement."];
 		if ([family isEqual:BAAnalyticsFamilySession] || [family isEqual:BAAnalyticsFamilyDischarge] || [family isEqual:BAAnalyticsFamilyCompare])
 			[familyLimitations addObject:@"Sampled process boundaries are approximate. A clock/source/configuration gap starts a new partial session with unknown boundary."];
 		families[family] = [[BAAnalyticsFamilyReport alloc] initWithFamily:family availability:availability window:window payload:payload limitations:familyLimitations];

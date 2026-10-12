@@ -17,15 +17,18 @@ BAAnalyticsFamilyReport *BAProcessFamily(BAAnalyticsCanvasView *view) {
 
 BAAnalyticsHistorySession *BAProcessSession(BAAnalyticsFamilyReport *report, NSString *kind) {
     id selected = report.payload[BAAnalyticsPayloadSelectedSession];
-    if ([selected isKindOfClass:[BAAnalyticsHistorySession class]] && [[selected kind] isEqualToString:kind]) return selected;
+    BOOL hasSelected = [selected isKindOfClass:[BAAnalyticsHistorySession class]] && [[selected kind] isEqualToString:kind];
+    if (hasSelected && [[selected endDate] compare:[selected startDate]] == NSOrderedDescending && [[selected intervals] count]) return selected;
     id sessions = report.payload[BAAnalyticsPayloadSessions];
-    if (![sessions isKindOfClass:[NSArray class]]) return nil;
-    BAAnalyticsHistorySession *latest = nil;
+    if (![sessions isKindOfClass:[NSArray class]]) return hasSelected ? selected : nil;
+    BAAnalyticsHistorySession *latest = nil, *drawable = nil;
     for (id session in sessions) {
         if (![session isKindOfClass:[BAAnalyticsHistorySession class]] || ![[session kind] isEqualToString:kind]) continue;
         if (!latest || [[session endDate] compare:latest.endDate] == NSOrderedDescending) latest = session;
+        if ([[session endDate] compare:[session startDate]] == NSOrderedDescending && [[session intervals] count] &&
+            (!drawable || [[session endDate] compare:drawable.endDate] == NSOrderedDescending)) drawable = session;
     }
-    return latest;
+    return drawable ?: (hasSelected ? selected : latest);
 }
 
 static NSDateFormatter *BAProcessFormatter(NSString *format) {

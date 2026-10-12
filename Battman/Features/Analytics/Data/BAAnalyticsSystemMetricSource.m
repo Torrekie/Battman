@@ -149,6 +149,51 @@ static NSNumber *BAAnalyticsCopyPowerSourceBoolean(io_service_t service, CFStrin
 	return value;
 }
 
+static NSArray<NSNumber *> *BAAnalyticsCopyPrimaryCellVoltages(void) {
+	// AppleSmartBattery is the built-in battery, unlike accessory power-source
+	// entries. Adopt its CellVoltage array only when the same dictionary's
+	// established mV pack voltage verifies the channel units and topology.
+	io_service_t service = IOServiceGetMatchingService(0, IOServiceMatching("AppleSmartBattery"));
+	if (!service) return nil;
+	CFTypeRef property = IORegistryEntryCreateCFProperty(service, CFSTR("BatteryData"), kCFAllocatorDefault, 0);
+	IOObjectRelease(service);
+	NSMutableArray<NSNumber *> *result = nil;
+	if (property && CFGetTypeID(property) == CFDictionaryGetTypeID()) {
+		CFTypeRef cells = CFDictionaryGetValue((CFDictionaryRef)property, CFSTR("CellVoltage"));
+		if (cells && CFGetTypeID(cells) == CFArrayGetTypeID()) {
+			CFIndex count = CFArrayGetCount((CFArrayRef)cells);
+			if (count > 0 && count <= 10) {
+				result = [NSMutableArray arrayWithCapacity:(NSUInteger)count];
+				for (CFIndex index = 0; index < count; index++) {
+					CFTypeRef cell = CFArrayGetValueAtIndex((CFArrayRef)cells, index);
+					double voltage = NAN;
+					if (!cell || CFGetTypeID(cell) != CFNumberGetTypeID() ||
+						!CFNumberGetValue((CFNumberRef)cell, kCFNumberDoubleType, &voltage) ||
+						!isfinite(voltage) || voltage <= 0 || voltage >= UINT16_MAX || floor(voltage) != voltage) {
+						result = nil; break;
+					}
+					[result addObject:@(voltage)];
+				}
+			}
+		}
+		// The primary pack Voltage is established in mV. Require the same
+		// dictionary's series-cell sum to agree before adopting an unfamiliar
+		// registry profile; never rescale values or infer accessory units. The
+		// small tolerance accommodates rounded/non-atomic gauge readings and
+		// is a unit consistency check, not an imbalance/fault threshold.
+		CFTypeRef pack = CFDictionaryGetValue((CFDictionaryRef)property, CFSTR("Voltage"));
+		double packVoltage = NAN, sum = 0;
+		for (NSNumber *voltage in result) sum += voltage.doubleValue;
+		if (!pack || CFGetTypeID(pack) != CFNumberGetTypeID() ||
+			!CFNumberGetValue((CFNumberRef)pack, kCFNumberDoubleType, &packVoltage) ||
+			!isfinite(packVoltage) || packVoltage <= 0 || packVoltage >= UINT16_MAX ||
+			floor(packVoltage) != packVoltage || fabs(sum - packVoltage) > MAX(10.0, packVoltage * .02))
+			result = nil;
+	}
+	if (property) CFRelease(property);
+	return [result copy];
+}
+
 static void BAAnalyticsReadObservedChargingMetrics(NSMutableDictionary<NSString *, NSNumber *> *values,
 													NSNumber *SMCConnected) {
 	NSNumber *connected = nil;
@@ -310,6 +355,22 @@ static void BAAnalyticsReadChargingLimitMetrics(NSMutableDictionary<NSString *, 
 					values[BAAnalyticsMetricInputVoltageMillivolts] = @(inputVoltage * 1000.0);
 				if (values[BAAnalyticsMetricInputCurrentMilliamps] && values[BAAnalyticsMetricInputVoltageMillivolts])
 					values[BAAnalyticsMetricInputPowerWatts] = @(inputCurrent * inputVoltage);
+			}
+		}
+		NSUInteger observedCells = 0;
+		for (NSUInteger index = 0; index < 10; index++)
+			if (values[BAAnalyticsCellVoltageMetricIdentifier(index)]) observedCells++;
+		NSNumber *count = values[BAAnalyticsMetricCellCount];
+		if (!count || observedCells != count.unsignedIntegerValue) {
+			NSArray<NSNumber *> *primaryCells = BAAnalyticsCopyPrimaryCellVoltages();
+			if (primaryCells.count) {
+				// Replace the complete set, never combine an SMC partial reading with
+				// a registry reading acquired later or from a different channel set.
+				for (NSUInteger index = 0; index < 10; index++)
+					[values removeObjectForKey:BAAnalyticsCellVoltageMetricIdentifier(index)];
+				values[BAAnalyticsMetricCellCount] = @(primaryCells.count);
+				for (NSUInteger index = 0; index < primaryCells.count; index++)
+					values[BAAnalyticsCellVoltageMetricIdentifier(index)] = primaryCells[index];
 			}
 		}
 	}

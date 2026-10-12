@@ -3516,3 +3516,25 @@ msgstr "Cache · %@"
 
 msgid "Edit"
 msgstr "Bearbeiten"
+
+msgid "Cached current reading"
+msgstr "Zwischengespeicherter aktueller Messwert"
+
+msgid "Current reading"
+msgstr "Aktueller Messwert"
+
+msgid "No cell readings"
+msgstr "Keine Zellmesswerte"
+
+msgid "Current cell voltages"
+msgstr "Aktuelle Zellspannungen"
+
+#, objc-format
+msgid "%lu valid · %lu shown"
+msgstr "%lu gültig · %lu sichtbar"
+
+msgid "Previous session"
+msgstr "Vorherige Sitzung"
+
+msgid "Newest connection has one reading; showing previous session"
+msgstr "Die letzte Verbindung enthält einen Messwert; die vorherige Sitzung wird angezeigt"

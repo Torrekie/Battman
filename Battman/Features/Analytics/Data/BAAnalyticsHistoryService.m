@@ -5,6 +5,9 @@
 #include <zlib.h>
 
 static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
+// A reader interpretation change must not restore a report produced by the
+// earlier session/configuration rules, even when its graph format is valid.
+static NSUInteger const BAHistoryCacheInterpretationVersion = 2;
 NSString *const BAAnalyticsHistoryServiceDidPublishNotification = @"BAAnalyticsHistoryServiceDidPublish";
 
 static NSURL *BAHistoryCacheDirectory(void) {
@@ -207,6 +210,7 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 			BAAnalyticsReport *cached = nil;
 			NSError *decodeError = nil;
 			if ([envelope isKindOfClass:NSDictionary.class] && [envelope[@"version"] isEqual:@1] &&
+				[envelope[@"interpretationVersion"] isEqual:@(BAHistoryCacheInterpretationVersion)] &&
 				identity && [envelope[@"source"] isEqual:identity] && [envelope[@"report"] isKindOfClass:NSData.class])
 				cached = BAAnalyticsDecodeCachedReportCancellable(envelope[@"report"], NSDate.date, &decodeError, ^BOOL { return cancellation.cancelled; });
 #if DEBUG
@@ -251,7 +255,8 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 		return;
 	}
 	[self.cacheDirectoryURL setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:NULL];
-	NSData *envelope = [NSPropertyListSerialization dataWithPropertyList:@{@"version": @1, @"source": identity, @"report": encoded}
+	NSData *envelope = [NSPropertyListSerialization dataWithPropertyList:@{@"version": @1,
+		@"interpretationVersion": @(BAHistoryCacheInterpretationVersion), @"source": identity, @"report": encoded}
 		format:NSPropertyListBinaryFormat_v1_0 options:0 error:&error];
 	if (!envelope) {
 #if DEBUG

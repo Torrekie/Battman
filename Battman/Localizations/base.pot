@@ -3475,3 +3475,25 @@ msgstr ""
 
 msgid "Edit"
 msgstr ""
+
+msgid "Cached current reading"
+msgstr ""
+
+msgid "Current reading"
+msgstr ""
+
+msgid "No cell readings"
+msgstr ""
+
+msgid "Current cell voltages"
+msgstr ""
+
+#, objc-format
+msgid "%lu valid · %lu shown"
+msgstr ""
+
+msgid "Previous session"
+msgstr ""
+
+msgid "Newest connection has one reading; showing previous session"
+msgstr ""

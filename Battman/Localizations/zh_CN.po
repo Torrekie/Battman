@@ -3517,3 +3517,25 @@ msgstr "缓存 · %@"
 
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Cached current reading"
+msgstr "缓存的当前读数"
+
+msgid "Current reading"
+msgstr "当前读数"
+
+msgid "No cell readings"
+msgstr "无电芯读数"
+
+msgid "Current cell voltages"
+msgstr "当前电芯电压"
+
+#, objc-format
+msgid "%lu valid · %lu shown"
+msgstr "%lu 有效 · 显示 %lu"
+
+msgid "Previous session"
+msgstr "此前会话"
+
+msgid "Newest connection has one reading; showing previous session"
+msgstr "最新接电片段只有一个读数，显示此前会话"

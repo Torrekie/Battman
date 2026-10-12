@@ -19,6 +19,7 @@
 #import "../../Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsLiveDrawing.h"
 #import "../../Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsDrawing.h"
 #import "../../Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsProcessDrawing.h"
+#import "../../Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsSessionCanvasCard.h"
 #import <objc/message.h>
 #include <math.h>
 static void DrainUI(void) { NSDate *end=[NSDate dateWithTimeIntervalSinceNow:.25]; while([end timeIntervalSinceNow]>0) [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:end]; }
@@ -561,6 +562,180 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         [self.navigation popViewControllerAnimated:NO];DrainUI();[cell setAnalyticsCardDisplayed:NO];
     }
     Require(detailCount==7,@"Optional card detail scope changed unexpectedly");
+}
+- (void)testSessionSingletonFallback {
+    BAAnalyticsReport *base = BAFixtureReport(@"ready");
+    BAAnalyticsFamilyReport *original = base.familyReports[BAAnalyticsFamilySession];
+    BAAnalyticsHistorySession *previous = original.payload[BAAnalyticsPayloadSelectedSession];
+    NSDate *date = [previous.endDate dateByAddingTimeInterval:60];
+    BAAnalyticsObservation *point = [[BAAnalyticsObservation alloc] initWithIdentifier:@"synthetic.latest.single"
+        timestamp:date sourceTimestamp:date.timeIntervalSince1970 timestampValidated:YES
+        values:previous.observations.lastObject.values fieldMetadata:previous.observations.lastObject.fieldMetadata];
+    BAAnalyticsHistorySession *latest = [[BAAnalyticsHistorySession alloc] initWithIdentifier:@"synthetic.latest.connection"
+        kind:@"connected" startDate:date endDate:date startBoundaryKnown:NO endBoundaryKnown:NO
+        observations:@[point] intervals:@[] gaps:@[] transitions:@[]];
+    BAAnalyticsFamilyReport *family = [[BAAnalyticsFamilyReport alloc] initWithFamily:BAAnalyticsFamilySession
+        availability:BAAnalyticsReportAvailabilityPartial window:original.window
+        payload:@{BAAnalyticsPayloadSessions:@[previous,latest],BAAnalyticsPayloadSelectedSession:latest}
+        limitations:@[@"Synthetic newest connection contains one observation"]];
+    NSMutableDictionary *families = [base.familyReports mutableCopy]; families[BAAnalyticsFamilySession] = family;
+    BAFixtureHistoryService *history = [BAFixtureHistoryService new];
+    history.fixtureReport = [[BAAnalyticsReport alloc] initWithSequenceNumber:2 generatedAt:date
+        sourceProfileIdentifier:base.sourceProfileIdentifier fieldMetadata:base.fieldMetadata familyReports:families error:nil];
+    BAAnalyticsCanvasCard *card = [BAAnalyticsSessionCanvasCard new]; card.historyService = history;
+    for (NSString *language in @[@"en",@"zh_CN",@"de"]) {
+        FixtureLanguage = language;
+        for (NSNumber *sizeNumber in BAAnalyticsCardOrderedSizesForMask(card.supportedAnalyticsCardSizes)) @autoreleasepool {
+            BAAnalyticsCardSize size = sizeNumber.integerValue; CGSize span = BAAnalyticsCardGridSpan(size);
+            BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,138*span.width+12*(span.width-1),138*span.height+12*(span.height-1))];
+            [cell configureWithCard:card size:size editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+            [cell applyMetricSnapshot:self.metrics.fixtureSnapshot]; [self.window addSubview:cell]; AwaitPreparedCanvases(cell);
+            BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+            BAAnalyticsDetailSelection *selection = canvas.hitRegions.firstObject.selection;
+            Require([selection.context[@"sessionIdentifier"] isEqual:previous.identifier] &&
+                [selection.context[@"showingPreviousSession"] boolValue] && [selection.startDate isEqual:previous.startDate],
+                @"Newest singleton hid the drawable session or changed its selected evidence");
+            Require([canvas.accessibilityLabel containsString:cond_localize("Newest connection has one reading; showing previous session")],
+                @"Previous-session presentation omitted its provenance");
+            NSString *name = [NSString stringWithFormat:@"session-previous-%ld-%@.png",(long)size,language];
+            [self saveView:cell name:name]; [self.manifest addObject:@{@"image":name,@"family":BAAnalyticsFamilySession,@"size":@(size),@"language":language}];
+            [cell configureWithCard:card size:size editing:YES]; [cell layoutIfNeeded];
+            Require(![canvas accessibilityActivate],@"Fallback session opened details during editing");
+            [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
+        }
+    }
+    FixtureLanguage = @"en";
+    BAAnalyticsFamilyReport *compare = base.familyReports[BAAnalyticsFamilyCompare];
+    BAAnalyticsFamilyReport *one = [[BAAnalyticsFamilyReport alloc] initWithFamily:BAAnalyticsFamilyCompare
+        availability:BAAnalyticsReportAvailabilityReady window:compare.window
+        payload:@{BAAnalyticsPayloadSessions:@[[compare.payload[BAAnalyticsPayloadSessions] firstObject]]} limitations:compare.limitations];
+    families[BAAnalyticsFamilyCompare] = one;
+    history.fixtureReport = [[BAAnalyticsReport alloc] initWithSequenceNumber:3 generatedAt:date
+        sourceProfileIdentifier:base.sourceProfileIdentifier fieldMetadata:base.fieldMetadata familyReports:families error:nil];
+    card = (id)BAAnalyticsCreateCompareCanvasCard(); card.historyService = history;
+    for (NSNumber *sizeNumber in BAAnalyticsCardOrderedSizesForMask(card.supportedAnalyticsCardSizes)) @autoreleasepool {
+        BAAnalyticsCardSize size = sizeNumber.integerValue; CGSize span = BAAnalyticsCardGridSpan(size);
+        BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,138*span.width+12*(span.width-1),138*span.height+12*(span.height-1))];
+        [cell configureWithCard:card size:size editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+        [cell applyMetricSnapshot:self.metrics.fixtureSnapshot]; [self.window addSubview:cell]; AwaitPreparedCanvases(cell);
+        BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+        Require([[[canvas valueForKey:@"analysis"] objectForKey:@"samples"] count] == 1 &&
+            ![[[canvas valueForKey:@"analysis"] objectForKey:@"hasBox"] boolValue],@"Single complete session did not retain its individual estimate");
+        NSString *name = [NSString stringWithFormat:@"compare-single-%ld-en.png",(long)size];
+        [self saveView:cell name:name]; [self.manifest addObject:@{@"image":name,@"family":BAAnalyticsFamilyCompare,@"size":@(size)}];
+        [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
+    }
+}
+- (void)testCellsCurrentFallback {
+    NSDate *now = [NSDate date], *cachedTime = [now dateByAddingTimeInterval:-3600];
+    NSDictionary *single = @{BAAnalyticsMetricCellCount:@1, BAAnalyticsCellVoltageMetricIdentifier(0):@3952};
+    NSDictionary *multiple = @{BAAnalyticsMetricCellCount:@3, BAAnalyticsCellVoltageMetricIdentifier(0):@3940,
+        BAAnalyticsCellVoltageMetricIdentifier(1):@3952, BAAnalyticsCellVoltageMetricIdentifier(2):@3965};
+    NSArray *scenarios = @[@"single",@"multiple",@"cached",@"missing",@"history"];
+    for (NSString *scenario in scenarios) {
+        BAFixtureHistoryService *history = [BAFixtureHistoryService new];
+        history.fixtureReport = BAFixtureReport([scenario isEqual:@"history"] ? @"ready" : @"unavailable");
+        BAAnalyticsCanvasCard *card = (id)BAAnalyticsCreateCellsCanvasCard(); card.historyService = history;
+        for (NSNumber *sizeNumber in BAAnalyticsCardOrderedSizesForMask(card.supportedAnalyticsCardSizes)) @autoreleasepool {
+            BAAnalyticsCardSize size = sizeNumber.integerValue; CGSize span = BAAnalyticsCardGridSpan(size);
+            CGFloat unit = 138; CGSize bounds = CGSizeMake(unit * span.width + 12 * (span.width - 1), unit * span.height + 12 * (span.height - 1));
+            BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:(CGRect){CGPointZero,bounds}];
+            [cell configureWithCard:card size:size editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+            NSDictionary *values = [scenario isEqual:@"multiple"] ? multiple : [scenario isEqual:@"missing"] ? @{} : single;
+            BOOL cached = [scenario isEqual:@"cached"];
+            BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:41
+                timestamp:cached ? cachedTime : now values:values histories:@{BAAnalyticsCellVoltageMetricIdentifier(0):
+                    @[[[BAAnalyticsMetricPoint alloc] initWithTimestamp:[now dateByAddingTimeInterval:-300] value:3200]]}];
+            if (cached) snapshot = [snapshot snapshotByMarkingCached];
+            [cell applyMetricSnapshot:snapshot]; [self.window addSubview:cell]; AwaitPreparedCanvases(cell);
+            BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+            BOOL hasHistory = [scenario isEqual:@"history"];
+            Require([[canvas valueForKey:@"displayingCurrentCells"] boolValue] != hasHistory, @"Cell fallback replaced existing history or failed to adopt a current reading");
+            NSDictionary *shown = [canvas valueForKey:@"latestValues"];
+            if (hasHistory) {
+                Require(canvas.detailEnabled && canvas.hitRegions.count > 0 && shown.count == 3,
+                    @"Historical cell chart or optional details were discarded by the single-cell live snapshot");
+                Require(![[canvas valueForKey:@"latestCellObservation"] isEqual:snapshot], @"Current cells were inserted into historical evidence");
+            } else {
+                Require(!canvas.detailEnabled && canvas.hitRegions.count == 0 && ![canvas accessibilityActivate] &&
+                    [card detailViewControllerForSelection:nil size:size] == nil, @"Current cell reading opened an unsupported historical detail");
+                Require(shown.count == values.count - (values.count ? 1 : 0), @"Current cell snapshot lost or borrowed a channel");
+                NSNumber *delta = [canvas valueForKey:@"observedDelta"];
+                Require([scenario isEqual:@"multiple"] ? delta.doubleValue == 25 : delta == nil,
+                    @"Cell delta was fabricated for a single/absent channel or mixed sample times");
+                BAAnalyticsMetricSnapshot *current = [canvas valueForKey:@"currentCellSnapshot"];
+                Require(!values.count || (current == snapshot && [current.timestamp isEqual:cached ? cachedTime : now]),
+                    @"Current cell fallback changed the acquisition timestamp");
+                Require([[canvas valueForKey:@"windowText"] isEqual:values.count ?
+                    cond_localize(cached ? "Cached current reading" : "Current reading") : cond_localize("No cell readings")],
+                    @"Current/cached/missing cells claim a historical window");
+            }
+            if (![[canvas valueForKey:@"largeType"] boolValue]) {
+                CGRect plot = [[canvas valueForKey:@"plotRect"] CGRectValue];
+                for (NSString *key in @[@"summaryRect",@"unitRect",@"countRect",@"timestampRect",@"windowRect"]) {
+                    CGRect annotation = [[canvas valueForKey:key] CGRectValue];
+                    Require(CGRectIsEmpty(annotation) || CGRectContainsRect(canvas.bounds,annotation), @"Cells annotation lies outside its canvas");
+                    Require(CGRectIsEmpty(CGRectIntersection(plot,annotation)), @"Cell reading annotations overlap the visualization");
+                }
+            }
+            NSString *name = [NSString stringWithFormat:@"cells-fallback-%@-%ld-en.png",scenario,(long)size];
+            [self saveView:cell name:name];
+            [self.manifest addObject:@{@"image":name,@"family":BAAnalyticsFamilyCells,@"size":@(size),@"scenario":scenario}];
+            if (cached) {
+                BAAnalyticsMetricSnapshot *fresh = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:42 timestamp:now values:multiple histories:nil];
+                [cell applyMetricSnapshot:fresh]; [cell layoutIfNeeded];
+                Require([canvas valueForKey:@"currentCellSnapshot"] == fresh && [[canvas valueForKey:@"observedDelta"] doubleValue] == 25 &&
+                    [[canvas valueForKey:@"windowText"] isEqual:cond_localize("Current reading")], @"Fresh cells did not replace cached values and provenance together");
+            }
+            [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
+        }
+    }
+    // Cover long localized provenance and the existing scrollable accessibility
+    // summary without rendering the unrelated card matrix again.
+    NSArray *presentations = @[@{@"language":@"de",@"cached":@YES}, @{@"language":@"zh_CN"},
+        @{@"language":@"en",@"dark":@YES}, @{@"language":@"en",@"large":@YES}];
+    for (NSDictionary *presentation in presentations) {
+        FixtureLanguage = presentation[@"language"];
+        ForcedStyle = [presentation[@"dark"] boolValue] ? UIUserInterfaceStyleDark : UIUserInterfaceStyleLight;
+        ForcedCategory = [presentation[@"large"] boolValue] ? UIContentSizeCategoryAccessibilityExtraExtraExtraLarge : nil;
+        BAFixtureHistoryService *history = [BAFixtureHistoryService new]; history.fixtureReport = BAFixtureReport(@"unavailable");
+        BAAnalyticsCanvasCard *card = (id)BAAnalyticsCreateCellsCanvasCard(); card.historyService = history;
+        NSArray *sizes = [presentation[@"cached"] boolValue] ? BAAnalyticsCardOrderedSizesForMask(card.supportedAnalyticsCardSizes) : @[@(BAAnalyticsCardSize1x1)];
+        for (NSNumber *sizeNumber in sizes) @autoreleasepool {
+            BAAnalyticsCardSize size = sizeNumber.integerValue; CGSize span = BAAnalyticsCardGridSpan(size);
+            BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,138*span.width+12*(span.width-1),138*span.height+12*(span.height-1))];
+            [cell configureWithCard:card size:size editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+            BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:43 timestamp:now values:multiple histories:nil];
+            if ([presentation[@"cached"] boolValue]) snapshot = [snapshot snapshotByMarkingCached];
+            [cell applyMetricSnapshot:snapshot]; [self.window addSubview:cell]; AwaitPreparedCanvases(cell);
+            NSString *name = [NSString stringWithFormat:@"cells-fallback-localized-%@-%ld%@%@.png",FixtureLanguage,(long)size,
+                ForcedStyle==UIUserInterfaceStyleDark ? @"-dark" : @"", ForcedCategory ? @"-large" : @""];
+            [self saveView:cell name:name];
+            [self.manifest addObject:@{@"image":name,@"family":BAAnalyticsFamilyCells,@"size":@(size),@"language":FixtureLanguage}];
+            [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
+        }
+    }
+    FixtureLanguage = @"en"; ForcedStyle = UIUserInterfaceStyleLight; ForcedCategory = nil;
+    BAAnalyticsCanvasCard *card = (id)BAAnalyticsCreateCellsCanvasCard();
+    BAFixtureHistoryService *history = [BAFixtureHistoryService new]; history.fixtureReport = BAFixtureReport(@"unavailable"); card.historyService = history;
+    BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,138,138)];
+    [cell configureWithCard:card size:BAAnalyticsCardSize1x1 editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+    BAAnalyticsMetricSnapshot *invalid = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:44 timestamp:now
+        values:@{BAAnalyticsMetricCellCount:@3, BAAnalyticsCellVoltageMetricIdentifier(0):@YES,
+            BAAnalyticsCellVoltageMetricIdentifier(1):@3952.25,BAAnalyticsCellVoltageMetricIdentifier(2):@3952} histories:nil];
+    [cell applyMetricSnapshot:invalid]; [cell layoutIfNeeded]; BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+    Require([[canvas valueForKey:@"latestValues"] count] == 1 && [canvas valueForKey:@"observedDelta"] == nil,
+        @"Boolean/fractional cells were treated as valid mV readings");
+    Require(![[canvas valueForKey:@"summaryText"] isEqual:cond_localize("Single cell")],
+        @"One valid reading in a multi-cell pack claimed single-cell hardware");
+    Require([[[canvas valueForKey:@"visibleMetrics"] firstObject] isEqual:BAAnalyticsHistoryCellVoltage2Millivolts],
+        @"Missing earlier channels displaced the only valid current reading");
+    NSMutableDictionary *dense = [NSMutableDictionary dictionaryWithObject:@10 forKey:BAAnalyticsMetricCellCount];
+    for (NSUInteger index=0;index<10;index++) dense[BAAnalyticsCellVoltageMetricIdentifier(index)] = @(3950+index);
+    [cell applyMetricSnapshot:[[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:45 timestamp:now values:dense histories:nil]]; [cell layoutIfNeeded];
+    Require([[canvas valueForKey:@"latestValues"] count] == 10 && [[canvas valueForKey:@"visibleMetrics"] count] <= 10 && canvas.hitRegions.count == 0,
+        @"Dense current cells lost exact accessible readings or created per-record actions");
+    [cell setAnalyticsCardDisplayed:NO];
 }
 - (void)testCapacityCurrentDetail {
     // A translucent missing-data fill must blend over an opaque light canvas.
@@ -1343,6 +1518,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     [json writeToFile:[self.output stringByAppendingPathComponent:@"validation.json"] atomically:YES];
 }
 - (void)runChecks {
+    BOOL cellsOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_CELLS_ONLY"] isEqual:@"1"];
     BOOL capacityOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_CAPACITY_ONLY"] isEqual:@"1"];
     BOOL historyOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_HISTORY_ONLY"] isEqual:@"1"];
     BOOL performanceOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_PERFORMANCE_ONLY"] isEqual:@"1"];
@@ -1356,6 +1532,13 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
           @"editing suppresses card touch, embedded gestures and accessibility actions",@"resize/remove/add/reorder/persistence",@"visible-only subscriptions",
           @"current capacity detail without history and no mixed-source capacity ratios",@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"];
     @try {
+        if (cellsOnly) {
+            [self testCellsCurrentFallback];
+            [self testSessionSingletonFallback];
+            [self writeValidationWithChecks:@[@"same-acquisition single/multiple/cached/missing current cells",@"historical cell chart and details preserved",@"supported sizes, annotation separation, localized provenance and accessible summary",@"newest singleton retains previous drawable session and accurate frozen selection",@"editing suppresses fallback session actions",@"one complete comparison session renders an estimate without a statistical box"] passed:YES];
+            [@"PASS" writeToFile:[self.output stringByAppendingPathComponent:@"analytics-v3.status"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
+            return;
+        }
         if (capacityOnly) {
             [self testCapacityCurrentDetail];
             [self writeValidationWithChecks:@[@"capacity overview and historical selection keep chart, readings and exact evidence consistent"] passed:YES];

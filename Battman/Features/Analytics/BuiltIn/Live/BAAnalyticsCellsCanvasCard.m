@@ -1,6 +1,7 @@
 #import "../Canvas/BAAnalyticsDetailViewController.h"
 #import "main.h"
 #import "BAAnalyticsLiveDrawing.h"
+#import "../../Data/BAAnalyticsMetricSnapshotInternal.h"
 #include <float.h>
 #include <math.h>
 
@@ -88,6 +89,9 @@ static BACellsPreparedHistory *BACellsPrepare(BAAnalyticsFamilyReport *family, N
     }
     id payload = family.payload[BAAnalyticsPayloadLatestObservation];
     BAAnalyticsObservation *latest = [payload isKindOfClass:BAAnalyticsObservation.class] ? payload : nil;
+    BOOL latestHasCells = NO;
+    for (NSString *key in latest.values) if (BACellIndex(key) && BALiveObservationValue(latest, key)) { latestHasCells = YES; break; }
+    if (!latestHasCells) latest = nil;
     NSMutableArray *discovery = [window.observations mutableCopy] ?: [NSMutableArray array];
     if (latest) [discovery addObject:latest];
     scanned = 0;
@@ -96,11 +100,11 @@ static BACellsPreparedHistory *BACellsPrepare(BAAnalyticsFamilyReport *family, N
         BOOL hasCell = NO;
         for (NSString *key in observation.fieldMetadata) {
             if ((scanned++ & 255) == 0 && token.isCancelled) return nil;
-            if (BACellIndex(key)) { [metrics addObject:key]; hasCell = YES; }
+            if (BACellIndex(key)) { [metrics addObject:key]; if (BALiveObservationValue(observation,key)) hasCell = YES; }
         }
         for (NSString *key in observation.values) {
             if ((scanned++ & 255) == 0 && token.isCancelled) return nil;
-            if (BACellIndex(key)) { [metrics addObject:key]; hasCell = YES; }
+            if (BACellIndex(key)) { [metrics addObject:key]; if (BALiveObservationValue(observation,key)) hasCell = YES; }
         }
         if (hasCell && observation.timestampValidated && (!latest || !latest.timestampValidated ||
             [observation.timestamp compare:latest.timestamp] == NSOrderedDescending)) latest = observation;
@@ -301,6 +305,9 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 @property (nonatomic, copy) NSDictionary<NSString *, NSArray<NSNumber *> *> *displayIndices;
 @property (nonatomic, strong) NSDateFormatter *pointFormatter;
 @property (nonatomic, strong) BACellsPreparationToken *preparationToken;
+@property (nonatomic) BOOL displayingCurrentCells;
+@property (nonatomic) BOOL allowsHistoryDetails;
+@property (nonatomic, strong) BAAnalyticsMetricSnapshot *currentCellSnapshot;
 - (void)reloadReport;
 - (void)startHistoryPreparation;
 @end
@@ -336,6 +343,11 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 - (void)adoptDisplayedReport:(BAAnalyticsReport *)report {
     self.displayedReport = report;
     [super setLatestReport:report];
+}
+
+- (void)setDetailEnabled:(BOOL)detailEnabled {
+    self.allowsHistoryDetails = detailEnabled;
+    [super setDetailEnabled:detailEnabled && !self.displayingCurrentCells];
 }
 
 - (void)requestDetailForSelection:(BAAnalyticsDetailSelection *)selection {
@@ -395,6 +407,30 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     self.cellMetrics = prepared.metrics ?: @[];
     self.latestValues = prepared.latestValues ?: @{};
     self.minimum = prepared ? prepared.minimum : 0; self.maximum = prepared ? prepared.maximum : 1;
+    BOOL hasHistory = self.latestValues.count != 0;
+    for (NSData *samples in prepared.samplesByMetric.allValues) if (samples.length) { hasHistory = YES; break; }
+    self.displayingCurrentCells = !hasHistory;
+    self.currentCellSnapshot = nil;
+    if (self.displayingCurrentCells) {
+        BAAnalyticsMetricSnapshot *snapshot = self.latestSnapshot;
+        NSNumber *count = BALiveFiniteNumber([snapshot valueForMetricIdentifier:BAAnalyticsMetricCellCount]);
+        NSUInteger known = count && CFGetTypeID((__bridge CFTypeRef)count) != CFBooleanGetTypeID() &&
+            count.doubleValue >= 1 && count.doubleValue <= 10 && floor(count.doubleValue) == count.doubleValue ? count.unsignedIntegerValue : 0;
+        NSMutableArray *metrics = [NSMutableArray array]; NSMutableDictionary *current = [NSMutableDictionary dictionary];
+        for (NSUInteger index = 0; index < known; index++) {
+            NSString *metric = [NSString stringWithFormat:@"cell-voltage.%lu.millivolts", (unsigned long)index];
+            [metrics addObject:metric];
+            NSNumber *value = BALiveFiniteNumber([snapshot valueForMetricIdentifier:BAAnalyticsCellVoltageMetricIdentifier(index)]);
+            if (value && CFGetTypeID((__bridge CFTypeRef)value) != CFBooleanGetTypeID() &&
+                value.doubleValue > 0 && value.doubleValue < UINT16_MAX && floor(value.doubleValue) == value.doubleValue)
+                current[metric] = value;
+        }
+        self.cellMetrics = metrics; self.latestValues = current;
+        self.currentCellSnapshot = current.count ? snapshot : nil;
+        self.latestCellObservation = nil;
+        self.geometryRect = CGRectNull; self.marks = @[]; self.displayIndices = @{}; self.untrustedRects = @[]; self.hitRegions = @[];
+    }
+    [super setDetailEnabled:self.allowsHistoryDetails && !self.displayingCurrentCells];
     BAAnalyticsHistoryWindow *window = family.window;
     BAAnalyticsObservation *latest = self.latestCellObservation;
     NSDictionary *values = self.latestValues;
@@ -405,10 +441,14 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         [NSString stringWithFormat:_("%lu valid cells"), (unsigned long)values.count] :
         _("Cell count unavailable");
     self.summaryText = self.observedDelta ? [NSString stringWithFormat:_("Δobs %.0f"), self.observedDelta.doubleValue] :
-        (values.count == 1 ? _("Single cell") : _("No readings"));
-    self.timestampText = latest.timestamp ? [self.pointFormatter stringFromDate:latest.timestamp] : _("Historical time unavailable");
-    self.ageText = BALiveAge(latest.timestamp);
-    self.windowText = window ? BALiveWindow(window.startDate, window.endDate) : _("Window unavailable");
+        (values.count == 1 && self.cellMetrics.count == 1 ? _("Single cell") :
+         values.count ? _("Group delta unavailable") : _("No readings"));
+    NSDate *readingDate = self.displayingCurrentCells ? self.currentCellSnapshot.timestamp : latest.timestamp;
+    self.timestampText = readingDate ? [self.pointFormatter stringFromDate:readingDate] : _("Time/age unavailable");
+    self.ageText = BALiveAge(readingDate);
+    self.windowText = self.displayingCurrentCells ? (self.currentCellSnapshot ?
+        (self.currentCellSnapshot.isCached ? _("Cached current reading") : _("Current reading")) : _("No cell readings")) :
+        (window ? BALiveWindow(window.startDate, window.endDate) : _("Window unavailable"));
     NSMutableArray *readings = [NSMutableArray array];
     for (NSString *metric in self.cellMetrics) {
         NSNumber *value = values[metric];
@@ -420,7 +460,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         self.timestampText, self.ageText, self.windowText];
     // The shared Canvas overview speaks accessibilityLabel, so it must retain
     // all evidence rather than relying on UIControl's separate value field.
-    self.accessibilityLabel = [NSString stringWithFormat:@"%@. %@", _("Cell voltage history"), self.accessibilityValue];
+    self.accessibilityLabel = [NSString stringWithFormat:@"%@. %@", self.displayingCurrentCells ? _("Current cell voltages") : _("Cell voltage history"), self.accessibilityValue];
     [self setNeedsLayout]; [self setNeedsDisplay];
 }
 
@@ -474,9 +514,9 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     self.largeTypeSummary.frame = self.bounds;
     if (self.largeType) {
         self.largeTypeSummary.summaryText = self.accessibilityLabel;
-        self.hitRegions = @[[BAAnalyticsCanvasHitRegion regionWithRect:self.bounds
+        self.hitRegions = self.detailEnabled ? @[[BAAnalyticsCanvasHitRegion regionWithRect:self.bounds
                    selection:[self selectionForObservation:self.latestCellObservation metric:nil]
-                   accessibilityLabel:self.accessibilityLabel]];
+                   accessibilityLabel:self.accessibilityLabel]] : @[];
         self.marks = @[];
         [self setNeedsDisplay];
         return;
@@ -493,12 +533,43 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         top = CGRectGetMaxY(self.summaryRect) + 4;
     } else {
         self.summaryText = self.observedDelta ? [NSString stringWithFormat:_("Δobs %.0f"), self.observedDelta.doubleValue] :
-            (self.latestValues.count == 1 ? _("Single cell") : _("No readings"));
+            (self.latestValues.count == 1 && self.cellMetrics.count == 1 ? _("Single cell") :
+             self.latestValues.count ? _("Group delta unavailable") : _("No readings"));
         UIFont *summary = BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold);
         CGFloat headerHeight = MAX(row, BALiveTextHeight(self.summaryText, contentWidth - 26, summary));
         self.unitRect = CGRectMake(inset, top, 25, headerHeight);
         self.summaryRect = CGRectMake(inset + 26, top, contentWidth - 26, headerHeight);
         top += headerHeight + 6;
+    }
+    if (self.displayingCurrentCells) {
+        // Current values use a separate canvas: they are a same-acquisition
+        // comparison, never points inserted into the six-hour history window.
+        NSString *timeAndAge = self.currentCellSnapshot ? [NSString stringWithFormat:@"%@ · %@", BALiveTime(self.currentCellSnapshot.timestamp), self.ageText] : _("Time/age unavailable");
+        CGFloat provenanceHeight = MAX(row, BALiveTextHeight(self.windowText, contentWidth, small));
+        CGFloat timeHeight = MAX(row, BALiveTextHeight(timeAndAge, contentWidth, small));
+        CGFloat countHeight = MAX(row, BALiveTextHeight(self.countText, contentWidth, small));
+        self.windowRect = CGRectMake(inset, height - provenanceHeight - 4, contentWidth, provenanceHeight);
+        self.timestampRect = CGRectMake(inset, CGRectGetMinY(self.windowRect) - timeHeight, contentWidth, timeHeight);
+        self.countRect = CGRectMake(inset, CGRectGetMinY(self.timestampRect) - countHeight, contentWidth, countHeight);
+        self.ageRect = CGRectZero;
+        self.plotRect = CGRectMake(inset, top, contentWidth, MAX(0, CGRectGetMinY(self.countRect) - top - 5));
+        if (self.plotRect.size.height < 26 && self.latestValues.count) {
+            self.largeType = YES; self.largeTypeSummary.hidden = NO;
+            self.largeTypeSummary.summaryText = self.accessibilityLabel;
+            self.hitRegions = @[]; self.marks = @[];
+            [self setNeedsDisplay];
+            return;
+        }
+        NSUInteger capacity = MAX(1, (NSUInteger)floor(self.plotRect.size.height / 26));
+        NSArray *currentMetrics = [self.cellMetrics sortedArrayUsingComparator:^NSComparisonResult(NSString *a, NSString *b) {
+            BOOL aAvailable = self.latestValues[a] != nil, bAvailable = self.latestValues[b] != nil;
+            if (aAvailable != bAvailable) return aAvailable ? NSOrderedAscending : NSOrderedDescending;
+            return [BACellIndex(a) compare:BACellIndex(b)];
+        }];
+        self.visibleMetrics = [currentMetrics subarrayWithRange:NSMakeRange(0, MIN(capacity, currentMetrics.count))];
+        self.hitRegions = @[]; self.marks = @[]; self.displayIndices = @{}; self.untrustedRects = @[];
+        [self setNeedsDisplay];
+        return;
     }
     // Reflow annotations rather than spending four rows of a short card on
     // metadata. Exact dates and the full age remain in accessible details.
@@ -618,17 +689,43 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     BALiveDrawText(self.summaryText ?: @"", self.summaryRect, self.largeType ? BALiveFont(20, UIFontWeightSemibold) :
         BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold), label, self.largeType ? NSTextAlignmentLeft : NSTextAlignmentRight);
     NSString *count = self.countText;
-    if (self.visibleMetrics.count < self.cellMetrics.count) count = [NSString stringWithFormat:_("%lu valid · +%lu in detail"),
-        (unsigned long)self.latestValues.count, (unsigned long)(self.cellMetrics.count - self.visibleMetrics.count)];
-    NSString *timeAndAge = self.latestCellObservation ?
-        [NSString stringWithFormat:@"%@ · %@", BALiveTime(self.latestCellObservation.timestamp), self.ageText] :
+    if (self.visibleMetrics.count < self.cellMetrics.count) count = self.displayingCurrentCells ?
+        [NSString stringWithFormat:_("%lu valid · %lu shown"), (unsigned long)self.latestValues.count, (unsigned long)self.visibleMetrics.count] :
+        [NSString stringWithFormat:_("%lu valid · +%lu in detail"), (unsigned long)self.latestValues.count, (unsigned long)(self.cellMetrics.count - self.visibleMetrics.count)];
+    NSDate *readingDate = self.displayingCurrentCells ? self.currentCellSnapshot.timestamp : self.latestCellObservation.timestamp;
+    NSString *timeAndAge = readingDate ?
+        [NSString stringWithFormat:@"%@ · %@", BALiveTime(readingDate), self.ageText] :
         _("Time/age unavailable");
-    if (self.cardSize == BAAnalyticsCardSize2x1) count = [NSString stringWithFormat:@"%@ · %@", count, timeAndAge];
+    if (self.cardSize == BAAnalyticsCardSize2x1 && !self.displayingCurrentCells) count = [NSString stringWithFormat:@"%@ · %@", count, timeAndAge];
     BALiveDrawText(count ?: @"", self.countRect, small, secondary, NSTextAlignmentLeft);
-    BALiveDrawText(self.compact ? timeAndAge : self.timestampText ?: @"", self.timestampRect, small, secondary, NSTextAlignmentLeft);
+    BALiveDrawText(self.compact || self.displayingCurrentCells ? timeAndAge : self.timestampText ?: @"", self.timestampRect, small, secondary, NSTextAlignmentLeft);
     BALiveDrawText(self.ageText ?: @"", self.ageRect, small, secondary, NSTextAlignmentLeft);
     BALiveDrawText(self.windowText ?: @"", self.windowRect, small, secondary, NSTextAlignmentLeft);
     if (CGRectIsEmpty(self.plotRect)) return;
+    if (self.displayingCurrentCells) {
+        if (!self.latestValues.count) { BALiveHatch(self.plotRect); return; }
+        CGFloat step = self.visibleMetrics.count ? self.plotRect.size.height / self.visibleMetrics.count : 0;
+        double scale = 0;
+        for (NSNumber *value in self.latestValues.allValues) scale = MAX(scale, value.doubleValue);
+        scale = MAX(1, ceil(scale / 500) * 500);
+        UIFont *readingFont = BACellsAnnotationFont(15, UIFontWeightSemibold);
+        for (NSUInteger ordinal = 0; ordinal < self.visibleMetrics.count; ordinal++) {
+            NSString *metric = self.visibleMetrics[ordinal]; NSNumber *value = self.latestValues[metric];
+            CGFloat y = self.plotRect.origin.y + step * ordinal;
+            CGRect identity = CGRectMake(self.plotRect.origin.x, y, 22, MIN(20, step));
+            // A numbered cell outline keeps the channel identity compact; the
+            // measured value has its own line, clear of the comparison bar.
+            UIBezierPath *cell = [UIBezierPath bezierPathWithRoundedRect:CGRectInset(identity, 1, 2) cornerRadius:3];
+            [secondary setStroke]; cell.lineWidth = 1; [cell stroke];
+            BALiveDrawText([NSString stringWithFormat:@"%lld", BACellIndex(metric).longLongValue + 1], identity, small, label, NSTextAlignmentCenter);
+            CGRect reading = CGRectMake(CGRectGetMaxX(identity) + 7, y, self.plotRect.size.width - 29, MIN(20, step));
+            BALiveDrawText(value ? [NSString stringWithFormat:@"%.0f mV", value.doubleValue] : @"—", reading, readingFont, value ? UIColor.compatBlueColor : secondary, NSTextAlignmentRight);
+            CGRect bar = CGRectMake(self.plotRect.origin.x, y + MIN(21, step - 4), self.plotRect.size.width, 3);
+            [UIColor.compatSeparatorColor setFill]; [[UIBezierPath bezierPathWithRoundedRect:bar cornerRadius:1.5] fill];
+            if (value) { bar.size.width *= value.doubleValue / scale; [UIColor.compatBlueColor setFill]; [[UIBezierPath bezierPathWithRoundedRect:bar cornerRadius:1.5] fill]; }
+        }
+        return;
+    }
     if (!self.cellMetrics.count) {
         BALiveHatch(self.plotRect);
         return;
@@ -725,6 +822,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     BAAnalyticsReport *report = nil;
     NSNumber *sequence = selection.context[@"reportSequence"];
     for (BAAnalyticsCellsCanvasView *view in self.cellViews.allObjects) {
+        if (!sequence && view.cardSize == size && view.displayingCurrentCells) return nil;
         if (sequence ? view.displayedReport.sequenceNumber == sequence.unsignedLongLongValue : view.cardSize == size) {
             report = view.displayedReport; if (report) break;
         }

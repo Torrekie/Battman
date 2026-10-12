@@ -155,21 +155,37 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
         BAProcessValue(soc.lastObject, BAAnalyticsHistorySOCPercent).doubleValue] : _("SOC unavailable");
     NSString *temperatureSummary = peak ? [NSString stringWithFormat:_("Observed peak %.1f °C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue] : _("Temperature unavailable");
     NSString *currentSummary = current.count ? [NSString stringWithFormat:_("Last %+.2f A"), BAProcessValue(current.lastObject, BAAnalyticsHistoryCurrentMilliamps).doubleValue / 1000.0] : _("Current unavailable");
+    NSArray *sessions = family.payload[BAAnalyticsPayloadSessions];
+    id newest = [sessions isKindOfClass:NSArray.class] ? sessions.lastObject : nil;
+    BOOL showingPrevious = [newest isKindOfClass:BAAnalyticsHistorySession.class] &&
+        ![[newest identifier] isEqual:session.identifier] && [[newest endDate] compare:session.endDate] == NSOrderedDescending &&
+        [[newest observations] count] == 1;
     NSDictionary *sessionContext = @{@"sessionIdentifier": session.identifier, @"boundaryEstimate": @YES,
-        @"startBoundaryKnown": @(session.startBoundaryKnown), @"endBoundaryKnown": @(session.endBoundaryKnown)};
+        @"startBoundaryKnown": @(session.startBoundaryKnown), @"endBoundaryKnown": @(session.endBoundaryKnown),
+        @"showingPreviousSession": @(showingPrevious)};
     BAAnalyticsDetailSelection *sessionSelection = BAProcessSelection(self, @"session", @[], metrics, session.startDate, session.endDate, sessionContext);
     if (accessibilityValue) *accessibilityValue = [NSString stringWithFormat:
         _("%@. Approximately %@, %@, %@. %@. %@. %@. %@. %lu source records. Positive current charges the battery; negative current discharges it. State changes are sampled bounds; hatching means missing observations."),
         window, BAProcessDuration(duration), boundary, partial ? _("partial observations") : _("covered observations"), socSummary, temperatureSummary,
         currentSummary, coverage, (unsigned long)session.observations.count];
+    if (accessibilityValue && showingPrevious)
+        *accessibilityValue = [NSString stringWithFormat:@"%@. %@", *accessibilityValue,
+            _("Newest connection has one reading; showing previous session")];
 
     // Larger text keeps directly selectable evidence instead of shrinking every
     // track label to fit the same small plot. Normal text retains all three
     // tracks; the square canvas provides more room for axis and peak labels.
     BOOL largeText = BAProcessLargeText(self);
     BOOL tall = self.cardSize == BAAnalyticsCardSize2x2;
-    CGFloat headerHeight = caption.lineHeight + 8;
-    BAProcessText(window, CGRectMake(12, 8, width - 24, caption.lineHeight + 2), caption, muted, NSTextAlignmentLeft);
+    NSString *combinedHeader = showingPrevious ? [NSString stringWithFormat:@"%@ · %@", _("Previous session"), window] : window;
+    BOOL inlinePrevious = showingPrevious && !tall &&
+        [combinedHeader sizeWithAttributes:@{NSFontAttributeName:caption}].width <= width - 24;
+    BOOL twoHeaderRows = showingPrevious && !inlinePrevious;
+    CGFloat headerHeight = caption.lineHeight * (twoHeaderRows ? 2 : 1) + 8 + (twoHeaderRows ? 2 : 0);
+    if (twoHeaderRows)
+        BAProcessText(_("Previous session"), CGRectMake(12, 8, width - 24, caption.lineHeight + 2), caption, muted, NSTextAlignmentLeft);
+    CGFloat windowY = twoHeaderRows ? 10 + caption.lineHeight : 8;
+    BAProcessText(inlinePrevious ? combinedHeader : window, CGRectMake(12, windowY, width - 24, caption.lineHeight + 2), caption, muted, NSTextAlignmentLeft);
     [regions addObject:BAProcessRegion(CGRectMake(12, 4, width - 24, headerHeight), sessionSelection,
         [NSString stringWithFormat:_("Connected session, %@, %@"), window, boundary])];
 

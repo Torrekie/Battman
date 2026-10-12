@@ -3517,3 +3517,25 @@ msgstr "快取 · %@"
 
 msgid "Edit"
 msgstr "編輯"
+
+msgid "Cached current reading"
+msgstr "快取的目前讀數"
+
+msgid "Current reading"
+msgstr "目前讀數"
+
+msgid "No cell readings"
+msgstr "無電芯讀數"
+
+msgid "Current cell voltages"
+msgstr "目前電芯電壓"
+
+#, objc-format
+msgid "%lu valid · %lu shown"
+msgstr "%lu 有效 · 顯示 %lu"
+
+msgid "Previous session"
+msgstr "先前階段"
+
+msgid "Newest connection has one reading; showing previous session"
+msgstr "最新接電片段僅有一筆讀數，顯示先前階段"
