@@ -52,7 +52,7 @@ struct localization_arr_entry {
 
 extern struct localization_arr_entry localization_arr[];
 
-#define PSTRMAP_SIZE 1024
+#define PSTRMAP_SIZE 2048
 struct localization_entry pstrmap[PSTRMAP_SIZE] = {0};
 
 #ifndef USE_GETTEXT
@@ -60,7 +60,7 @@ extern int cond_localize_cnt;
 extern int cond_localize_language_cnt;
 
 inline static int localization_simple_hash(const char *str) {
-	return (((unsigned long long)str) >> 3) & 0x3ff;
+	return (((unsigned long long)str) >> 3) & (PSTRMAP_SIZE - 1);
 }
 
 __attribute__((destructor)) static void localization_deinit() {
@@ -91,16 +91,14 @@ __attribute__((constructor)) static void localization_init() {
 }
 
 struct localization_entry *cond_localize_find(const char *str) {
-	struct localization_entry *ent = pstrmap + localization_simple_hash(str);
-	for (; ent->pstr; ent++) {
-		if (ent == pstrmap + PSTRMAP_SIZE) {
-			ent = pstrmap;
-			if (!ent->pstr)
-				break;
-		}
-		if (*(ent->pstr) != str)
-			continue;
-		return ent;
+	int index = localization_simple_hash(str);
+	for (int probes = 0; probes < PSTRMAP_SIZE; probes++) {
+		struct localization_entry *ent = pstrmap + index;
+		if (!ent->pstr)
+			return NULL;
+		if (*(ent->pstr) == str)
+			return ent;
+		index = (index + 1) & (PSTRMAP_SIZE - 1);
 	}
 	return NULL;
 }
