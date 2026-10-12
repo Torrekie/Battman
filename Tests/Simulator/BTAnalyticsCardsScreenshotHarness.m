@@ -10,6 +10,7 @@
 #import "../../Battman/Features/Analytics/Host/AnalyticsViewController.h"
 #import "../../Battman/Features/Analytics/Host/AnalyticsCardCell.h"
 #import "../../Battman/Features/Analytics/Host/BAAnalyticsCardLayoutStore.h"
+#import "../../Battman/Features/Analytics/Host/BAAnalyticsUnavailableCard.h"
 #import "../../Battman/Features/Analytics/Data/BAAnalyticsSystemMetricSource.h"
 #import "../../Battman/PluginHost/Application/BTPluginPlatform.h"
 #import "../../Battman/PluginHost/BTPluginRegistry.h"
@@ -20,8 +21,10 @@
 #import "../../Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsDrawing.h"
 #import "../../Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsProcessDrawing.h"
 #import "../../Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsSessionCanvasCard.h"
+#import "../../Battman/Features/Analytics/Data/BAAnalyticsHistoryReader.h"
 #import <objc/message.h>
 #include <math.h>
+#include <sqlite3.h>
 static void DrainUI(void) { NSDate *end=[NSDate dateWithTimeIntervalSinceNow:.25]; while([end timeIntervalSinceNow]>0) [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:end]; }
 static void Require(BOOL condition,NSString *message) { if(!condition) @throw [NSException exceptionWithName:@"FixtureFailure" reason:message userInfo:nil]; }
 static void WaitForFixture(BOOL (^ready)(void), NSTimeInterval seconds, NSString *message) {
@@ -90,8 +93,18 @@ UIImage *imageForSFProGlyph(NSString *g,NSString *f,CGFloat s,UIColor *c) { (voi
 @implementation BAAnalyticsSystemMetricSource
 - (NSDictionary *)readAnalyticsMetricValues { Require(NO,@"Physical metric source reached by fixture");return @{}; }
 @end
+NSNotificationName const BTPluginPlatformDidFinishStartupNotification = @"BTPluginPlatformDidFinishStartupNotification";
+static BTPluginPlatform *FixtureExternalPlatform;
+static BTPluginRegistry *FixtureExternalRegistry;
 @implementation BTPluginPlatform
-+ (instancetype)sharedPlatform { Require(NO,@"Production composition reached by fixture");return nil; }
++ (instancetype)sharedPlatform {
+    Require(FixtureExternalPlatform != nil, @"Production composition reached outside the external-card fixture");
+    return FixtureExternalPlatform;
+}
+- (BTPluginRegistry *)registry {
+    Require(self == FixtureExternalPlatform && FixtureExternalRegistry != nil, @"Unexpected external registry access");
+    return FixtureExternalRegistry;
+}
 @end
 static UIUserInterfaceStyle ForcedStyle=UIUserInterfaceStyleLight;
 static BOOL FixtureNativeDarkMode=NO;
@@ -199,6 +212,31 @@ static BAAnalyticsReport *PerformanceReport(NSUInteger count) {
 static BAAnalyticsReport *PerformanceGeneration(BAAnalyticsReport *report, uint64_t sequence) {
     return [[BAAnalyticsReport alloc] initWithSequenceNumber:sequence generatedAt:report.generatedAt sourceProfileIdentifier:report.sourceProfileIdentifier
         fieldMetadata:report.fieldMetadata familyReports:report.familyReports error:nil];
+}
+
+static BAAnalyticsReport *ReaderCableEventReport(NSURL *file) {
+    NSDate *end = [NSDate dateWithTimeIntervalSince1970:floor(NSDate.date.timeIntervalSince1970)];
+    NSTimeInterval start = end.timeIntervalSince1970 - 1800;
+    sqlite3 *database = NULL;
+    Require(sqlite3_open(file.path.fileSystemRepresentation, &database) == SQLITE_OK, @"Could not create isolated cable-event database");
+    @try {
+        NSString *schema = [NSString stringWithFormat:
+            @"CREATE TABLE PLStorageOperator_EventForward_TimeOffset (ID INTEGER PRIMARY KEY,timestamp REAL,system REAL);"
+            "INSERT INTO PLStorageOperator_EventForward_TimeOffset VALUES (1,%.6f,0);"
+            "CREATE TABLE PLBatteryAgent_EventBackward_Battery (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,InstantAmperage INTEGER,"
+            "ExternalConnected INTEGER,IsCharging INTEGER,FullyCharged INTEGER,Voltage INTEGER DEFAULT 4000,CellVoltage0 INTEGER DEFAULT 4000,CellVoltage1 INTEGER DEFAULT 4001);"
+            "CREATE TABLE PLBatteryAgent_EventBackward_BatteryUI (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,IsCharging INTEGER);"
+            "INSERT INTO PLBatteryAgent_EventBackward_BatteryUI VALUES (1,%.6f,50,0),(2,%.6f,50,0);", start - 3600, start, start + 1200];
+        Require(sqlite3_exec(database, schema.UTF8String, NULL, NULL, NULL) == SQLITE_OK, @"Could not populate cable-event schema");
+        for (NSUInteger index = 0; index <= 21; index++) {
+            NSTimeInterval time = start + (index == 21 ? 1800 : index * 60);
+            BOOL charging = index == 2 || index == 3 || index == 21;
+            NSString *row = [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_Battery (ID,timestamp,Level,InstantAmperage,ExternalConnected,IsCharging,FullyCharged) VALUES (%lu,%.6f,50,%d,%d,%d,0)",
+                (unsigned long)index + 1, time, charging ? 100 : -100, charging, charging];
+            Require(sqlite3_exec(database, row.UTF8String, NULL, NULL, NULL) == SQLITE_OK, @"Could not populate cable-event samples");
+        }
+    } @finally { sqlite3_close(database); }
+    return BAAnalyticsReadHistoryReport(file, end, 710, ^BOOL { return NO; });
 }
 
 static BAAnalyticsReport *PerformanceFragmentedReport(BAAnalyticsReport *base) {
@@ -427,11 +465,41 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
 - (UIGestureRecognizerState)state { return UIGestureRecognizerStateEnded; }
 - (CGPoint)locationInView:(UIView *)view { return self.fixturePoint; }
 @end
+@interface BAFixtureCardLongPress : UILongPressGestureRecognizer
+@property (nonatomic) UIGestureRecognizerState fixtureState;
+@property (nonatomic) CGPoint fixturePoint;
+@end
+@implementation BAFixtureCardLongPress
+- (UIGestureRecognizerState)state { return self.fixtureState; }
+- (CGPoint)locationInView:(UIView *)view { return self.fixturePoint; }
+@end
+// A small external provider exercises the actual host/registry/restoration
+// boundary without starting sensor acquisition or deriving another canvas.
+@interface BAFixtureExternalCard : NSObject <BAAnalyticsCard>
+@property (nonatomic, copy) NSString *analyticsCardIdentifier;
+@property (nonatomic, copy) NSDictionary *restoredState;
+@property (nonatomic) NSUInteger restorationCount;
+@end
+@implementation BAFixtureExternalCard
+- (BAAnalyticsCardSizeMask)supportedAnalyticsCardSizes { return BAAnalyticsCardSizeMaskAll; }
+- (BAAnalyticsCardSize)defaultAnalyticsCardSize { return BAAnalyticsCardSize1x1; }
+- (NSString *)analyticsCardDisplayName { return self.analyticsCardIdentifier.lastPathComponent; }
+- (UIView *)makeAnalyticsCardContentView { return [UIView new]; }
+- (void)configureAnalyticsCardContentView:(UIView *)view forSize:(BAAnalyticsCardSize)size editing:(BOOL)editing {
+    view.accessibilityIdentifier = self.analyticsCardIdentifier;
+}
+- (NSUInteger)analyticsCardRestorationSchemaVersion { return 1; }
+- (NSDictionary *)analyticsCardRestorationState { return self.restoredState ?: @{}; }
+- (void)analyticsCardRestoreState:(NSDictionary *)state { self.restoredState = state; ++self.restorationCount; }
+@end
 @interface BAAnalyticsCanvasView (FixtureCapacityBrowsing)
 - (void)selectHistoryReading:(UITapGestureRecognizer *)recognizer;
 @end
 @interface AnalyticsViewController (FixtureActions)
 - (void)addCard:(id<BAAnalyticsCard>)card;
+- (void)externalCardsDidLoad:(NSNotification *)notification;
+- (void)handleCardLongPress:(UILongPressGestureRecognizer *)recognizer;
+- (void)saveCardLayout;
 @end
 @interface BAAnalyticsCanvasView (FixtureEventsEvidence)
 - (NSArray<BAAnalyticsStateTransition *> *)transitionsForFamily:(BAAnalyticsFamilyReport *)family;
@@ -527,6 +595,119 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     Require(records.count==2,@"Legacy migration lost records");
     Require([((BAAnalyticsCardLayoutRecord *)records[0]).cardIdentifier hasSuffix:@".live"],@"Legacy battery record not migrated");
     [self.defaults removeObjectForKey:BAAnalyticsLegacyCardLayoutDefaultsKey];
+}
+- (void)testDelayedExternalCards {
+    UIViewController *originalRoot = self.window.rootViewController;
+    NSString *suite = @"com.torrekie.Battman.AnalyticsV3Fixture.external-startup";
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:suite];
+    AnalyticsViewController *host = nil;
+    @try {
+        // Separate launches cover normal edit completion and Done being tapped
+        // while a dragged card is still waiting for its finish callback.
+        for (NSUInteger dragging = 0; dragging < 2; dragging++) {
+            [defaults removePersistentDomainForName:suite];
+            NSMutableArray<BAFixtureExternalCard *> *cards = [NSMutableArray array];
+            NSMutableArray *records = [NSMutableArray array];
+            NSDictionary *savedState = @{@"range":@"week", @"selectedSeries":@2};
+            for (NSString *suffix in @[@"alpha", @"beta", @"gamma", @"hidden"]) {
+                BAFixtureExternalCard *card = [BAFixtureExternalCard new];
+                card.analyticsCardIdentifier = [@"com.example.fixture.async." stringByAppendingString:suffix];
+                [cards addObject:card];
+                if (cards.count <= 3) [records addObject:[[BAAnalyticsCardLayoutRecord alloc]
+                    initWithCardIdentifier:card.analyticsCardIdentifier displayName:suffix sizeValue:BAAnalyticsCardSize1x1
+                    restorationSchemaVersion:1 restorationState:savedState]];
+            }
+            [BAAnalyticsCardLayoutStore saveRecords:records toUserDefaults:defaults];
+            FixtureExternalPlatform = [BTPluginPlatform new];
+            FixtureExternalRegistry = [BTPluginRegistry new];
+            NSError *error = nil;
+            Require([FixtureExternalRegistry registerExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier
+                interfaceVersion:BAAnalyticsCardExtensionPointVersion requiredProtocol:@protocol(BAAnalyticsCard) error:&error], error.description);
+            host = [[AnalyticsViewController alloc] initWithCards:@[cards[0]] metricService:[BAFixtureMetricService new]
+                historyService:[BAFixtureHistoryService new] userDefaults:defaults];
+            // The injected initializer intentionally omits application composition.
+            // Wire its production notification selector to this isolated platform.
+            [NSNotificationCenter.defaultCenter addObserver:host selector:@selector(externalCardsDidLoad:)
+                name:BTPluginPlatformDidFinishStartupNotification object:FixtureExternalPlatform];
+            self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:host];
+            [self.window layoutIfNeeded]; [host.view layoutIfNeeded]; DrainUI();
+            UICollectionView *collection = [host valueForKey:@"collectionView"];
+            NSMutableArray *states = [host valueForKey:@"cardStates"];
+            Require(states.count == 3 && [[states[1] valueForKey:@"card"] isKindOfClass:BAAnalyticsUnavailableCard.class],
+                @"Pending external provider did not retain its saved placeholder");
+
+            [host setEditing:YES animated:NO]; [collection layoutIfNeeded];
+            [collection.dataSource collectionView:collection moveItemAtIndexPath:[NSIndexPath indexPathForItem:1 inSection:0]
+                toIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+            [collection reloadData]; [collection layoutIfNeeded];
+            BAAnalyticsCardCell *cell = (id)[collection cellForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+            Require(cell != nil && !cell.resizeButton.hidden, @"Pending provider could not be resized");
+            [cell.resizeButton sendActionsForControlEvents:UIControlEventTouchUpInside]; [collection layoutIfNeeded];
+            NSInteger editedSize = [[states[0] valueForKey:@"size"] integerValue];
+            Require(editedSize != BAAnalyticsCardSize1x1, @"Fixture resize did not reach the production host");
+            NSIndexPath *removedPath = [NSIndexPath indexPathForItem:2 inSection:0];
+            [collection scrollToItemAtIndexPath:removedPath atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+            [collection layoutIfNeeded];
+            cell = (id)[collection cellForItemAtIndexPath:removedPath];
+            Require(cell != nil, @"Pending provider to remove was not visible");
+            [cell.removeButton sendActionsForControlEvents:UIControlEventTouchUpInside]; [collection layoutIfNeeded]; DrainUI();
+            [collection setContentOffset:CGPointZero animated:NO]; [collection layoutIfNeeded];
+            NSArray *editedStates = [states copy];
+            NSArray *editedOrder = @[cards[1].analyticsCardIdentifier, cards[0].analyticsCardIdentifier];
+            Require([[states valueForKeyPath:@"card.analyticsCardIdentifier"] isEqual:editedOrder], @"Fixture edit did not preserve its intended order");
+            id placeholder = [states[0] valueForKey:@"card"];
+
+            BAFixtureCardLongPress *gesture = nil;
+            if (dragging) {
+                cell = (id)[collection cellForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+                gesture = [BAFixtureCardLongPress new]; gesture.fixtureState = UIGestureRecognizerStateBegan;
+                gesture.fixturePoint = CGPointMake(CGRectGetMidX(cell.frame), CGRectGetMidY(cell.frame));
+                [host handleCardLongPress:gesture];
+                Require([[host valueForKey:@"movingCard"] boolValue], @"Production long press did not start a drag");
+            }
+            BTPluginRegistrationTransaction *transaction = [FixtureExternalRegistry beginTransactionForPluginIdentifier:@"com.example.fixture.async"
+                pluginVersion:@"1.0" declaredExtensionPoints:[NSSet setWithObject:BAAnalyticsCardExtensionPointIdentifier] error:&error];
+            Require(transaction != nil, error.description);
+            for (BAFixtureExternalCard *card in cards)
+                Require([transaction registerExtensionObject:card extensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier
+                    extensionPointVersion:BAAnalyticsCardExtensionPointVersion extensionIdentifier:card.analyticsCardIdentifier error:&error], error.description);
+            Require([transaction commit:&error], error.description);
+            [NSNotificationCenter.defaultCenter postNotificationName:BTPluginPlatformDidFinishStartupNotification object:FixtureExternalPlatform];
+            Require([[host valueForKey:@"pendingExternalCards"] boolValue] && [states[0] valueForKey:@"card"] == placeholder,
+                @"External completion changed a card during editing or dragging");
+            [host setEditing:NO animated:NO];
+            if (dragging) {
+                Require([[host valueForKey:@"pendingExternalCards"] boolValue] && [states[0] valueForKey:@"card"] == placeholder,
+                    @"Done replaced the provider before the dragged card finished");
+                gesture.fixtureState = UIGestureRecognizerStateEnded;
+                [host handleCardLongPress:gesture];
+            }
+            WaitForFixture(^BOOL { return ![[host valueForKey:@"pendingExternalCards"] boolValue] && ![[host valueForKey:@"movingCard"] boolValue]; },
+                1, @"Deferred external completion was not applied after editing/dragging ended");
+            [collection layoutIfNeeded];
+            Require([states isEqualToArray:editedStates] && [[states valueForKeyPath:@"card.analyticsCardIdentifier"] isEqual:editedOrder] &&
+                [[states[0] valueForKey:@"size"] integerValue] == editedSize, @"External startup reconstructed or overwrote the edited layout");
+            Require([states[0] valueForKey:@"card"] == cards[1] && cards[1].restorationCount == 1 && [cards[1].restoredState isEqual:savedState],
+                @"The matching external provider did not restore the placeholder's exact saved state");
+            Require([[host valueForKey:@"availableCards"] count] == 4 && states.count == 2 && cards[2].restorationCount == 0,
+                @"External startup re-added a removed/hidden provider to a saved layout");
+            cell = (id)[collection cellForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:0]];
+            Require([cell.analyticsCardContentView.accessibilityIdentifier isEqual:cards[1].analyticsCardIdentifier],
+                @"Resolved provider did not replace the visible unavailable content");
+            [host saveCardLayout];
+            NSArray<BAAnalyticsCardLayoutRecord *> *saved = [BAAnalyticsCardLayoutStore loadRecordsFromUserDefaults:defaults];
+            Require(saved.count == 2 && [saved[0].cardIdentifier isEqual:cards[1].analyticsCardIdentifier] &&
+                saved[0].sizeValue == editedSize && [saved[0].restorationState isEqual:savedState],
+                @"Resolved external provider did not preserve edited layout persistence");
+            [NSNotificationCenter.defaultCenter removeObserver:host name:BTPluginPlatformDidFinishStartupNotification object:FixtureExternalPlatform];
+        }
+    } @finally {
+        if (host) [NSNotificationCenter.defaultCenter removeObserver:host name:BTPluginPlatformDidFinishStartupNotification object:FixtureExternalPlatform];
+        self.window.rootViewController = originalRoot;
+        [self.window layoutIfNeeded];
+        FixtureExternalRegistry = nil; FixtureExternalPlatform = nil;
+        [defaults removePersistentDomainForName:suite];
+    }
 }
 - (void)testHost {
     self.history.fixtureReport=BAFixtureReport(@"ready");[self.history publishFixture];self.metrics.fixtureSnapshot=BAFixtureSnapshot(NO);[self.metrics refreshNow];
@@ -1142,6 +1323,59 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview]; [history setApplicationActive:NO];
     }
     Require(history.subscriberCount == 0 && !history.polling,@"Hidden production canvas retained real history acquisition");
+}
+- (void)testReaderCableEventsAndIndependentGaps {
+    NSURL *file = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES]
+        URLByAppendingPathComponent:[@"battman-cable-fixture-" stringByAppendingString:NSUUID.UUID.UUIDString]];
+    __block BAAnalyticsReport *report = nil; __block NSString *error = nil;
+    dispatch_async(BAAnalyticsCanvasPreparationQueue(), ^{
+        @autoreleasepool {
+            @try {
+                BAAnalyticsReport *generated = ReaderCableEventReport(file);
+                dispatch_async(dispatch_get_main_queue(), ^{ report = generated; });
+            } @catch (NSException *exception) {
+                NSString *reason = exception.reason;
+                dispatch_async(dispatch_get_main_queue(), ^{ error = reason; });
+            }
+        }
+    });
+    BAAnalyticsCardCell *cell = nil;
+    @try {
+        WaitForFixture(^BOOL { return report || error; }, 5, @"Production reader did not finish the cable-event fixture");
+        Require(report && !report.error, error ?: @"Production reader rejected the cable-event fixture");
+        BAAnalyticsFamilyReport *family = [report reportForFamily:BAAnalyticsFamilyEvents];
+        NSArray<BAAnalyticsStateTransition *> *raw = family.payload[BAAnalyticsPayloadTransitions];
+        Require(raw.count == 2, @"Reader failed to distinguish insertion/removal from a change across a long gap");
+        for (BAAnalyticsStateTransition *transition in raw) {
+            Require(BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, NO) &&
+                !BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, YES),
+                @"Cable boundary fixture did not exercise joint-coverage complement without a real source gap");
+        }
+        BAFixtureHistoryService *history = [BAFixtureHistoryService new]; history.fixtureReport = report;
+        BAAnalyticsCanvasCard *events = nil;
+        for (BAAnalyticsCanvasCard *card in BAAnalyticsCreateProcessCanvasCards())
+            if ([card.familyIdentifier isEqual:BAAnalyticsFamilyEvents]) events = card;
+        events.historyService = history;
+        cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0, 0, 346, 346)];
+        [cell configureWithCard:events size:BAAnalyticsCardSize2x2 editing:NO];
+        [cell setAnalyticsCardDisplayed:YES]; [self.window addSubview:cell]; AwaitPreparedCanvases(cell);
+        BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+        NSArray<BAAnalyticsStateTransition *> *visible = [canvas transitionsForFamily:family];
+        Require(visible.count == 2 && [visible[0].identifier isEqual:raw[0].identifier] && [visible[1].identifier isEqual:raw[1].identifier],
+            @"Events canvas erased a real reader cable transition because its state coverage changes");
+        Require(visible[0].previousState == BAAnalyticsObservedStateUnplugged && visible[1].nextState == BAAnalyticsObservedStateUnplugged,
+            @"Insertion and removal lost their distinct observed directions");
+        BAAnalyticsHistoryWindow *path = [report reportForFamily:BAAnalyticsFamilyPath].window;
+        NSUInteger usable = 0;
+        for (BAAnalyticsHistoryInterval *interval in path.intervals)
+            if (BAProcessIntervalUsable(interval, @[BAAnalyticsHistoryBatteryPowerWatts], path.gaps)) usable++;
+        Require(usable == 20, @"Independent sparse BatteryUI masked trusted primary Battery power pairs");
+        if (!self.performanceResults) self.performanceResults = [NSMutableDictionary dictionary];
+        self.performanceResults[@"readerCableEventsAndIndependentSourceGaps"] = @YES;
+    } @finally {
+        [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
+        [NSFileManager.defaultManager removeItemAtURL:file error:NULL];
+    }
 }
 - (void)testRealHostHistoryActivation {
     Require(UIApplication.sharedApplication.applicationState == UIApplicationStateActive,@"History host activation fixture requires an active application");
@@ -2061,6 +2295,8 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
           @"full canvas editing with sibling accessory stacking and hit routing",@"readings / plot annotation separation",@"44-point accessibility targets and equivalent activation",
           @"editing suppresses card touch, embedded gestures and accessibility actions",@"resize/remove/add/reorder/persistence",@"visible-only subscriptions",
           @"current capacity detail without history and no mixed-source capacity ratios",@"bounded capacity history browsing, exact reading selection and resize consistency",@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"];
+    checks = [checks arrayByAddingObject:@"production reader cable transitions and independent source gaps survive canvas filtering"];
+    checks = [checks arrayByAddingObject:@"delayed external completion preserves edited layout and restores placeholders after editing/dragging"];
     @try {
         NSString *focusedFamilies = NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_VISUAL_FAMILIES"];
         if (focusedFamilies.length) {
@@ -2098,6 +2334,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             [@"PASS" writeToFile:[self.output stringByAppendingPathComponent:@"analytics-v3.status"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
             return;
         }
+        [self testDelayedExternalCards];
         if (performanceOnly) {
             [self testRegistrationAndMigration]; [self testHost]; [self testFamilyDetails]; [self testCapacityCurrentDetail]; [self testCapacityHistoryBrowsing];
             [self testPerformanceHistory]; [self testGapIndexSemantics];
@@ -2121,6 +2358,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         [self testFamilyDetails];
         [self testCapacityCurrentDetail]; [self testCapacityHistoryBrowsing];
         }
+        [self testReaderCableEventsAndIndependentGaps];
         [self testRealHistoryPublication];
         [self testRealHostHistoryActivation];
         [self writeValidationWithChecks:checks passed:YES];

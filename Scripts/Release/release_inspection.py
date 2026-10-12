@@ -18,7 +18,7 @@ from pathlib import Path, PurePosixPath
 
 from compatibility_matrix import load_compatibility_matrix
 from debian_archive import data_members, extract_data, read_ar_members, read_control
-from host_build_identity import require_embedded_identity, require_git_object_id
+from host_build_identity import require_embedded_identity, require_git_object_id, extract_distribution_channel
 from release_common import (
     PLUGIN_SDK_MIT_LICENSE_SHA256,
     ReleaseError,
@@ -168,6 +168,7 @@ def inspect_deb(
             source_tree=source_tree,
             source_dirty=False if not allow_debug else None,
         )
+        channel = extract_distribution_channel(executable)
         macho = _inspect_macho(executable)
         if not allow_debug and not macho["platformSignatureInspectable"]:
             raise ReleaseError(f"{flavor} Debian app code signature is not inspectable by codesign or ldid")
@@ -206,6 +207,7 @@ def inspect_deb(
         "appBuildConfiguration": info.get("BTBuildConfiguration", "unmarked"),
         "appSourceCommit": info.get("GIT_COMMIT_HASH", ""),
         "appBuildIdentity": build_identity,
+        "appDistributionChannel": channel,
         "machO": macho,
     }
 
@@ -445,6 +447,8 @@ def inspect_tipa(
             if not isinstance(executable_name, str) or "/" in executable_name:
                 raise ReleaseError("TIPA app executable metadata is invalid")
             executable = app / executable_name
+            if extract_distribution_channel(executable) == "havoc":
+                raise ReleaseError("Havoc builds are Debian-only; a Havoc TIPA is not supported")
             build_identity = require_embedded_identity(
                 executable,
                 version=version,

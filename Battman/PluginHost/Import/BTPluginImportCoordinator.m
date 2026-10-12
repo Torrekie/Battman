@@ -92,8 +92,8 @@ static NSError *BTPluginImportError(NSString *description, NSError *underlyingEr
 			return YES;
 		[self.pendingCanonicalPaths addObject:pendingKey];
 	}
+	BOOL scoped = [capturedURL startAccessingSecurityScopedResource];
 	dispatch_async(self.importQueue, ^{
-		BOOL scoped = [capturedURL startAccessingSecurityScopedResource];
 		__block BTPluginImportResult *result = nil;
 		__block NSError *resultError = nil;
 		NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];

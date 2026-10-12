@@ -99,7 +99,7 @@ EXPECTED_CARDS = {
             "cell-voltage.1.millivolts",
             "cell-voltage.2.millivolts",
         ],
-        "host-only-normalized-main-battery-cell-voltage-history",
+        "host-only-normalized-main-battery-cell-voltage-history-or-validated-live",
     ),
     "com.torrekie.battman.analytics.session": (
         "embedded",

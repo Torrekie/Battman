@@ -56,7 +56,7 @@ def render(sdk_root: Path) -> bytes:
         "lp64Layout": {
             "BTPluginErrorV1": {"minimumSize": 24, "currentSize": 24},
             "BTPluginExtensionRegistrationV1": {"minimumSize": 40, "currentSize": 40},
-            "BTPluginHostV1": {"minimumSize": 24, "currentSize": 32},
+            "BTPluginHostV1": {"minimumSize": 24, "currentSize": 40},
             "BTPluginDescriptorV1": {"minimumSize": 40, "currentSize": 40},
         },
         "publicFileSHA256": hashes,

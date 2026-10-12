@@ -107,9 +107,9 @@
       ]
     },
     {
-      "availability": "Displays available validated main-battery cell channels independently, including additional discovered indices. Concurrent spread needs at least two valid channels at one observation. Missing channels remain unavailable; attachment-battery fields and live snapshot cell values are not substituted.",
+      "availability": "Displays validated main-battery cell channels independently, including additional discovered indices. Concurrent spread needs at least two valid channels from the same observation. When history is absent, validated live channels may be shown explicitly as current readings; they do not imply historical coverage. Missing channels remain unavailable; attachment-battery fields are not substituted.",
       "delivery": "embedded",
-      "hardwareBoundary": "host-only-normalized-main-battery-cell-voltage-history",
+      "hardwareBoundary": "host-only-normalized-main-battery-cell-voltage-history-or-validated-live",
       "identifier": "com.torrekie.battman.analytics.cells",
       "requiredMetrics": [
         "cell-voltage.0.millivolts",

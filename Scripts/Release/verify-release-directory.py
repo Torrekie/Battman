@@ -110,7 +110,7 @@ def _validate_havoc_artifact_policy(name: str, kind: str, channels: list[str]) -
             and channel != HAVOC_MANUAL_CANDIDATE_CHANNEL
         ):
             raise ReleaseError("release manifest contains a legacy or unknown Havoc channel")
-    eligible_kind = kind in HAVOC_ELIGIBLE_ARTIFACT_KINDS
+    eligible_kind = kind.startswith("plugin-debian-") and kind in HAVOC_ELIGIBLE_ARTIFACT_KINDS
     if eligible_kind and not name.endswith(".deb"):
         raise ReleaseError("Havoc candidate artifact kind must use a Debian filename")
     has_candidate_channel = HAVOC_MANUAL_CANDIDATE_CHANNEL in channels

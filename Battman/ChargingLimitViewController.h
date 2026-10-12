@@ -3,8 +3,8 @@
 
 @interface ChargingLimitViewController : UITableViewController
 {
-	int daemon_pid;
-	int daemon_fd;
+	int daemon_pid; // Main-thread presentation snapshot.
+	int daemon_fd;  // Serial daemon queue only, except final close in dealloc.
 	char *vals;
 	char fallback_vals[3];
 	BOOL vals_mapped;

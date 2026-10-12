@@ -8,8 +8,8 @@ tag, sign, upload, publish, or install artifacts.
 
 ### Added
 
-- Added the production Analytics page with six embedded cards backed by shared,
-  immutable battery metric snapshots and visible-only updates.
+- Added ten Analytics cards with shared battery snapshots, cached startup,
+  source-aware history, and interactive capacity trends.
 - Added the native plug-in host, stable C ABI v1, transactional registry, and
   public PluginSDK authoring/package tools.
 - Added offline `.battman` import, bounded verification, quarantine, explicit
@@ -21,12 +21,28 @@ tag, sign, upload, publish, or install artifacts.
 
 ### Changed
 
+- External plug-in verification runs in the background; saved card layouts are
+  restored when plug-ins finish loading. Recovery mode covers official and
+  third-party external plug-ins, and Charge Gauge follows the app language.
+- Charging-limit operations and history queries no longer wait on the UI thread.
+- Data removal waits for Analytics cache writers and reports deletion failures.
+- Legacy icons use vector fallbacks without a bundled symbol font.
+- Public, GitHub and Havoc builds retain distinct Xcode schemes. Havoc provides
+  Debian packages only; its private authorization implementation is required.
 - Existing Analytics cards remain embedded but now use the same registry and
   lifecycle contract as external native cards.
-- Release packaging is handled by bounded scripts and gated workflows instead
-  of the former push-to-master IPA workflow.
+- Release packaging uses bounded scripts and gated workflows.
 - Versioning uses numeric `MAJ.MIN.PATCH[.REV]`; Debug and Release remain the
   only build configurations.
+
+### Fixed
+
+- Preserved valid cable-change events and prevented gaps in an independent
+  history table from hiding available measurements.
+- Fixed the lifetime and cleanup of asynchronous power notifications.
+- Updated release fixtures and platform dependency hashes; normal CI now runs
+  the native regression suite and serial Public/GitHub Xcode Release builds
+  before tagging.
 
 ### Security
 
@@ -42,7 +58,12 @@ tag, sign, upload, publish, or install artifacts.
 ### Distribution
 
 - The release matrix retains rooted `iphoneos-arm`, rootless
-  `iphoneos-arm64`, and TrollStore replacement-TIPA host delivery.
+  `iphoneos-arm64`, and GitHub TrollStore replacement-TIPA host delivery.
+- Channel markers distinguish Public, GitHub and Havoc executables. Havoc
+  validation requires its own build, and Havoc TIPAs are rejected.
+- Manual release validation accepts a ref and defaults to validation-only mode.
+  Production draft creation still requires an exact tag, signed public inputs,
+  offline checksum signing, and protected environment approval.
 - Charge Gauge is prepared as rooted/rootless add-ons and sealed replacement-
   TIPA code. APT/dpkg or marketplace availability remains transport evidence,
   not Battman activation trust.

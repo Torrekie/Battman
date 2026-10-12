@@ -7,6 +7,9 @@
 #import "BAAnalyticsMetricService.h"
 #import "BAAnalyticsMetricSnapshotInternal.h"
 
+static NSHashTable<BAAnalyticsMetricService *> *BAMetricServices;
+static BOOL BAMetricDataWipeRequested;
+
 #include <math.h>
 
 static NSTimeInterval const BAAnalyticsDefaultSampleInterval = 5.0;
@@ -28,6 +31,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 @property (nonatomic, strong, readwrite, nullable) BAAnalyticsMetricSnapshot *latestSnapshot;
 @property (nonatomic, copy, nullable) NSURL *startupCacheURL;
 @property (nonatomic) NSTimeInterval lastCacheWriteUptime;
+@property (nonatomic) BOOL preparedForDataWipe;
 @end
 
 @implementation BAAnalyticsMetricService
@@ -39,7 +43,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 
 - (void)enableStartupCacheAtURL:(NSURL *)cacheURL {
 	NSParameterAssert(NSThread.isMainThread);
-	if (!cacheURL.isFileURL || self.startupCacheURL) return;
+	if (!cacheURL.isFileURL || self.startupCacheURL || self.preparedForDataWipe) return;
 	self.startupCacheURL = cacheURL;
 	__weak typeof(self) weakSelf = self;
 	dispatch_async(self.workerQueue, ^{
@@ -79,7 +83,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 			}
 			dispatch_async(dispatch_get_main_queue(), ^{
 				BAAnalyticsMetricService *service = weakSelf;
-				if (!snapshot || !service || service.latestSnapshot) return;
+				if (!snapshot || !service || service.preparedForDataWipe || service.latestSnapshot) return;
 				service.latestSnapshot = snapshot;
 				for (id<BAAnalyticsMetricServiceSubscriber> subscriber in service.subscribers.allObjects)
 					[subscriber analyticsMetricService:service didPublishSnapshot:snapshot];
@@ -128,6 +132,11 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 	_historyStorage = [NSMutableDictionary dictionary];
 	_applicationActive = YES;
 	_nextSequenceNumber = 1;
+	@synchronized(BAAnalyticsMetricService.class) {
+		if (!BAMetricServices) BAMetricServices = [NSHashTable weakObjectsHashTable];
+		[BAMetricServices addObject:self];
+		_preparedForDataWipe = BAMetricDataWipeRequested;
+	}
 	return self;
 }
 
@@ -180,8 +189,34 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 	});
 }
 
+- (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion {
+	NSParameterAssert(NSThread.isMainThread);
+	self.preparedForDataWipe = YES;
+	self.latestSnapshot = nil;
+	[self updatePollingState];
+	dispatch_async(self.workerQueue, ^{
+		[self.historyStorage removeAllObjects];
+		dispatch_async(dispatch_get_main_queue(), completion);
+	});
+}
+
++ (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion {
+	NSParameterAssert(NSThread.isMainThread);
+	NSArray<BAAnalyticsMetricService *> *services;
+	@synchronized(BAAnalyticsMetricService.class) {
+		BAMetricDataWipeRequested = YES;
+		services = BAMetricServices.allObjects;
+	}
+	dispatch_group_t pending = dispatch_group_create();
+	for (BAAnalyticsMetricService *service in services) {
+		dispatch_group_enter(pending);
+		[service prepareForDataWipeWithCompletion:^{ dispatch_group_leave(pending); }];
+	}
+	dispatch_group_notify(pending, dispatch_get_main_queue(), completion);
+}
+
 - (void)updatePollingState {
-	BOOL shouldPoll = self.applicationActive && self.subscribers.allObjects.count > 0;
+	BOOL shouldPoll = !self.preparedForDataWipe && self.applicationActive && self.subscribers.allObjects.count > 0;
 	if (shouldPoll == self.polling)
 		return;
 	if (shouldPoll)

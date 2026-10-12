@@ -34,6 +34,7 @@ from release_common import (
 from official_trust import require_official_plugins, validate_official_trust
 from compatibility_matrix import validate_repository_compatibility_matrix
 from host_build_identity import (
+    extract_distribution_channel,
     require_embedded_identity,
     require_product_identifier,
     require_git_object_id,
@@ -342,6 +343,13 @@ def main() -> int:
                           expected_trust_digest, required_host_content)
     _require_app_identity(arguments.tipa_app, version, commit, source_tree, arguments.engineering_candidate,
                           expected_trust_digest, required_host_content)
+    # A GitHub release matrix must never redistribute the Havoc-only host.
+    channels = {
+        extract_distribution_channel(app / "Battman")
+        for app in (arguments.deb_app, arguments.tipa_app)
+    }
+    if len(channels) != 1 or not channels.issubset({"public", "github"}):
+        raise ReleaseError("GitHub release requires matching Public or GitHub host variants")
     if arguments.engineering_candidate:
         if arguments.checksum_public_key:
             raise ReleaseError(

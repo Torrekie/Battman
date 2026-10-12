@@ -32,6 +32,11 @@ or appended C tail does not itself require all other numbers to change.
   so it cannot leave partially registered objects.
 - `BTPluginHostV1.log` is optional. A plug-in may use it only when `structSize`
   includes that field and the callback is non-null.
+- `BTPluginHostV1.preferredLanguage` is an optional UTF-8 BCP-47 language tag
+  selected by the host. Read it only when `structSize` covers the field and
+  copy it during registration if it is needed later. A missing or null field
+  falls back to the system language; the frozen required v1 prefix is unchanged.
+
 - A plug-in declares the host-ABI range it supports. ABI v1 hosts reject a
   range that excludes v1.
 - Plug-ins do not resolve Battman executable symbols. They may link only the

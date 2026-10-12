@@ -142,7 +142,7 @@
 	return YES;
 }
 - (BTPluginStartupSnapshot *)beginStartupWithSafeModeRequested:(BOOL)safeModeRequested error:(NSError **)error { (void)safeModeRequested; (void)error; return nil; }
-- (BOOL)recordThirdPartyLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier packageSHA256:(NSString *)packageSHA256 source:(BTPluginSource)source startupIdentifier:(NSString *)startupIdentifier error:(NSError **)error { (void)pluginIdentifier; (void)packageSHA256; (void)source; (void)startupIdentifier; (void)error; return YES; }
+- (BOOL)recordNativeLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier packageSHA256:(NSString *)packageSHA256 source:(BTPluginSource)source startupIdentifier:(NSString *)startupIdentifier error:(NSError **)error { (void)pluginIdentifier; (void)packageSHA256; (void)source; (void)startupIdentifier; (void)error; return YES; }
 - (BOOL)markStartupSettledWithIdentifier:(NSString *)startupIdentifier error:(NSError **)error { (void)startupIdentifier; (void)error; return YES; }
 - (BOOL)disablePluginFromRecovery:(BTPluginStartupRecovery *)recovery error:(NSError **)error { (void)recovery; (void)error; return NO; }
 @end

@@ -7,6 +7,7 @@
 
 #import "ThermalTunesViewContoller.h"
 #import "ObjCExt/UIColor+compat.h"
+#import "ObjCExt/UIImage+SVG.h"
 
 #include <sys/sysctl.h>
 #include "battery_utils/thermal.h"
@@ -37,7 +38,8 @@
 	} else {
 		// lock.fill U+1003A1
 		// checkmark U+100185
-		items = @[@"􀎡", @"􀆅"];
+		items = @[[[UIImage legacySymbolImageForGlyph:@"􀎡" pointSize:17 color:UIColor.blackColor] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate],
+			[[UIImage legacySymbolImageForGlyph:@"􀆅" pointSize:17 color:UIColor.blackColor] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
 	}
 	self = [super initWithFrame:CGRectMake(0, 0, 74, 32)];
 	if (self) {

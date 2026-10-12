@@ -24,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 @end
 
+// Opaque, single-use capability for an entirely verified, privately pinned
+// package. Only the loader that prepared it may activate it.
+@interface BTPluginPreparedActivation : NSObject
+- (instancetype)init NS_UNAVAILABLE;
+@end
+
 @interface BTPluginRuntimeLoader : NSObject
 
 - (instancetype)init NS_UNAVAILABLE;
@@ -37,6 +43,17 @@ NS_ASSUME_NONNULL_BEGIN
 											 startupSnapshot:(BTPluginStartupSnapshot *)startupSnapshot
 												 developerMode:(BOOL)developerMode
 														 error:(NSError * _Nullable * _Nullable)error;
+
+// Run preparation on the serial startup worker, then immediately activate on
+// main before preparing the next package. Preparation performs all file I/O,
+// verification, pinning and durable trust/recovery writes; it executes no
+// package code. Never settle startup while a prepared activation is pending.
+- (nullable BTPluginPreparedActivation *)prepareDiscoveredPackage:(BTPluginDiscoveredPackage *)discoveredPackage
+	activationRecord:(nullable BTPluginActivationRecord *)activationRecord
+	startupSnapshot:(BTPluginStartupSnapshot *)startupSnapshot
+	developerMode:(BOOL)developerMode error:(NSError * _Nullable * _Nullable)error;
+- (nullable BTPluginRuntimeLoadResult *)activatePreparedPackage:(BTPluginPreparedActivation *)prepared
+	error:(NSError * _Nullable * _Nullable)error;
 
 @end
 

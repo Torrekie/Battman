@@ -29,6 +29,18 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 - (instancetype)bt_init { return [super init]; }
 @end
 
+@interface BTPluginPreparedActivation ()
+@property (nonatomic, strong) BTPluginRuntimeLoader *owner;
+@property (nonatomic, strong) BTPluginPreparedNativeImage *image;
+@property (nonatomic, strong) BTPluginRuntimeLoadResult *result;
+@property (nonatomic) BOOL consumed;
+- (instancetype)bt_init;
+@end
+
+@implementation BTPluginPreparedActivation
+- (instancetype)bt_init { return [super init]; }
+@end
+
 @interface BTPluginRuntimeLoader ()
 @property (nonatomic, strong) BTPluginPackageVerifier *packageVerifier;
 @property (nonatomic, strong) BTPluginRegistry *registry;
@@ -73,18 +85,33 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 }
 
 - (BTPluginRuntimeLoadResult *)loadDiscoveredPackage:(BTPluginDiscoveredPackage *)discoveredPackage
-											 activationRecord:(BTPluginActivationRecord *)activationRecord
-											startupSnapshot:(BTPluginStartupSnapshot *)startupSnapshot
-												developerMode:(BOOL)developerMode
-														 error:(NSError **)error {
+	activationRecord:(BTPluginActivationRecord *)activationRecord
+	startupSnapshot:(BTPluginStartupSnapshot *)startupSnapshot
+	developerMode:(BOOL)developerMode error:(NSError **)error {
 	if (![NSThread isMainThread]) {
 		BTPluginLoaderFail(error, @"Plug-in startup activation must run on the main thread.");
 		return nil;
 	}
+	BTPluginPreparedActivation *prepared = [self prepareDiscoveredPackage:discoveredPackage
+		activationRecord:activationRecord startupSnapshot:startupSnapshot developerMode:developerMode error:error];
+	return prepared ? [self activatePreparedPackage:prepared error:error] : nil;
+}
+
+- (BTPluginPreparedActivation *)prepareDiscoveredPackage:(BTPluginDiscoveredPackage *)discoveredPackage
+	activationRecord:(BTPluginActivationRecord *)activationRecord
+	startupSnapshot:(BTPluginStartupSnapshot *)startupSnapshot
+	developerMode:(BOOL)developerMode error:(NSError **)error {
 	if (![discoveredPackage isKindOfClass:[BTPluginDiscoveredPackage class]] ||
 		![startupSnapshot isKindOfClass:[BTPluginStartupSnapshot class]] ||
+		(activationRecord && ![activationRecord isKindOfClass:[BTPluginActivationRecord class]]) ||
 		!BTPluginSourceCanActivate(discoveredPackage.source)) {
 		BTPluginLoaderFail(error, @"The discovered plug-in is not a directly loadable installed package.");
+		return nil;
+	}
+	// These process-immutable decisions need no package I/O, including for
+	// official images. Safe mode must remain usable after an official crash.
+	if (startupSnapshot.isSafeMode || (activationRecord && !activationRecord.isEnabled)) {
+		BTPluginLoaderFail(error, @"External native plug-ins are disabled for this startup.");
 		return nil;
 	}
 	if (discoveredPackage.source == BTPluginSourceApplicationData &&
@@ -94,8 +121,8 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 		return nil;
 	}
 
-	// This complete verification occurs in the same method and immediately
-	// before the one private image-loader call below.
+	// Complete verification and byte pinning may run on the serial startup
+	// worker. No plug-in code is mapped or called in this phase.
 	BTPluginVerifiedPackage *verified = nil;
 	if (discoveredPackage.representation == BTPluginInstalledRepresentationTransportPackage) {
 		verified = [self.packageVerifier verifyPackageAtURL:discoveredPackage.packageURL
@@ -120,7 +147,7 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 		BTPluginLoaderFail(error, @"The plug-in has not received an offline trust approval.");
 		return nil;
 	}
-	if (thirdParty && (!startupSnapshot.areThirdPartyPluginsEnabled || startupSnapshot.isSafeMode)) {
+	if (thirdParty && !startupSnapshot.areThirdPartyPluginsEnabled) {
 		BTPluginLoaderFail(error, @"Third-party native plug-ins are disabled for this startup.");
 		return nil;
 	}
@@ -162,24 +189,43 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 
 	if (![self.packageVerifier recordActivationCommitForVerifiedPackage:verified error:error])
 		return nil;
-	if (thirdParty && ![self.activationStore recordThirdPartyLoadAttemptForPluginIdentifier:manifest.pluginIdentifier
+	if (![self.activationStore recordNativeLoadAttemptForPluginIdentifier:manifest.pluginIdentifier
 		packageSHA256:verified.packageInspection.packageSHA256 source:discoveredPackage.source
 		startupIdentifier:startupSnapshot.startupIdentifier error:error])
-		return nil;
-
-	NSMutableSet<NSString *> *declaredExtensionPoints = [NSMutableSet set];
-	for (BTPluginManifestExtensionPoint *extensionPoint in manifest.extensionPoints)
-		[declaredExtensionPoints addObject:extensionPoint.identifier];
-	if (![self.nativeImageLoader loadPreparedImage:preparedImage
-		expectedPluginIdentifier:manifest.pluginIdentifier expectedPluginVersion:manifest.buildVersion
-		declaredExtensionPoints:declaredExtensionPoints registry:self.registry error:error])
 		return nil;
 
 	BTPluginRuntimeLoadResult *result = [[BTPluginRuntimeLoadResult alloc] bt_init];
 	result.discoveredPackage = discoveredPackage;
 	result.verifiedPackage = verified;
 	result.thirdParty = thirdParty;
-	return result;
+	BTPluginPreparedActivation *prepared = [[BTPluginPreparedActivation alloc] bt_init];
+	prepared.owner = self;
+	prepared.image = preparedImage;
+	prepared.result = result;
+	return prepared;
+}
+
+- (BTPluginRuntimeLoadResult *)activatePreparedPackage:(BTPluginPreparedActivation *)prepared
+	error:(NSError **)error {
+	if (![NSThread isMainThread]) {
+		BTPluginLoaderFail(error, @"Plug-in startup activation must run on the main thread.");
+		return nil;
+	}
+	if (![prepared isKindOfClass:[BTPluginPreparedActivation class]] ||
+		prepared.owner != self || prepared.consumed) {
+		BTPluginLoaderFail(error, @"The plug-in preparation is invalid or has already been consumed.");
+		return nil;
+	}
+	prepared.consumed = YES;
+	BTPluginPackageManifest *manifest = prepared.result.verifiedPackage.packageInspection.manifest;
+	NSMutableSet<NSString *> *declaredExtensionPoints = [NSMutableSet set];
+	for (BTPluginManifestExtensionPoint *extensionPoint in manifest.extensionPoints)
+		[declaredExtensionPoints addObject:extensionPoint.identifier];
+	if (![self.nativeImageLoader loadPreparedImage:prepared.image
+		expectedPluginIdentifier:manifest.pluginIdentifier expectedPluginVersion:manifest.buildVersion
+		declaredExtensionPoints:declaredExtensionPoints registry:self.registry error:error])
+		return nil;
+	return prepared.result;
 }
 
 @end

@@ -74,6 +74,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 @property (nonatomic) NSTimeInterval lastDragReorderTime;
 @property (nonatomic) BOOL pendingDragFinish;
 @property (nonatomic) BOOL pendingDragCancellation;
+@property (nonatomic) BOOL pendingExternalCards;
 @end
 
 @implementation AnalyticsViewController
@@ -86,8 +87,45 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	NSArray *cards = [BTPluginPlatform.sharedPlatform.registry extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
 	BAAnalyticsMetricService *metrics = [[BAAnalyticsMetricService alloc] initWithSource:[BAAnalyticsSystemMetricSource new]];
 	[metrics enableStartupCache];
-	return [self initWithCards:cards metricService:metrics
+	self = [self initWithCards:cards metricService:metrics
 		historyService:BAAnalyticsHistoryService.sharedService userDefaults:NSUserDefaults.standardUserDefaults];
+	if (self) [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(externalCardsDidLoad:)
+		name:BTPluginPlatformDidFinishStartupNotification object:BTPluginPlatform.sharedPlatform];
+	return self;
+}
+
+- (void)externalCardsDidLoad:(NSNotification *)notification {
+	self.pendingExternalCards = YES;
+	[self applyPendingExternalCards];
+}
+
+- (void)applyPendingExternalCards {
+	if (!self.pendingExternalCards || self.editing || self.movingCard || self.collectionView.dragging || self.collectionView.decelerating) return;
+	self.pendingExternalCards = NO;
+	NSArray<id<BAAnalyticsCard>> *cards = [BTPluginPlatform.sharedPlatform.registry extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
+	NSMutableDictionary *byIdentifier = [NSMutableDictionary dictionary];
+	for (id<BAAnalyticsCard> card in cards) {
+		byIdentifier[card.analyticsCardIdentifier] = card;
+		if ([card isKindOfClass:BAAnalyticsCanvasCard.class]) ((BAAnalyticsCanvasCard *)card).historyService = self.historyService;
+	}
+	// Replace saved unavailable placeholders in place, preserving edits made while
+	// verification was pending. Never reconstruct the layout from stale defaults.
+	NSMutableSet *visible = [NSMutableSet set];
+	for (BAAnalyticsCardState *state in self.cardStates) {
+		[visible addObject:state.card.analyticsCardIdentifier];
+		id<BAAnalyticsCard> loaded = byIdentifier[state.card.analyticsCardIdentifier];
+		if (loaded && loaded != state.card) {
+			state.card = loaded;
+			state.size = [self validSizeFromSavedValue:@(state.size) forCard:loaded];
+			[self restorePersistedStateForCardState:state];
+		}
+	}
+	BOOL hasSavedLayout = [self.layoutDefaults objectForKey:BAAnalyticsCardLayoutDefaultsKey] != nil ||
+		[self.layoutDefaults objectForKey:BAAnalyticsLegacyCardLayoutDefaultsKey] != nil;
+	if (!hasSavedLayout) for (id<BAAnalyticsCard> card in cards)
+		if (![visible containsObject:card.analyticsCardIdentifier]) [self.cardStates addObject:[self stateForCard:card]];
+	self.availableCards = cards;
+	[self.collectionView reloadData];
 }
 
 - (instancetype)initWithCards:(NSArray<id<BAAnalyticsCard>> *)cards metricService:(BAAnalyticsMetricService *)metricService
@@ -197,6 +235,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
+	[self applyPendingExternalCards];
 	// The lazy view may have missed activation after the host was created in the background.
 	[self.historyService setApplicationActive:UIApplication.sharedApplication.applicationState != UIApplicationStateBackground];
 	for (BAAnalyticsCardCell *cell in self.collectionView.visibleCells) {
@@ -230,12 +269,15 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-	if (!decelerate)
+	if (!decelerate) {
 		[self setCanvasPresentationUpdatesDeferred:NO];
+		[self applyPendingExternalCards];
+	}
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	[self setCanvasPresentationUpdatesDeferred:NO];
+	[self applyPendingExternalCards];
 }
 
 - (void)applicationWillResignActive:(NSNotification *)notification {
@@ -251,6 +293,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
 	// An interrupted drag may not deliver its normal deceleration callback.
 	[self setCanvasPresentationUpdatesDeferred:NO];
+	[self applyPendingExternalCards];
 	[self.metricService setApplicationActive:YES];
 	[self.historyService setApplicationActive:YES];
 	[self.metricService refreshNow];
@@ -302,6 +345,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 - (void)setEditing:(BOOL)editing animated:(BOOL)animated {
 	[super setEditing:editing animated:animated && !UIAccessibilityIsReduceMotionEnabled()];
+	if (!editing) [self applyPendingExternalCards];
 	[self updateEditingButtons];
 	if (!self.movingCard)
 		[self.collectionView reloadData];
@@ -907,6 +951,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 		self.movingCard = NO;
 		self.reorderingDraggedCard = NO;
 		[self saveCardLayout];
+		[self applyPendingExternalCards];
 		[self.collectionView reloadData];
 	}];
 }

@@ -123,7 +123,9 @@ def _artifact_channels(
     kind: str,
     base_channels: list[str],
 ) -> list[str]:
-    eligible = kind in policy["eligibleArtifactKinds"]
+    # GitHub host binaries do not include the Havoc authorization variant.
+    # Only the separately shipped plug-in Debs can be shared between channels.
+    eligible = kind.startswith("plugin-debian-") and kind in policy["eligibleArtifactKinds"]
     if eligible and not name.endswith(policy["eligibleFilenameSuffix"]):
         raise ReleaseError("Havoc manual candidate is not a Debian package")
     channels = list(base_channels)

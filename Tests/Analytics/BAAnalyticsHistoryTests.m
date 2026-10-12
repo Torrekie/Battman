@@ -301,6 +301,50 @@ static void TestIndependentTablesAndWindowClipping(void) {
 			"clipped trusted intervals preserved the real source endpoint samples");
 }
 
+static void TestIndependentSourceGaps(void) {
+	NSMutableArray *rows = [NSMutableArray arrayWithObjects:OffsetRow(1, -3600, 0),
+		@"ALTER TABLE PLBatteryAgent_EventBackward_Battery ADD COLUMN CellVoltage1 INTEGER DEFAULT 4001",
+		@"CREATE TABLE PLBatteryAgent_EventBackward_BatteryUI (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,IsCharging INTEGER)", nil];
+	for (NSUInteger index = 0; index <= 20; index++)
+		[rows addObject:BatteryRow(index + 1, index * 60, @50, @-100, @0, @0, @0)];
+	[rows addObject:[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_BatteryUI VALUES (1,%.3f,50,0),(2,%.3f,49,0)", FixtureEpoch, FixtureEpoch + 1200]];
+	BAAnalyticsReport *report = Read(Fixture(YES, rows), 1200, 22);
+	NSDate *start = [NSDate dateWithTimeIntervalSince1970:FixtureEpoch], *end = [start dateByAddingTimeInterval:1200];
+	for (NSString *familyName in @[BAAnalyticsFamilyCells, BAAnalyticsFamilyPath, BAAnalyticsFamilyEvents, BAAnalyticsFamilyDwell]) {
+		BAAnalyticsHistoryWindow *window = [report reportForFamily:familyName].window;
+		Assert(!BAAnalyticsHistoryHasGap(window.gaps, start, end, NO), "sparse BatteryUI cannot shade or invalidate continuous Battery coverage");
+		AssertNear(window.coveredDuration, 1200, "Battery source retains all trusted coverage despite unrelated UI outage");
+	}
+	rows = [NSMutableArray arrayWithObjects:OffsetRow(1, -3600, 0), BatteryRow(1, 0, @50, @-100, @0, @0, @0),
+		BatteryRow(2, 1200, @49, @-100, @0, @0, @0),
+		@"CREATE TABLE PLBatteryAgent_EventBackward_BatteryUI (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,IsCharging INTEGER)", nil];
+	for (NSUInteger index = 0; index <= 4; index++)
+		[rows addObject:[NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_BatteryUI VALUES (%lu,%.3f,50,0)", (unsigned long)index + 1, FixtureEpoch + index * 300]];
+	report = Read(Fixture(YES, rows), 1200, 23);
+	BAAnalyticsHistoryWindow *dwell = [report reportForFamily:BAAnalyticsFamilyDwell].window;
+	AssertNear(dwell.coveredDuration, 1200, "canonical SOC uses trusted UI pairs during the Battery outage");
+	Assert(!BAAnalyticsHistoryHasGap(dwell.gaps, start, end, NO), "Battery outage cannot mask canonical UI coverage");
+	Assert(BAAnalyticsHistoryHasGap([report reportForFamily:BAAnalyticsFamilyPath].window.gaps, start, end, YES),
+		"UI SOC coverage must not erase the Battery-only power outage");
+}
+
+static void TestCableTransitionCoverage(void) {
+	NSURL *source = Fixture(YES, @[OffsetRow(1, -3600, 0),
+		BatteryRow(1, 0, @50, @-100, @0, @0, @0), BatteryRow(2, 60, @49, @-100, @0, @0, @0),
+		BatteryRow(3, 120, @50, @100, @1, @1, @0), BatteryRow(4, 180, @51, @100, @1, @1, @0),
+		BatteryRow(5, 240, @51, @-100, @0, @0, @0), BatteryRow(6, 300, @50, @-100, @0, @0, @0),
+		BatteryRow(7, 900, @55, @100, @1, @1, @0)]);
+	BAAnalyticsFamilyReport *family = [Read(source, 900, 24) reportForFamily:BAAnalyticsFamilyEvents];
+	NSArray<BAAnalyticsStateTransition *> *transitions = family.payload[BAAnalyticsPayloadTransitions];
+	Assert(transitions.count == 2, "trusted insertion and removal survive; a cable change across a long source gap is unknown");
+	for (BAAnalyticsStateTransition *transition in transitions) {
+		Assert(BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, NO),
+			"sampled cable boundaries correctly lack continuous connection-state coverage");
+		Assert(!BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, YES),
+			"connection-state coverage complement is not a source sampling gap");
+	}
+}
+
 static void TestConfigurationEpochBoundaries(void) {
 	NSMutableArray *statements = [NSMutableArray arrayWithObjects:
 		OffsetRow(1, -3600, 30),
@@ -976,6 +1020,19 @@ static BOOL WaitUntil(BOOL (^condition)(void), NSTimeInterval timeout) {
 @interface BAAnalyticsHistoryService (HistoryTestPhases)
 @property (nonatomic, readonly) BOOL cacheRestorePending;
 @property (nonatomic, readonly) BOOL acquisitionPending;
+- (void)storeCompletedReport:(BAAnalyticsReport *)report sourceURL:(NSURL *)url cancellation:(id)cancellation;
+@end
+
+@interface GatedHistoryWriter : BAAnalyticsHistoryService
+@property (nonatomic, strong) dispatch_semaphore_t writerGate;
+@property (atomic) BOOL writerEntered;
+@end
+@implementation GatedHistoryWriter
+- (void)storeCompletedReport:(BAAnalyticsReport *)report sourceURL:(NSURL *)url cancellation:(id)cancellation {
+	self.writerEntered = YES;
+	dispatch_semaphore_wait(self.writerGate, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+	[super storeCompletedReport:report sourceURL:url cancellation:cancellation];
+}
 @end
 
 static NSURL *IsolatedHistoryCache(void) {
@@ -1026,10 +1083,10 @@ static void TestPersistentHistoryService(void) {
     Assert(WaitUntil(^BOOL { return weakWarm == nil; }, 3), "warm service released after unsubscribing without polling backlog");
     NSData *validEnvelope = [NSData dataWithContentsOfURL:completed];
     Assert(validEnvelope.length > 0, "completed cache is present on disk before cold bootstrap");
-    for (NSUInteger revision = 0; revision < 3; revision++) {
+    for (NSUInteger revision = 0; revision < 4; revision++) {
         NSMutableDictionary *legacyEnvelope = MutableCacheFixture(validEnvelope);
         if (!revision) [legacyEnvelope removeObjectForKey:@"interpretationVersion"];
-        else legacyEnvelope[@"interpretationVersion"] = revision == 1 ? @1 : @99;
+        else legacyEnvelope[@"interpretationVersion"] = revision < 3 ? @(revision) : @99;
         Assert([CacheFixtureData(legacyEnvelope) writeToURL:completed atomically:YES], "wrote synthetic incompatible reader interpretation");
         HistorySubscriber *legacySubscriber = [HistorySubscriber new];
         BAAnalyticsHistoryService *legacyService = InactiveCachedService(source, cache, legacySubscriber);
@@ -1211,6 +1268,40 @@ static void TestVisibleActiveWeakSubscriptions(void) {
 	Assert(service.latestReport == nil, "memory pressure released the bounded report cache");
 }
 
+static void TestHistoryDataWipeBarrier(void) {
+	double recent = NSDate.date.timeIntervalSince1970 - FixtureEpoch - 300;
+	NSURL *source = Fixture(YES, @[OffsetRow(1, recent - 3600, 0),
+		BatteryRow(1, recent, @40, @100, @1, @1, @0), BatteryRow(2, recent + 60, @41, @100, @1, @1, @0)]);
+	NSURL *cache = IsolatedHistoryCache();
+	GatedHistoryWriter *service = [[GatedHistoryWriter alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+	service.writerGate = dispatch_semaphore_create(0);
+	HistorySubscriber *subscriber = [HistorySubscriber new]; [service addSubscriber:subscriber];
+	@try {
+		Assert(WaitUntil(^BOOL { return service.writerEntered && service.latestReport && !service.acquisitionPending; }, 4),
+			"history writer remains pending after its completed report was delivered");
+		__block BOOL complete = NO, heartbeat = NO;
+		[BAAnalyticsHistoryService prepareForDataWipeWithCompletion:^{ complete = YES; }];
+		dispatch_async(dispatch_get_main_queue(), ^{ heartbeat = YES; });
+		Assert(WaitUntil(^BOOL { return heartbeat; }, .5) && !complete,
+			"wipe waits for pending persistence without blocking the main queue");
+		Assert(!service.isPolling && service.latestReport == nil, "wipe cancels polling and drops completed in-memory evidence");
+		dispatch_semaphore_signal(service.writerGate);
+		Assert(WaitUntil(^BOOL { return complete; }, 4), "history wipe barrier completes after its writer exits");
+		Assert([NSFileManager.defaultManager removeItemAtURL:cache error:NULL], "deleted history cache only after the writer barrier");
+		NSUInteger deliveries = subscriber.deliveries;
+		[service setApplicationActive:NO]; [service setApplicationActive:YES]; [service refreshNow];
+		HistorySubscriber *lateSubscriber = [HistorySubscriber new]; [service addSubscriber:lateSubscriber];
+		BAAnalyticsHistoryService *late = [[BAAnalyticsHistoryService alloc] initWithDatabaseURL:source cacheDirectoryURL:cache];
+		[late addSubscriber:lateSubscriber]; [late refreshNow];
+		Assert(!service.isPolling && !late.isPolling && !late.cacheRestorePending && subscriber.deliveries == deliveries && lateSubscriber.deliveries == 0,
+			"activation, subscription and new instances cannot restart history during a terminal wipe");
+		Assert(![NSFileManager.defaultManager fileExistsAtPath:cache.path], "cancelled or newly constructed history services do not recreate erased storage");
+	} @finally {
+		dispatch_semaphore_signal(service.writerGate);
+		[service removeSubscriber:subscriber];
+	}
+}
+
 int main(void) {
 	@autoreleasepool {
 		FixtureDirectories = [NSMutableArray array];
@@ -1220,6 +1311,8 @@ int main(void) {
 			TestFieldsAndIndependentCoverage();
 			TestClockSegmentsStatesAndStableIdentifiers();
 			TestIndependentTablesAndWindowClipping();
+			TestIndependentSourceGaps();
+			TestCableTransitionCoverage();
 			TestConfigurationEpochBoundaries();
 			TestPlatformCadenceUnvalidatedTimeAndSparseCapacity();
 			TestWirelessCandidateUnits();
@@ -1232,6 +1325,7 @@ int main(void) {
 			TestVisibleActiveWeakSubscriptions();
 			TestPersistentHistoryService();
 			TestArchiveEnrichmentService();
+			TestHistoryDataWipeBarrier();
 			printf("Analytics history synthetic SQLite and lifecycle tests passed.\n");
 		} @catch (NSException *exception) {
 			fprintf(stderr, "%s: %s\n", exception.name.UTF8String, exception.reason.UTF8String);

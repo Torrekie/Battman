@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <poll.h>
+#include <time.h>
 #include <signal.h>
 #include <sqlite3.h>
 #include <sys/errno.h>
@@ -25,6 +27,7 @@
 #endif
 
 #import "ObjCExt/UIColor+compat.h"
+#import "ObjCExt/UIImage+SVG.h"
 #import <objc/runtime.h>
 
 typedef enum {
@@ -121,18 +124,8 @@ static UIImage *CLPowerlogExportMenuImage(void) {
 		image = [UIImage systemImageNamed:@"square.and.arrow.up" withConfiguration:configuration];
 	}
 
-	if (!image) {
-		NSString *glyph = @"􀈂";
-		UIFont *font = [UIFont fontWithName:@SFPRO size:22.0] ?: [UIFont systemFontOfSize:22.0];
-		CGSize imageSize = CGSizeMake(24.0, 24.0);
-		UIGraphicsBeginImageContextWithOptions(imageSize, NO, 0.0);
-		NSDictionary *attrs = @{ NSFontAttributeName: font, NSForegroundColorAttributeName: [UIColor blackColor] };
-		CGSize glyphSize = [glyph sizeWithAttributes:attrs];
-		CGPoint point = CGPointMake(ceil((imageSize.width - glyphSize.width) / 2.0), ceil((imageSize.height - glyphSize.height) / 2.0));
-		[glyph drawAtPoint:point withAttributes:attrs];
-		image = UIGraphicsGetImageFromCurrentImageContext();
-		UIGraphicsEndImageContext();
-	}
+	if (!image)
+		image = [UIImage legacySymbolImageForGlyph:@"􀈂" pointSize:22.0 color:[UIColor blackColor]];
 
 	return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 }
@@ -220,14 +213,31 @@ static void CLPowerlogInstallMenuImageSupport(void) {
 
 @end
 
-/*
- * The daemon control socket is intentionally a tiny protocol, but it still
- * crosses a process boundary.  A daemon can be restarted while this view is
- * alive (for example after a respring), so all I/O must tolerate a closed or
- * stale descriptor.  Keep the timeout short: these calls can be made from a
- * table-view action and must never leave the UI blocked indefinitely.
- */
+/* Every transaction shares one monotonic deadline across connect, ping,
+ * retries and the command reply. Per-read timeouts alone multiply on retry. */
 #define CL_DAEMON_IO_TIMEOUT_SECONDS 1
+#define CL_DAEMON_OPERATION_SECONDS 3.0
+
+static double CLMonotonicTime(void) {
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (double)now.tv_sec + (double)now.tv_nsec / 1e9;
+}
+
+static BOOL CLWaitForDaemonSocket(int sock, short events, double deadline) {
+	for (;;) {
+		double remaining = deadline - CLMonotonicTime();
+		if (remaining <= 0) { errno = ETIMEDOUT; return NO; }
+		struct pollfd descriptor = { .fd = sock, .events = events };
+		int result = poll(&descriptor, 1, (int)ceil(MIN(remaining * 1000.0, INT_MAX)));
+		if (result < 0 && errno == EINTR) continue;
+		if (result == 0) { errno = ETIMEDOUT; return NO; }
+		if (result < 0) return NO;
+		if (descriptor.revents & POLLNVAL) { errno = EBADF; return NO; }
+		/* Let send/recv/getsockopt report a peer close or socket error. */
+		return YES;
+	}
+}
 
 static void CLConfigureDaemonSocket(int sock) {
 	struct timeval timeout = { CL_DAEMON_IO_TIMEOUT_SECONDS, 0 };
@@ -238,24 +248,25 @@ static void CLConfigureDaemonSocket(int sock) {
 	(void)setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &no_sigpipe, sizeof(no_sigpipe));
 #endif
 	int flags = fcntl(sock, F_GETFD, 0);
-	if (flags >= 0)
-		(void)fcntl(sock, F_SETFD, flags | FD_CLOEXEC);
+	if (flags >= 0) (void)fcntl(sock, F_SETFD, flags | FD_CLOEXEC);
 }
 
-static ssize_t CLDaemonSend(int sock, const void *bytes, size_t length) {
-	ssize_t result;
-	do {
-		result = send(sock, bytes, length, MSG_NOSIGNAL);
-	} while (result < 0 && errno == EINTR);
-	return result;
+static ssize_t CLDaemonSendBefore(int sock, const void *bytes, size_t length, double deadline) {
+	for (;;) {
+		if (!CLWaitForDaemonSocket(sock, POLLOUT, deadline)) return -1;
+		ssize_t result = send(sock, bytes, length, MSG_NOSIGNAL | MSG_DONTWAIT);
+		if (result < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
+		return result;
+	}
 }
 
-static ssize_t CLDaemonReceive(int sock, void *bytes, size_t length) {
-	ssize_t result;
-	do {
-		result = recv(sock, bytes, length, 0);
-	} while (result < 0 && errno == EINTR);
-	return result;
+static ssize_t CLDaemonReceiveBefore(int sock, void *bytes, size_t length, double deadline) {
+	for (;;) {
+		if (!CLWaitForDaemonSocket(sock, POLLIN, deadline)) return -1;
+		ssize_t result = recv(sock, bytes, length, MSG_DONTWAIT);
+		if (result < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
+		return result;
+	}
 }
 
 static BOOL CLDaemonPath(char *buffer, size_t capacity, const char *suffix) {
@@ -433,7 +444,7 @@ static BOOL CLPrepareDaemonSettingsFile(int fd, unsigned char values[BATTMAN_DAE
 	return CLDaemonSettingsAreValid((const unsigned char *)values);
 }
 
-int connect_to_daemon(bool show_alerts) {
+static int CLConnectToDaemonBefore(bool show_alerts, double deadline) {
 	struct sockaddr_un sockaddr;
 	memset(&sockaddr, 0, sizeof(sockaddr));
 	sockaddr.sun_family = AF_UNIX;
@@ -475,33 +486,43 @@ int connect_to_daemon(bool show_alerts) {
 	}
 	CLConfigureDaemonSocket(sock);
 	
+	int original_flags = fcntl(sock, F_GETFL, 0);
+	if (original_flags < 0 || fcntl(sock, F_SETFL, original_flags | O_NONBLOCK) < 0) {
+		close(sock);
+		return 0;
+	}
 	if (connect(sock, (struct sockaddr *)&sockaddr, (socklen_t)addrlen) == -1) {
-		/*
-		char errstr[1024];
-		snprintf(errstr, sizeof(errstr), "%s\n%s\n%s: %s", _C("Failed to connect to daemon at"), sockaddr.sun_path, L_ERR, strerror(errno));
-		show_alert(L_ERR, errstr, L_OK);
-		 */
-		// No alert bc we need to retry
-		close(sock);
-		return 0;
+		if ((errno != EINPROGRESS && errno != EALREADY) ||
+		    !CLWaitForDaemonSocket(sock, POLLOUT, deadline)) {
+			close(sock);
+			return 0;
+		}
+		int socket_error = 0;
+		socklen_t error_size = sizeof(socket_error);
+		if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &socket_error, &error_size) < 0 || socket_error) {
+			if (socket_error) errno = socket_error;
+			close(sock);
+			return 0;
+		}
 	}
-	
 	char cmd = 2;
-	if (CLDaemonSend(sock, &cmd, 1) != 1) {
-		NSLog(@"Failed to write ping to daemon: %s", strerror(errno));
-		if (show_alerts) show_alert(L_FAILED, "Failed to write to daemon.", L_OK);
+	if (CLDaemonSendBefore(sock, &cmd, 1, deadline) != 1 ||
+	    CLDaemonReceiveBefore(sock, &cmd, 1, deadline) != 1 || cmd != 2) {
 		close(sock);
 		return 0;
 	}
-	if (CLDaemonReceive(sock, &cmd, 1) != 1 || cmd != 2) {
-		NSLog(@"Failed to ping daemon: %s", strerror(errno));
-		if (show_alerts) show_alert(L_FAILED, "The daemon may not be working properly.", L_OK);
+	/* Preserve the blocking-descriptor contract of the shared legacy C API. */
+	if (fcntl(sock, F_SETFL, original_flags) < 0) {
 		close(sock);
 		return 0;
 	}
 
 	NSLog(@"Connected to daemon and received ping!");
 	return sock;
+}
+
+int connect_to_daemon(bool show_alerts) {
+	return CLConnectToDaemonBefore(show_alerts, CLMonotonicTime() + CL_DAEMON_IO_TIMEOUT_SECONDS);
 }
 
 #if 0
@@ -640,8 +661,25 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	return nil;
 }
 
+static int CLPowerlogReadExpired(void *context) {
+	return CLMonotonicTime() >= *(const double *)context;
+}
+
 @interface ChargingLimitViewController ()
 @property (nonatomic, copy) NSArray *drainModes;
+@property (nonatomic, strong) dispatch_queue_t daemonQueue;
+@property (nonatomic, strong) dispatch_queue_t historyQueue;
+@property (nonatomic) int daemonWorkerPID;
+@property (nonatomic) double daemonDeadline;
+@property (nonatomic) BOOL daemonOperationInFlight;
+@property (nonatomic) BOOL viewVisible;
+@property (nonatomic) NSUInteger presentationGeneration;
+@property (nonatomic) BOOL graphLoadInFlight;
+@property (nonatomic) BOOL graphLoaded;
+@property (nonatomic, strong) NSMutableArray *graphPoints;
+@property (nonatomic) BOOL graphReloadPending;
+@property (nonatomic, copy) NSString *graphError;
+@property (nonatomic) BOOL exportInFlight;
 @property (nonatomic, weak) UIView *powerlogExportSourceView;
 @property (nonatomic) CGRect powerlogExportSourceRect;
 - (void)refreshDaemonStatus;
@@ -650,7 +688,14 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 - (void)invalidateDaemonConnection;
 - (BOOL)sendDaemonCommand:(char)command reconnect:(BOOL)reconnect;
 - (BOOL)receiveDaemonByte:(char *)byte;
-- (BOOL)daemonRedecide;
+- (void)daemonRedecide;
+- (void)daemonRedecideWithCompletion:(void (^)(BOOL))completion;
+- (void)refreshDaemonStatusOnQueue;
+- (void)reloadDaemonControls;
+- (void)loadPowerlogGraph;
+- (void)refreshGraphPresentation;
+- (void)prepareDaemonSettings;
+- (void)runDaemonOperation:(NSString *(^)(void))operation completion:(void (^)(BOOL))completion;
 @end
 
 @implementation ChargingLimitViewController
@@ -678,11 +723,11 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		}
 		return nil;
 	}
-	sqlite3_busy_timeout(sourceDB, 5000);
+	sqlite3_busy_timeout(sourceDB, 100);
 
-	NSString *exportDir = [NSTemporaryDirectory() stringByAppendingPathComponent:@"BattmanPowerlogExport"];
+	NSString *exportDir = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"BattmanPowerlogExport"]
+	    stringByAppendingPathComponent:[NSUUID UUID].UUIDString];
 	NSFileManager *fileManager = [NSFileManager defaultManager];
-	[fileManager removeItemAtPath:exportDir error:nil];
 	if (![fileManager createDirectoryAtPath:exportDir withIntermediateDirectories:YES attributes:nil error:error]) {
 		sqlite3_close_v2(sourceDB);
 		return nil;
@@ -696,6 +741,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		sqlite3_close_v2(sourceDB);
 		if (destDB)
 			sqlite3_close_v2(destDB);
+		[fileManager removeItemAtPath:exportDir error:nil];
 		if (error) {
 			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
 			                             code:err
@@ -703,7 +749,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		}
 		return nil;
 	}
-	sqlite3_busy_timeout(destDB, 5000);
+	sqlite3_busy_timeout(destDB, 100);
 
 	sqlite3_backup *backup = sqlite3_backup_init(destDB, "main", sourceDB, "main");
 	if (!backup) {
@@ -711,6 +757,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		NSString *message = [NSString stringWithUTF8String:sqlite3_errmsg(destDB)];
 		sqlite3_close_v2(destDB);
 		sqlite3_close_v2(sourceDB);
+		[fileManager removeItemAtPath:exportDir error:nil];
 		if (error) {
 			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
 			                             code:err
@@ -719,16 +766,15 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		return nil;
 	}
 
-	int busyRetries = 0;
+	double deadline = CLMonotonicTime() + 5.0;
 	do {
 		err = sqlite3_backup_step(backup, 256);
-		if (err == SQLITE_BUSY || err == SQLITE_LOCKED) {
-			usleep(100 * 1000);
-			busyRetries++;
-		} else {
-			busyRetries = 0;
+		if (err == SQLITE_BUSY || err == SQLITE_LOCKED) usleep(20000);
+		if (CLMonotonicTime() >= deadline && err != SQLITE_DONE) {
+			err = SQLITE_INTERRUPT;
+			break;
 		}
-	} while (err == SQLITE_OK || ((err == SQLITE_BUSY || err == SQLITE_LOCKED) && busyRetries < 50));
+	} while (err == SQLITE_OK || err == SQLITE_BUSY || err == SQLITE_LOCKED);
 
 	sqlite3_backup_finish(backup);
 	if (err == SQLITE_DONE)
@@ -736,13 +782,13 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 	NSString *message = nil;
 	if (err != SQLITE_OK)
-		message = [NSString stringWithUTF8String:sqlite3_errmsg(destDB)];
+		message = err == SQLITE_INTERRUPT ? _("Unable to export powerlog database.") : [NSString stringWithUTF8String:sqlite3_errmsg(destDB)];
 
 	sqlite3_close_v2(destDB);
 	sqlite3_close_v2(sourceDB);
 
 	if (err != SQLITE_OK) {
-		[fileManager removeItemAtPath:exportPath error:nil];
+		[fileManager removeItemAtPath:exportDir error:nil];
 		if (error) {
 			*error = [NSError errorWithDomain:@"BattmanPowerlogExport"
 			                             code:err
@@ -755,18 +801,34 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)exportPowerlogFromSourceView:(UIView *)sourceView sourceRect:(CGRect)sourceRect {
-	NSError *error = nil;
-	NSURL *exportURL = [self exportPowerlogDatabaseSnapshotWithError:&error];
-	if (!exportURL) {
-		show_alert(L_FAILED, error.localizedDescription.UTF8String ?: _C("Unable to export powerlog database."), L_OK);
-		return;
-	}
-
-	UIActivityViewController *activityViewController = [[UIActivityViewController alloc] initWithActivityItems:@[ exportURL ] applicationActivities:nil];
-	UIView *presentingView = sourceView ?: self.view;
-	activityViewController.popoverPresentationController.sourceView = presentingView;
-	activityViewController.popoverPresentationController.sourceRect = CGRectIsEmpty(sourceRect) ? presentingView.bounds : sourceRect;
-	[self presentViewController:activityViewController animated:YES completion:nil];
+	if (self.exportInFlight || !self.viewVisible) return;
+	self.exportInFlight = YES;
+	NSUInteger generation = self.presentationGeneration;
+	__weak UIView *weakSourceView = sourceView;
+	dispatch_async(self.historyQueue, ^{
+		NSError *error = nil;
+		NSURL *exportURL = [self exportPowerlogDatabaseSnapshotWithError:&error];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self.exportInFlight = NO;
+			if (!self.viewVisible || generation != self.presentationGeneration || !self.view.window ||
+			    [UIApplication sharedApplication].applicationState == UIApplicationStateBackground || self.presentedViewController) {
+				if (exportURL) [[NSFileManager defaultManager] removeItemAtURL:[exportURL URLByDeletingLastPathComponent] error:nil];
+				return;
+			}
+			if (!exportURL) {
+				show_alert(L_FAILED, error.localizedDescription.UTF8String ?: _C("Unable to export powerlog database."), L_OK);
+				return;
+			}
+			UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[exportURL] applicationActivities:nil];
+			UIView *presentingView = weakSourceView.window ? weakSourceView : self.view;
+			activity.popoverPresentationController.sourceView = presentingView;
+			activity.popoverPresentationController.sourceRect = CGRectIsEmpty(sourceRect) ? presentingView.bounds : sourceRect;
+			activity.completionWithItemsHandler = ^(UIActivityType type, BOOL completed, NSArray *items, NSError *activityError) {
+				[[NSFileManager defaultManager] removeItemAtURL:[exportURL URLByDeletingLastPathComponent] error:nil];
+			};
+			[self presentViewController:activity animated:YES completion:nil];
+		});
+	});
 }
 
 - (void)exportPowerlogMenuPressed:(id)sender {
@@ -823,8 +885,10 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 	daemon_pid = 0;
 	daemon_fd = -1;
-	vals = NULL;
+	vals = fallback_vals;
 	vals_mapped = false;
+	self.daemonQueue = dispatch_queue_create("com.torrekie.Battman.charging-control", DISPATCH_QUEUE_SERIAL);
+	self.historyQueue = dispatch_queue_create("com.torrekie.Battman.charging-history", DISPATCH_QUEUE_SERIAL);
 	fallback_vals[0] = (char)255;
 	fallback_vals[1] = (char)255;
 	fallback_vals[2] = 0;
@@ -842,9 +906,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 #elif __has_include("PLGraphViewTableCell.h")
 	// We have implemented a clone of Apple's legacy PSGraphViewTableCell without 'PS'
 	// Also fixed some bugs where iOS 16 users met ig
-	NSString *resolvedPath = CLResolvePowerlogDatabasePath();
-	if (resolvedPath)
-		powerlog_db_path = strdup(resolvedPath.fileSystemRepresentation);
+	/* The graph loader resolves the database on its background queue. */
 #endif
 
 	self.drainModes = @[
@@ -855,44 +917,71 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"clhighthr"];
 	[self.tableView registerClass:[SliderTableViewCell class] forCellReuseIdentifier:@"cllowthr"];
 
-	char settings_path[PATH_MAX];
-	if (!CLDaemonPath(settings_path, sizeof(settings_path), "_settings")) {
-		NSLog(@"Unable to construct daemon settings path");
-		vals = fallback_vals;
-		return self;
-	}
-	int fd = open(settings_path, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600);
-	if (fd == -1) {
-		NSLog(@"open %s: Error - %s", settings_path, strerror(errno));
-		show_alert(L_ERR, _C("Failed to open daemon settings file"), L_OK);
-		vals = fallback_vals;
-		return self;
-	}
-	unsigned char prepared_vals[BATTMAN_DAEMON_SETTINGS_SIZE];
-	if (!CLPrepareDaemonSettingsFile(fd, prepared_vals)) {
-		NSLog(@"Unable to validate daemon settings file %s", settings_path);
-		show_alert(L_ERR, _C("Failed to prepare daemon settings file"), L_OK);
-		close(fd);
-		vals = fallback_vals;
-		daemon_pid = 0;
-		return self;
-	}
-	memcpy(fallback_vals, prepared_vals, sizeof(prepared_vals));
-	void *mapping = mmap(NULL, BATTMAN_DAEMON_SETTINGS_SIZE,
-	                    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	if (mapping == MAP_FAILED) {
-		NSLog(@"mmap: Error - %s", strerror(errno));
-		show_alert(L_ERR, _C("File mapping failed"), L_OK);
-		vals = fallback_vals;
-		daemon_pid = 0;
-		close(fd);
-		return self;
-	}
-	vals = (char *)mapping;
-	vals_mapped = true;
-	close(fd);
-	[self refreshDaemonStatus];
+	/* tableView can load during init. Start work only after initialization has
+	 * returned, with safe fallback values already available for every cell. */
+	dispatch_async(dispatch_get_main_queue(), ^{ [self prepareDaemonSettings]; });
 	return self;
+}
+
+- (void)prepareDaemonSettings {
+	__block void *preparedMapping = MAP_FAILED;
+	[self runDaemonOperation:^NSString *{
+		char settings_path[PATH_MAX];
+		if (!CLDaemonPath(settings_path, sizeof(settings_path), "_settings"))
+			return _("Failed to open daemon settings file");
+		int fd = open(settings_path, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600);
+		if (fd < 0) return _("Failed to open daemon settings file");
+		unsigned char prepared_vals[BATTMAN_DAEMON_SETTINGS_SIZE];
+		BOOL valid = CLPrepareDaemonSettingsFile(fd, prepared_vals);
+		if (valid)
+			preparedMapping = mmap(NULL, BATTMAN_DAEMON_SETTINGS_SIZE,
+			                       PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		close(fd);
+		if (!valid) return _("Failed to prepare daemon settings file");
+		if (preparedMapping == MAP_FAILED) return _("File mapping failed");
+		[self refreshDaemonStatusOnQueue];
+		return nil;
+	} completion:^(BOOL success) {
+		if (success) {
+			self->vals = preparedMapping;
+			self->vals_mapped = YES;
+		}
+	}];
+}
+
+- (void)reloadDaemonControls {
+	self.navigationItem.rightBarButtonItem.enabled = vals_mapped && !self.daemonOperationInFlight;
+	if (self.isViewLoaded && self.viewVisible)
+		[self.tableView reloadSections:[NSIndexSet indexSetWithIndex:CL_SECTION_MAIN]
+		               withRowAnimation:UITableViewRowAnimationNone];
+}
+
+- (void)runDaemonOperation:(NSString *(^)(void))operation completion:(void (^)(BOOL))completion {
+	NSAssert([NSThread isMainThread], @"Daemon operations are scheduled by the UI");
+	if (self.daemonOperationInFlight) return;
+	self.daemonOperationInFlight = YES;
+	NSUInteger generation = self.presentationGeneration;
+	[self reloadDaemonControls];
+	dispatch_async(self.daemonQueue, ^{
+		self.daemonDeadline = CLMonotonicTime() + CL_DAEMON_OPERATION_SECONDS;
+		NSString *error = operation();
+		int pid = self.daemonWorkerPID;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self->daemon_pid = pid;
+			self.daemonOperationInFlight = NO;
+			if (completion) completion(error == nil);
+			[self reloadDaemonControls];
+			BOOL current = self.viewVisible && generation == self.presentationGeneration;
+			if (error && current && self.view.window &&
+			    [UIApplication sharedApplication].applicationState != UIApplicationStateBackground && !self.presentedViewController) {
+				UIAlertController *alert = [UIAlertController alertControllerWithTitle:@(L_FAILED)
+				    message:error preferredStyle:UIAlertControllerStyleAlert];
+				[alert addAction:[UIAlertAction actionWithTitle:@(L_OK) style:UIAlertActionStyleDefault handler:nil]];
+				[self presentViewController:alert animated:YES completion:nil];
+			}
+			if (self.viewVisible && !current) [self refreshDaemonStatus];
+		});
+	});
 }
 
 - (void)viewDidLoad {
@@ -902,58 +991,111 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	                                                                 target:self
 	                                                                 action:@selector(restoreDefaults:)];
 	restore.accessibilityLabel = _("Restore Defaults");
-	restore.enabled = vals_mapped;
+	restore.enabled = vals_mapped && !self.daemonOperationInFlight;
 	self.navigationItem.rightBarButtonItem = restore;
+}
+
+- (void)loadPowerlogGraph {
+	if (self.graphLoadInFlight) return;
+	self.graphLoadInFlight = YES;
+	NSUInteger generation = self.presentationGeneration;
+	NSString *path = powerlog_db_path ? [NSString stringWithUTF8String:powerlog_db_path] : nil;
+	dispatch_async(self.historyQueue, ^{
+		NSString *resolvedPath = path ?: CLResolvePowerlogDatabasePath();
+		sqlite3 *database = NULL;
+		NSMutableArray *points = [NSMutableArray array];
+		NSString *error = nil;
+		int result = resolvedPath ? sqlite3_open_v2(resolvedPath.fileSystemRepresentation,
+		    &database, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL) : SQLITE_CANTOPEN;
+		if (result == SQLITE_OK) {
+			double deadline = CLMonotonicTime() + 3.0;
+			sqlite3_busy_timeout(database, 100);
+			sqlite3_progress_handler(database, 1000, CLPowerlogReadExpired, &deadline);
+			time_t end = time(NULL);
+			char query[256];
+			snprintf(query, sizeof(query), "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %lld AND %lld ORDER BY timestamp", (long long)(end - 3600 * 24 * 7), (long long)end);
+			result = sqlite3_exec(database, query, _cl_sql_pt_cb, (__bridge void *)points, NULL);
+		}
+		if (result != SQLITE_OK)
+			error = database ? [NSString stringWithUTF8String:sqlite3_errmsg(database)] : _("Unavailable");
+		if (database) sqlite3_close_v2(database);
+		NSMutableArray *snapshot = result == SQLITE_OK ? points : nil;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			self.graphLoadInFlight = NO;
+			/* Do not replace a previous complete graph with partial/error data. */
+			if (snapshot) self.graphPoints = snapshot;
+			self.graphError = error;
+			self.graphLoaded = YES;
+			if (!self->powerlog_db_path && resolvedPath)
+				self->powerlog_db_path = strdup(resolvedPath.fileSystemRepresentation);
+			if (self.viewVisible && generation == self.presentationGeneration)
+				[self refreshGraphPresentation];
+			else if (self.viewVisible)
+				[self loadPowerlogGraph];
+		});
+	});
+}
+
+- (void)refreshGraphPresentation {
+	if (self.tableView.tracking || self.tableView.dragging || self.tableView.decelerating) {
+		self.graphReloadPending = YES;
+		return;
+	}
+	self.graphReloadPending = NO;
+	[self.tableView reloadSections:[NSIndexSet indexSetWithIndex:CL_SECTION_GRAPH]
+	               withRowAnimation:UITableViewRowAnimationNone];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+	if (!decelerate && self.graphReloadPending) [self refreshGraphPresentation];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	if (self.graphReloadPending) [self refreshGraphPresentation];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
+	self.viewVisible = YES;
+	++self.presentationGeneration;
 	[self refreshDaemonStatus];
-	[self.tableView reloadData];
+	[self loadPowerlogGraph];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-	[super viewDidAppear:animated];
-	[self refreshDaemonStatus];
+- (void)viewDidDisappear:(BOOL)animated {
+	[super viewDidDisappear:animated];
+	self.viewVisible = NO;
+	++self.presentationGeneration;
 }
 
 - (void)refreshDaemonStatus {
-	if (!vals_mapped) {
-		[self invalidateDaemonConnection];
-		daemon_pid = 0;
-		self.navigationItem.rightBarButtonItem.enabled = NO;
-		return;
-	}
+	if (!vals_mapped || self.daemonOperationInFlight) return;
+	[self runDaemonOperation:^NSString *{
+		[self refreshDaemonStatusOnQueue];
+		return nil;
+	} completion:nil];
+}
 
+- (void)refreshDaemonStatusOnQueue {
 	char run_path[PATH_MAX];
 	pid_t found_pid = 0;
-	BOOL has_pid = CLDaemonPath(run_path, sizeof(run_path), ".run") &&
-	               CLReadDaemonPID(run_path, &found_pid);
+	BOOL has_pid = CLDaemonPath(run_path, sizeof(run_path), ".run") && CLReadDaemonPID(run_path, &found_pid);
 	if (!has_pid) {
 		[self invalidateDaemonConnection];
-		daemon_pid = 0;
-		self.navigationItem.rightBarButtonItem.enabled = YES;
+		self.daemonWorkerPID = 0;
 		return;
 	}
-
-	if (daemon_pid != (int)found_pid)
-		[self invalidateDaemonConnection];
-	daemon_pid = (int)found_pid;
-	if (daemon_fd < 0 && ![self connectToDaemonWithAlerts:NO]) {
-		/* A live PID without the tiny Battman handshake is not safe to control.
-		 * Keep it visible as active so a later Stop/reconnect can recover it;
-		 * never unlink a live process's run lock from this status refresh. */
-		if (!CLDaemonPIDIsAlive(found_pid)) {
-			CLRemoveStaleDaemonArtifacts(run_path, found_pid);
-			daemon_pid = 0;
-		}
+	if (self.daemonWorkerPID != (int)found_pid) [self invalidateDaemonConnection];
+	self.daemonWorkerPID = (int)found_pid;
+	if (![self connectToDaemonWithAlerts:NO] && !CLDaemonPIDIsAlive(found_pid)) {
+		CLRemoveStaleDaemonArtifacts(run_path, found_pid);
+		self.daemonWorkerPID = 0;
 	}
-	self.navigationItem.rightBarButtonItem.enabled = YES;
 }
 
 - (void)restoreDefaults:(id)sender {
 	(void)sender;
-	if (!vals || !vals_mapped) {
+	if (!vals || !vals_mapped || self.daemonOperationInFlight) {
 		show_alert(L_FAILED, _C("Charging-limit settings are unavailable."), L_OK);
 		return;
 	}
@@ -963,25 +1105,23 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	[alert addAction:[UIAlertAction actionWithTitle:_("Cancel") style:UIAlertActionStyleCancel handler:nil]];
 	[alert addAction:[UIAlertAction actionWithTitle:_("Restore") style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
 		(void)action;
-		unsigned char previous[BATTMAN_DAEMON_SETTINGS_SIZE];
-		memcpy(previous, self->vals, sizeof(previous));
+		if (self.daemonOperationInFlight || !self.viewVisible) return;
+		NSData *previous = [NSData dataWithBytes:self->vals length:BATTMAN_DAEMON_SETTINGS_SIZE];
 		self->vals[0] = (char)-1;
 		self->vals[1] = (char)-1;
 		self->vals[2] = 0;
-		if (![self daemonRedecide]) {
-			memcpy(self->vals, previous, sizeof(previous));
-			(void)msync(self->vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC);
-			show_alert(L_FAILED, _C("Unable to persist charging-limit defaults."), L_OK);
-			return;
-		}
-		[self.tableView reloadData];
-		UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, _("Charging-limit defaults restored."));
+		NSUInteger generation = self.presentationGeneration;
+		[self daemonRedecideWithCompletion:^(BOOL success) {
+			if (!success) {
+				memcpy(self->vals, previous.bytes, previous.length);
+				/* Restore durable bytes on the same queue; later commands stay behind it. */
+				dispatch_async(self.daemonQueue, ^{ (void)msync(self->vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC); });
+			} else if (self.viewVisible && generation == self.presentationGeneration) {
+				UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, _("Charging-limit defaults restored."));
+			}
+		}];
 	}]];
 	[self presentViewController:alert animated:YES completion:nil];
-}
-
-- (void)connectToDaemon {
-	(void)[self connectToDaemonWithAlerts:YES];
 }
 
 - (BOOL)connectToDaemonWithAlerts:(BOOL)showAlerts {
@@ -991,12 +1131,12 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 		 * otherwise stop/redecide silently writes to a dead peer and never
 		 * reaches the reconnect path. */
 		char ping = 2;
-		if (CLDaemonSend(daemon_fd, &ping, 1) == 1 &&
-		    CLDaemonReceive(daemon_fd, &ping, 1) == 1 && ping == 2)
+		if (CLDaemonSendBefore(daemon_fd, &ping, 1, self.daemonDeadline) == 1 &&
+		    CLDaemonReceiveBefore(daemon_fd, &ping, 1, self.daemonDeadline) == 1 && ping == 2)
 			return YES;
 		[self invalidateDaemonConnection];
 	}
-	int fd = connect_to_daemon(showAlerts);
+	int fd = CLConnectToDaemonBefore(showAlerts, self.daemonDeadline);
 	if (fd <= 0) {
 		daemon_fd = -1;
 		return NO;
@@ -1014,11 +1154,11 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 - (BOOL)receiveDaemonByte:(char *)byte {
 	if (daemon_fd < 0 || !byte)
 		return NO;
-	return CLDaemonReceive(daemon_fd, byte, 1) == 1;
+	return CLDaemonReceiveBefore(daemon_fd, byte, 1, self.daemonDeadline) == 1;
 }
 
 - (BOOL)sendDaemonCommand:(char)command reconnect:(BOOL)reconnect {
-	for (int attempt = 0; attempt < (reconnect ? 2 : 1); attempt++) {
+	for (int attempt = 0; attempt < (reconnect ? 2 : 1) && CLMonotonicTime() < self.daemonDeadline; attempt++) {
 		/* Always validate a cached descriptor.  The daemon may have exited or
 		 * been replaced since the previous command. */
 		if (![self connectToDaemonWithAlerts:NO]) {
@@ -1026,12 +1166,13 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 			 * reconnecting command one more bounded attempt instead of returning
 			 * before the retry loop has a chance to run. */
 			if (reconnect && attempt == 0) {
-				usleep(50000);
+				double remaining = self.daemonDeadline - CLMonotonicTime();
+				if (remaining > 0) usleep((useconds_t)(MIN(remaining, 0.05) * 1000000));
 				continue;
 			}
 			return NO;
 		}
-		if (CLDaemonSend(daemon_fd, &command, 1) == 1)
+		if (CLDaemonSendBefore(daemon_fd, &command, 1, self.daemonDeadline) == 1)
 			return YES;
 
 		int saved_errno = errno;
@@ -1074,15 +1215,11 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)dealloc {
-	const char endconnectioncmd = 5;
-	if (daemon_fd >= 0) {
-		(void)CLDaemonSend(daemon_fd, &endconnectioncmd, 1);
-		[self invalidateDaemonConnection];
-	}
-	if (vals && vals_mapped) {
-		(void)msync(vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC);
-		munmap(vals, BATTMAN_DAEMON_SETTINGS_SIZE);
-	}
+	/* An in-flight block owns self until its I/O and main-thread completion end.
+	 * Closing a descriptor is sufficient; a final protocol send must not block
+	 * view-controller destruction on the main thread. */
+	if (daemon_fd >= 0) close(daemon_fd);
+	if (vals && vals_mapped) munmap(vals, BATTMAN_DAEMON_SETTINGS_SIZE);
 	free((void *)powerlog_db_path);
 }
 
@@ -1104,83 +1241,59 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)tableView:(UITableView *)tv didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-	if (indexPath.section == CL_SECTION_MAIN && indexPath.row == CL_MAIN_DAEMONSWITCH) {
-		if (!vals || !vals_mapped) {
-			show_alert(L_FAILED, _C("Charging-limit settings are unavailable."), L_OK);
-			[tv deselectRowAtIndexPath:indexPath animated:YES];
-			return;
-		}
-		if (daemon_pid) {
-			NSLog(@"Daemon is likely active, requesting stop");
-			if (![self connectToDaemonWithAlerts:NO]) {
-				BOOL alive = CLDaemonPIDIsAlive((pid_t)daemon_pid);
-				if (!alive) {
-					CLRemoveStaleDaemonArtifacts(NULL, (pid_t)daemon_pid);
-					daemon_pid = 0;
-					[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
-				} else {
-				/* Keep a live-but-unresponsive PID visible as active. The run file
-				 * remains a spawn lock and the user can retry Stop after the daemon
-				 * finishes its startup/recovery work. */
-					show_alert(L_ERR, _C("The daemon is running but did not answer. Try starting it again after it exits."), L_OK);
-				}
-				[tv deselectRowAtIndexPath:indexPath animated:YES];
-				return;
-			}
-			char stop_cmd = 3;
-			pid_t stopping_pid = (pid_t)daemon_pid;
-			BOOL sent = [self sendDaemonCommand:stop_cmd reconnect:NO];
-			BOOL stopped = sent && [self receiveDaemonByte:&stop_cmd] && stop_cmd == 3;
-			[self invalidateDaemonConnection];
-			if (stopped || !CLDaemonPIDIsAlive((pid_t)daemon_pid)) {
-				NSLog(@"Daemon returned 3 - stopped");
-				daemon_pid = 0;
-				if (!stopped)
-					CLRemoveStaleDaemonArtifacts(NULL, stopping_pid);
-			} else if (!sent) {
-				show_alert(L_ERR, _C("Unable to send the stop request to the daemon."), L_OK);
-			} else {
-				show_alert(L_ERR, _C("The daemon did not respond before the timeout."), L_OK);
-			}
-			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
-		} else {
-			/* Validate only when starting.  A malformed settings record must not
-			 * prevent the user from reaching the Stop/recovery path for an already
-			 * running daemon. */
-			if (!CLDaemonSettingsAreValid((const unsigned char *)vals)) {
-				show_alert(_C("Invalid Setup"), _C("Limit Value should be bigger than Resume Value"), L_OK);
-				[tv deselectRowAtIndexPath:indexPath animated:YES];
-				return;
-			}
-			extern int battman_run_daemon(void);
-			daemon_pid = battman_run_daemon();
-			for (int i = 0; daemon_pid && i < 30; i++) {
-				usleep(50000);
-				(void)[self connectToDaemonWithAlerts:NO];
-				if (daemon_fd >= 0) {
-					DBGLOG(@"%@: Got Daemon fd: %d", indexPath, daemon_fd);
-					break;
-				}
-			}
-			if (daemon_pid && daemon_fd < 0) {
-				pid_t started_pid = (pid_t)daemon_pid;
-				if (!CLDaemonPIDIsAlive(started_pid)) {
-					CLRemoveStaleDaemonArtifacts(NULL, started_pid);
-					daemon_pid = 0;
-				}
-				/* Keep a live PID as active until it is confirmed dead. This avoids
-				 * unlinking a replacement daemon's run/socket files and lets the user
-				 * retry a bounded Stop request. */
-				show_alert(L_FAILED, _C("Couldn't start the daemon — it isn’t responding."), L_OK);
-			}
-			[tv reloadRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:CL_MAIN_PIDLABEL inSection:CL_SECTION_MAIN], indexPath] withRowAnimation:UITableViewRowAnimationFade];
-		}
-	}
 	[tv deselectRowAtIndexPath:indexPath animated:YES];
+	if (indexPath.section != CL_SECTION_MAIN || indexPath.row != CL_MAIN_DAEMONSWITCH ||
+	    !vals_mapped || self.daemonOperationInFlight) return;
+	BOOL stopping = daemon_pid != 0;
+	if (!stopping && !CLDaemonSettingsAreValid((const unsigned char *)vals)) {
+		show_alert(_C("Invalid Setup"), _C("Limit Value should be bigger than Resume Value"), L_OK);
+		return;
+	}
+	[self runDaemonOperation:^NSString *{
+		if (stopping) {
+			pid_t stoppingPID = (pid_t)self.daemonWorkerPID;
+			char command = 3;
+			BOOL sent = [self sendDaemonCommand:command reconnect:NO];
+			BOOL stopped = sent && [self receiveDaemonByte:&command] && command == 3;
+			[self invalidateDaemonConnection];
+			if (stopped || !CLDaemonPIDIsAlive(stoppingPID)) {
+				self.daemonWorkerPID = 0;
+				if (!stopped) CLRemoveStaleDaemonArtifacts(NULL, stoppingPID);
+				return nil;
+			}
+			return sent ? _("The daemon did not respond before the timeout.") :
+			    _("Unable to send the stop request to the daemon.");
+		}
+		/* A status snapshot may have aged. Recheck the run file before spawning. */
+		char runPath[PATH_MAX];
+		pid_t existingPID = 0;
+		if (CLDaemonPath(runPath, sizeof(runPath), ".run") && CLReadDaemonPID(runPath, &existingPID)) {
+			self.daemonWorkerPID = existingPID;
+		} else {
+			extern int battman_run_daemon_with_error(int *error_out);
+			int spawnError = 0;
+			self.daemonWorkerPID = battman_run_daemon_with_error(&spawnError);
+			if (!self.daemonWorkerPID)
+				return spawnError ? [NSString stringWithUTF8String:strerror(spawnError)] :
+				    _("Couldn't start the daemon — it isn’t responding.");
+		}
+		while (CLMonotonicTime() < self.daemonDeadline) {
+			if ([self connectToDaemonWithAlerts:NO]) return nil;
+			if (!CLDaemonPIDIsAlive(self.daemonWorkerPID)) break;
+			double remaining = self.daemonDeadline - CLMonotonicTime();
+			if (remaining > 0) usleep((useconds_t)(MIN(remaining, 0.05) * 1000000));
+		}
+		pid_t startedPID = self.daemonWorkerPID;
+		if (!CLDaemonPIDIsAlive(startedPID)) {
+			CLRemoveStaleDaemonArtifacts(NULL, startedPID);
+			self.daemonWorkerPID = 0;
+		}
+		return _("Couldn't start the daemon — it isn’t responding.");
+	} completion:nil];
 }
 
 - (void)cltypechanged:(UISegmentedControl *)segCon {
-	if (!vals || !vals_mapped)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight)
 		return;
 	if (segCon.selectedSegmentIndex) {
 		/* Enabling resume mode requires a paired limit.  A fresh settings record
@@ -1209,7 +1322,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
 	if (previousTraitCollection)
 		[super traitCollectionDidChange:previousTraitCollection];
-	[self viewDidAppear:YES];
+	[self.tableView setNeedsDisplay];
 }
 
 #if 0
@@ -1244,86 +1357,18 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 	CLSect section = (CLSect)indexPath.section;
 	switch (section) {
 		case CL_SECTION_GRAPH: {
-			if (!powerlog_db_path) {
-				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-				cell.textLabel.text       = _("7-Day Battery Level");
-				cell.detailTextLabel.text = _("Unavailable");
+			if (!self.graphPoints) {
+				cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+				cell.textLabel.text = _("7-Day Battery Level");
+				cell.detailTextLabel.text = self.graphLoaded ? (self.graphError ?: _("Unavailable")) : _("Loading history…");
 				return cell;
 			}
-			sqlite3 *p_db = NULL;
-			int      err = SQLITE_CANTOPEN;
-			
-			if (access(powerlog_db_path, R_OK) == 0) {
-				// Use FULLMUTEX for thread safety and allow concurrent reads
-				err = sqlite3_open_v2(powerlog_db_path, &p_db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, NULL);
+			PLGraphViewTableCell *graphCell = [tv dequeueReusableCellWithIdentifier:@"clgraph"];
+			if (!graphCell) {
+				graphCell = [[PLGraphViewTableCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"clgraph"];
+				[graphCell addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(graphLongPressed:)]];
 			}
-			
-			if (err == SQLITE_OK) {
-				// Set a 5-second timeout for busy database (when locked by other processes)
-				sqlite3_busy_timeout(p_db, 5000);
-			}
-			if (err != SQLITE_OK) {
-				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-				cell.textLabel.text       = _("7-Day Battery Level");
-				cell.detailTextLabel.text = [NSString stringWithUTF8String:sqlite3_errmsg(p_db)];
-				sqlite3_close_v2(p_db);
-				return cell;
-			}
-			struct timespec ts;
-			time_t cur_time;
-			if (clock_gettime(CLOCK_REALTIME, &ts) == 0) {
-				cur_time = ts.tv_sec;
-			} else {
-				cur_time = time(NULL);
-			}
-			double start_time = (double)(cur_time - 3600 * 24 * 7);
-			double end_time = (double)cur_time;
-			char query[256];
-			snprintf(query, sizeof(query), "SELECT * FROM PLBatteryAgent_EventBackward_BatteryUI WHERE timestamp BETWEEN %lld AND %lld ORDER BY timestamp", (long long)start_time, (long long)end_time);
-			char           *errmsg = NULL;
-			NSMutableArray *arr = [NSMutableArray array];
-
-			int retry_count = 0;
-			const int max_retries = 3;
-			do {
-				err = sqlite3_exec(p_db, query, _cl_sql_pt_cb, (__bridge void *)arr, &errmsg);
-				if (err == SQLITE_OK || err != SQLITE_BUSY) {
-					break;
-				}
-				if (retry_count < max_retries) {
-					usleep((100 * 1000) << retry_count);
-					retry_count++;
-					if (errmsg) {
-						sqlite3_free(errmsg);
-						errmsg = NULL;
-					}
-				}
-			} while (retry_count < max_retries);
-			if (err != SQLITE_OK) {
-				cell                      = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
-				cell.textLabel.text       = _("7-Day Battery Level");
-				cell.detailTextLabel.text = [NSString stringWithUTF8String:errmsg];
-				sqlite3_free(errmsg);
-				sqlite3_close_v2(p_db);
-				return cell;
-			}
-			sqlite3_close_v2(p_db);
-#if 0
-			id            graphCell     = [PSGraphViewTableCell new];
-			NSArray      *modelGraphArr = arr;
-			UIScrollView *view          = [(id)graphCell scrollView];
-			view.autoresizingMask       = UIViewAutoresizingFlexibleWidth;
-#else
-			PLGraphViewTableCell *graphCell = [PLGraphViewTableCell new];
-#endif
-
-#if 0
-			[(id)graphCell setGraphArray:modelGraphArr];
-#else
-			graphCell.graphArray = arr;
-#endif
-			UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(graphLongPressed:)];
-			[graphCell addGestureRecognizer:longPress];
+			if (graphCell.graphArray != self.graphPoints) graphCell.graphArray = self.graphPoints;
 			return graphCell;
 		}
 		case CL_SECTION_MAIN: {
@@ -1345,17 +1390,13 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					} else {
 						// pause.rectangle U+10029B
 						// arrow.rectanglepath U+1008C1
-						items = @[@"􀊛", @"􀣁"];
+						items = @[[UIImage legacySymbolImageForGlyph:@"􀊛" pointSize:18.0 color:[UIColor compatLinkColor]],
+						          [UIImage legacySymbolImageForGlyph:@"􀣁" pointSize:18.0 color:[UIColor compatLinkColor]]];
 					}
 					UISegmentedControl *segCon = [[UISegmentedControl alloc] initWithItems:items];
-					segCon.enabled = vals_mapped;
+					segCon.enabled = vals_mapped && !self.daemonOperationInFlight;
 					segCon.accessibilityLabel = _("When limit is reached");
-					if (@available(iOS 13.0, *)) {
-						// Handle something?
-					} else {
-						[segCon setTitleTextAttributes:[NSDictionary dictionaryWithObjectsAndKeys:[UIFont fontWithName:@SFPRO size:12.0], NSFontAttributeName, nil] forState:UIControlStateNormal];
-					}
-					
+
 					if ((unsigned char)vals[0] == 255) {
 						segCon.selectedSegmentIndex = 0;
 					} else {
@@ -1377,10 +1418,10 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					scell.slider.minimumValue = 1;
 					 scell.slider.maximumValue = 100;
 					scell.integerOnly     = YES;
-					scell.slider.enabled      = vals_mapped;
-					scell.textField.enabled   = vals_mapped;
-					scell.slider.userInteractionEnabled = vals_mapped;
-					scell.textField.userInteractionEnabled = vals_mapped;
+					scell.slider.enabled      = vals_mapped && !self.daemonOperationInFlight;
+					scell.textField.enabled   = vals_mapped && !self.daemonOperationInFlight;
+					scell.slider.userInteractionEnabled = vals_mapped && !self.daemonOperationInFlight;
+					scell.textField.userInteractionEnabled = vals_mapped && !self.daemonOperationInFlight;
 					scell.slider.accessibilityLabel = _("Limit charging at (%)");
 					scell.textField.accessibilityLabel = _("Limit charging at (%)");
 					scell.delegate            = (id)self;
@@ -1418,11 +1459,11 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 						scell.textField.userInteractionEnabled = 0;
 						scell.textField.text                   = @"0";
 					} else {
-						scell.slider.enabled                   = vals_mapped;
-						scell.slider.userInteractionEnabled    = vals_mapped;
+						scell.slider.enabled                   = vals_mapped && !self.daemonOperationInFlight;
+						scell.slider.userInteractionEnabled    = vals_mapped && !self.daemonOperationInFlight;
 						scell.slider.value                     = (float)vals[0];
-						scell.textField.enabled                = vals_mapped;
-						scell.textField.userInteractionEnabled = vals_mapped;
+						scell.textField.enabled                = vals_mapped && !self.daemonOperationInFlight;
+						scell.textField.userInteractionEnabled = vals_mapped && !self.daemonOperationInFlight;
 						scell.textField.text                   = [NSString stringWithFormat:@"%d", (int)vals[0]];
 					}
 					return scell;
@@ -1431,7 +1472,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					cell.textLabel.text = _("Drain Mode");
 					PickerAccessoryView *picker = [[PickerAccessoryView alloc] initWithFrame:CGRectZero font:nil options:self.drainModes];
 					[picker addTarget:self action:@selector(drainModeChanged:)];
-					picker.userInteractionEnabled = vals_mapped;
+					picker.userInteractionEnabled = vals_mapped && !self.daemonOperationInFlight;
 					picker.accessibilityLabel = _("Drain Mode");
 					[picker selectAutomaticRow:BIT_GET(vals[2], 0) animated:YES];
 					cell.accessoryView = picker;
@@ -1442,7 +1483,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					cell.textLabel.text = _("Override OBC On Cycle");
 					UISwitch *cswitch = [UISwitch new];
 					cswitch.on = BIT_GET(vals[2], 1);
-					cswitch.enabled = vals_mapped;
+					cswitch.enabled = vals_mapped && !self.daemonOperationInFlight;
 					cswitch.accessibilityLabel = _("Override OBC On Cycle");
 					cswitch.accessibilityValue = cswitch.on ? _("Enabled") : _("Disabled");
 					cell.detailTextLabel.text = cswitch.on ? _("OBC will turn off") : _("OBC will not be affected");
@@ -1464,8 +1505,14 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 					NSString *labelText = [NSString stringWithFormat:@"%@", daemon_pid ? _("Stop Daemon %@") : _("Start Daemon %@")];
 					cell.textLabel.text = [NSString stringWithFormat:labelText, enforced ? _("(Enforce Mode)") : _("(Soft Mode)")];
 					cell.detailTextLabel.text = enforced ? _("Battman charging limits are enforced") : _("OBC may ignore Battman charging limits");
-					cell.selectionStyle = vals_mapped ? UITableViewCellSelectionStyleDefault : UITableViewCellSelectionStyleNone;
+					cell.selectionStyle = (vals_mapped && !self.daemonOperationInFlight) ? UITableViewCellSelectionStyleDefault : UITableViewCellSelectionStyleNone;
 					cell.textLabel.textColor = [UIColor compatLinkColor];
+					cell.userInteractionEnabled = !self.daemonOperationInFlight;
+					if (self.daemonOperationInFlight) {
+						UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+						[spinner startAnimating];
+						cell.accessoryView = spinner;
+					}
 					break;
 				}
 				case CL_MAIN_COUNT: {
@@ -1483,7 +1530,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 #pragma mark - SliderTableViewCell Delegate
 
 - (void)sliderTableViewCellDidBeginChanging:(SliderTableViewCell *)cell {
-	if (!vals || !vals_mapped)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight)
 		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
@@ -1500,7 +1547,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didChangeValue:(float)value {
-	if (!vals || !vals_mapped)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight)
 		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	int8_t rounded = (int8_t)lroundf(value);
@@ -1542,7 +1589,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)sliderTableViewCell:(SliderTableViewCell *)cell didEndChangingValue:(float)value {
-	if (!vals || !vals_mapped)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight)
 		return;
 	BOOL isHighThr = [cell.reuseIdentifier isEqualToString:@"clhighthr"];
 	NSIndexPath *curr = [self.tableView indexPathForCell:cell];
@@ -1563,25 +1610,25 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 
 
 
-- (BOOL)daemonRedecide {
-	if (!vals || !vals_mapped)
-		return NO;
-	/* Do msync after vals[] changes. The old sizeof(vals) expression measured
-	 * the pointer (8 bytes on arm64), not the shared record. */
-	if (msync(vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC) == -1) {
-		os_log_error(gLog, "msync failed: %s", strerror(errno));
-		return NO;
-	}
-	if (daemon_fd >= 0 || daemon_pid) {
-		const char redecidecmd = 4;
-		if (![self sendDaemonCommand:redecidecmd reconnect:YES])
-			DBGLOG(@"Daemon is unavailable; persisted charging-limit settings will be applied on reconnect");
-	}
-	return YES;
+- (void)daemonRedecide {
+	[self daemonRedecideWithCompletion:nil];
+}
+
+- (void)daemonRedecideWithCompletion:(void (^)(BOOL))completion {
+	if (!vals || !vals_mapped || self.daemonOperationInFlight) return;
+	[self runDaemonOperation:^NSString *{
+		if (msync(self->vals, BATTMAN_DAEMON_SETTINGS_SIZE, MS_SYNC) == -1)
+			return _("Unable to save charging-limit settings.");
+		if (self->daemon_fd >= 0 || self.daemonWorkerPID) {
+			if (![self sendDaemonCommand:4 reconnect:YES])
+				DBGLOG(@"Daemon is unavailable; persisted charging-limit settings will be applied on reconnect");
+		}
+		return nil;
+	} completion:completion];
 }
 
 - (void)drainModeChanged:(PickerAccessoryView *)sender {
-	if (!vals || !vals_mapped || sender.options.count == 0)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight || sender.options.count == 0)
 		return;
 	NSInteger row = [sender selectedRowInComponent:0];
 	NSInteger opt = row % sender.options.count;
@@ -1593,7 +1640,7 @@ static NSString *CLResolvePowerlogDatabasePath(void) {
 }
 
 - (void)overrideOBCChanged:(UISwitch *)sender {
-	if (!vals || !vals_mapped)
+	if (!vals || !vals_mapped || self.daemonOperationInFlight)
 		return;
 	BIT_SET(vals[2], 1, sender.on);
 	[self daemonRedecide];

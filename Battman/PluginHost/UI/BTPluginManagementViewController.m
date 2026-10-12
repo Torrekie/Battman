@@ -243,7 +243,7 @@ UIAlertController *BTPluginCreateThirdPartyEnableConsentAlert(dispatch_block_t e
 
 UIAlertController *BTPluginCreateSafeModeScheduledAlert(void) {
 	UIAlertController *alert = [UIAlertController alertControllerWithTitle:_("Safe Mode Scheduled")
-		message:_("The next Battman launch will skip all third-party plug-ins once. Quit and reopen Battman when you are ready.")
+		message:_("The next Battman launch will skip all external native plug-ins once. Quit and reopen Battman when you are ready.")
 		preferredStyle:UIAlertControllerStyleAlert];
 	[alert addAction:[UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleCancel handler:nil]];
 	return alert;

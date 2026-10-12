@@ -38,6 +38,9 @@ STRICT_COMMIT_DATE = "2023-11-14T22:13:20+00:00"
 STRICT_SOURCE_PATHS = (
     Path("VERSION"),
     Path("Battman/Makefile"),
+    Path("Battman/Features/Analytics/Data/BAAnalyticsMetricSnapshotInternal.h"),
+    Path("Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.h"),
+    Path("Battman/Features/Analytics/Data/BAAnalyticsReport.h"),
     Path("Battman/PluginHost/Runtime/BTPluginRuntimeEnvironment.m"),
     Path("OfficialPlugins/ChargeGauge"),
     Path("Packaging"),
@@ -722,10 +725,10 @@ def main() -> int:
         ]
         assert manifest_records[f"com.torrekie.battman_1.1.0_iphoneos-arm.deb"][
             "channels"
-        ] == ["github", "apt-rooted", "havoc-manual-candidate"]
+        ] == ["github", "apt-rooted"]
         assert manifest_records[f"com.torrekie.battman_1.1.0_iphoneos-arm64.deb"][
             "channels"
-        ] == ["github", "apt-rootless", "havoc-manual-candidate"]
+        ] == ["github", "apt-rootless"]
         assert manifest_records["Battman.tipa"]["channels"] == [
             "github", "trollstore-replacement",
         ]
@@ -837,7 +840,7 @@ def main() -> int:
             record for record in tampered["artifacts"]
             if record["name"] == rooted_host_name
         )
-        rooted_host["channels"].remove("havoc-manual-candidate")
+        rooted_host["channels"].append("havoc-manual-candidate")
         expect_manifest_rejection(tampered, "does not match artifact eligibility")
 
         for forbidden_name in (

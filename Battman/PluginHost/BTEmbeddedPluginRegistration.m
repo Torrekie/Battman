@@ -9,6 +9,15 @@
 
 NSErrorDomain const BTEmbeddedPluginRegistrationErrorDomain = @"com.torrekie.battman.embedded-plugin-registration";
 
+static NSString *BTPluginPreferredLanguage;
+
+void BTPluginSetPreferredLanguage(NSString *language) {
+	@synchronized ([BTPluginRegistry class]) {
+		BTPluginPreferredLanguage = language.length ?
+			[[language stringByReplacingOccurrencesOfString:@"_" withString:@"-"] copy] : nil;
+	}
+}
+
 static BOOL BTEmbeddedSetError(NSError **error, BTEmbeddedPluginRegistrationErrorCode code, NSString *description) {
 	if (error) {
 		*error = [NSError errorWithDomain:BTEmbeddedPluginRegistrationErrorDomain
@@ -28,6 +37,12 @@ static BOOL BTEmbeddedSetError(NSError **error, BTEmbeddedPluginRegistrationErro
 @end
 
 static void BTEmbeddedWriteError(BTEmbeddedRegistrationContext *context, BTPluginErrorV1 *error, int32_t code, NSString *message) {
+	// Every rejected ABI call poisons the transaction, even if the plug-in
+	// ignores its return value or supplies no writable error structure.
+	if (!context.firstError)
+		context.firstError = [NSError errorWithDomain:BTEmbeddedPluginRegistrationErrorDomain
+			code:BTEmbeddedPluginRegistrationErrorHostRejectedExtension
+			userInfo:@{ NSLocalizedDescriptionKey: message }];
 	context.lastErrorMessage = message;
 	if (!error || error->structSize < BT_PLUGIN_ERROR_V1_MINIMUM_SIZE)
 		return;
@@ -128,12 +143,17 @@ BOOL BTRegisterPluginDescriptorV1(const BTPluginDescriptorV1 *descriptor,
 
 	BTEmbeddedRegistrationContext *context = [BTEmbeddedRegistrationContext new];
 	context.transaction = transaction;
+	__attribute__((objc_precise_lifetime)) NSString *language;
+	@synchronized ([BTPluginRegistry class]) {
+		language = BTPluginPreferredLanguage;
+	}
 	BTPluginHostV1 host = {
 		.structSize = sizeof(BTPluginHostV1),
 		.abiVersion = BT_PLUGIN_ABI_VERSION_1,
 		.context = (__bridge void *)context,
 		.registerExtension = BTEmbeddedRegisterExtension,
 		.log = BTEmbeddedLog,
+		.preferredLanguage = language.UTF8String,
 	};
 	BTPluginErrorV1 callbackError = {
 		.structSize = sizeof(BTPluginErrorV1),

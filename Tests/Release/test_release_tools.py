@@ -40,6 +40,7 @@ from release_inputs import require_tracked_public_input  # noqa: E402
 from host_build_identity import (  # noqa: E402
     canonical_identity_bytes,
     extract_embedded_identity,
+    extract_distribution_channel,
     parse_identity_bytes,
     require_embedded_identity,
 )
@@ -291,6 +292,14 @@ def main() -> int:
             str(ROOT / "Tests/Release/Fixtures/MinimalAppMain.c"),
             "-o", str(identified_macho),
         ], check=True, stdout=subprocess.DEVNULL)
+        assert extract_distribution_channel(identified_macho) == "public"
+        github_macho = temporary / "github-host"
+        github_macho.write_bytes(identified_macho.read_bytes().replace(b"public\0", b"github\0"))
+        assert extract_distribution_channel(github_macho) == "github"
+        havoc_macho = temporary / "havoc-host"
+        havoc_macho.write_bytes(identified_macho.read_bytes().replace(b"public\0", b"havoc\0\0"))
+        # Extra terminators, unknown strings or malformed sections fail closed.
+        expect_failure(lambda: extract_distribution_channel(havoc_macho), "noncanonical channel")
         assert extract_embedded_identity(identified_macho) == identity
         assert require_embedded_identity(
             identified_macho,

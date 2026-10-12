@@ -7,6 +7,7 @@
 
 #import "common.h"
 #import "UILabel+SFSymbolsOverride.h"
+#import "ObjCExt/UIImage+SVG.h"
 #import <objc/runtime.h>
 
 @implementation UILabel (SFSymbolsOverride)
@@ -44,21 +45,31 @@ static BOOL isPUAB(unichar high, unichar low) {
 	// Build an attributed string that swaps in the symbol font on PUA‑B codepoints
 	UIFont *bodyFont   = self.font ?: [UIFont systemFontOfSize:[UIFont labelFontSize]];
 	UIFont *symbolFont = [UIFont fontWithName:@SFPRO size:bodyFont.pointSize];
-	
-	NSMutableAttributedString *m = [[NSMutableAttributedString alloc] initWithString:text attributes:@{ NSFontAttributeName: bodyFont }];
+	NSMutableAttributedString *m = nil;
 	
 	// Walk the string as UTF‑16, detect surrogate pairs
-	for (NSUInteger i = 0; i + 1 < text.length; ++i) {
+	for (NSUInteger remaining = text.length; remaining > 1; --remaining) {
+		NSUInteger i = remaining - 2;
 		unichar c1 = [text characterAtIndex:i];
 		if (0xD800 <= c1 && c1 <= 0xDBFF) {
 			unichar c2 = [text characterAtIndex:i+1];
 			if (0xDC00 <= c2 && c2 <= 0xDFFF && isPUAB(c1,c2)) {
-				// Replace that pair with the symbol font
-				[m addAttribute:NSFontAttributeName value:symbolFont range:NSMakeRange(i,2)];
+				if (!m) m = [[NSMutableAttributedString alloc] initWithString:text attributes:@{NSFontAttributeName: bodyFont}];
+				if (symbolFont) {
+					[m addAttribute:NSFontAttributeName value:symbolFont range:NSMakeRange(i,2)];
+				} else {
+					UIImage *image = [UIImage legacySymbolImageForGlyph:[text substringWithRange:NSMakeRange(i,2)] pointSize:bodyFont.pointSize color:self.textColor ?: UIColor.blackColor];
+					if (image) {
+						NSTextAttachment *attachment = [NSTextAttachment new];
+						attachment.image = image;
+						attachment.bounds = CGRectMake(0, (bodyFont.capHeight-image.size.height)/2, image.size.width, image.size.height);
+						[m replaceCharactersInRange:NSMakeRange(i,2) withAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
+					}
+				}
 			}
-			i++; // skip the low surrogate
 		}
 	}
+	if (!m) { [self swizzled_setText:text]; return; }
 	
 	// Finally call the original -setText: (really swizzled_setText:)
 	[self swizzled_setText:nil];

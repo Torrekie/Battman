@@ -419,6 +419,7 @@ if strings "$TEST_TMP/macho-tests" | grep -Eq '(^|[^A-Za-z])(dlopen|dlsym|CFBund
 	exit 1
 fi
 
+bash "$REPO_ROOT/Tests/Analytics/run-history-tests.sh"
 bash "$REPO_ROOT/Tests/PluginSDK/run-clean-room-sdk-tests.sh"
 bash "$REPO_ROOT/Tests/Release/run-release-tool-tests.sh"
 

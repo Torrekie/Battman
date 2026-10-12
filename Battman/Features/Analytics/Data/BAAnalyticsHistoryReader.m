@@ -528,8 +528,9 @@ static BAAnalyticsHistoryWindow *BAWindow(NSDate *start, NSDate *end, NSArray<BA
 				endObservation:interval.endObservation coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:interval.state];
 		[clipped addObject:owned];
 	}
+	NSArray *coveredSpans = BASpans(clipped, required, start, end, cancelled);
 	NSDate *cursor = start;
-	for (NSArray *span in BASpans(clipped, required, start, end, cancelled)) @autoreleasepool {
+	for (NSArray *span in coveredSpans) @autoreleasepool {
 		if ((checked++ & 63) == 0 && cancelled()) return nil;
 		if ([span[0] compare:cursor] == NSOrderedDescending) [gaps addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:cursor endDate:span[0] reason:@"Required fields unavailable or sampling gap"]];
 		cursor = span[1];
@@ -538,6 +539,22 @@ static BAAnalyticsHistoryWindow *BAWindow(NSDate *start, NSDate *end, NSArray<BA
 	for (BAAnalyticsHistoryGap *gap in discontinuities) @autoreleasepool {
 		if ((checked++ & 63) == 0 && cancelled()) return nil;
 		NSDate *a = [gap.startDate laterDate:start], *b = [gap.endDate earlierDate:end];
+		// A canonical window can use another table's trusted pair during this
+		// source's outage. Retain only the uncovered fragments of the outage;
+		// an unrelated source must not turn valid coverage into missing time.
+		NSUInteger lo = 0, hi = coveredSpans.count;
+		while (lo < hi) {
+			NSUInteger mid = lo + (hi - lo) / 2;
+			if ([coveredSpans[mid][1] compare:a] != NSOrderedDescending) lo = mid + 1; else hi = mid;
+		}
+		for (NSUInteger index = lo; index < coveredSpans.count && [a compare:b] == NSOrderedAscending; index++) {
+			NSArray *span = coveredSpans[index];
+			if ([span[0] compare:b] != NSOrderedAscending) break;
+			NSDate *fragmentEnd = [span[0] earlierDate:b];
+			if ([fragmentEnd compare:a] == NSOrderedDescending)
+				[gaps addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a endDate:fragmentEnd reason:gap.reason]];
+			a = [a laterDate:span[1]];
+		}
 		if ([b compare:a] == NSOrderedDescending) [gaps addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a endDate:b reason:gap.reason]];
 	}
 	if (cancelled()) return nil;
@@ -674,7 +691,8 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
     if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
     NSMutableArray *limitations = [NSMutableArray array];
     NSMutableDictionary *allMetadata = [NSMutableDictionary dictionary], *tableRecords = [NSMutableDictionary dictionary];
-    NSMutableArray *allObservations = [NSMutableArray array], *discontinuities = [NSMutableArray array];
+    NSMutableArray *allObservations = [NSMutableArray array];
+    NSMutableDictionary<NSString *, NSArray<BAAnalyticsHistoryGap *> *> *discontinuitiesByTable = [NSMutableDictionary dictionary];
     NSString *profile = @"powerlog.unknown";
     NSError *error = nil, *firstSourceError = nil;
     BOOL openedCompatibleSource = NO, selectedProfile = NO, acquisitionPartial = NO;
@@ -844,6 +862,7 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
         // Config/input values remain sparse points. Across a file boundary,
         // matching sampling cadence is insufficient to establish continuity.
         if ([table isEqual:BABatteryTable] || [table isEqual:BABatteryUITable]) {
+            NSMutableArray *discontinuities = [NSMutableArray array];
             NSTimeInterval maxCadence = [table isEqual:BABatteryUITable] ? 900 : cadence;
             for (NSUInteger i = 1; i < records.count; i++) @autoreleasepool {
                 if ((i & 63) == 1 && cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
@@ -852,6 +871,7 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
                     [discontinuities addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a.observation.timestamp endDate:b.observation.timestamp reason:
                         [a.segment isEqual:b.segment] ? @"Source sampling gap or gauge reset" : @"Clock or source/battery/configuration discontinuity"]];
             }
+            discontinuitiesByTable[table] = discontinuities;
         }
     }
 	[limitations addObject:@"Powerlog temperature, wireless input/budgets and float-bit adapter/system power remain unverified and unavailable. Different tables retain independent records."];
@@ -885,6 +905,9 @@ BAAnalyticsReport *BAAnalyticsReadHistoryReportFromSources(NSArray<NSURL *> *dat
 		else if ([family isEqual:BAAnalyticsFamilySession] || [family isEqual:BAAnalyticsFamilyDischarge] || [family isEqual:BAAnalyticsFamilyCompare] || [family isEqual:BAAnalyticsFamilyRhythm])
 			required = [NSSet setWithObjects:BAAnalyticsHistorySOCPercent, BAAnalyticsHistoryExternalConnected, nil];
 		NSArray *familyIntervals = capacity ? @[] : ([family isEqual:BAAnalyticsFamilyDwell] || [family isEqual:BAAnalyticsFamilyLive]) ? canonicalIntervals : batteryIntervals;
+		NSArray *discontinuities = discontinuitiesByTable[BABatteryTable] ?: @[];
+		if ([family isEqual:BAAnalyticsFamilyDwell] || [family isEqual:BAAnalyticsFamilyLive])
+			discontinuities = [discontinuities arrayByAddingObjectsFromArray:discontinuitiesByTable[BABatteryUITable] ?: @[]];
 		BAAnalyticsHistoryWindow *window = BAWindow(start, endDate, allObservations, familyIntervals, required, discontinuities, cancelled);
 		if (cancelled()) return BACancelledHistoryReport(endDate, sequenceNumber);
 		NSMutableDictionary *payload = [NSMutableDictionary dictionary];

@@ -68,8 +68,9 @@ typedef NS_ENUM(NSUInteger, BTPluginActivationMode) {
 																error:(NSError * _Nullable * _Nullable)error;
 
 // Call immediately before the one verifier-gated loader operation for a
-// non-official image. This does not itself load or otherwise touch the package.
-- (BOOL)recordThirdPartyLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
+// external native image, including an official image. Built-in descriptors do
+// not pass through this loader. This does not load or touch the package.
+- (BOOL)recordNativeLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
 												 packageSHA256:(NSString *)packageSHA256
 															 source:(BTPluginSource)source
 											 startupIdentifier:(NSString *)startupIdentifier

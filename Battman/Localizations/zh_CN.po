@@ -3941,3 +3941,12 @@ msgstr "%.1f%% · 已记录 %@"
 #, objc-format
 msgid "Stronger color: more time · up to %@"
 msgstr "颜色越鲜明，停留越久 · 最多 %@"
+
+msgid "Some Battman data could not be deleted. Restart the app and try again."
+msgstr "部分 Battman 数据未能删除。请重启应用后重试。"
+
+msgid "Unable to save charging-limit settings."
+msgstr "无法保存充电限制设置。"
+
+msgid "The next Battman launch will skip all external native plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "Battman 下次启动时将跳过所有外部原生插件一次。准备好后，请退出并重新打开 Battman。"

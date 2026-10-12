@@ -19,6 +19,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Posted on main once every external candidate has either registered or been
+// rejected. Observers may safely refresh registry-derived UI at this point.
+FOUNDATION_EXPORT NSNotificationName const BTPluginPlatformDidFinishStartupNotification;
+
 @interface BTPluginPlatformDiagnostic : NSObject
 @property (nonatomic, copy, readonly) NSString *stage;
 @property (nonatomic, copy, readonly, nullable) NSString *pluginIdentifier;
@@ -29,17 +33,20 @@ NS_ASSUME_NONNULL_BEGIN
 @interface BTPluginPlatform : NSObject
 
 @property (nonatomic, strong, readonly) BTPluginRegistry *registry;
-@property (nonatomic, strong, readonly, nullable) BTPluginStartupSnapshot *startupSnapshot;
-@property (nonatomic, strong, readonly, nullable) BTPluginDiscoveryResult *discoveryResult;
-@property (nonatomic, copy, readonly) NSArray<BTPluginRuntimeLoadResult *> *loadedPlugins;
-@property (nonatomic, copy, readonly) NSArray<BTPluginPlatformDiagnostic *> *diagnostics;
-@property (nonatomic, strong, readonly, nullable) BTPluginManagementService *managementService;
-@property (nonatomic, readonly, getter=isPreparedForApplicationLaunch) BOOL preparedForApplicationLaunch;
+@property (atomic, strong, readonly, nullable) BTPluginStartupSnapshot *startupSnapshot;
+@property (atomic, strong, readonly, nullable) BTPluginDiscoveryResult *discoveryResult;
+@property (atomic, copy, readonly) NSArray<BTPluginRuntimeLoadResult *> *loadedPlugins;
+@property (atomic, copy, readonly) NSArray<BTPluginPlatformDiagnostic *> *diagnostics;
+@property (atomic, strong, readonly, nullable) BTPluginManagementService *managementService;
+@property (atomic, readonly, getter=isPreparedForApplicationLaunch) BOOL preparedForApplicationLaunch;
+@property (atomic, readonly, getter=isExternalStartupComplete) BOOL externalStartupComplete;
 
 + (instancetype)sharedPlatform;
 
 // Call once on the main thread after battman_bootstrap creates its delegate
-// classes and before UIApplicationMain. Repeated calls are idempotent.
+// classes and before UIApplicationMain. Built-in descriptors are immediately
+// available; external verification runs asynchronously, with main-thread
+// activation. YES means scheduled, not finished. Repeated calls are idempotent.
 - (BOOL)prepareForApplicationLaunchWithError:(NSError * _Nullable * _Nullable)error;
 
 // Called by application integration after the first stable active interval.

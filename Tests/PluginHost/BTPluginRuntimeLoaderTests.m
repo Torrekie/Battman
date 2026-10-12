@@ -151,7 +151,7 @@
 	error:(NSError **)error {
 	(void)safeModeRequested; (void)error; return nil;
 }
-- (BOOL)recordThirdPartyLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
+- (BOOL)recordNativeLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
 	packageSHA256:(NSString *)packageSHA256 source:(BTPluginSource)source
 	startupIdentifier:(NSString *)startupIdentifier error:(NSError **)error {
 	self.loadAttemptInvocationCount++;
@@ -681,6 +681,67 @@ int main(int argc, const char *argv[]) {
 			trustStore.commitInvocationCount == commitBaseline &&
 			activationStore.loadAttemptInvocationCount == attemptBaseline,
 			"background activation reached verification, state mutation, or native loading");
+
+		__block BTPluginPreparedActivation *backgroundPreparation = nil;
+		__block BOOL preparedMappingRejected = NO;
+		dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+			NSError *preparationError = nil;
+			backgroundPreparation = [backgroundLoader prepareDiscoveredPackage:discovered
+				activationRecord:activationRecord startupSnapshot:enabledSnapshot developerMode:YES error:&preparationError];
+			preparedMappingRejected = backgroundPreparation &&
+				![backgroundLoader activatePreparedPackage:backgroundPreparation error:&preparationError];
+			dispatch_semaphore_signal(backgroundFinished);
+		});
+		BTAssert(dispatch_semaphore_wait(backgroundFinished,
+			dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC))) == 0,
+			"background package preparation timed out");
+		BTAssert(backgroundPreparation && preparedMappingRejected && imageLoader.prepareInvocationCount == 1 &&
+			imageLoader.loadInvocationCount == 0 && trustStore.commitInvocationCount == commitBaseline + 1 &&
+			activationStore.loadAttemptInvocationCount == attemptBaseline + 1,
+			"worker preparation failed or executed native code off the main thread");
+		error = nil;
+		BTAssert([backgroundLoader activatePreparedPackage:backgroundPreparation error:&error] != nil &&
+			imageLoader.loadInvocationCount == 1, "main-thread activation did not consume the verified worker preparation");
+		BTAssert(![backgroundLoader activatePreparedPackage:backgroundPreparation error:&error] &&
+			imageLoader.loadInvocationCount == 1, "a prepared package was activated more than once");
+
+		// The exact same signed fixture is official only under this explicit
+		// test policy. Its app-bundle discovery needs no opt-in activation record.
+		NSString *officialKeyIdentifier = baseManifest[@"publisher"][@"primaryKeyIdentifier"];
+		NSData *officialPublicKey = [NSData dataWithContentsOfURL:[discovered.packageURL
+			URLByAppendingPathComponent:[NSString stringWithFormat:@"PublisherKeys/%@.p256", officialKeyIdentifier]]];
+		BTPluginTrustScope *officialScope = [[BTPluginTrustScope alloc]
+			initWithPluginIdentifiers:[NSSet setWithObject:BTPluginTestSignedPackageIdentifier]
+			extensionPointIdentifiers:[NSSet setWithObject:BTPluginTestSignedPackageExtensionPoint] error:&error];
+		BTPluginTrustPolicy *officialPolicy = [[BTPluginTrustPolicy alloc]
+			initWithOfficialPublicKeysByIdentifier:@{ officialKeyIdentifier: officialPublicKey }
+			officialScopesByKeyIdentifier:@{ officialKeyIdentifier: officialScope }
+			revokedKeyIdentifiers:[NSSet set] metadataSequence:1 metadataUpdatedAt:[NSDate dateWithTimeIntervalSince1970:1]
+			error:&error];
+		BTAssert(officialPolicy != nil, error.localizedDescription.UTF8String);
+		BTPluginPackageVerifier *officialVerifier = [[BTPluginPackageVerifier alloc]
+			initWithTrustEvaluator:[[BTPluginTrustEvaluator alloc] initWithPolicy:officialPolicy trustStore:trustStore]
+			hostIOSVersion:iOS17];
+		BTPluginDiscoveredPackage *officialPackage = [[[BTPluginDiscovery new] discoverRoots:@[
+			[BTPluginDiscoveryRoot transportPackageRootURL:installedRootURL source:BTPluginSourceAppBundle]
+		]] packages].firstObject;
+		BTPluginRuntimeLoaderTestActivationStore *officialActivationStore = [BTPluginRuntimeLoaderTestActivationStore new];
+		BTPluginRuntimeLoaderRecordingImageLoader *officialImageLoader = [BTPluginRuntimeLoaderRecordingImageLoader new];
+		BTPluginRuntimeLoader *officialLoader = BTPluginRuntimeLoaderTestLoader(officialVerifier, registry,
+			officialActivationStore, directEnvironment, officialImageLoader);
+		error = nil;
+		BTPluginRuntimeLoadResult *officialLoaded = [officialLoader loadDiscoveredPackage:officialPackage
+			activationRecord:nil startupSnapshot:BTPluginRuntimeLoaderTestSnapshot(NO, NO, @"official-startup")
+			developerMode:NO error:&error];
+		BTAssert(officialLoaded && !officialLoaded.isThirdParty && officialActivationStore.loadAttemptInvocationCount == 1 &&
+			officialActivationStore.lastSource == BTPluginSourceAppBundle,
+			"official native loading did not persist its crash-recovery identity");
+		error = nil;
+		BTAssert(![officialLoader loadDiscoveredPackage:officialPackage activationRecord:nil
+			startupSnapshot:BTPluginRuntimeLoaderTestSnapshot(NO, YES, @"official-safe") developerMode:NO error:&error] &&
+			officialImageLoader.prepareInvocationCount == 1 && officialImageLoader.loadInvocationCount == 1 &&
+			officialActivationStore.loadAttemptInvocationCount == 1,
+			"safe mode allowed an official native image to be prepared or mapped");
 		BTAssert(![manager fileExistsAtPath:sentinelPath],
 			"constructor executed during composed verification or a rejected runtime path");
 

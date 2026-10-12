@@ -9,6 +9,8 @@
 #import "PreferencesViewController.h"
 #import "ThermAniTestViewController.h"
 #import "BattmanPrefs.h"
+#import "Features/Analytics/Data/BAAnalyticsHistoryService.h"
+#import "Features/Analytics/Data/BAAnalyticsMetricService.h"
 #include "common.h"
 #import <UIKit/UIKit.h>
 
@@ -20,6 +22,7 @@
 @interface BattmanPrefs ()
 @property (nonatomic, strong) NSMutableDictionary<NSString*, id> *backing;
 @property (nonatomic) dispatch_queue_t queue;
+- (nullable NSError *)wipeDirectoryData:(BOOL)dryRun;
 @end
 
 @implementation BattmanPrefs
@@ -528,8 +531,36 @@ BOOL BattmanPrefsSynchronize(void) {
 }
 
 - (void)wipeAllData:(BOOL)dryRun {
+	[self wipeAllData:dryRun completion:nil];
+}
+
+- (void)wipeAllData:(BOOL)dryRun completion:(void (^)(NSError *))completion {
+	if (!NSThread.isMainThread) {
+		dispatch_async(dispatch_get_main_queue(), ^{ [self wipeAllData:dryRun completion:completion]; });
+		return;
+	}
+	void (^deleteData)(void) = ^{
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+			NSError *error = [self wipeDirectoryData:dryRun];
+			if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(error); });
+		});
+	};
+	if (dryRun) { deleteData(); return; }
+	// Cancellation alone cannot interrupt a write already inside Foundation.
+	// Wait for both serial workers before deleting any directory, without
+	// blocking the main thread that delivers their cancellation/completion.
+	dispatch_group_t pending = dispatch_group_create();
+	dispatch_group_enter(pending);
+	[BAAnalyticsHistoryService prepareForDataWipeWithCompletion:^{ dispatch_group_leave(pending); }];
+	dispatch_group_enter(pending);
+	[BAAnalyticsMetricService prepareForDataWipeWithCompletion:^{ dispatch_group_leave(pending); }];
+	dispatch_group_notify(pending, dispatch_get_main_queue(), deleteData);
+}
+
+- (NSError *)wipeDirectoryData:(BOOL)dryRun {
 	DBGLOG(@"BattmanPrefs: %@ wipe all data operation", dryRun ? @"DRY RUN -" : @"Starting");
 	NSFileManager *fileManager = [NSFileManager defaultManager];
+	__block NSError *firstError = nil;
 	
 	// Helper to delete all children inside a directory (not the directory itself)
 	void (^wipeDirectoryContents)(NSURL *dirURL, NSString *label) = ^(NSURL *dirURL, NSString *label) {
@@ -540,6 +571,7 @@ BOOL BattmanPrefsSynchronize(void) {
 		NSError *error = nil;
 		NSArray *contents = [fileManager contentsOfDirectoryAtURL:dirURL includingPropertiesForKeys:nil options:0 error:&error];
 		if (error) {
+			if (error.code != NSFileReadNoSuchFileError && !firstError) firstError = error;
 			NSLog(@"BattmanPrefs: Error reading %@ (%@): %@", label, dirURL.path, error.localizedDescription);
 			return;
 		}
@@ -560,6 +592,7 @@ BOOL BattmanPrefsSynchronize(void) {
 			if ([fileManager removeItemAtURL:fileURL error:&deleteError]) {
 				DBGLOG(@"BattmanPrefs: Deleted %@", fileURL.path);
 			} else {
+				if (!firstError) firstError = deleteError;
 				DBGLOG(@"BattmanPrefs: Failed to delete %@: %@", fileURL.path, deleteError.localizedDescription);
 			}
 		}
@@ -634,8 +667,20 @@ BOOL BattmanPrefsSynchronize(void) {
 			wipeDirectoryContents(containerURL, @"AppData container");
 		}
 	}
+	// In an uncontained launch, Application Support can live outside both the
+	// config directory and the optional MCM container. Remove only our cache.
+	NSURL *support = [fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+	NSURL *analyticsCache = [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES];
+	if (analyticsCache.path.length && [fileManager fileExistsAtPath:analyticsCache.path]) {
+		if (dryRun) wipeDirectoryContents(analyticsCache, @"Analytics cache");
+		else {
+			NSError *error = nil;
+			if (![fileManager removeItemAtURL:analyticsCache error:&error] && !firstError) firstError = error;
+		}
+	}
 
 	NSLog(@"BattmanPrefs: %@ wipe all data operation completed", dryRun ? @"DRY RUN -" : @"");
+	return firstError;
 }
 
 @end

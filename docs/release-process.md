@@ -1,10 +1,29 @@
 # Battman release process
 
-Status: production pipeline implemented; no release is authorized by this
-document. Alpha, beta, and stable are internal readiness checks, not version
-channels; Battman versions remain numeric `MAJ.MIN.PATCH[.REV]` and builds remain
-`Debug` or `Release`. GitHub, Havoc, key, support, and publication decisions
-remain explicit gates in the owner-private release-review workspace.
+Release tooling and validation workflows are implemented. Production trust
+metadata, signed packages, reviewed key fingerprints, and publication approval
+remain separate requirements; a passing build does not establish that these
+materials are complete. Battman versions use numeric `MAJ.MIN.PATCH[.REV]`, with
+`Debug` and `Release` build configurations. Alpha, beta, and stable describe
+readiness rather than additional version or build channels.
+
+The three application variants are distinct:
+
+| Distribution | Xcode scheme | Release use |
+| --- | --- | --- |
+| Public | `Battman` | Public-source app and CI validation |
+| GitHub | `Battman (rel-nonfree)` | GitHub host Debian packages and replacement TIPA |
+| Havoc | `Battman-havoc` | Havoc host Debian packages, including the existing private authorization implementation |
+
+The GitHub scheme selects the `Battman-nonfree` target; use the scheme's full
+name, including spaces and parentheses, with `xcodebuild -scheme`.
+
+The executable records `public`, `github`, or `havoc` in its
+`__TEXT,__btchannel` section. Finalization verifies this against the selected
+target, and package inspection reports it separately from source identity.
+Havoc requires its private implementation and definitions; public CI does not
+supply them. There is no Havoc TIPA target, and the TIPA builder and inspector
+reject a Havoc executable.
 
 ## 1. Roles and separation
 
@@ -53,13 +72,14 @@ Before strict assembly:
   private key exclusively on the offline checksum station;
 - approve support/privacy/security intake and Havoc product classification.
 
-For 1.1.0, the owner-approved inputs are maintained in the private
-release-review workspace: the six existing Analytics cards remain embedded;
-Charge Gauge is separately packaged and included in rooted/rootless add-ons
-plus replacement TIPAs; and trust uses 2-of-3 offline roots with separate
-publisher and checksum keys. Production private keys may be generated on this
-Mac only through the separately approved owner-operated ceremony; they must
-never enter normal build/release tooling.
+For 1.1.0, `Packaging/Release/release-matrix.json` selects ten embedded
+Analytics cards. Charge Gauge is separately packaged and included in
+rooted/rootless add-ons and GitHub replacement TIPAs. The trust policy calls
+for 2-of-3 offline roots with separate publisher and checksum keys. These
+requirements describe the intended release inputs; they do not attest that
+production signatures or custody reviews have been completed. Production
+private keys remain confined to the owner-operated signing ceremony and never
+enter normal build or CI tooling.
 
 The same private workspace holds the SDK review order, Havoc classification and
 dual-hosting decision, support ownership decision, readiness ledger, and review
@@ -72,46 +92,56 @@ approval.
 
 ## 3. CI boundary
 
-`.github/workflows/ci.yml` uses an Ubuntu runner for the routine Debug IPA build.
-It downloads only the pinned Theos iPhoneOS 13.7 SDK and L1ghtmann LLVM
-toolchain, verifies their SHA-256 values, extracts them beneath a runner-local
-directory, and invokes `make -C Battman ... -j1`; the resulting
-`Battman/build/Battman.ipa` is uploaded as a short-lived CI artifact. Every
-action is pinned to a full commit SHA and the build uses no Python release
-dependencies. Xcode/simulator rendering and native Release packaging remain
-owner/manual lanes, so a pull request does not spend a macOS runner on them.
+`.github/workflows/ci.yml` runs on pull requests, pushes to `master`, and
+manual dispatch. Its Ubuntu job downloads the digest-pinned iPhoneOS SDK and
+LLVM toolchain, checks source and release boundaries, and builds one Debug IPA
+with `-j1`. That IPA is a short-lived CI artifact.
 
-`.github/workflows/release.yml` checks out the exact tag without persistent
-credentials, proves tag/version/clean-tree identity, runs focused tests, builds
-from fresh runner-local product/intermediate roots, validates the reviewed
-checksum public key, and invokes strict assembly. It uploads only a short-lived
-inspected candidate without the detached checksum signature. The offline
-checksum operator signs exact `SHA256SUMS` bytes. A second job behind the
-protected `battman-production-release` environment accepts only that returned
-signature, attaches and verifies it, and creates a GitHub **draft** only on
-manual dispatch. No hosted runner receives the production checksum private
-key; no workflow publishes a release or uploads to Havoc.
+After the Ubuntu job succeeds, the macOS `release-tests` job runs the focused
+plug-in, Analytics, and strict release regression suite, then builds the Public
+`Battman` and GitHub `Battman (rel-nonfree)` schemes in `Release`. Those two builds run
+serially with one build worker. They exercise the public source tree without
+production signing inputs. The optional `run_macos_evidence` input additionally
+runs simulator rendering, user-manual generation, and a Simulator build. Havoc's
+private authorization inputs are not part of either public CI lane.
 
-For a manual release run, let `build-and-inspect` finish, download and verify
-its unsigned candidate, and transfer only exact `SHA256SUMS` bytes to the
-offline checksum station. After offline signing, base64-encode only the returned
-DER signature into the protected environment secret
-`BATTMAN_CHECKSUM_SIGNATURE_BASE64`, then approve the
-`battman-production-release` environment. The draft job rejects a stale,
-mismatched, malformed, or wrong-key signature. Remove or replace that signature
-secret after the run so a later candidate cannot accidentally reuse it. The
-public checksum PEM and both reviewed public fingerprints are environment
-variables, not private-key secrets.
+`.github/workflows/release.yml` supports three entry paths:
 
-If the owner dispatches the optional simulator lane, it selects the runner's
-available Xcode explicitly and keeps simulator output outside the repository.
-Recheck the official runner-image inventory before each such run because hosted
-images change.
+| Trigger | Validation and output |
+| --- | --- |
+| Manual dispatch with `validate_only: true` (default) | `tag` accepts a branch, commit, or tag ref. Requires a clean checkout, runs focused tests and synthetic signed-package regressions, and builds the GitHub Release app. It creates no production candidate, signature, tag, or GitHub draft. |
+| Push of a `v*` tag | Requires an exact clean `v<VERSION>` tag and the production public inputs, then builds and inspects an unsigned candidate for offline checksum signing. It does not create a GitHub draft. |
+| Manual dispatch with `validate_only: false` | Requires that same exact tag and production inputs. After candidate inspection and offline signature return, a protected job may create a GitHub draft. |
+
+The production build job requires reviewed public trust metadata and signed
+plug-in packages tracked in the exact tag. It also requires the public
+repository variables `BATTMAN_CHECKSUM_PUBLIC_KEY_PEM`,
+`BATTMAN_CHECKSUM_SIGNING_KEY_ID`, and
+`BATTMAN_SDK_EXAMPLE_PUBLISHER_KEY_ID`. These variables contain public material,
+not private keys. Validation-only runs skip these production-input steps;
+their synthetic package tests do not certify a production release matrix.
+
+For a production manual run, let `build-and-inspect` finish, download and verify
+its unsigned candidate, and transfer exact `SHA256SUMS` bytes to the offline
+checksum station. Base64-encode the returned DER signature into the protected
+`battman-production-release` environment secret
+`BATTMAN_CHECKSUM_SIGNATURE_BASE64`, then approve that environment. The job
+checks the reviewed checksum fingerprint and rejects stale, malformed,
+mismatched, or wrong-key signatures before creating a **draft**. Remove or
+replace the signature secret after the run. The build and protected jobs must
+use the same reviewed public checksum fingerprint.
+
+Every action is pinned to a full commit SHA. Native jobs select Xcode
+explicitly and keep product, intermediate, and simulator output outside the
+checkout. No hosted runner receives a production checksum private key, no
+workflow publishes a GitHub draft, and no workflow uploads to Havoc.
 
 ## 4. Local strict assembly
 
-Start with a clean exact tag and independently finalized Release app copies.
-Use fresh output directories and bounded parallelism:
+Start with a clean exact tag and independently finalized GitHub Release app
+copies built with `Battman (rel-nonfree)`. Use fresh output directories and bounded
+parallelism. Build Havoc Debian inputs separately with `Battman-havoc`; do not
+substitute them into the GitHub matrix or replacement TIPA:
 
 ```sh
 export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
@@ -198,7 +228,7 @@ one arbitrary run.
 The matrix contains:
 
 - rooted `iphoneos-arm` and rootless `iphoneos-arm64` host Debian files;
-- replacement `Battman.tipa` and its embedding/re-sign report;
+- GitHub replacement `Battman.tipa` and its embedding/re-sign report;
 - signed official `.battman.zip` transports plus rooted/rootless plug-in add-ons;
 - the separately signed third-party SDK example `.battman.zip`;
 - SDK source archive after its license gate closes;
@@ -275,6 +305,16 @@ GitHub receives only the reviewed matrix and remains a draft until explicit
 approval. Prefer immutable release settings once the owner decides to publish.
 After publication, download every asset into a new directory and repeat
 checksum/signature/inspection checks.
+
+Havoc host candidates must be built separately using `Battman-havoc` in
+`Release`, with its existing private authorization implementation and
+definitions. Package that finalized app using `build-host-deb.py` for the
+rooted and rootless layouts. `validate-havoc-candidate.py --artifact-kind host`
+requires the embedded `havoc` channel; a Public or GitHub host Debian is not a
+substitute. GitHub host Debian records do not receive the
+`havoc-manual-candidate` label. Separately shipped official plug-in Debian
+records may receive that label, subject to their own Havoc validation and
+manual approval.
 
 Owner-selected host or plug-in Debian candidates must separately pass the
 applicable `validate-havoc-candidate.py` checks against the explicit

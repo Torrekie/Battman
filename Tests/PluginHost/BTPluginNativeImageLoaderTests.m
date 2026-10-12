@@ -1,4 +1,7 @@
 #import <Foundation/Foundation.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #import "../../Battman/PluginHost/BTPluginRegistry.h"
 #import "../../Battman/PluginHost/Model/BTPluginPackageErrors.h"
@@ -48,6 +51,33 @@ int main(int argc, const char *argv[]) {
 			}
 			BTAssert(![[NSFileManager defaultManager] fileExistsAtPath:unmappedStageRoot.path],
 				"an unmapped prepared image did not clean up its private staging root");
+
+			// Mutate the private copy after its last digest check, restore its
+			// original size, permissions and mtime, and require the ctime/identity
+			// guard to reject it before any constructor can execute.
+			BTPluginPreparedNativeImage *changed = [loader bt_prepareLooseImageAtURL:fixtureURL error:&error];
+			BTAssert(changed != nil, error.localizedDescription.UTF8String);
+			struct stat before;
+			const char *changedPath = changed.stagedExecutableURL.fileSystemRepresentation;
+			BTAssert(stat(changedPath, &before) == 0 && chmod(changedPath, 0700) == 0,
+				"could not prepare post-verification mutation");
+			int changedFD = open(changedPath, O_RDWR);
+			unsigned char byte = 0;
+			BTAssert(changedFD >= 0 && pread(changedFD, &byte, 1, 0) == 1,
+				"could not read staged mutation fixture");
+			byte ^= 1;
+			struct timespec times[] = { before.st_atimespec, before.st_mtimespec };
+			BTAssert(pwrite(changedFD, &byte, 1, 0) == 1 && futimens(changedFD, times) == 0 &&
+				fchmod(changedFD, before.st_mode & 0777) == 0 && close(changedFD) == 0,
+				"could not restore mutation fixture metadata");
+			error = nil;
+			BTAssert(![loader loadPreparedImage:changed expectedPluginIdentifier:@"com.example.battman.runtime"
+				expectedPluginVersion:@"7" declaredExtensionPoints:[NSSet setWithObject:BTFixtureExtensionPoint]
+				registry:registry error:&error] && error.code == BTPluginPackageErrorRaceDetected &&
+				![[NSFileManager defaultManager] fileExistsAtPath:sentinelPath],
+				"post-hash mutation with restored mtime crossed the native mapping boundary");
+			changed = nil;
+			error = nil;
 
 			BTPluginPreparedNativeImage *prepared =
 				[loader bt_prepareLooseImageAtURL:fixtureURL error:&error];

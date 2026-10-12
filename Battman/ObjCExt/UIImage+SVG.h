@@ -11,6 +11,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface UIImage (SVG)
 
+/// System symbols with vector fallbacks for the legacy glyphs used by Battman.
+/// Does not require a bundled symbol font on iOS 12.
++ (nullable UIImage *)legacySymbolImageForGlyph:(NSString *)glyph pointSize:(CGFloat)size color:(UIColor *)color;
+
 /// Create a UIImage from SVG data. If `scale` <= 0.0, device screen scale is used.
 /// Returns nil on failure.
 + (nullable UIImage *)imageWithSVGData:(NSData *)svgData scale:(CGFloat)scale API_AVAILABLE(ios(12.4));

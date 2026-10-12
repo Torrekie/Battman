@@ -618,12 +618,15 @@ static BTPluginPreparedNativeImage *BTPluginCreatePreparedImage(
 		goto cleanup;
 	}
 	executableDescriptor = BTPluginOpenRelativeFile(contentDescriptor, executableRelativePath, error);
-	struct stat executableStat;
+	struct stat executableStat = {0};
+	struct stat executableAfterHash = {0};
 	if (executableDescriptor < 0 || fstat(executableDescriptor, &executableStat) != 0 ||
 		!S_ISREG(executableStat.st_mode) || executableStat.st_nlink != 1 ||
 		executableStat.st_size < 0 || (uint64_t)executableStat.st_size != executableFile.fileSize ||
 		!BTPluginHashDescriptor(executableDescriptor, executableFile.fileSize,
 			executableFile.sha256, executableRelativePath, error) ||
+		fstat(executableDescriptor, &executableAfterHash) != 0 ||
+		!BTPluginStatsMatch(&executableStat, &executableAfterHash) ||
 		!BTPluginAuthorizeStagedExecutable(executableDescriptor, machOInspection,
 			executableRelativePath, error)) {
 		if (error && !*error)
@@ -876,9 +879,11 @@ static NSMutableSet<NSString *> *BTPluginProcessMappedIdentities(void) {
 		fstat(preparedImage.executableDescriptor, &executableDescriptorStat) == 0 &&
 		BTPluginStatsMatch(&expectedExecutableStat, &executableDescriptorStat) &&
 		executablePathStat.st_dev == executableDescriptorStat.st_dev &&
-		executablePathStat.st_ino == executableDescriptorStat.st_ino &&
-		BTPluginHashDescriptor(preparedImage.executableDescriptor, preparedImage.executableSize,
-			preparedImage.executableSHA256, preparedImage.executableRelativePath, error);
+		executablePathStat.st_ino == executableDescriptorStat.st_ino;
+	// The retained executable was hashed after the private copy completed,
+	// with matching before/after stat snapshots. Recheck that exact identity
+	// (including nanosecond ctime) here instead of rereading up to 64 MiB on
+	// the UI thread. The private capability directory remains the load boundary.
 	if (!pinned) {
 		if (error && !*error)
 			BTPluginStageFail(error, @"The private staged image changed before native mapping.",

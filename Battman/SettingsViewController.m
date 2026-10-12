@@ -1,6 +1,7 @@
 #import "ObjCExt/UIScreen+Auto.h"
 #import "ObjCExt/CALayer+smoothCorners.h"
 #import "ObjCExt/UIColor+compat.h"
+#import "ObjCExt/UIImage+SVG.h"
 #import "SettingsViewController.h"
 #import "PreferencesViewController.h"
 #import "LanguageSelectionViewController.h"
@@ -163,10 +164,9 @@ static BOOL _coolDebugVCPresented = 0;
         [export_button setBackgroundImage:export_img forState:UIControlStateNormal];
     } else {
         export_button = [UIButton buttonWithType:UIButtonTypeSystem];
-        [export_button.titleLabel setFont:[UIFont fontWithName:@SFPRO size:22]];
-        // U+100202
-        [export_button setTitle:@"􀈂" forState:UIControlStateNormal];
-        [export_button setFrame:CGRectZero];
+        UIImage *image = [UIImage legacySymbolImageForGlyph:@"􀈂" pointSize:22 color:UIColor.blackColor];
+        [export_button setImage:[image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+        [export_button sizeToFit];
     }
     [export_button addTarget:self action:@selector(DebugExportPressed) forControlEvents:UIControlEventTouchUpInside];
     [export_button setShowsTouchWhenHighlighted:YES];

@@ -95,7 +95,7 @@ int main(void) {
 		BTAssert(first != nil && !first.isSafeMode && first.areThirdPartyPluginsEnabled &&
 			first.recovery == nil && first.activationRecords.count == 2,
 			"normal startup snapshot was not created from persisted activation intent");
-		BTAssert([store recordThirdPartyLoadAttemptForPluginIdentifier:thirdPartyIdentifier
+		BTAssert([store recordNativeLoadAttemptForPluginIdentifier:thirdPartyIdentifier
 			packageSHA256:thirdPartyDigest source:BTPluginSourceApplicationData
 			startupIdentifier:first.startupIdentifier error:&error], error.localizedDescription.UTF8String);
 
@@ -118,11 +118,29 @@ int main(void) {
 		BTAssert([store markStartupSettledWithIdentifier:manualSafeMode.startupIdentifier error:&error],
 			error.localizedDescription.UTF8String);
 
+		NSString *bundledIdentifier = @"com.example.bundled-without-activation-record";
+		BTPluginStartupSnapshot *officialLaunch = [store beginStartupWithSafeModeRequested:NO error:&error];
+		BTAssert([store recordNativeLoadAttemptForPluginIdentifier:bundledIdentifier packageSHA256:BTDigest('b')
+			source:BTPluginSourceAppBundle startupIdentifier:officialLaunch.startupIdentifier error:&error],
+			error.localizedDescription.UTF8String);
+		BTPluginStartupSnapshot *officialRecovery = [store beginStartupWithSafeModeRequested:NO error:&error];
+		BTAssert(officialRecovery.isSafeMode &&
+			[officialRecovery.recovery.pluginIdentifier isEqualToString:bundledIdentifier],
+			"an unsettled official native image did not trigger recovery");
+		BTAssert([store disablePluginFromRecovery:officialRecovery.recovery error:&error], error.localizedDescription.UTF8String);
+		BTPluginActivationRecord *disabledOfficial = [[store activationRecordsWithError:&error]
+			filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"pluginIdentifier == %@", bundledIdentifier]].firstObject;
+		BTAssert(disabledOfficial && !disabledOfficial.isEnabled && disabledOfficial.source == BTPluginSourceAppBundle &&
+			[disabledOfficial.packageSHA256 isEqualToString:BTDigest('b')],
+			"recovery could not disable an official bundled image without a prior activation record");
+		BTAssert([store markStartupSettledWithIdentifier:officialRecovery.startupIdentifier error:&error],
+			error.localizedDescription.UTF8String);
+
 		BTPluginActivationRecord *reenabled = BTRecord(thirdPartyIdentifier, thirdPartyDigest,
 			BTPluginSourceApplicationData, BTPluginActivationModeDirect, YES);
 		BTAssert([store scheduleActivationRecord:reenabled error:&error], error.localizedDescription.UTF8String);
 		BTPluginStartupSnapshot *third = [store beginStartupWithSafeModeRequested:NO error:&error];
-		BTAssert([store recordThirdPartyLoadAttemptForPluginIdentifier:thirdPartyIdentifier
+		BTAssert([store recordNativeLoadAttemptForPluginIdentifier:thirdPartyIdentifier
 			packageSHA256:thirdPartyDigest source:BTPluginSourceApplicationData
 			startupIdentifier:third.startupIdentifier error:&error], error.localizedDescription.UTF8String);
 		BTPluginStartupSnapshot *fourth = [store beginStartupWithSafeModeRequested:NO error:&error];

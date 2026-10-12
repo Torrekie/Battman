@@ -29,6 +29,10 @@ FOUNDATION_EXPORT NSString *const BAAnalyticsHistoryServiceDidPublishNotificatio
 - (void)setApplicationActive:(BOOL)applicationActive;
 - (void)refreshNow;
 - (void)handleMemoryPressure;
+// Terminal suspension for an app-data wipe. Completion runs on main only after
+// every queued read/restore/write has finished; subsequent activation is ignored.
+- (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion;
++ (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion;
 @end
 
 NS_ASSUME_NONNULL_END

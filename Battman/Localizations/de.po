@@ -3940,3 +3940,12 @@ msgstr "%.1f%% · %@ erfasst"
 #, objc-format
 msgid "Stronger color: more time · up to %@"
 msgstr "Kräftiger: länger · bis %@"
+
+msgid "Some Battman data could not be deleted. Restart the app and try again."
+msgstr "Einige Battman-Daten konnten nicht gelöscht werden. Starte die App neu und versuche es erneut."
+
+msgid "Unable to save charging-limit settings."
+msgstr "Die Einstellungen für das Ladelimit konnten nicht gespeichert werden."
+
+msgid "The next Battman launch will skip all external native plug-ins once. Quit and reopen Battman when you are ready."
+msgstr "Beim nächsten Start überspringt Battman einmalig alle externen nativen Plug-ins. Beende Battman und öffne die App erneut, wenn du bereit bist."

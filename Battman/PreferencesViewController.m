@@ -739,6 +739,13 @@ extern UITableViewCell *find_cell(UIView *view);
 			[pathsForAlert addObject:containerPath];
 		}
 	}
+	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+	NSString *analyticsPath = [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES].path;
+	if (analyticsPath.length && [NSFileManager.defaultManager fileExistsAtPath:analyticsPath]) {
+		BOOL listed = NO;
+		for (NSString *listedPath in pathsForAlert) if (isSubpath(analyticsPath, listedPath)) { listed = YES; break; }
+		if (!listed) [pathsForAlert addObject:analyticsPath];
+	}
 	
 	NSString *alertMessage = nil;
 	if (pathsForAlert.count > 1) {
@@ -792,33 +799,34 @@ extern UITableViewCell *find_cell(UIView *view);
 	
 	__weak typeof(self) weakSelf = self;
 	[self presentViewController:progressAlert animated:YES completion:^{
-		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-			// Perform the wipe operation on background queue
-			[[BattmanPrefs sharedPrefs] wipeAllData:dryRun];
-
-			dispatch_async(dispatch_get_main_queue(), ^{
-				__strong typeof(weakSelf) strongSelf = weakSelf;
-				[progressAlert dismissViewControllerAnimated:YES completion:^{
-					if (!strongSelf) {
-						return;
-					}
-					if (dryRun) {
-						UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Dry Run Complete") message:_("Analysis complete. Check the console/logs to see what would be deleted. No data was actually removed.") preferredStyle:UIAlertControllerStyleAlert];
-						UIAlertAction *okAction = [UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:nil];
-						[completionAlert addAction:okAction];
-						[strongSelf presentViewController:completionAlert animated:YES completion:nil];
-					} else {
-						// Show completion alert for actual wipe
-						UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Data Wiped") message:_("All Battman data has been successfully deleted. The app will now exit.") preferredStyle:UIAlertControllerStyleAlert];
-						UIAlertAction *okAction = [UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-							app_exit();
-						}];
-						[completionAlert addAction:okAction];
-						[strongSelf presentViewController:completionAlert animated:YES completion:nil];
-					}
-				}];
-			});
-		});
+		[[BattmanPrefs sharedPrefs] wipeAllData:dryRun completion:^(NSError *error) {
+			__strong typeof(weakSelf) strongSelf = weakSelf;
+			[progressAlert dismissViewControllerAnimated:YES completion:^{
+				if (!strongSelf) {
+					return;
+				}
+				if (error) {
+					UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Error") message:dryRun ? error.localizedDescription : _("Some Battman data could not be deleted. Restart the app and try again.") preferredStyle:UIAlertControllerStyleAlert];
+					[completionAlert addAction:[UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+						if (!dryRun) app_exit();
+					}]];
+					[strongSelf presentViewController:completionAlert animated:YES completion:nil];
+				} else if (dryRun) {
+					UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Dry Run Complete") message:_("Analysis complete. Check the console/logs to see what would be deleted. No data was actually removed.") preferredStyle:UIAlertControllerStyleAlert];
+					UIAlertAction *okAction = [UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:nil];
+					[completionAlert addAction:okAction];
+					[strongSelf presentViewController:completionAlert animated:YES completion:nil];
+				} else {
+					// Show completion alert for actual wipe
+					UIAlertController *completionAlert = [UIAlertController alertControllerWithTitle:_("Data Wiped") message:_("All Battman data has been successfully deleted. The app will now exit.") preferredStyle:UIAlertControllerStyleAlert];
+					UIAlertAction *okAction = [UIAlertAction actionWithTitle:_("OK") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+						app_exit();
+					}];
+					[completionAlert addAction:okAction];
+					[strongSelf presentViewController:completionAlert animated:YES completion:nil];
+				}
+			}];
+		}];
 	}];
 }
 

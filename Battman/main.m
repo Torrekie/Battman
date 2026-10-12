@@ -36,6 +36,7 @@ extern int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
 #if TARGET_OS_IPHONE
 #import "PluginHost/Application/BTPluginApplicationIntegration.h"
 #import "PluginHost/Application/BTPluginPlatform.h"
+#import "PluginHost/BTEmbeddedPluginRegistration.h"
 #endif
 
 struct localization_entry {
@@ -403,6 +404,8 @@ int main(int argc, char * argv[]) {
     if (is_carbon()) {
 #if TARGET_OS_IPHONE
 	    @autoreleasepool{
+		    const char *pluginLanguage = use_libintl ? getenv("LANGUAGE") : "en";
+		    BTPluginSetPreferredLanguage(pluginLanguage ? [NSString stringWithUTF8String:pluginLanguage] : @"en");
 		    extern NSString *battman_bootstrap(char *, int);
 		    NSString *applicationDelegateClassName = battman_bootstrap("", 0);
 		    NSError *pluginStartupError = nil;

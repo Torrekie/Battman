@@ -97,6 +97,7 @@ endif
 # files under Plugins/, examples, fixtures, and tests must never enter the host
 # build merely because they appeared on disk.
 ROOT_OBJC_SOURCES := \
+	Distribution.m \
 	BatteryDetailsViewController.m \
 	BatteryInfoViewController.m \
 	BattmanPrefs.m \
@@ -317,9 +318,11 @@ RETIRED_ANALYTICS_SOURCES := \
 	Features/Analytics/BuiltIn/BAAnalyticsRemainingCapacityCard.m \
 	Features/Analytics/BuiltIn/BAAnalyticsChargingLimitCard.m
 
-# Wildcards are permitted only for the audit. Any new source must be classified
-# above before the build can proceed.
-DISCOVERED_SOURCE_FILES := $(sort $(shell find . -path ./build -prune -o -type f \( -name '*.m' -o -name '*.c' -o -name '*.S' \) -print | $(SED) 's|^\./||'))
+# Audit the versioned source surface, not unrelated scratch files or the private
+# Havoc implementation (compiled only through Distribution.m in its Xcode target).
+# Stage new source files before running the membership check.
+TRACKED_SOURCE_FILES := $(shell git ls-files -- '*.m' '*.c' '*.S')
+DISCOVERED_SOURCE_FILES := $(sort $(foreach source,$(TRACKED_SOURCE_FILES),$(if $(wildcard $(source)),$(source))))
 CLASSIFIED_NONPRODUCTION_SOURCES := $(PROTOTYPE_SOURCES) $(DEVELOPMENT_ONLY_SOURCES) $(RETIRED_ANALYTICS_SOURCES)
 UNCLASSIFIED_SOURCE_FILES := $(filter-out $(SOURCES) $(CLASSIFIED_NONPRODUCTION_SOURCES),$(DISCOVERED_SOURCE_FILES))
 MISSING_CLASSIFIED_SOURCE_FILES := $(filter-out $(DISCOVERED_SOURCE_FILES),$(SOURCES) $(CLASSIFIED_NONPRODUCTION_SOURCES))

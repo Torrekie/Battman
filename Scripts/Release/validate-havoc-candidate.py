@@ -130,6 +130,8 @@ def main() -> int:
                 commit=commit, source_tree=source_tree,
             ),
         ]
+        if any(record.get("appDistributionChannel") != "havoc" for record in records):
+            raise ReleaseError("Havoc host candidates must be built with the Battman-havoc Xcode scheme")
     else:
         records = [
             inspect_plugin_deb(

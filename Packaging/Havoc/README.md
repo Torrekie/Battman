@@ -1,6 +1,17 @@
 # Havoc manual Debian candidate scope
 
-Torrekie may manually select these local candidates for Havoc submission:
+Havoc host packages use the `Battman-havoc` Xcode scheme in `Release`. This
+variant includes the existing private authorization implementation and its
+private definitions. Those inputs must be supplied through the authorized
+private build process; a Public (`Battman`) or GitHub (`Battman (rel-nonfree)`) build
+is not a Havoc replacement.
+
+The executable's `__TEXT,__btchannel` marker must be `havoc`. The finalizer
+checks the target's channel, and the host candidate validator checks the
+packaged executable. The public CI and GitHub release workflow do not build
+this private variant or establish that its production materials are ready.
+
+Torrekie may manually select these candidates for Havoc submission:
 
 - rooted host Debian (`iphoneos-arm`, `/Applications/Battman.app`);
 - rootless host Debian (`iphoneos-arm64`, `/var/jb/Applications/Battman.app`);
@@ -8,7 +19,10 @@ Torrekie may manually select these local candidates for Havoc submission:
   future plug-ins, after Havoc confirms an accepted section/classification for
   each product.
 
-Only `.deb` files are Havoc candidates. TIPAs, raw `.battman` bundles,
+Only `.deb` files are Havoc candidates. Build the two host layouts from the
+finalized Havoc app with `Scripts/Release/build-host-deb.py`; validate that exact
+pair before submission. There is no Havoc TIPA target, and TIPA assembly and
+inspection reject a Havoc executable. TIPAs, raw `.battman` bundles,
 `.battman.zip` transports, SDK/source archives, checksums, trust metadata, and
 other release assets remain outside the Havoc submission scope.
 
@@ -16,8 +30,9 @@ Local preparation and inspection may be automated, but uploading is always a
 separate manual action performed by Torrekie. No Battman script or CI workflow
 logs in to Havoc, stores Havoc credentials, or publishes a candidate.
 `validate-havoc-candidate.py` supports `--artifact-kind host` and
-`--artifact-kind plugin`. It rejects Debug metadata, wrong architecture/path
-pairs, a non-monotonic version relative to an explicit published version,
+`--artifact-kind plugin`. Host mode requires the embedded `havoc` channel.
+It rejects Debug metadata, wrong architecture/path pairs, a non-monotonic
+version relative to an explicit published version,
 unsupported or mismatched `Section` values, an embedded host build identity
 that differs from the explicitly reviewed full commit/tree, maintainer
 scripts, and unexpected files. Plug-in mode additionally checks the package
@@ -32,6 +47,7 @@ bytes: exact artifact review and Torrekie's explicit submission approval remain
 required. After publication, download and compare Havoc-processed packages,
 documenting any legitimate repository transformation.
 
+Havoc purchase authorization and Battman plug-in publisher trust are separate.
 Marketplace availability is not Battman publisher trust. Unless an official
 offline delegation covers the exact publisher/plug-in/extension scope, the
 normal third-party approval flow still applies.

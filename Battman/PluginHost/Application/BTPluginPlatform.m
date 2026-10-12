@@ -26,6 +26,8 @@
 #import "../Security/BTPluginTrustStore.h"
 #import "../UI/BTPluginImportPresenter.h"
 
+NSNotificationName const BTPluginPlatformDidFinishStartupNotification = @"BTPluginPlatformDidFinishStartupNotification";
+
 static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 	if (error)
 		*error = BTPluginPackageMakeError(BTPluginPackageErrorRuntime, description, nil, nil);
@@ -45,22 +47,25 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 
 @interface BTPluginPlatform ()
 @property (nonatomic, strong, readwrite) BTPluginRegistry *registry;
-@property (nonatomic, strong, readwrite, nullable) BTPluginStartupSnapshot *startupSnapshot;
-@property (nonatomic, strong, readwrite, nullable) BTPluginDiscoveryResult *discoveryResult;
-@property (nonatomic, copy, readwrite) NSArray<BTPluginRuntimeLoadResult *> *loadedPlugins;
-@property (nonatomic, copy, readwrite) NSArray<BTPluginPlatformDiagnostic *> *diagnostics;
-@property (nonatomic, readwrite, getter=isPreparedForApplicationLaunch) BOOL preparedForApplicationLaunch;
+@property (atomic, strong, readwrite, nullable) BTPluginStartupSnapshot *startupSnapshot;
+@property (atomic, strong, readwrite, nullable) BTPluginDiscoveryResult *discoveryResult;
+@property (atomic, copy, readwrite) NSArray<BTPluginRuntimeLoadResult *> *loadedPlugins;
+@property (atomic, copy, readwrite) NSArray<BTPluginPlatformDiagnostic *> *diagnostics;
+@property (atomic, readwrite, getter=isPreparedForApplicationLaunch) BOOL preparedForApplicationLaunch;
+@property (atomic, readwrite, getter=isExternalStartupComplete) BOOL externalStartupComplete;
+@property (nonatomic) dispatch_queue_t startupQueue;
+@property (nonatomic) dispatch_group_t startupGroup;
 @property (nonatomic, strong) id<BTPluginActivationStore> activationStore;
 @property (nonatomic, strong) BTPluginPackageVerifier *packageVerifier;
 @property (nonatomic, strong) BTPluginImportCoordinator *importCoordinator;
-@property (nonatomic, strong, readwrite, nullable) BTPluginManagementService *managementService;
+@property (atomic, strong, readwrite, nullable) BTPluginManagementService *managementService;
 @property (nonatomic, strong) BTPluginRuntimeLoader *runtimeLoader;
 @property (nonatomic, strong) BTPluginRuntimeEnvironment *runtimeEnvironment;
 @property (nonatomic, strong) NSURL *applicationSupportURL;
 @property (nonatomic, strong) NSURL *safeModeSentinelURL;
 @property (nonatomic, strong) BTPluginSafeModeRequest *safeModeRequest;
 @property (nonatomic) NSUInteger activeSettlementGeneration;
-@property (nonatomic) BOOL startupSettled;
+@property (atomic) BOOL startupSettled;
 @property (nonatomic) BOOL officialTrustFailedClosed;
 @end
 
@@ -79,6 +84,8 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 	self = [super init];
 	if (!self)
 		return nil;
+	_startupQueue = dispatch_queue_create("com.torrekie.Battman.PluginStartup", DISPATCH_QUEUE_SERIAL);
+	_startupGroup = dispatch_group_create();
 	_registry = [BTPluginRegistry new];
 	_loadedPlugins = @[];
 	_diagnostics = @[];
@@ -106,6 +113,13 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 	NSURL *hostSupportURL = [_applicationSupportURL URLByAppendingPathComponent:@"Battman" isDirectory:YES];
 	_safeModeSentinelURL = [hostSupportURL URLByAppendingPathComponent:BTPluginSafeModeSentinelName isDirectory:NO];
 	_safeModeRequest = [[BTPluginSafeModeRequest alloc] initWithSentinelURL:_safeModeSentinelURL];
+	return self;
+}
+
+// Serial worker only: Keychain, filesystem, signatures and store recovery must
+// not extend the UIApplication startup watchdog interval.
+- (void)initializeExternalServices {
+	NSURL *hostSupportURL = [self.applicationSupportURL URLByAppendingPathComponent:@"Battman" isDirectory:YES];
 	_activationStore = [BTPluginKeychainActivationStore new];
 
 	// Root private keys are never generated or inferred here. A missing resource
@@ -126,7 +140,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		diagnostic.stage = @"official-trust";
 		diagnostic.error = officialTrustError ?: BTPluginPackageMakeError(BTPluginPackageErrorInvalidSignature,
 			@"The bundled official plug-in trust policy could not be verified.", nil, nil);
-		_diagnostics = [_diagnostics arrayByAddingObject:diagnostic];
+		self.diagnostics = [self.diagnostics arrayByAddingObject:diagnostic];
 	}
 	BTPluginKeychainTrustStore *trustStore = [BTPluginKeychainTrustStore new];
 	BTPluginTrustEvaluator *trustEvaluator = [[BTPluginTrustEvaluator alloc]
@@ -144,7 +158,6 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		initWithRootURL:quarantineURL packageVerifier:_packageVerifier error:&quarantineError];
 	if (quarantineStore) {
 		_importCoordinator = [[BTPluginImportCoordinator alloc] initWithQuarantineStore:quarantineStore];
-		[[BTPluginImportPresenter sharedPresenter] startObserving];
 		NSURL *applicationDataPluginURL = [hostSupportURL URLByAppendingPathComponent:@"PlugIns" isDirectory:YES];
 		NSError *applicationDataError = nil;
 		BTPluginApplicationDataStore *applicationDataStore = [[BTPluginApplicationDataStore alloc]
@@ -152,7 +165,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		NSArray<BTPluginDiscoveryRoot *> *managementRoots = [BTPluginDiscovery
 			defaultRootsForApplicationSupportURL:_applicationSupportURL mainBundleURL:NSBundle.mainBundle.bundleURL];
 		if (applicationDataStore) {
-			_managementService = [[BTPluginManagementService alloc]
+			self.managementService = [[BTPluginManagementService alloc]
 				initWithPackageVerifier:_packageVerifier trustStore:trustStore activationStore:_activationStore
 				applicationDataStore:applicationDataStore quarantineStore:quarantineStore
 				environment:_runtimeEnvironment discoveryRoots:managementRoots];
@@ -161,23 +174,53 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 			diagnostic.stage = @"management-initialization";
 			diagnostic.error = applicationDataError ?: BTPluginPackageMakeError(BTPluginPackageErrorImport,
 				@"The private plug-in installation directory could not be initialized.", nil, nil);
-			_diagnostics = [_diagnostics arrayByAddingObject:diagnostic];
+			self.diagnostics = [self.diagnostics arrayByAddingObject:diagnostic];
 		}
 	} else {
 		BTPluginPlatformDiagnostic *diagnostic = [[BTPluginPlatformDiagnostic alloc] bt_init];
 		diagnostic.stage = @"import-initialization";
 		diagnostic.error = quarantineError ?: BTPluginPackageMakeError(BTPluginPackageErrorImport,
 			@"The private plug-in quarantine could not be initialized.", nil, nil);
-		_diagnostics = [_diagnostics arrayByAddingObject:diagnostic];
+		self.diagnostics = [self.diagnostics arrayByAddingObject:diagnostic];
 	}
-	return self;
 }
 
 - (BOOL)handleOpenPackageURL:(NSURL *)packageURL {
-	return [self.importCoordinator handleOpenPackageURL:packageURL];
+	// Document delivery may race the worker's initialization. Keep the URL's
+	// security scope alive until the import coordinator accepts ownership.
+	if (![packageURL isKindOfClass:[NSURL class]] || !packageURL.isFileURL ||
+		![packageURL.pathExtension isEqualToString:@"battman"] ||
+		packageURL.lastPathComponent.length <= @".battman".length ||
+		![packageURL.lastPathComponent isEqualToString:packageURL.lastPathComponent.precomposedStringWithCanonicalMapping])
+		return NO;
+	NSURL *capturedURL = [packageURL copy];
+	BOOL scoped = [capturedURL startAccessingSecurityScopedResource];
+	dispatch_async(self.startupQueue, ^{
+		BOOL accepted = [self.importCoordinator handleOpenPackageURL:capturedURL];
+		if (scoped)
+			[capturedURL stopAccessingSecurityScopedResource];
+		if (!accepted) {
+			NSError *error = BTPluginPackageMakeError(BTPluginPackageErrorImport,
+				@"Plug-in import is unavailable because its private storage failed to initialize.", nil, nil);
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[NSNotificationCenter.defaultCenter postNotificationName:BTPluginImportDidFinishNotification
+					object:self userInfo:@{ BTPluginImportErrorUserInfoKey: error }];
+			});
+		}
+	});
+	return YES;
 }
 
 - (BTPluginManagementSnapshot *)currentManagementSnapshotWithError:(NSError **)error {
+	if (!self.externalStartupComplete) {
+		if (NSThread.isMainThread || !self.preparedForApplicationLaunch) {
+			BTPluginPlatformSetError(error, @"Plug-in startup is still in progress.");
+			return nil;
+		}
+		// The management UI already requests snapshots on its own worker. It
+		// can wait here; the main thread must never wait for plugin startup.
+		dispatch_group_wait(self.startupGroup, DISPATCH_TIME_FOREVER);
+	}
 	if (!self.managementService) {
 		BTPluginPlatformSetError(error, @"Plug-in management is unavailable because its private storage failed to initialize.");
 		return nil;
@@ -207,50 +250,72 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 - (BOOL)prepareForApplicationLaunchWithError:(NSError **)error {
 	if (![NSThread isMainThread])
 		return BTPluginPlatformSetError(error, @"The plug-in platform must prepare on the main thread.");
-	@synchronized (self) {
-		if (self.preparedForApplicationLaunch)
-			return YES;
-		if (!self.runtimeLoader || !self.activationStore)
-			return BTPluginPlatformSetError(error, @"The plug-in platform composition root is incomplete.");
-		if (self.managementService) {
-			NSError *transactionError = nil;
-			if (![self.managementService reconcilePendingApplicationDataTransactionWithError:&transactionError]) {
-				if (error)
-					*error = transactionError;
-				return NO;
+	if (self.preparedForApplicationLaunch)
+		return YES;
+	[[BTPluginImportPresenter sharedPresenter] startObserving];
+	NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
+	[center addObserver:self selector:@selector(applicationDidBecomeActive:)
+		name:UIApplicationDidBecomeActiveNotification object:nil];
+	[center addObserver:self selector:@selector(applicationWillLeaveActive:)
+		name:UIApplicationWillResignActiveNotification object:nil];
+	[center addObserver:self selector:@selector(applicationWillLeaveActive:)
+		name:UIApplicationDidEnterBackgroundNotification object:nil];
+	self.preparedForApplicationLaunch = YES;
+	dispatch_group_async(self.startupGroup, self.startupQueue, ^{
+		@autoreleasepool {
+			[self initializeExternalServices];
+			NSError *startupError = nil;
+			if (![self loadExternalPluginsWithError:&startupError]) {
+				NSMutableArray *diagnostics = [self.diagnostics mutableCopy];
+				[self addDiagnosticStage:@"startup" pluginIdentifier:nil
+					error:startupError ?: BTPluginPackageMakeError(BTPluginPackageErrorRuntime,
+						@"External plug-in startup failed closed.", nil, nil) toArray:diagnostics];
+				self.diagnostics = diagnostics;
 			}
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				self.externalStartupComplete = YES;
+				[NSNotificationCenter.defaultCenter postNotificationName:BTPluginPlatformDidFinishStartupNotification
+					object:self];
+				if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive)
+					[self applicationDidBecomeActive:nil];
+			});
 		}
+	});
+	return YES;
+}
 
-		NSError *startupError = nil;
-		BOOL safeModeRequested = [self safeModeWasRequested] || self.officialTrustFailedClosed;
-		BTPluginStartupSnapshot *snapshot = [self.activationStore
-			beginStartupWithSafeModeRequested:safeModeRequested error:&startupError];
-		if (!snapshot) {
-			if (error)
-				*error = startupError;
-			return NO;
-		}
-		self.startupSnapshot = snapshot;
+- (BOOL)loadExternalPluginsWithError:(NSError **)error {
+	if (!self.runtimeLoader || !self.activationStore)
+		return BTPluginPlatformSetError(error, @"The plug-in platform composition root is incomplete.");
+	if (self.managementService &&
+		![self.managementService reconcilePendingApplicationDataTransactionWithError:error])
+		return NO;
+	BOOL safeModeRequested = [self safeModeWasRequested] || self.officialTrustFailedClosed;
+	BTPluginStartupSnapshot *snapshot = [self.activationStore
+		beginStartupWithSafeModeRequested:safeModeRequested error:error];
+	if (!snapshot)
+		return NO;
+	self.startupSnapshot = snapshot;
+	NSArray<BTPluginDiscoveryRoot *> *roots = [BTPluginDiscovery
+		defaultRootsForApplicationSupportURL:self.applicationSupportURL
+		mainBundleURL:NSBundle.mainBundle.bundleURL];
+	self.discoveryResult = [[BTPluginDiscovery new] discoverRoots:roots];
+	NSMutableArray<BTPluginPlatformDiagnostic *> *diagnostics = [self.diagnostics mutableCopy];
+	for (BTPluginDiscoveryDiagnostic *discoveryDiagnostic in self.discoveryResult.diagnostics)
+		[self addDiagnosticStage:@"discovery" pluginIdentifier:nil
+			error:discoveryDiagnostic.error toArray:diagnostics];
 
-		NSArray<BTPluginDiscoveryRoot *> *roots = [BTPluginDiscovery
-			defaultRootsForApplicationSupportURL:self.applicationSupportURL
-			mainBundleURL:NSBundle.mainBundle.bundleURL];
-		self.discoveryResult = [[BTPluginDiscovery new] discoverRoots:roots];
-		NSMutableArray<BTPluginPlatformDiagnostic *> *diagnostics = [self.diagnostics mutableCopy];
-		for (BTPluginDiscoveryDiagnostic *discoveryDiagnostic in self.discoveryResult.diagnostics)
-			[self addDiagnosticStage:@"discovery" pluginIdentifier:nil
-				error:discoveryDiagnostic.error toArray:diagnostics];
+	NSMutableDictionary<NSString *, BTPluginActivationRecord *> *recordsByIdentifier = [NSMutableDictionary dictionary];
+	for (BTPluginActivationRecord *record in snapshot.activationRecords)
+		recordsByIdentifier[record.pluginIdentifier] = record;
 
-		NSMutableDictionary<NSString *, BTPluginActivationRecord *> *recordsByIdentifier = [NSMutableDictionary dictionary];
-		for (BTPluginActivationRecord *record in snapshot.activationRecords)
-			recordsByIdentifier[record.pluginIdentifier] = record;
-
-		// Discovery is already sorted by source priority and path. Accept the
-		// first installed representation for an ID so a duplicate cannot reach a
-		// second constructor after registration of the first image.
-		NSMutableSet<NSString *> *selectedIdentifiers = [NSMutableSet set];
-		NSMutableArray<BTPluginRuntimeLoadResult *> *loaded = [NSMutableArray array];
-		for (BTPluginDiscoveredPackage *package in self.discoveryResult.packages) {
+	// Discovery is already sorted by source priority and path. Accept the
+	// first installed representation for an ID so a duplicate cannot reach a
+	// second constructor after registration of the first image.
+	NSMutableSet<NSString *> *selectedIdentifiers = [NSMutableSet set];
+	NSMutableArray<BTPluginRuntimeLoadResult *> *loaded = [NSMutableArray array];
+	for (BTPluginDiscoveredPackage *package in self.discoveryResult.packages) {
+		@autoreleasepool {
 			if ([selectedIdentifiers containsObject:package.claimedPluginIdentifier]) {
 				NSError *duplicateError = BTPluginPackageMakeError(BTPluginPackageErrorRuntime,
 					@"A lower-priority installed representation was ignored for a duplicate plug-in identifier.",
@@ -261,43 +326,45 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 			}
 			[selectedIdentifiers addObject:package.claimedPluginIdentifier];
 			NSError *loadError = nil;
-			BTPluginRuntimeLoadResult *result = [self.runtimeLoader
-				loadDiscoveredPackage:package activationRecord:recordsByIdentifier[package.claimedPluginIdentifier]
+			BTPluginPreparedActivation *prepared = [self.runtimeLoader
+				prepareDiscoveredPackage:package activationRecord:recordsByIdentifier[package.claimedPluginIdentifier]
 				startupSnapshot:snapshot developerMode:NO error:&loadError];
+			__block BTPluginRuntimeLoadResult *result = nil;
+			if (prepared) {
+				__block NSError *activationError = nil;
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					result = [self.runtimeLoader activatePreparedPackage:prepared error:&activationError];
+				});
+				loadError = activationError;
+			}
 			if (result)
 				[loaded addObject:result];
 			else if (loadError)
 				[self addDiagnosticStage:@"activation" pluginIdentifier:package.claimedPluginIdentifier
 					error:loadError toArray:diagnostics];
 		}
-		self.loadedPlugins = loaded;
-		self.diagnostics = diagnostics;
-		self.preparedForApplicationLaunch = YES;
-		NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
-		[notificationCenter addObserver:self selector:@selector(applicationDidBecomeActive:)
-			name:UIApplicationDidBecomeActiveNotification object:nil];
-		[notificationCenter addObserver:self selector:@selector(applicationWillLeaveActive:)
-			name:UIApplicationWillResignActiveNotification object:nil];
-		[notificationCenter addObserver:self selector:@selector(applicationWillLeaveActive:)
-			name:UIApplicationDidEnterBackgroundNotification object:nil];
-		return YES;
 	}
+	self.loadedPlugins = loaded;
+	self.diagnostics = diagnostics;
+	return YES;
 }
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
 	(void)notification;
-	@synchronized (self) {
-		if (self.startupSettled || !self.startupSnapshot)
-			return;
-		NSUInteger generation = ++self.activeSettlementGeneration;
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
-			dispatch_get_main_queue(), ^{
-				@synchronized (self) {
-					if (self.startupSettled || generation != self.activeSettlementGeneration ||
-						UIApplication.sharedApplication.applicationState != UIApplicationStateActive)
-						return;
-					NSError *settlementError = nil;
-					if ([self markStartupSettledWithError:&settlementError]) {
+	if (self.startupSettled || !self.externalStartupComplete || !self.startupSnapshot)
+		return;
+	NSUInteger generation = ++self.activeSettlementGeneration;
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
+		dispatch_get_main_queue(), ^{
+			if (self.startupSettled || !self.externalStartupComplete ||
+				generation != self.activeSettlementGeneration ||
+				UIApplication.sharedApplication.applicationState != UIApplicationStateActive)
+				return;
+			dispatch_async(self.startupQueue, ^{
+				NSError *settlementError = nil;
+				BOOL settled = [self markStartupSettledWithError:&settlementError];
+				dispatch_async(dispatch_get_main_queue(), ^{
+					if (settled) {
 						self.startupSettled = YES;
 					} else {
 						NSMutableArray *diagnostics = [self.diagnostics mutableCopy];
@@ -305,27 +372,23 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 							error:settlementError toArray:diagnostics];
 						self.diagnostics = diagnostics;
 					}
-				}
+				});
 			});
-	}
+		});
 }
 
 - (void)applicationWillLeaveActive:(NSNotification *)notification {
 	(void)notification;
-	@synchronized (self) {
-		self.activeSettlementGeneration++;
-	}
+	self.activeSettlementGeneration++;
 }
 
 - (BOOL)markStartupSettledWithError:(NSError **)error {
-	@synchronized (self) {
-		if (self.startupSettled)
-			return YES;
-		if (!self.startupSnapshot)
-			return BTPluginPlatformSetError(error, @"No plug-in startup session exists to settle.");
-		return [self.activationStore markStartupSettledWithIdentifier:self.startupSnapshot.startupIdentifier
-			error:error];
-	}
+	if (self.startupSettled)
+		return YES;
+	if (!self.externalStartupComplete || !self.startupSnapshot)
+		return BTPluginPlatformSetError(error, @"No plug-in startup session exists to settle.");
+	return [self.activationStore markStartupSettledWithIdentifier:self.startupSnapshot.startupIdentifier
+		error:error];
 }
 
 @end

@@ -19,15 +19,20 @@ def fail(message: str) -> None:
 
 project = (ROOT / "Battman.xcodeproj/project.pbxproj").read_text(encoding="utf-8")
 finalizer = 'shellScript = "\\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\\"";'
-if project.count(finalizer) != 4:
-    fail("all four app targets must call the one bounded Xcode finalizer")
+if project.count(finalizer) != 3:
+    fail("all three app targets must call the one bounded Xcode finalizer")
 generator = 'shellScript = "\\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\\"";'
-if project.count(generator) != 4:
-    fail("all four app targets must call the one bounded source generator")
-if project.count('"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",') != 4:
-    fail("all four app targets must declare the generated build identity")
-if project.count('OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";') != 8:
+if project.count(generator) != 3:
+    fail("all three app targets must call the one bounded source generator")
+if project.count('"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",') != 3:
+    fail("all three app targets must declare the generated build identity")
+if project.count('OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";') != 6:
     fail("all app configurations must embed the generated Mach-O build identity")
+if "Battman-havoc-tipa" in project:
+    fail("Havoc must have no TIPA target")
+if project.count("/* Distribution.m in Sources */ =") != 3:
+    fail("every Xcode app target must compile its distribution identity")
+
 for forbidden in (
     "dpkg-deb", "tree-nonfree", "tree-havoc", "deb-nonfree", "deb-havoc",
     "6841152D2E57E166001B76B6 /* control in Sources */",
@@ -40,6 +45,8 @@ if re.search(r"/Users/[A-Za-z0-9._-]+(?:/|$)", project):
 finalizer_text = (ROOT / "Scripts/Build/finalize-xcode-app.sh").read_text(encoding="utf-8")
 generator_text = (ROOT / "Scripts/Build/generate-xcode-sources.sh").read_text(encoding="utf-8")
 config_text = (ROOT / "Config.xcconfig").read_text(encoding="utf-8")
+if '--channel "${distribution_channel}"' not in finalizer_text:
+    fail("Xcode finalization must verify the compiled channel")
 if "verify-build-identity.py" not in finalizer_text:
     fail("Xcode finalizer does not verify the linked host build identity")
 for required in ("generate-build-identity.py", "BattmanBuildIdentity.json"):
@@ -126,6 +133,17 @@ if "if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_macos_evidenc
     fail("Xcode/simulator evidence lane must be workflow-dispatch-only")
 if "if: ${{ vars.BATTMAN_IOS_SDK_URL" in ci_workflow:
     fail("Linux Debug IPA workflow must not silently skip on unset repository variables")
+
+release_workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+for required in ("validate_only:", "default: true", '-scheme "Battman (rel-nonfree)"',
+                 "--channel github", "&& !inputs.validate_only", "environment: battman-production-release"):
+    if required not in release_workflow:
+        fail(f"release workflow omits channel or validation-only boundary: {required}")
+if release_workflow.count("if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.validate_only) }}") != 3:
+    fail("production inputs, assembly and upload must skip validation-only runs")
+for required in ("release-tests:", "needs: linux-debug-ipa", 'for scheme in Battman "Battman (rel-nonfree)"; do'):
+    if required not in ci_workflow:
+        fail(f"CI omits serial Release regression coverage: {required}")
 
 simulator_root = ROOT / "Tests/Simulator"
 simulator_common = simulator_root / "simulator-runner-common.sh"
@@ -235,7 +253,6 @@ for required in (
         fail(f"Analytics screenshot harness omits synthetic boundary: {required}")
 for class_name, method in (
     ("BAAnalyticsSystemMetricSource", '- (NSDictionary *)readAnalyticsMetricValues'),
-    ("BTPluginPlatform", '+ (instancetype)sharedPlatform'),
 ):
     implementation = re.search(
         rf"@implementation\s+{class_name}\s*(.*?)@end",
@@ -247,6 +264,37 @@ for class_name, method in (
         implementation.group(1),
     ):
         fail(f"Analytics fixture does not fail closed at the physical boundary: {class_name}")
+# The delayed-startup host regression admits only an explicitly scoped, empty
+# platform stub backed by a synthetic registry. All other composition access
+# still fails, and the production composition source remains excluded above.
+platform_stub = re.search(r"@implementation\s+BTPluginPlatform\s*(.*?)@end", analytics_harness_text, re.DOTALL)
+platform_stub_pattern = (
+    r'\s*\+\s*\(instancetype\)sharedPlatform\s*\{\s*'
+    r'Require\(FixtureExternalPlatform\s*!=\s*nil,\s*@"[^"]+"\);\s*'
+    r'return\s+FixtureExternalPlatform;\s*\}\s*'
+    r'-\s*\(BTPluginRegistry\s*\*\)registry\s*\{\s*'
+    r'Require\(self\s*==\s*FixtureExternalPlatform\s*&&\s*FixtureExternalRegistry\s*!=\s*nil,\s*@"[^"]+"\);\s*'
+    r'return\s+FixtureExternalRegistry;\s*\}\s*'
+)
+if platform_stub is None or not re.fullmatch(platform_stub_pattern, platform_stub.group(1)):
+    fail("Analytics platform fixture must reject access outside its isolated registry scope")
+external_scope = re.search(
+    r"- \(void\)testDelayedExternalCards \{\n.*?\n\}(?=\n- \(void\)testHost)",
+    analytics_harness_text, re.DOTALL,
+)
+if external_scope is None:
+    fail("Analytics external platform fixture lacks its bounded host regression scope")
+outside_external_scope = analytics_harness_text[:external_scope.start()] + analytics_harness_text[external_scope.end():]
+if re.search(r"FixtureExternal(?:Platform|Registry)\s*=(?!=)", outside_external_scope):
+    fail("Analytics fixture enables platform access outside its explicit host regression")
+for declaration in ("static BTPluginPlatform *FixtureExternalPlatform;", "static BTPluginRegistry *FixtureExternalRegistry;"):
+    if declaration not in analytics_harness_text:
+        fail("Analytics fixture composition gate must default to nil")
+for assignment in ("FixtureExternalPlatform = [BTPluginPlatform new];", "FixtureExternalRegistry = [BTPluginRegistry new];"):
+    if external_scope.group(0).count(assignment) != 1:
+        fail("Analytics host regression may instantiate only its synthetic platform and registry")
+if not re.search(r"@finally\s*\{.*?FixtureExternalRegistry = nil; FixtureExternalPlatform = nil;", external_scope.group(0), re.DOTALL):
+    fail("Analytics host regression must always close its platform access gate")
 # The actual history service is exercised only against an explicitly injected,
 # random missing path inside the fixture's temporary directory. It must never
 # fall back to locating a real device or host Powerlog database.

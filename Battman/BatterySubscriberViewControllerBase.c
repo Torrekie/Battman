@@ -173,15 +173,9 @@ static void BSVCBatteryStatusCallback(CFNotificationCenterRef center, void *obse
 	} else {
 		BSVCBatteryStatusPayload *payload = calloc(1, sizeof(BSVCBatteryStatusPayload));
 		if (!payload) {
-			id retainedObserver = observer ? NSObjectRetain((id)observer) : NULL;
-			void *observerAndUserInfo[2] = {
-				retainedObserver,
-				(void *)userInfo
-			};
-			dispatch_sync_f(dispatch_get_main_queue(), observerAndUserInfo, (void (*)(void *))BSVCBatteryStatusCallback1);
-			if (retainedObserver) {
-				NSObjectRelease(retainedObserver);
-			}
+			/* The main thread may be draining this power-event queue while
+			 * suspending monitoring. Never wait for it from a notification;
+			 * dropping one refresh is safe and no references were retained yet. */
 			return;
 		}
 

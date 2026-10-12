@@ -18,6 +18,7 @@
 
 #include "common.h"
 #include "intlextern.h"
+#include <unistd.h>
 
 @interface UIImage ()
 + (instancetype)_applicationIconImageForBundleIdentifier:(NSString*)bundleIdentifier format:(int)format scale:(CGFloat)scale;
@@ -244,10 +245,20 @@ enum sections_batteryinfo {
 	if (is_debugged())
 		copyright.text = [copyright.text stringByAppendingFormat:@", %@", _("Debugger Attached")];
 
-	extern int connect_to_daemon(bool);
-	// Clear badge state
-	if (!connect_to_daemon(false))
-		set_badge(NULL);
+	/* The handshake can wait for a stale daemon. Do not stall footer creation,
+	 * and close the successful probe instead of retaining an unused client. */
+	NSUInteger badgeGeneration = _refreshGeneration;
+	__weak typeof(self) weakSelf = self;
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+		extern int connect_to_daemon(bool);
+		int fd = connect_to_daemon(false);
+		if (fd > 0) { close(fd); return; }
+		dispatch_async(dispatch_get_main_queue(), ^{
+			BatteryInfoViewController *strongSelf = weakSelf;
+			if (strongSelf && strongSelf->_refreshGeneration == badgeGeneration && [strongSelf _canScheduleRefresh])
+				set_badge(NULL);
+		});
+	});
 
 	copyright.font = [UIFont systemFontOfSize:12];
     copyright.textAlignment = NSTextAlignmentCenter;

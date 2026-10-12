@@ -213,8 +213,8 @@ def _decode_name(raw: bytes) -> str:
         raise ReleaseError("Mach-O contains a non-ASCII segment or section name") from error
 
 
-def extract_embedded_identity(executable: Path, *, required: bool = True) -> dict[str, object] | None:
-    """Extract the canonical identity from a thin arm64 MH_EXECUTE."""
+def _extract_host_section(executable: Path, section_name: str, *, required: bool = True) -> bytes | None:
+    """Read one bounded section from a thin arm64 host executable."""
     executable = executable.expanduser().absolute()
     try:
         entry = executable.lstat()
@@ -267,12 +267,12 @@ def extract_embedded_identity(executable: Path, *, required: bool = True) -> dic
                     section = struct.unpack_from(
                         "<16s16sQQIIIIIIII", commands, section_offset
                     )
-                    section_name = _decode_name(section[0])
+                    candidate_section_name = _decode_name(section[0])
                     section_segment = _decode_name(section[1])
                     if (
                         segment_name == SEGMENT_NAME
                         and section_segment == SEGMENT_NAME
-                        and section_name == SECTION_NAME
+                        and candidate_section_name == section_name
                     ):
                         if found is not None:
                             raise ReleaseError("host executable has duplicate build identities")
@@ -290,13 +290,29 @@ def extract_embedded_identity(executable: Path, *, required: bool = True) -> dic
             raise ReleaseError("host executable load-command size is inconsistent")
         if found is None:
             if required:
-                raise ReleaseError("host executable has no embedded Battman build identity")
+                if section_name == SECTION_NAME:
+                    raise ReleaseError("host executable has no embedded Battman build identity")
+                raise ReleaseError(f"host executable has no embedded Battman {section_name} section")
             return None
         stream.seek(found[0])
         data = stream.read(found[1])
         if len(data) != found[1]:
             raise ReleaseError("host build identity section is truncated")
-    return parse_identity_bytes(data)
+    return data
+
+
+def extract_embedded_identity(executable: Path, *, required: bool = True) -> dict[str, object] | None:
+    data = _extract_host_section(executable, SECTION_NAME, required=required)
+    return parse_identity_bytes(data) if data is not None else None
+
+
+def extract_distribution_channel(executable: Path, *, required: bool = True) -> str | None:
+    data = _extract_host_section(executable, "__btchannel", required=required)
+    if data is None:
+        return None
+    if data not in (b"public\0", b"github\0", b"havoc\0"):
+        raise ReleaseError("host distribution channel is malformed")
+    return data[:-1].decode("ascii")
 
 
 def require_embedded_identity(

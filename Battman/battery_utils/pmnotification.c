@@ -19,166 +19,163 @@
 extern void *dispatch_get_global_queue(int, int);
 #endif
 
-dispatch_queue_t   _powerQueue = NULL;
-static IONotificationPortRef  _notifyPort = NULL;
-static io_iterator_t      _notifyIter = MACH_PORT_NULL;
-static bool _powerMonitoringSuspended = false;
-static bool _powerMonitoringInitialized = false;
+/* The queue and context have process lifetime. IOKit retains refCon after
+ * registration returns; neither callback may point into a caller's stack. */
+dispatch_queue_t _powerQueue = NULL;
+static char powerQueueKey;
+typedef void (*PowerEventCallback)(int, io_registry_entry_t, int32_t);
+typedef struct PowerInterest {
+	uint64_t registryID;
+	io_object_t notification;
+	struct PowerInterest *next;
+} PowerInterest;
+static struct {
+	IONotificationPortRef port;
+	io_iterator_t iterator;
+	PowerEventCallback callback;
+	PowerInterest *interests;
+	uintptr_t generation;
+	bool initialized;
+	bool suspended;
+} powerMonitor;
 
-static void stpe_cb(void **pcb, io_iterator_t it) {
-	if (!it) return;
+static void onPowerQueue(dispatch_block_t block) {
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		_powerQueue = dispatch_queue_create("com.torrekie.Battman.pmEvents", DISPATCH_QUEUE_SERIAL);
+		dispatch_queue_set_specific(_powerQueue, &powerQueueKey, &powerQueueKey, NULL);
+	});
+	if (dispatch_get_specific(&powerQueueKey))
+		block();
+	else
+		dispatch_sync(_powerQueue, block);
+}
 
-	io_object_t next;
-	while ((next = IOIteratorNext(it))) {
-		void *refCon;
-		int err = IOServiceAddInterestNotification(pcb[0], next, kIOGeneralInterest, (IOServiceInterestCallback)pcb[1], NULL, (void *)&refCon);
-		if (err) abort();
-		IOObjectRelease(next);
+static void powerInterestChanged(void *refCon, io_service_t service,
+                                 uint32_t messageType, void *messageArgument) {
+	(void)messageArgument;
+	/* A late delivery from a destroyed port cannot enter a newer subscription. */
+	if (!powerMonitor.initialized || powerMonitor.suspended ||
+	    (uintptr_t)refCon != powerMonitor.generation)
+		return;
+	PowerEventCallback callback = powerMonitor.callback;
+	if (callback)
+		callback(0, service, (int32_t)messageType);
+}
+
+static void stpe_cb(void *refCon, io_iterator_t iterator) {
+	if (refCon != &powerMonitor || !powerMonitor.initialized ||
+	    iterator != powerMonitor.iterator)
+		return;
+	io_object_t service;
+	while ((service = IOIteratorNext(iterator))) {
+		uint64_t registryID = 0;
+		bool duplicate = false;
+		if (IORegistryEntryGetRegistryEntryID(service, &registryID) == KERN_SUCCESS) {
+			for (PowerInterest *item = powerMonitor.interests; item; item = item->next)
+				if (item->registryID == registryID) { duplicate = true; break; }
+		} else {
+			IOObjectRelease(service);
+			continue;
+		}
+		PowerInterest *interest = duplicate ? NULL : calloc(1, sizeof(*interest));
+		if (interest) {
+			kern_return_t error = IOServiceAddInterestNotification(powerMonitor.port,
+			    service, kIOGeneralInterest, powerInterestChanged,
+			    (void *)powerMonitor.generation, &interest->notification);
+			if (error == KERN_SUCCESS) {
+				interest->registryID = registryID;
+				interest->next = powerMonitor.interests;
+				powerMonitor.interests = interest;
+			} else {
+				if (interest->notification) IOObjectRelease(interest->notification);
+				free(interest);
+				os_log_error(gLog, "[pmnotification] Failed to register interest: %d", error);
+			}
+		}
+		IOObjectRelease(service);
 	}
 }
 
-// FIXME: Prevent overstock of pending notifications when App UI suspended
+static void cleanupPowerMonitoringOnQueue(void) {
+	powerMonitor.initialized = false;
+	powerMonitor.suspended = false;
+	powerMonitor.callback = NULL;
+	++powerMonitor.generation;
+	if (powerMonitor.port)
+		IONotificationPortSetDispatchQueue(powerMonitor.port, NULL);
+	while (powerMonitor.interests) {
+		PowerInterest *interest = powerMonitor.interests;
+		powerMonitor.interests = interest->next;
+		IOObjectRelease(interest->notification);
+		free(interest);
+	}
+	if (powerMonitor.iterator) {
+		IOObjectRelease(powerMonitor.iterator);
+		powerMonitor.iterator = MACH_PORT_NULL;
+	}
+	if (powerMonitor.port) {
+		IONotificationPortDestroy(powerMonitor.port);
+		powerMonitor.port = NULL;
+	}
+}
 
 void suspendPowerEventMonitoring(void) {
-	if (!_powerMonitoringInitialized || _powerQueue == NULL || _notifyPort == NULL || _powerMonitoringSuspended) {
-		return;
-	}
-	
-	// Remove the notification port from the dispatch queue
-	IONotificationPortSetDispatchQueue(_notifyPort, NULL);
-	
-	// Suspend the dispatch queue
-	dispatch_suspend(_powerQueue);
-	
-	_powerMonitoringSuspended = true;
-	os_log_info(gLog, "[pmnotification] Power event monitoring suspended");
+	onPowerQueue(^{
+		if (!powerMonitor.initialized || powerMonitor.suspended) return;
+		powerMonitor.suspended = true;
+		IONotificationPortSetDispatchQueue(powerMonitor.port, NULL);
+	});
 }
 
 void resumePowerEventMonitoring(void) {
-	if (!_powerMonitoringInitialized || _powerQueue == NULL || _notifyPort == NULL || !_powerMonitoringSuspended) {
-		return;
-	}
-	
-	// Resume the dispatch queue
-	dispatch_resume(_powerQueue);
-	
-	// Re-attach the notification port to the dispatch queue
-	IONotificationPortSetDispatchQueue(_notifyPort, _powerQueue);
-	
-	_powerMonitoringSuspended = false;
-	os_log_info(gLog, "[pmnotification] Power event monitoring resumed");
+	onPowerQueue(^{
+		if (!powerMonitor.initialized || !powerMonitor.suspended) return;
+		powerMonitor.suspended = false;
+		IONotificationPortSetDispatchQueue(powerMonitor.port, _powerQueue);
+		stpe_cb(&powerMonitor, powerMonitor.iterator);
+	});
 }
 
-// Enhanced cleanup function for proper shutdown
 void cleanupPowerEventMonitoring(void) {
-	if (is_main_process()) {
-		if (!_powerMonitoringInitialized) {
-			return;
-		}
-		// Resume queue if it was suspended to allow proper cleanup
-		if (_powerMonitoringSuspended && _powerQueue) {
-			dispatch_resume(_powerQueue);
-			_powerMonitoringSuspended = false;
-		}
-	}
-
-	os_log_info(gLog, "[pmnotification] Starting power monitoring cleanup");
-	
-	// Clean up IOKit resources
-	if (_notifyIter != MACH_PORT_NULL) {
-		IOObjectRelease(_notifyIter);
-		_notifyIter = MACH_PORT_NULL;
-	}
-	
-	if (_notifyPort) {
-		// Remove from dispatch queue first
-		IONotificationPortSetDispatchQueue(_notifyPort, NULL);
-		IONotificationPortDestroy(_notifyPort);
-		_notifyPort = NULL;
-	}
-	
-	// Clean up dispatch queue
-	if (is_main_process() && _powerQueue) {
-		// Dispatch a final cleanup block and then release the queue
-		dispatch_async(_powerQueue, ^{
-			os_log_debug(gLog, "[pmnotification] Final cleanup block executed");
-		});
-		
-		// Don't release the queue immediately as it might still have pending blocks
-		// Just set it to NULL - the system will clean it up when appropriate
-		_powerQueue = NULL;
-	}
-	
-	_powerMonitoringInitialized = false;
-	os_log_info(gLog, "[pmnotification] Power event monitoring cleanup completed");
+	/* Never suspend the serial queue: teardown can drain every earlier callback
+	 * before releasing its IOKit objects, including while the app is backgrounded. */
+	onPowerQueue(^{ cleanupPowerMonitoringOnQueue(); });
 }
 
-void subscribeToPowerEvents(void (*cb)(int, io_registry_entry_t, int32_t)) {
-	_notifyPort = IONotificationPortCreate(kIOMasterPortDefault);
-	if (_notifyPort == NULL) {
-#if DEBUG
-		add_notification("com.apple.powerui.lowpowermode", "pmnotification", NULL, "Failed to create IONotificationPort");
-#endif
-		os_log_error(gLog, "[pmnotification] Failed to create IONotificationPort");
-		return;
-	}
-	// Weird design
-	void *port[] = {_notifyPort, cb};
-
-	if (is_main_process()) {
-		if (_powerQueue != NULL) {
-			// Already initialized
+void subscribeToPowerEvents(PowerEventCallback callback) {
+	if (!callback) return;
+	onPowerQueue(^{
+		/* The constructor subscribes before daemon_main replaces the callback.
+		 * Reuse that registration instead of leaking a second port and notifier. */
+		if (powerMonitor.initialized) {
+			powerMonitor.callback = callback;
 			return;
 		}
-		
-		_powerQueue = dispatch_queue_create("com.torrekie.Battman.pmEvents", DISPATCH_QUEUE_SERIAL);
-		if (_powerQueue == NULL) {
-			os_log_error(gLog, "[pmnotification] Failed to create dispatch queue");
+		powerMonitor.port = IONotificationPortCreate(kIOMasterPortDefault);
+		if (!powerMonitor.port) {
+			os_log_error(gLog, "[pmnotification] Failed to create IONotificationPort");
 			return;
 		}
-
-		// Set up dispatch queue for notifications
-		IONotificationPortSetDispatchQueue(_notifyPort, _powerQueue);
-	} else {
-		IONotificationPortSetDispatchQueue(_notifyPort, dispatch_get_global_queue(0, 0));
-	}
-	
-	int err = IOServiceAddMatchingNotification(_notifyPort, kIOFirstMatchNotification, IOServiceMatching("IOPMPowerSource"), (IOServiceMatchingCallback)stpe_cb, port, &_notifyIter);
-	if (err) {
-		char *str = malloc(1024);
-		sprintf(str, "Failed to add matching notification: %d", err);
-#if DEBUG
-		add_notification("com.apple.powerui.lowpowermode", "pmnotification", NULL, str);
-#endif
-		os_log_error(gLog, "[pmnotification] %s", str);
-		free(str);
-		cleanupPowerEventMonitoring();
-		return;
-	}
-
-	// Process any existing power sources
-	stpe_cb(port, _notifyIter);
-	_powerMonitoringInitialized = true;
-
-	os_log_info(gLog, "[pmnotification] Power event monitoring started successfully");
+		powerMonitor.callback = callback;
+		++powerMonitor.generation;
+		powerMonitor.initialized = true;
+		IONotificationPortSetDispatchQueue(powerMonitor.port, _powerQueue);
+		kern_return_t error = IOServiceAddMatchingNotification(powerMonitor.port,
+		    kIOFirstMatchNotification, IOServiceMatching("IOPMPowerSource"),
+		    stpe_cb, &powerMonitor, &powerMonitor.iterator);
+		if (error != KERN_SUCCESS) {
+			os_log_error(gLog, "[pmnotification] Failed to register matching notification: %d", error);
+			cleanupPowerMonitoringOnQueue();
+			return;
+		}
+		stpe_cb(&powerMonitor, powerMonitor.iterator);
+	});
 }
-
-#if 0
-void subscribeToPowerEvents(void (*cb)(int, io_registry_entry_t, int32_t)) {
-    void *port[] = {IONotificationPortCreate(0), cb};
-    IONotificationPortSetDispatchQueue(*port, dispatch_get_global_queue(0, 0));
-    io_iterator_t nit = 0;
-    int err = IOServiceAddMatchingNotification(*port, kIOFirstMatchNotification, IOServiceMatching("IOPMPowerSource"), (IOServiceMatchingCallback)stpe_cb, port, &nit);
-    if (err)
-        abort();
-    stpe_cb(port, nit);
-    IOObjectRelease(nit);
-}
-#endif
 
 void pmncb(int a, io_registry_entry_t b, int32_t c) {
 	// Check if we're in the middle of shutdown
-	if (!_powerMonitoringInitialized) {
+	if (!powerMonitor.initialized || powerMonitor.suspended) {
 		return;
 	}
 

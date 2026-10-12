@@ -13,6 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXPORT NSErrorDomain const BTEmbeddedPluginRegistrationErrorDomain;
 
+// Configure once after the application's effective localization is selected,
+// before registering built-in or native plug-ins. nil uses the system language.
+FOUNDATION_EXPORT void BTPluginSetPreferredLanguage(NSString * _Nullable language);
+
 typedef NS_ERROR_ENUM(BTEmbeddedPluginRegistrationErrorDomain, BTEmbeddedPluginRegistrationErrorCode) {
 	BTEmbeddedPluginRegistrationErrorInvalidDescriptor = 1,
 	BTEmbeddedPluginRegistrationErrorIncompatibleABI = 2,

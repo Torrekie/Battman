@@ -2,6 +2,7 @@
 #import "WarnAccessoryView.h"
 #import "CompatibilityHelper.h"
 #import "common.h"
+#import "ObjCExt/UIImage+SVG.h"
 
 @implementation WarnAccessoryView
 
@@ -15,8 +16,8 @@
         UIImage *img = [UIImage systemImageNamed:systemName];
         [button setImage:img forState:UIControlStateNormal];
     } else {
-        [button setTitle:fallbackGlyph forState:UIControlStateNormal];
-        button.titleLabel.font = [UIFont fontWithName:@SFPRO size:22];
+        UIImage *image = [UIImage legacySymbolImageForGlyph:fallbackGlyph pointSize:22 color:UIColor.blackColor];
+        [button setImage:[image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
     }
 
     button.tintColor = [UIColor compatBlueColor];

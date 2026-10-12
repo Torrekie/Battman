@@ -62,6 +62,7 @@ extern int posix_spawnattr_setjetsam_ext(posix_spawnattr_t *, short, int, int, i
 extern char **environ;
 
 extern void subscribeToPowerEvents(void (*cb)(int, io_registry_entry_t, int32_t));
+extern void cleanupPowerEventMonitoring(void);
 
 struct battman_daemon_settings {
 	unsigned char enable_charging_at_level;
@@ -960,13 +961,16 @@ void daemon_main(void) {
 	} else {
 		NSLog(CFSTR("Daemon: Failed to start control thread"));
 	}
+	/* Drain the power callback before releasing the settings it reads. */
+	cleanupPowerEventMonitoring();
 	if (daemon_settings && daemon_settings != MAP_FAILED)
 		munmap(daemon_settings, BATTMAN_DAEMON_SETTINGS_SIZE);
 	daemon_settings = NULL;
 	cleanup_daemon_files(false);
 }
 
-int battman_run_daemon(void) {
+int battman_run_daemon_with_error(int *error_out) {
+	if (error_out) *error_out = 0;
 	posix_spawnattr_t sattr = NULL;
 	pid_t dpid = 0;
 	int err;
@@ -1022,10 +1026,17 @@ int battman_run_daemon(void) {
 out:
 	if (err != 0) {
 		NSLog(CFSTR("Daemon: %s failed: %s"), failed_step ? failed_step : "spawn setup", strerror(err));
-		show_alert(L_ERR, strerror(err), L_OK);
+		if (error_out) *error_out = err;
 		dpid = 0;
 	}
 	if (sattr != NULL)
 		posix_spawnattr_destroy(&sattr);
 	return dpid;
+}
+
+int battman_run_daemon(void) {
+	int error = 0;
+	int pid = battman_run_daemon_with_error(&error);
+	if (error) show_alert(L_ERR, strerror(error), L_OK);
+	return pid;
 }

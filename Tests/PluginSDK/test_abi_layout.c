@@ -26,7 +26,9 @@ BT_TEST_STATIC_ASSERT(BT_PLUGIN_DESCRIPTOR_V1_MINIMUM_SIZE == 40, "unexpected de
 #if UINTPTR_MAX == UINT64_MAX
 BT_TEST_STATIC_ASSERT(sizeof(BTPluginErrorV1) == 24, "unexpected 64-bit error layout");
 BT_TEST_STATIC_ASSERT(sizeof(BTPluginExtensionRegistrationV1) == 40, "unexpected 64-bit registration layout");
-BT_TEST_STATIC_ASSERT(sizeof(BTPluginHostV1) == 32, "unexpected 64-bit host layout");
+BT_TEST_STATIC_ASSERT(sizeof(BTPluginHostV1) == 40, "unexpected 64-bit host layout");
+BT_TEST_STATIC_ASSERT(offsetof(BTPluginHostV1, preferredLanguage) == 32,
+	"optional language must follow the existing log tail without changing v1 offsets");
 BT_TEST_STATIC_ASSERT(sizeof(BTPluginDescriptorV1) == 40, "unexpected 64-bit descriptor layout");
 BT_TEST_STATIC_ASSERT(sizeof(BTPluginHostV1) >= BT_PLUGIN_HOST_V1_MINIMUM_SIZE,
 	"current host table must contain its frozen v1 prefix");

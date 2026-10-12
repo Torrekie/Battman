@@ -41,8 +41,26 @@ static CGFloat BTChargeGaugeVisualCenterOffset(CGRect bounds) {
 @implementation BTChargeGaugeResourceAnchor
 @end
 
+static NSBundle *BTChargeGaugeLanguageBundle;
+
+static void BTChargeGaugeUseHostLanguage(const BTPluginHostV1 *host) {
+	NSBundle *resources = [NSBundle bundleForClass:[BTChargeGaugeResourceAnchor class]];
+	BTChargeGaugeLanguageBundle = nil;
+	if (host->structSize < BT_PLUGIN_STRUCT_SIZE_THROUGH(BTPluginHostV1, preferredLanguage) ||
+		!host->preferredLanguage)
+		return;
+	NSString *language = [NSString stringWithUTF8String:host->preferredLanguage];
+	if (language.length == 0)
+		return;
+	NSArray *matches = [NSBundle preferredLocalizationsFromArray:resources.localizations
+		forPreferences:@[ language ]];
+	NSString *path = [resources pathForResource:matches.firstObject ?: @"en" ofType:@"lproj"];
+	if (path)
+		BTChargeGaugeLanguageBundle = [NSBundle bundleWithPath:path];
+}
+
 static NSString *BTChargeGaugeLocalizedString(NSString *key) {
-	NSBundle *bundle = [NSBundle bundleForClass:[BTChargeGaugeResourceAnchor class]];
+	NSBundle *bundle = BTChargeGaugeLanguageBundle ?: [NSBundle bundleForClass:[BTChargeGaugeResourceAnchor class]];
 	return [bundle localizedStringForKey:key value:key table:nil];
 }
 
@@ -418,6 +436,7 @@ static BTPluginResultV1 BTChargeGaugeRegister(const BTPluginHostV1 *host,
 			"The Battman host table is incompatible.");
 		return BTPluginResultV1IncompatibleABI;
 	}
+	BTChargeGaugeUseHostLanguage(host);
 	BTChargeGaugeCard *card = [BTChargeGaugeCard new];
 	BTPluginExtensionRegistrationV1 registration = {
 		.structSize = sizeof(BTPluginExtensionRegistrationV1),

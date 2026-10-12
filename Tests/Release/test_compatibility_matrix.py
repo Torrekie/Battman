@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import re
 import sys
 from pathlib import Path
 
@@ -46,6 +47,12 @@ def main() -> int:
     assert statuses["rooted-ios14-package-integrity"] == "verified-limited"
     assert len(value["analyticsCards"]) == 11
     assert sum(card["delivery"] == "embedded" for card in value["analyticsCards"]) == 10
+    fixture = (ROOT / "Tests/Release/Fixtures/MinimalAppMain.c").read_text(encoding="utf-8")
+    fixture_cards = set(re.findall(r'"(com\.torrekie\.battman\.analytics\.[^\"]+)"', fixture))
+    fixture_cards.discard("com.torrekie.battman.analytics.card.v1")
+    assert fixture_cards == {
+        card["identifier"] for card in value["analyticsCards"] if card["delivery"] == "embedded"
+    }, "strict host fixture must represent the selected embedded cards"
 
     wrong_version = copy.deepcopy(value)
     wrong_version["releaseVersion"] = "1.1.0.1"

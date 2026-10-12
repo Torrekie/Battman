@@ -1,5 +1,5 @@
 #!/bin/sh
-# Shared source-generation phase for all four Battman application targets.
+# Shared source-generation phase for all three Battman application targets.
 
 set -eu
 
@@ -16,7 +16,7 @@ export PATH
 
 printf '%s\n' "const unsigned char lh_arr[] = {" > "${SCRIPT_OUTPUT_FILE_0}"
 openssl sha256 -c "${SCRIPT_INPUT_FILE_0}" |
-    gsed "s/^.*= /0x/g;s/:/,0x/g" >> "${SCRIPT_OUTPUT_FILE_0}"
+    sed "s/^.*= /0x/g;s/:/,0x/g" >> "${SCRIPT_OUTPUT_FILE_0}"
 printf '%s\n' "};" >> "${SCRIPT_OUTPUT_FILE_0}"
 
 if [ -e "${PROJECT_DIR}/Battman/gen_locale_hashes.py" ]; then

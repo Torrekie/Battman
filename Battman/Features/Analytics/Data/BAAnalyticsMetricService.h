@@ -44,6 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 // The host opts its system source into persistence; arbitrary plug-in/test sources do not.
 - (void)enableStartupCache;
 - (void)enableStartupCacheAtURL:(NSURL *)cacheURL;
+// Terminal suspension for an app-data wipe. Completion runs on main after the
+// serial worker drains, so old acquisitions cannot recreate deleted cache files.
+- (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion;
++ (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion;
 @end
 
 NS_ASSUME_NONNULL_END

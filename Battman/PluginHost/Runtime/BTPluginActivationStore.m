@@ -656,7 +656,7 @@ static BOOL BTPluginActivationDictionaryHasOnlyKeys(NSDictionary *dictionary, NS
 	}
 }
 
-- (BOOL)recordThirdPartyLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
+- (BOOL)recordNativeLoadAttemptForPluginIdentifier:(NSString *)pluginIdentifier
 										 packageSHA256:(NSString *)packageSHA256
 												 source:(BTPluginSource)source
 								 startupIdentifier:(NSString *)startupIdentifier
@@ -735,7 +735,25 @@ static BOOL BTPluginActivationDictionaryHasOnlyKeys(NSDictionary *dictionary, NS
 			state[@"records"] = records;
 			return [self storeState:state error:error];
 		}
-		return BTPluginActivationSetError(error, @"The recovered plug-in activation record no longer exists.");
+		// Official app/system bundles can load without a pre-existing activation
+		// record. Persist an exact disabled build so recovery can stop them too.
+		if (recovery.source != BTPluginSourceAppBundle &&
+			recovery.source != BTPluginSourceRootedSystem && recovery.source != BTPluginSourceRootlessSystem)
+			return BTPluginActivationSetError(error, @"The recovered plug-in activation record no longer exists.");
+		BTPluginActivationRecord *disabled = [[BTPluginActivationRecord alloc]
+			initWithPluginIdentifier:recovery.pluginIdentifier packageSHA256:recovery.packageSHA256
+			source:recovery.source activationMode:BTPluginActivationModeDirect enabled:NO
+			updatedAt:[NSDate date] error:error];
+		if (!disabled)
+			return NO;
+		if (records.count >= BTPluginActivationMaximumRecords)
+			return BTPluginActivationSetError(error, @"The plug-in activation record limit has been reached.");
+		[records addObject:[self propertyListForRecord:disabled]];
+		[records sortUsingComparator:^NSComparisonResult(NSDictionary *left, NSDictionary *right) {
+			return [left[@"pluginIdentifier"] compare:right[@"pluginIdentifier"] options:NSLiteralSearch];
+		}];
+		state[@"records"] = records;
+		return [self storeState:state error:error];
 	}
 }
 

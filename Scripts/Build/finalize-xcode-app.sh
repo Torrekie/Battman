@@ -15,6 +15,12 @@ app_path=${CODESIGNING_FOLDER_PATH}
 executable_name=${EXECUTABLE_NAME:-Battman}
 executable_path="${app_path}/${executable_name}"
 info_plist="${app_path}/Info.plist"
+case "${TARGET_NAME:-Battman}" in
+    Battman) distribution_channel=public ;;
+    Battman-nonfree) distribution_channel=github ;;
+    Battman-havoc) distribution_channel=havoc ;;
+    *) echo "error: unsupported Battman distribution target" >&2; exit 2 ;;
+esac
 
 if [ ! -d "${app_path}" ] || [ ! -f "${info_plist}" ]; then
     echo "error: incomplete Xcode app product: ${app_path}" >&2
@@ -27,7 +33,8 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
     --executable "${executable_path}" \
     --version "${CURRENT_PROJECT_VERSION}" \
     --configuration "${CONFIGURATION}" \
-    --product-identifier "${PRODUCT_BUNDLE_IDENTIFIER}"
+    --product-identifier "${PRODUCT_BUNDLE_IDENTIFIER}" \
+    --channel "${distribution_channel}"
 
 commit_hash=${COMMIT_HASH:-}
 if [ -z "${commit_hash}" ]; then

@@ -94,6 +94,11 @@ typedef struct BTPluginHostV1 {
 	BTPluginHostRegisterExtensionV1 registerExtension;
 	/* Optional for v1 callers. Check structSize and the pointer before use. */
 	BTPluginHostLogV1 log;
+	/* Optional UTF-8 BCP-47 interface language actually used by the host.
+	 * Check structSize before reading. NULL means use the system preference.
+	 * Borrowed only for registerPlugin; copy before returning if needed later.
+	 */
+	const char *preferredLanguage;
 } BTPluginHostV1;
 
 typedef BTPluginResultV1 (*BTPluginRegisterV1)(

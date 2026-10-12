@@ -49,12 +49,14 @@ def main() -> int:
         validator._debian_section = lambda path: selected_sections[Path(path).name]
 
         host_calls: list[tuple[str, str, str]] = []
+        host_channel = "havoc"
 
         def inspect_host(path, flavor, version, package, **identity):
             assert identity == {"commit": commit, "source_tree": source_tree}
             host_calls.append((flavor, version, package))
             return {
                 "kind": f"host-debian-{flavor}",
+                "appDistributionChannel": host_channel,
                 "name": Path(path).name,
                 "package": package,
                 "version": version,
@@ -106,6 +108,23 @@ def main() -> int:
         else:
             raise AssertionError("existing Battman host accepted an initial submission")
 
+        for host_channel in ("public", "github"):
+            try:
+                invoke([
+                    "--rooted-deb", str(temporary / "host-rooted.deb"),
+                    "--rootless-deb", str(temporary / "host-rootless.deb"),
+                    "--version", "1.1.0", "--published-version", "1.0.3.3",
+                    "--commit", commit, "--source-tree", source_tree,
+                    "--output", str(temporary / f"{host_channel}.json"),
+                    "--source-date-epoch", "1700000000",
+                ])
+            except validator.ReleaseError as error:
+                assert "Havoc" in str(error)
+            else:
+                raise AssertionError(f"Havoc accepted {host_channel} host binaries")
+        host_channel = "havoc"
+        assert comparisons == [("1.1.0", "1.0.3.3")] * 3
+
         plugin_calls: list[tuple[str, str, str, str]] = []
 
         def inspect_plugin(path, flavor, version, package, host_version):
@@ -138,7 +157,7 @@ def main() -> int:
             ("rooted", "1.0", "com.example.battman.plugin", "1.1.0"),
             ("rootless", "1.0", "com.example.battman.plugin", "1.1.0"),
         ]
-        assert comparisons == [("1.1.0", "1.0.3.3")]
+        assert comparisons == [("1.1.0", "1.0.3.3")] * 3
         assert plugin["artifactKind"] == "plugin-debian-pair"
         assert plugin["package"] == "com.example.battman.plugin"
         assert plugin["section"] == "Tweaks"

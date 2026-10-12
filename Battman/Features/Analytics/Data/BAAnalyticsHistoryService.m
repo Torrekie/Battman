@@ -7,8 +7,12 @@
 static NSTimeInterval const BAHistoryRefreshInterval = 60.0;
 // A reader interpretation change must not restore a report produced by the
 // earlier session/configuration rules, even when its graph format is valid.
-static NSUInteger const BAHistoryCacheInterpretationVersion = 2;
+static NSUInteger const BAHistoryCacheInterpretationVersion = 3;
 NSString *const BAAnalyticsHistoryServiceDidPublishNotification = @"BAAnalyticsHistoryServiceDidPublish";
+// Registration also covers non-singleton host services. New instances created
+// after a wipe begins remain suspended until the process exits.
+static NSHashTable<BAAnalyticsHistoryService *> *BAHistoryServices;
+static BOOL BAHistoryDataWipeRequested;
 
 static NSURL *BAHistoryCacheDirectory(void) {
 	if (!NSBundle.mainBundle.bundleIdentifier.length) return nil;
@@ -160,6 +164,7 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 @property (nonatomic) BOOL cacheRestorePending;
 @property (nonatomic, strong, nullable) BAHistoryReadCancellation *cacheRestoreCancellation;
 @property (nonatomic, strong, nullable) BAHistoryReadCancellation *cacheWriteCancellation;
+@property (nonatomic) BOOL preparedForDataWipe;
 @end
 
 @implementation BAAnalyticsHistoryService
@@ -183,7 +188,14 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 	_applicationActive = YES;
 	_nextSequenceNumber = 1;
 	_cacheDirectoryURL = [cacheDirectoryURL copy];
-	if (_cacheDirectoryURL) [self restoreCompletedReport];
+	@synchronized(BAAnalyticsHistoryService.class) {
+		if (!BAHistoryServices) BAHistoryServices = [NSHashTable weakObjectsHashTable];
+		[BAHistoryServices addObject:self];
+		_preparedForDataWipe = BAHistoryDataWipeRequested;
+		// Registration and restore scheduling are one operation: a concurrent
+		// wipe cannot take its worker snapshot before this restore is enqueued.
+		if (_cacheDirectoryURL && !_preparedForDataWipe) [self restoreCompletedReport];
+	}
 	return self;
 }
 - (void)publishReport:(BAAnalyticsReport *)report {
@@ -308,7 +320,7 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 	return !self.latestReport.isCached && isfinite(age) && age >= 0 && age <= BAHistoryRefreshInterval ? BAHistoryRefreshInterval - age : -1;
 }
 - (void)updatePollingState {
-	BOOL active = self.applicationActive && self.subscribers.allObjects.count > 0;
+	BOOL active = !self.preparedForDataWipe && self.applicationActive && self.subscribers.allObjects.count > 0;
 	if (active == self.polling) return;
 	self.polling = active;
 	if (!active) {
@@ -400,5 +412,35 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 	self.readCancellation = nil;
 	// Keep the minute-scale timer, but do not immediately recreate a large
 	// report in response to low memory. A later timer or activation can retry.
+}
+
+- (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion {
+	NSParameterAssert(NSThread.isMainThread);
+	self.preparedForDataWipe = YES;
+	self.cacheRestoreCancellation.cancelled = YES;
+	self.cacheWriteCancellation.cancelled = YES;
+	self.readCancellation.cancelled = YES;
+	self.latestReport = nil;
+	[self updatePollingState];
+	// A write already inside its atomic filesystem operation may finish. Drain
+	// that operation before the caller removes any app-owned directory.
+	dispatch_async(self.workerQueue, ^{
+		dispatch_async(dispatch_get_main_queue(), completion);
+	});
+}
+
++ (void)prepareForDataWipeWithCompletion:(dispatch_block_t)completion {
+	NSParameterAssert(NSThread.isMainThread);
+	NSArray<BAAnalyticsHistoryService *> *services;
+	@synchronized(BAAnalyticsHistoryService.class) {
+		BAHistoryDataWipeRequested = YES;
+		services = BAHistoryServices.allObjects;
+	}
+	dispatch_group_t pending = dispatch_group_create();
+	for (BAAnalyticsHistoryService *service in services) {
+		dispatch_group_enter(pending);
+		[service prepareForDataWipeWithCompletion:^{ dispatch_group_leave(pending); }];
+	}
+	dispatch_group_notify(pending, dispatch_get_main_queue(), completion);
 }
 @end

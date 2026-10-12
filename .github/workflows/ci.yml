@@ -9,7 +9,7 @@ on:
       run_macos_evidence:
         description: >-
           Run the owner-triggered Xcode/simulator evidence lane (uses macOS
-          minutes; routine CI remains Linux-only).
+          minutes for UI validation).
         required: false
         default: false
         type: boolean
@@ -22,10 +22,54 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-tests:
+    # Release regressions must be visible before a version tag is created.
+    # Run after the cross-build and keep native work serial.
+    needs: linux-debug-ipa
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Check out the reviewed commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_16.4.app
+      - name: Select Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: Requirements/release.txt
+      - name: Make gettext build tools available
+        run: |
+          brew list --versions gettext >/dev/null || brew install gettext
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
+      - name: Install hash-pinned release dependencies
+        run: >-
+          python3 -m pip install --require-hashes --only-binary=:all:
+          -r Requirements/release.txt
+      - name: Run plug-in, Analytics and strict release regressions
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: bash Tests/run-plugin-phase1-tests.sh
+      - name: Build public and GitHub Release variants
+        run: |
+          set -euo pipefail
+          for scheme in Battman "Battman (rel-nonfree)"; do
+            BATTMAN_CODESIGN_TOOL=codesign xcodebuild -quiet \
+              -project Battman.xcodeproj -scheme "$scheme" -configuration Release \
+              -sdk iphoneos -destination 'generic/platform=iOS' \
+              -derivedDataPath "$RUNNER_TEMP/ReleaseDerivedData" \
+              SYMROOT="$RUNNER_TEMP/BattmanProducts" \
+              OBJROOT="$RUNNER_TEMP/BattmanIntermediates" \
+              COMPILER_INDEX_STORE_ENABLE=NO -jobs 1 build
+          done
+
   macos-evidence:
     # Xcode and simulator evidence is intentionally opt-in. Keeping this lane
-    # out of pull-request and push requirements avoids spending a macOS runner
-    # on every routine cross-build.
+    # out of pull-request and push requirements avoids booting a simulator
+    # on every routine build.
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_macos_evidence == true }}
     runs-on: macos-15
     timeout-minutes: 45
@@ -42,6 +86,10 @@ jobs:
           python-version: '3.13'
           cache: pip
           cache-dependency-path: Requirements/release.txt
+      - name: Make gettext build tools available
+        run: |
+          brew list --versions gettext >/dev/null || brew install gettext
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
       - name: Install hash-pinned release dependencies
         run: >-
           python3 -m pip install --require-hashes --only-binary=:all:
@@ -83,6 +131,13 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/ChargeGaugeScreenshots"
           Tests/Simulator/run-charge-gauge-screenshots.sh "$RUNNER_TEMP/ChargeGaugeScreenshots"
+      - name: Verify Analytics interaction and bounded rendering
+        env:
+          BATTMAN_SIMULATOR_UDID: ${{ steps.boot-evidence-simulator.outputs.udid }}
+          BATTMAN_ANALYTICS_PERFORMANCE_ONLY: "1"
+        run: |
+          mkdir -p "$RUNNER_TEMP/AnalyticsScreenshots"
+          Tests/Simulator/run-analytics-card-screenshots.sh "$RUNNER_TEMP/AnalyticsScreenshots"
       - name: Compile the app for the iOS Simulator
         run: >-
           xcodebuild -project Battman.xcodeproj -scheme Battman

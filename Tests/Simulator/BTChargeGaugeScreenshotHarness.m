@@ -32,6 +32,25 @@ const char *cond_localize_c(const char *value) {
 	return value;
 }
 
+// The host cell only uses these built-in types for identity checks. This
+// independently shipped provider must never enter a built-in renderer path.
+@interface BAAnalyticsCanvasCard : NSObject @end
+@implementation BAAnalyticsCanvasCard
++ (instancetype)allocWithZone:(NSZone *)zone { (void)zone; abort(); }
+@end
+@interface BAAnalyticsCanvasView : UIView @end
+@implementation BAAnalyticsCanvasView
++ (instancetype)allocWithZone:(NSZone *)zone { (void)zone; abort(); }
+@end
+
+static id<BAAnalyticsCard> BTLegacyHostCard;
+static BTPluginResultV1 BTLegacyHostRegister(void *context,
+	const BTPluginExtensionRegistrationV1 *registration, BTPluginErrorV1 *error) {
+	(void)context; (void)error;
+	BTLegacyHostCard = (__bridge id)registration->extensionObject;
+	return BTPluginResultV1Success;
+}
+
 id perform_selector(SEL selector, id target, id argument) {
 	if (!target || ![target respondsToSelector:selector])
 		return nil;
@@ -104,6 +123,7 @@ int main(int argc, const char *argv[]) {
 		BTRequire([[NSFileManager defaultManager] fileExistsAtPath:outputDirectory
 			isDirectory:&directory] && directory, @"output directory is unavailable");
 		BTRequire([NSThread isMainThread], @"UIKit evidence harness must run on the main thread");
+		BTPluginSetPreferredLanguage(@"en");
 
 		BTPluginRegistry *registry = [BTPluginRegistry new];
 		NSError *error = nil;
@@ -133,6 +153,32 @@ int main(int argc, const char *argv[]) {
 			@"plugin-1.1.0-charge-gauge-unavailable-1x1", CGSizeMake(228.0, 228.0),
 			BAAnalyticsCardSize1x1, nil, BAAnalyticsChargingStateUnavailable) == 0,
 			@"could not render unavailable state");
+
+		NSDictionary *localizedNames = @{ @"de": @"Ladeanzeige", @"zh_CN": @"电量仪表",
+			@"zh_TW": @"電量儀表", @"en": @"Charge Gauge" };
+		for (NSString *language in @[ @"de", @"zh_CN", @"zh_TW", @"en" ]) {
+			BTPluginSetPreferredLanguage(language);
+			BTPluginRegistry *localizedRegistry = [BTPluginRegistry new];
+			BTRequire([localizedRegistry registerExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier
+				interfaceVersion:BAAnalyticsCardExtensionPointVersion requiredProtocol:@protocol(BAAnalyticsCard) error:&error],
+				error.localizedDescription);
+			BTRequire(BTRegisterEmbeddedPluginDescriptor(BTChargeGaugePluginDescriptor(), localizedRegistry,
+				[NSSet setWithObject:BAAnalyticsCardExtensionPointIdentifier], &error), error.localizedDescription);
+			id<BAAnalyticsCard> localizedCard = [localizedRegistry
+				extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier].firstObject;
+			BTRequire([localizedCard.analyticsCardDisplayName isEqualToString:localizedNames[language]],
+				([NSString stringWithFormat:@"Charge Gauge did not follow host language %@", language]));
+		}
+		BTPluginSetPreferredLanguage(nil);
+		BTPluginHostV1 legacyHost = {
+			.structSize = BT_PLUGIN_HOST_V1_MINIMUM_SIZE, .abiVersion = BT_PLUGIN_ABI_VERSION_1,
+			.registerExtension = BTLegacyHostRegister,
+			// Outside the advertised prefix: the plug-in must never read it.
+			.preferredLanguage = (const char *)(uintptr_t)1,
+		};
+		BTRequire(BTChargeGaugePluginDescriptor()->registerPlugin(&legacyHost, NULL) == BTPluginResultV1Success &&
+			BTLegacyHostCard.analyticsCardDisplayName.length > 0,
+			@"Charge Gauge could not register with the original v1 host prefix");
 		printf("Charge Gauge release screenshots rendered through the public card contract.\n");
 	}
 	return 0;

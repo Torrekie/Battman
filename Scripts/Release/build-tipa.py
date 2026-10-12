@@ -14,6 +14,7 @@ import os
 import stat
 import sys
 from pathlib import Path, PurePosixPath
+from host_build_identity import extract_distribution_channel
 
 from release_common import (
     ReleaseError,
@@ -138,15 +139,14 @@ def main() -> int:
         raise ReleaseError("TIPA and report outputs must share one existing parent")
 
     app_source = require_input_directory(arguments.app, ".app")
-    app_info, _ = load_app_info(app_source)
+    app_info, executable = load_app_info(app_source)
     if app_source.name != "Battman.app":
         raise ReleaseError("TIPA input must be named Battman.app")
     if app_info.get("CFBundleShortVersionString") != version or app_info.get("CFBundleVersion") != version:
         raise ReleaseError("app bundle versions must exactly match --version")
-    if app_info.get("CFBundleIdentifier") not in (
-        "com.torrekie.Battman",
-        "com.torrekie.Battman.Havoc",
-    ):
+    if extract_distribution_channel(executable) == "havoc":
+        raise ReleaseError("Havoc builds are Debian-only; a Havoc TIPA is not supported")
+    if app_info.get("CFBundleIdentifier") != "com.torrekie.Battman":
         raise ReleaseError("unexpected Battman app bundle identifier")
     if arguments.require_release and app_info.get("BTBuildConfiguration") != "Release":
         raise ReleaseError("release TIPA input is not marked BTBuildConfiguration=Release")

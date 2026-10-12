@@ -15,6 +15,9 @@ CM = (ROOT / "Battman/ChargingManagementViewController.m").read_text(encoding="u
 SLIDER = (ROOT / "Battman/SliderTableViewCell.m").read_text(encoding="utf-8")
 HEADER = (ROOT / "Battman/common.h").read_text(encoding="utf-8")
 DAEMON = (ROOT / "Battman/battery_utils/daemon.c").read_text(encoding="utf-8")
+MONITOR = (ROOT / "Battman/battery_utils/pmnotification.c").read_text(encoding="utf-8")
+BATTERY_INFO = (ROOT / "Battman/BatteryInfoViewController.m").read_text(encoding="utf-8")
+BATTERY_SUBSCRIBER = (ROOT / "Battman/BatterySubscriberViewControllerBase.c").read_text(encoding="utf-8")
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -29,7 +32,7 @@ require(CLIENT, "SO_SNDTIMEO", "bounded daemon send timeout")
 require(CLIENT, "SO_NOSIGPIPE", "SIGPIPE protection")
 require(CLIENT, "MSG_NOSIGNAL", "SIGPIPE-safe send")
 require(CLIENT, "MAP_FAILED", "portable mmap failure check")
-require(CLIENT, "msync(vals, BATTMAN_DAEMON_SETTINGS_SIZE", "exact settings sync length")
+require(CLIENT, "msync(self->vals, BATTMAN_DAEMON_SETTINGS_SIZE", "exact settings sync length")
 require(CLIENT, "sendDaemonCommand:(char)command reconnect:", "reconnect-aware command path")
 require(CLIENT, "fstat(fd, &locked_stat)", "client stale-run inode snapshot")
 require(CLIENT, "lstat(run_path, &path_stat)", "client stale-run pathname revalidation")
@@ -91,5 +94,73 @@ if "fchmod(sock," in DAEMON or "fchown(sock," in DAEMON:
     raise SystemExit("FAIL: socket permissions applied to descriptor instead of bound path")
 if "power_switch_safe(val," in DAEMON:
     raise SystemExit("FAIL: raw battery percentage passed as inhibit bit")
+
+# The UI must never reintroduce synchronous daemon or database work through
+# cell construction or deallocation. Check boundaries, not timing on a device.
+def implementation(text: str, marker: str) -> str:
+    start = text.index(marker)
+    opening = text.index("{", start)
+    depth = 1
+    for offset in range(opening + 1, len(text)):
+        if text[offset] == "{":
+            depth += 1
+        elif text[offset] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[opening + 1:offset]
+    raise AssertionError(f"Unterminated implementation: {marker}")
+
+cells = implementation(CLIENT, "- (UITableViewCell *)tableView:")
+for forbidden in ("sqlite3_", "connect_to_daemon", "CLDaemonSend", "usleep("):
+    assert forbidden not in cells, f"cell configuration blocks on {forbidden}"
+teardown = implementation(CLIENT, "- (void)dealloc")
+for forbidden in ("CLDaemonSend", "msync(", "dispatch_sync", "receiveDaemonByte"):
+    assert forbidden not in teardown, f"controller destruction blocks on {forbidden}"
+operation = implementation(CLIENT, "- (void)runDaemonOperation:(NSString *(^)(void))operation completion:(void (^)(BOOL))completion {")
+require(operation, "if (self.daemonOperationInFlight) return", "single UI transaction admission")
+require(operation, "dispatch_async(self.daemonQueue", "serial background daemon transaction")
+require(operation, "self.daemonDeadline = CLMonotonicTime() + CL_DAEMON_OPERATION_SECONDS", "whole-transaction deadline")
+require(operation, "dispatch_async(dispatch_get_main_queue()", "main-thread result delivery")
+require(operation, "generation == self.presentationGeneration", "stale presentation rejection")
+require(CLIENT, "O_NONBLOCK", "nonblocking daemon connection")
+require(CLIENT, "MSG_NOSIGNAL | MSG_DONTWAIT", "nonblocking daemon writes")
+require(CLIENT, "recv(sock, bytes, length, MSG_DONTWAIT)", "nonblocking daemon reads")
+require(CLIENT, "deadline - CLMonotonicTime()", "remaining monotonic I/O budget")
+require(CLIENT, "sqlite3_progress_handler(database, 1000, CLPowerlogReadExpired, &deadline)", "interruptible history query")
+require(CLIENT, "if (snapshot) self.graphPoints = snapshot", "retain last complete graph on failure")
+require(CLIENT, "self.graphLoadInFlight", "coalesced history reads")
+require(CLIENT, "battman_run_daemon_with_error(&spawnError)", "lifecycle-aware spawn error delivery")
+spawn = implementation(DAEMON, "int battman_run_daemon_with_error(")
+assert "show_alert" not in spawn, "background spawn must not present a global alert"
+
+subscribe = implementation(MONITOR, "void subscribeToPowerEvents(")
+assert subscribe.index("if (powerMonitor.initialized)") < subscribe.index("IONotificationPortCreate"), "repeat subscriptions must not allocate a new port"
+require(subscribe, "powerMonitor.callback = callback", "daemon listener replacement")
+require(subscribe, "stpe_cb, &powerMonitor, &powerMonitor.iterator", "persistent matching callback context")
+require(MONITOR, "(uintptr_t)refCon != powerMonitor.generation", "retired interest generation rejection")
+require(MONITOR, "IOObjectRelease(interest->notification)", "interest token teardown")
+require(MONITOR, "item->registryID == registryID", "duplicate interest prevention")
+require(BATTERY_INFO, "if (fd > 0) { close(fd); return; }", "close successful badge probe")
+require(BATTERY_INFO, "strongSelf->_refreshGeneration == badgeGeneration", "badge probe lifecycle check")
+require(DAEMON, "cleanupPowerEventMonitoring();\n\tif (daemon_settings", "drain power delivery before settings unmap")
+for forbidden in ("void *port[]", "dispatch_suspend(", "abort()"):
+    assert forbidden not in MONITOR, f"unsafe power-monitor lifetime pattern: {forbidden}"
+
+# Main-thread suspension drains the power queue, so even allocation failure
+# must not synchronously deliver a notification back to the main thread.
+battery_callback = implementation(BATTERY_SUBSCRIBER, "static void BSVCBatteryStatusCallback(")
+assert "dispatch_sync" not in battery_callback, "power notifications must never wait for the main thread"
+allocation_failure = implementation(battery_callback, "if (!payload)")
+require(allocation_failure, "return;", "drop a notification when its payload cannot be allocated")
+assert "Retain(" not in allocation_failure, "dropped notifications must not retain their observer or data"
+assert battery_callback.index("if (!payload)") < battery_callback.index("payload->observer ="), "retain only after successful payload allocation"
+require(battery_callback, "dispatch_async_f(dispatch_get_main_queue(), payload, BSVCBatteryStatusCallbackMain)", "asynchronous power notification delivery")
+
+GRAPH_CELL = (ROOT / "Battman/PLGraphViewTableCell.m").read_text()
+graph_layout = implementation(GRAPH_CELL, "- (void)layoutSubviews")
+require(graph_layout, "!CGSizeEqualToSize(self.lastGraphLayoutSize, self.bounds.size)", "graph layout size invalidation")
+require(GRAPH_CELL, "self.graphDataDidChange || !self.hasGeneratedGraph", "graph input parsing only on changed data")
+require(GRAPH_CELL, "visibleStart timeIntervalSinceDate:self.graphView.startDate", "preserved visible history after refresh")
+assert "removeFromSuperview" not in implementation(GRAPH_CELL, "- (void)generateGraphs"), "graph refresh must preserve its view hierarchy"
 
 print("charging-limit daemon safety checks: PASS")

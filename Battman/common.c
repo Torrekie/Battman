@@ -631,8 +631,10 @@ const char *second_to_datefmt(uint64_t second) {
 	return ret;
 }
 
-// For iOS 12 or ealier, we generate image directly from 'SF-Pro-Display-Regular.otf'
+// Older systems use the same small vector symbols without a bundled font.
 id imageForSFProGlyph(CFStringRef glyph, CFStringRef fontName, CGFloat fontSize, id tintColor) {
+	id vector = ocall(oclass(UIImage), legacySymbolImageForGlyph:pointSize:color:, glyph, fontSize, tintColor);
+	if (vector) return ocall(vector, imageWithRenderingMode:, 2);
 	id              font  = ocall(oclass(UIFont), fontWithName:size:, fontName, fontSize) ?: ocall(oclass(UIFont), systemFontOfSize:, fontSize);
 	CFDictionaryRef attrs = CFDictionaryCreate(NULL, (const void *[]) { NSFontAttributeName, NSForegroundColorAttributeName }, (const void *[]) { font, tintColor }, 2, NULL, NULL);
 

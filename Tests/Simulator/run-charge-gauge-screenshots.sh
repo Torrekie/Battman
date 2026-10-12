@@ -9,6 +9,19 @@ SIMULATOR_UDID="$(battman_select_booted_iphone_simulator)"
 OUTPUT_DIR="${1:-$REPO_ROOT/docs/evidence}"
 TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/battman-charge-gauge-evidence.XXXXXX")"
 trap 'rm -rf "$TEST_TMP"' EXIT
+TEST_APP="$TEST_TMP/ChargeGaugeEvidence.app"
+mkdir -p "$TEST_APP"
+cat > "$TEST_APP/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>ChargeGaugeEvidence</string>
+<key>CFBundleIdentifier</key><string>com.torrekie.battman.tests.charge-gauge</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+</dict></plist>
+PLIST
+cp -R "$REPO_ROOT/OfficialPlugins/ChargeGauge/Resources/"*.lproj "$TEST_APP/"
 
 CLANG="$(xcrun --sdk iphonesimulator --find clang)"
 SDKROOT="$(xcrun --sdk iphonesimulator --show-sdk-path)"
@@ -59,9 +72,9 @@ FRAMEWORKS=(
 
 "$CLANG" "${COMMON_FLAGS[@]}" -DDEBUG=1 -DBATTMAN_VERSION_STRING=\"1.1.0\" \
 	-DBT_PLUGIN_EMBEDDED=1 \
-	"${SOURCES[@]}" "${FRAMEWORKS[@]}" -o "$TEST_TMP/charge-gauge-evidence"
-codesign --force --sign - --timestamp=none "$TEST_TMP/charge-gauge-evidence" >/dev/null
-xcrun simctl spawn "$SIMULATOR_UDID" "$TEST_TMP/charge-gauge-evidence" "$OUTPUT_DIR"
+	"${SOURCES[@]}" "${FRAMEWORKS[@]}" -o "$TEST_APP/ChargeGaugeEvidence"
+codesign --force --sign - --timestamp=none "$TEST_APP" >/dev/null
+xcrun simctl spawn "$SIMULATOR_UDID" "$TEST_APP/ChargeGaugeEvidence" "$OUTPUT_DIR"
 
 for screenshot in \
 	plugin-1.1.0-charge-gauge-charging-2x1.png \

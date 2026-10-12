@@ -12,7 +12,7 @@ from pathlib import Path
 RELEASE_TOOLS = Path(__file__).resolve().parents[1] / "Release"
 sys.path.insert(0, str(RELEASE_TOOLS))
 
-from host_build_identity import require_repository_identity  # noqa: E402
+from host_build_identity import require_repository_identity, extract_distribution_channel  # noqa: E402
 from release_common import ReleaseError  # noqa: E402
 
 
@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--version", required=True)
     parser.add_argument("--configuration", required=True)
     parser.add_argument("--product-identifier", required=True)
+    parser.add_argument("--channel", choices=("public", "github", "havoc"))
     arguments = parser.parse_args()
     identity = require_repository_identity(
         arguments.executable,
@@ -31,6 +32,8 @@ def main() -> int:
         arguments.configuration,
         arguments.product_identifier,
     )
+    if arguments.channel and extract_distribution_channel(arguments.executable) != arguments.channel:
+        raise ReleaseError("compiled distribution channel differs from the requested Xcode variant")
     print(json.dumps(identity, sort_keys=True, separators=(",", ":")))
     return 0
 

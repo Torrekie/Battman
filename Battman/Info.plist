@@ -64,10 +64,6 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>SF-Pro-Display-Regular.otf</string>
-	</array>
 	<key>UIAppSupportsHDR</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

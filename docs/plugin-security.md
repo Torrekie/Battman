@@ -102,8 +102,15 @@ scheduled for a restart. Third-party plug-ins additionally require a global
 enable switch. Disable, update, removal, and revocation are restart-only because
 mapped native code cannot be safely removed from a live process.
 
-Startup records the plug-in being activated before mapping it and clears that
-record only after successful startup. A crash-loop marker causes safe mode on
+External package discovery, verification and private staging run on a serial
+worker; final mapping and registration remain on the main thread. The private
+executable is hashed during preparation and its descriptor, inode, size, mode
+and modification/change timestamps are checked again before mapping.
+
+Startup records every external plug-in being activated, including official
+plug-ins, before mapping it and clears that record only after the batch completes
+and the app remains active through the startup grace period. Safe mode skips
+all external native plug-ins while retaining embedded cards. A crash-loop marker causes safe mode on
 the next launch and identifies the likely plug-in so the user can disable it.
 A one-shot safe-mode request is consumed only when its exact protected marker
 is valid; manual/malformed recovery markers remain fail-safe. App-bundle and

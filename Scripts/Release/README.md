@@ -5,6 +5,37 @@ resolved local inputs, create only new outputs, reject links/special files and
 unexpected archive members, normalize timestamps/modes, and never install,
 upload, contact a device, invoke TrollStore, or generate a production key.
 
+## Channels and workflow entry points
+
+| Distribution | Xcode scheme | Packaging |
+| --- | --- | --- |
+| Public | `Battman` | Public-source app and CI validation |
+| GitHub | `Battman (rel-nonfree)` | Rooted/rootless host Debian and replacement TIPA |
+| Havoc | `Battman-havoc` | Rooted/rootless host Debian only, with the existing private authorization implementation |
+
+The GitHub scheme's underlying target is `Battman-nonfree`; command-line
+builds must quote the full `Battman (rel-nonfree)` scheme name. Build and
+inspection tools validate the executable's `__TEXT,__btchannel` marker. A Havoc host must retain its private authorization source and
+definitions; there is no Havoc TIPA target. `build-tipa.py` and TIPA inspection
+reject the `havoc` channel, while the Havoc host validator requires it.
+
+Routine CI runs the Linux Debug cross-build, followed by the native regression
+suite and serial Public/GitHub Release builds. Simulator evidence is an
+additional opt-in lane. The manual release workflow defaults to
+`validate_only: true`, accepts a ref in its `tag` input, and runs focused tests,
+synthetic signed-package regressions, and the GitHub Release build without
+production signing inputs or draft creation.
+
+Production runs require an exact clean `v<VERSION>` tag, tracked public trust
+metadata and signed packages, and reviewed public checksum and SDK-example
+publisher fingerprints. A tag push only prepares an unsigned candidate. Manual
+production dispatch can create a draft after the offline checksum signature is
+returned and the `battman-production-release` environment is approved. A green
+validation-only run does not establish production-material readiness. Neither
+workflow publishes the draft or uploads to Havoc.
+
+## Assembly and inspection
+
 `assemble-release.py` has two intentionally different modes:
 
 - strict mode requires a clean exact `v<VERSION>` checkout, the commit timestamp
@@ -34,7 +65,7 @@ directory verification retain the same contract.
 
 The normal order is:
 
-1. build/finalize a Release app;
+1. build/finalize a GitHub Release app using `Battman (rel-nonfree)`;
 2. build signed official `.battman` packages and a separately signed third-party
    SDK example with existing publisher keys;
 3. assemble rooted/rootless host Debian files and the replacement TIPA;
@@ -57,8 +88,9 @@ the canonical `<identifier>.battman` directory inside. `build-plugin-deb.py`
 independently produces rooted and rootless delivery packages from the same
 signed bytes. `validate-havoc-candidate.py` checks an owner-selected rooted and
 rootless Debian pair for manual Havoc submission. Its `--artifact-kind host`
-mode applies host layout, exact embedded commit/tree, version, and
-`Section: Applications` checks. Its `--artifact-kind plugin` mode applies the
+mode requires a separately built `Battman-havoc` Release app in each package
+and applies embedded `havoc` channel, host layout, exact commit/tree, version,
+and `Section: Applications` checks. Its `--artifact-kind plugin` mode applies the
 plug-in Debian layout, identifier/version, minimum-host dependency, and the
 explicit owner-reviewed Havoc section. Host mode requires an explicit
 last-published version; plug-in mode may use `--initial-submission` for a new
@@ -105,11 +137,12 @@ ephemeral key and may exercise the same pinning check.
 `generate-release-manifest.py` fails if the concrete asset set differs from
 `Packaging/Release/release-matrix.json`, if inspection contains an unselected
 asset, or if the TIPA's sealed official set differs from owner selection.
-Only rooted/rootless host and plug-in `.deb` records may receive the
-`havoc-manual-candidate` channel. That label expresses eligibility for
-Torrekie's later manual review and upload, not publication approval. TIPAs,
-raw `.battman` packages, `.battman.zip` transports, SDK/source archives, and
-other assets are never Havoc candidates.
+In the GitHub matrix, only separately shipped official plug-in `.deb` records
+may receive the `havoc-manual-candidate` label. GitHub host Debian records do
+not receive it: Havoc host packages require a separate `Battman-havoc` build and
+channel validation. The label does not authorize publication. TIPAs, raw
+`.battman` packages, `.battman.zip` transports, SDK/source archives, and other
+assets are never Havoc candidates.
 `verify-release-directory.py` rejects missing, extra, linked, malformed, or
 changed files and requires `SHA256SUMS` to cover every final file except itself
 and its detached signature. The checksum signature therefore binds the

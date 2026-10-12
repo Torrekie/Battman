@@ -179,11 +179,14 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
             [transition.earliestDate compare:family.window.endDate] == NSOrderedDescending ||
             transition.previousState == transition.nextState) continue;
         BOOL point = [transition.earliestDate isEqualToDate:transition.latestDate];
-        BOOL intersectsGap = BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, NO);
+        // A sampled cable change has no continuous connection-state coverage
+        // between its endpoints. That coverage complement is not a lost sample.
+        BOOL intersectsGap = BAAnalyticsHistoryHasGap(family.window.gaps, transition.earliestDate, transition.latestDate, YES);
         if (point) {
             if (!self.closedGapRanges) {
                 NSMutableData *ranges = [NSMutableData dataWithCapacity:family.window.gaps.count * sizeof(BAEventTimeRange)];
                 for (BAAnalyticsHistoryGap *gap in family.window.gaps) {
+                    if ([gap.reason isEqualToString:@"Required fields unavailable or sampling gap"]) continue;
                     BAEventTimeRange range = {gap.startDate.timeIntervalSince1970, gap.endDate.timeIntervalSince1970};
                     [ranges appendBytes:&range length:sizeof range];
                 }

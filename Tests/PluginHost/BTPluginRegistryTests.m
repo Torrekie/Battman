@@ -130,6 +130,29 @@ static BTPluginResultV1 BTTruncatedRegistrationPluginRegister(const BTPluginHost
 	return host->registerExtension(host->context, &registration, error);
 }
 
+static BOOL BTTestInvalidUTF8;
+static NSString *BTTestObservedLanguage;
+static BTPluginResultV1 BTIgnoredABIErrorPluginRegister(const BTPluginHostV1 *host, BTPluginErrorV1 *error) {
+	BTTestExtensionObject *object = [BTTestExtensionObject new];
+	const char invalidUTF8[] = { (char)0xff, 0 };
+	BTPluginExtensionRegistrationV1 invalid = {
+		.structSize = sizeof(BTPluginExtensionRegistrationV1), .abiVersion = BT_PLUGIN_ABI_VERSION_1,
+		.extensionPointIdentifier = BTTestExtensionPoint.UTF8String, .extensionPointVersion = 1,
+		.flags = BTTestInvalidUTF8 ? 0 : 1,
+		.extensionIdentifier = BTTestInvalidUTF8 ? invalidUTF8 : "com.example.ignored-error.invalid",
+		.extensionObject = (__bridge const void *)object,
+	};
+	(void)host->registerExtension(host->context, &invalid, NULL);
+	return BTTestRegisterObject(host, BTTestExtensionPoint, @"com.example.ignored-error.valid", object, error);
+}
+
+static BTPluginResultV1 BTLanguagePluginRegister(const BTPluginHostV1 *host, BTPluginErrorV1 *error) {
+	BTTestRequire(host->structSize >= BT_PLUGIN_STRUCT_SIZE_THROUGH(BTPluginHostV1, preferredLanguage),
+		@"current host did not advertise its optional language tail");
+	BTTestObservedLanguage = host->preferredLanguage ? [NSString stringWithUTF8String:host->preferredLanguage] : nil;
+	return BTGoodPluginRegister(host, error);
+}
+
 static const BTPluginDescriptorV1 BTGoodPlugin = {
 	.structSize = sizeof(BTPluginDescriptorV1),
 	.abiVersion = BT_PLUGIN_ABI_VERSION_1,
@@ -247,6 +270,26 @@ static void BTTestRegistryTransactions(void) {
 		@"extension-point interface version lookup should be exact and read-only");
 
 	NSSet<NSString *> *declared = [NSSet setWithObject:BTTestExtensionPoint];
+	for (NSNumber *invalidUTF8 in @[ @NO, @YES ]) {
+		BTTestInvalidUTF8 = invalidUTF8.boolValue;
+		BTPluginDescriptorV1 ignoredError = BTGoodPlugin;
+		ignoredError.pluginIdentifier = "com.example.ignored-error";
+		ignoredError.registerPlugin = BTIgnoredABIErrorPluginRegister;
+		BTTestRequire(!BTRegisterEmbeddedPluginDescriptor(&ignoredError, registry, declared, &error),
+			@"an ignored ABI validation error must roll back the whole registration");
+		BTTestRequire([registry extensionDescriptorsForExtensionPointIdentifier:BTTestExtensionPoint].count == 0,
+			@"ABI rejection leaked a later valid registration");
+	}
+	error = nil;
+	BTPluginSetPreferredLanguage(@"zh_CN");
+	BTPluginDescriptorV1 languagePlugin = BTGoodPlugin;
+	languagePlugin.registerPlugin = BTLanguagePluginRegister;
+	BTPluginRegistry *languageRegistry = [BTPluginRegistry new];
+	BTTestRequire([languageRegistry registerExtensionPointIdentifier:BTTestExtensionPoint interfaceVersion:1
+		requiredProtocol:@protocol(BTTestExtension) error:&error], error.localizedDescription);
+	BTTestRequire(BTRegisterEmbeddedPluginDescriptor(&languagePlugin, languageRegistry, declared, &error) &&
+		[BTTestObservedLanguage isEqualToString:@"zh-CN"], @"effective host language was not delivered as BCP-47");
+	BTPluginSetPreferredLanguage(nil);
 	BTTestRequire(BTRegisterEmbeddedPluginDescriptor(&BTGoodPlugin, registry, declared, &error), error.localizedDescription);
 	NSArray<BTPluginExtensionDescriptor *> *descriptors = [registry extensionDescriptorsForExtensionPointIdentifier:BTTestExtensionPoint];
 	BTTestRequire(descriptors.count == 1, @"good transaction should commit exactly one extension");

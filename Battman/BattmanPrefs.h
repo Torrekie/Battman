@@ -53,9 +53,10 @@
 - (nullable NSString *)envStringForKey:(NSString *)key;
 - (BOOL)hasEnvOverrideForKey:(NSString *)key;
 
-// Wipe all data
+// Wipe all data asynchronously. Completion is delivered on the main thread.
 - (void)wipeAllData;
 - (void)wipeAllData:(BOOL)dryRun;
+- (void)wipeAllData:(BOOL)dryRun completion:(void (^ _Nullable)(NSError * _Nullable error))completion;
 @end
 
 #endif

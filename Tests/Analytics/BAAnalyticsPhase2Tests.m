@@ -355,6 +355,56 @@ static void TestMetricStartupCacheValidation(void) {
 	}
 }
 
+@interface BAAnalyticsMetricService (MetricWriterTest)
+- (void)storeSnapshot:(BAAnalyticsMetricSnapshot *)snapshot;
+@end
+@interface GatedMetricWriter : BAAnalyticsMetricService
+@property (nonatomic, strong) dispatch_semaphore_t writerGate;
+@property (atomic) BOOL writerEntered;
+@end
+@implementation GatedMetricWriter
+- (void)storeSnapshot:(BAAnalyticsMetricSnapshot *)snapshot {
+	self.writerEntered = YES;
+	dispatch_semaphore_wait(self.writerGate, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+	[super storeSnapshot:snapshot];
+}
+@end
+
+static void TestMetricDataWipeBarrier(void) {
+	NSURL *directory = MakeMetricCacheDirectory(), *file = [directory URLByAppendingPathComponent:@"instant.plist"];
+	FakeMetricSource *source = [FakeMetricSource new];
+	GatedMetricWriter *service = [[GatedMetricWriter alloc] initWithSource:source sampleInterval:30 maxHistoryPoints:3];
+	service.writerGate = dispatch_semaphore_create(0);
+	MetricSubscriber *subscriber = [MetricSubscriber new];
+	@try {
+		[service enableStartupCacheAtURL:file]; [service addSubscriber:subscriber];
+		Assert(WaitUntil(^BOOL { return service.writerEntered && service.latestSnapshot; }, 2),
+			"metric cache write can remain pending after snapshot publication");
+		__block BOOL complete = NO, heartbeat = NO;
+		[BAAnalyticsMetricService prepareForDataWipeWithCompletion:^{ complete = YES; }];
+		dispatch_async(dispatch_get_main_queue(), ^{ heartbeat = YES; });
+		Assert(WaitUntil(^BOOL { return heartbeat; }, .5) && !complete,
+			"metric wipe drains the writer without blocking main-thread cancellation");
+		Assert(!service.isPolling && service.latestSnapshot == nil, "metric wipe drops old visible values and stops polling");
+		dispatch_semaphore_signal(service.writerGate);
+		Assert(WaitUntil(^BOOL { return complete; }, 2), "metric wipe completion follows the last old cache write");
+		Assert([NSFileManager.defaultManager fileExistsAtPath:file.path], "in-flight writer finished before destructive removal");
+		Assert([NSFileManager.defaultManager removeItemAtURL:directory error:NULL], "removed metric cache after the barrier");
+		NSUInteger readCount = source.safeReadCount, deliveries = subscriber.snapshots.count;
+		[service setApplicationActive:NO]; [service setApplicationActive:YES]; [service refreshNow];
+		FakeMetricSource *lateSource = [FakeMetricSource new];
+		BAAnalyticsMetricService *late = [[BAAnalyticsMetricService alloc] initWithSource:lateSource];
+		[late enableStartupCacheAtURL:file]; [late addSubscriber:subscriber]; [late refreshNow];
+		DrainMetricWorker(service); DrainMetricWorker(late);
+		Assert(!service.isPolling && !late.isPolling && source.safeReadCount == readCount && lateSource.safeReadCount == 0 && subscriber.snapshots.count == deliveries,
+			"activation and late metric services cannot resume sampling or cached publication after a wipe");
+		Assert(![NSFileManager.defaultManager fileExistsAtPath:directory.path], "old metric writers cannot recreate deleted storage after barrier completion");
+	} @finally {
+		dispatch_semaphore_signal(service.writerGate); [service removeSubscriber:subscriber];
+		[NSFileManager.defaultManager removeItemAtURL:directory error:NULL];
+	}
+}
+
 int main(void) {
 	@autoreleasepool {
 		TestSnapshotImmutability();
@@ -363,6 +413,7 @@ int main(void) {
 		TestVisibleOnlyMetricService();
 		TestMetricStartupCacheLifecycle();
 		TestMetricStartupCacheValidation();
+		TestMetricDataWipeBarrier();
 		printf("Analytics snapshot, layout, visible-only metric service, and startup cache lifecycle tests passed.\n");
 	}
 	return 0;

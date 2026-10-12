@@ -55,6 +55,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		B7D157A10000000000000004 /* Distribution.m in Sources */ = {isa = PBXBuildFile; fileRef = B7D157A10000000000000001 /* Distribution.m */; };
+		B7D157A10000000000000003 /* Distribution.m in Sources */ = {isa = PBXBuildFile; fileRef = B7D157A10000000000000001 /* Distribution.m */; };
+		B7D157A10000000000000002 /* Distribution.m in Sources */ = {isa = PBXBuildFile; fileRef = B7D157A10000000000000001 /* Distribution.m */; };
 		68171A302D5221C400DD4224 /* libsmc.c in Sources */ = {isa = PBXBuildFile; fileRef = 68171A2F2D5221C400DD4224 /* libsmc.c */; };
 		68171A372D534E6B00DD4224 /* BatteryDetailsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */; };
 		68336DE22E9662B700E9F180 /* UIScreen+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336DE12E9662B700E9F180 /* UIScreen+Auto.m */; };
@@ -222,7 +225,6 @@
 		684115152E57BDE7001B76B6 /* BattmanIcons@3x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */; };
 		684115162E57BDE7001B76B6 /* license.html in Resources */ = {isa = PBXBuildFile; fileRef = 6838BF642DB8D06B007EB66C /* license.html */; };
 		684115172E57BDE7001B76B6 /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
-		6841151E2E57BEAF001B76B6 /* SF-Pro-Display-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */; };
 		6845759A2E3CBD2B00618DFD /* BattmanIcons@3x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */; };
 		6845759C2E3CBFEB00618DFD /* BattmanIcons@2x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */; };
 		684575AA2E3D4ABF00618DFD /* thermtune.c in Sources */ = {isa = PBXBuildFile; fileRef = 6845759E2E3D4A9900618DFD /* thermtune.c */; };
@@ -231,100 +233,19 @@
 		684972632EACA13300C9C58A /* UITextFieldStepper.m in Sources */ = {isa = PBXBuildFile; fileRef = 6849725E2EACA13300C9C58A /* UITextFieldStepper.m */; };
 		684972642EACA13300C9C58A /* UITextFieldStepper.m in Sources */ = {isa = PBXBuildFile; fileRef = 6849725E2EACA13300C9C58A /* UITextFieldStepper.m */; };
 		684972652EACA13300C9C58A /* UITextFieldStepper.m in Sources */ = {isa = PBXBuildFile; fileRef = 6849725E2EACA13300C9C58A /* UITextFieldStepper.m */; };
-		6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */ = {isa = PBXBuildFile; fileRef = 68E9389A2D58980B00223285 /* iokit_connection.c */; };
-		6849726C2EACB71B00C9C58A /* thermal.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B68F6B2E21026600431E14 /* thermal.c */; };
-		6849726D2EACB71B00C9C58A /* UILabel+SFSymbolsOverride.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AFCBA32E054D04007A9EC7 /* UILabel+SFSymbolsOverride.m */; };
-		6849726E2EACB71B00C9C58A /* SegmentButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B62D8EB8870023D7B0 /* SegmentButton.m */; };
-		6849726F2EACB71B00C9C58A /* BatteryCellView.m in Sources */ = {isa = PBXBuildFile; fileRef = 687743412D4F6C7800375A2C /* BatteryCellView.m */; };
-		684972702EACB71B00C9C58A /* UPSMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B82DEEEDC600550EBE /* UPSMonitor.m */; };
-		684972712EACB71B00C9C58A /* ChargingManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6838BF822DC27F1E007EB66C /* ChargingManagementViewController.m */; };
-		684972722EACB71B00C9C58A /* BatteryInfoTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 687743442D4F6C7800375A2C /* BatteryInfoTableViewCell.m */; };
-		684972732EACB71B00C9C58A /* selfcheck.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B291492DDC76B00089BA1F /* selfcheck.c */; };
-		684972742EACB71B00C9C58A /* UITextFieldStepper.m in Sources */ = {isa = PBXBuildFile; fileRef = 6849725E2EACA13300C9C58A /* UITextFieldStepper.m */; };
-		684972752EACB71B00C9C58A /* accessory.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2913C2DD86AAB0089BA1F /* accessory.c */; };
-		684972762EACB71B00C9C58A /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B52D8EB8870023D7B0 /* Constants.m */; };
-		684972772EACB71B00C9C58A /* MultiSelectSegmentedControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40AB2D8EB8870023D7B0 /* MultiSelectSegmentedControl.m */; };
-		684972782EACB71B00C9C58A /* DividerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B02D8EB8870023D7B0 /* DividerView.m */; };
-		684972792EACB71B00C9C58A /* DatePickerTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B16F062E167CE6009B63AC /* DatePickerTableViewCell.m */; };
-		6849727A2EACB71B00C9C58A /* BattmanVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 6841147D2E512AB1001B76B6 /* BattmanVectorIcon.m */; };
-		6849727B2EACB71B00C9C58A /* DonationPrompter.m in Sources */ = {isa = PBXBuildFile; fileRef = 684114032E4A34DA001B76B6 /* DonationPrompter.m */; };
-		6849727C2EACB71B00C9C58A /* hid.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291392DD1FEDA0089BA1F /* hid.m */; };
-		6849727D2EACB71B00C9C58A /* BrightnessDetailsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E362E9F7F7A00E9F180 /* BrightnessDetailsViewController.m */; };
-		6849727E2EACB71B00C9C58A /* UIImage+SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C73E2E93B93E006F73EA /* UIImage+SVG.m */; };
-		6849727F2EACB71B00C9C58A /* wrapper.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B7513D2E2A425D003C94BC /* wrapper.c */; };
-		684972802EACB71B00C9C58A /* NSData+HexString.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B16F112E1BBCC6009B63AC /* NSData+HexString.m */; };
-		684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2D052E6C344E00FECDF5 /* UPSMonitor-new.m */; };
-		684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
-		684972832EACB71B00C9C58A /* SimpleTemperatureViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291322DD1E6960089BA1F /* SimpleTemperatureViewController.m */; };
-		684972842EACB71B00C9C58A /* localized.c in Sources */ = {isa = PBXBuildFile; fileRef = 6838BF752DBF810D007EB66C /* localized.c */; };
-		684972852EACB71B00C9C58A /* BatteryInfoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 687743352D4E08AD00375A2C /* BatteryInfoViewController.m */; };
-		684972862EACB71B00C9C58A /* BattmanPrefs.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E872EA4E03F00E9F180 /* BattmanPrefs.m */; };
-		684972872EACB71B00C9C58A /* licensing.S in Sources */ = {isa = PBXBuildFile; fileRef = 6838BF652DB8D06B007EB66C /* licensing.S */; };
-		684972882EACB71B00C9C58A /* SPWaterProgressIndicatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 687743422D4F6C7800375A2C /* SPWaterProgressIndicatorView.m */; };
-		684972892EACB71B00C9C58A /* WarnAccessoryView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6833A8C82DA3C6E500B71299 /* WarnAccessoryView.m */; };
-		6849728A2EACB71B00C9C58A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 686AECD42D3B93CD0059ECD0 /* main.m */; };
-		6849728B2EACB71B00C9C58A /* StackViewGestureHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B42D8EB8870023D7B0 /* StackViewGestureHandler.m */; };
-		6849728C2EACB71B00C9C58A /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
-		6849728D2EACB71B00C9C58A /* protect.S in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCE72DE1A1D40057870A /* protect.S */; };
-		6849728E2EACB71B00C9C58A /* TemperatureInfoTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B5FF2F2D85617400919BC2 /* TemperatureInfoTableViewCell.m */; };
-		6849728F2EACB71B00C9C58A /* CreditViewController.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD162DE30A8E0057870A /* CreditViewController.c */; };
-		684972902EACB71B00C9C58A /* worker.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCEF2DE30A5E0057870A /* worker.c */; };
-		684972912EACB71B00C9C58A /* BrightnessInfoTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E3C2E9F80DF00E9F180 /* BrightnessInfoTableViewCell.m */; };
-		684972922EACB71B00C9C58A /* MultilineViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 6834254F2D7D6A240070CE6F /* MultilineViewCell.m */; };
-		684972932EACB71B00C9C58A /* UIView+Fill.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40B12D8EB8870023D7B0 /* UIView+Fill.m */; };
-		684972942EACB71B00C9C58A /* PreferencesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E4A2EA0CF3400E9F180 /* PreferencesViewController.m */; };
-		684972952EACB71B00C9C58A /* UberSegmentedControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AE40AA2D8EB8870023D7B0 /* UberSegmentedControl.m */; };
-		684972962EACB71B00C9C58A /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
-		684972972EACB71B00C9C58A /* FullSMCViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291352DD1E6960089BA1F /* FullSMCViewController.m */; };
-		684972982EACB71B00C9C58A /* daemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911F2DC754100089BA1F /* daemon.c */; };
-		684972992EACB71B00C9C58A /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
-		68F000052F00000000000005 /* bin_display.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F000012F00000000000001 /* bin_display.m */; };
-		68F100052F20000000000005 /* battery_diagnostics.c in Sources */ = {isa = PBXBuildFile; fileRef = 68F100012F20000000000001 /* battery_diagnostics.c */; };
-		6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */ = {isa = PBXBuildFile; fileRef = 6846114F2E0D5250006B651D /* IOMFB_interaction.c */; };
-		6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B2911E2DC754100089BA1F /* pmnotification.c */; };
-		6849729C2EACB71B00C9C58A /* PickerAccessoryView.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2C9C2E6185D900FECDF5 /* PickerAccessoryView.m */; };
-		6849729D2EACB71B00C9C58A /* UIScreen+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336DE12E9662B700E9F180 /* UIScreen+Auto.m */; };
-		6849729E2EACB71B00C9C58A /* GradientArcView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B5FF2D2D85606000919BC2 /* GradientArcView.m */; };
-		6849729F2EACB71B00C9C58A /* BatterySubscriberViewControllerBase.c in Sources */ = {isa = PBXBuildFile; fileRef = 689FE0B42DEAEA4A00550EBE /* BatterySubscriberViewControllerBase.c */; };
-		684972A02EACB71B00C9C58A /* GradientHDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E432E9F8A7F00E9F180 /* GradientHDRView.m */; };
-		684972A12EACB71B00C9C58A /* SVG.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7422E93BA3C006F73EA /* SVG.m */; };
-		684972A22EACB71B00C9C58A /* ThermalTunesViewContoller.m in Sources */ = {isa = PBXBuildFile; fileRef = 684575AC2E3E032700618DFD /* ThermalTunesViewContoller.m */; };
-		684972A32EACB71B00C9C58A /* SliderTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 6838BFAB2DC3984C007EB66C /* SliderTableViewCell.m */; };
-		684972A42EACB71B00C9C58A /* SegmentedTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 68336E812EA3891900E9F180 /* SegmentedTextField.m */; };
-		684972A52EACB71B00C9C58A /* BatteryDetailsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */; };
-		684972A62EACB71B00C9C58A /* CompatibilityHelper.c in Sources */ = {isa = PBXBuildFile; fileRef = 68B291332DD1E6960089BA1F /* CompatibilityHelper.c */; };
-		684972A72EACB71B00C9C58A /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD172DE30A8E0057870A /* common.c */; };
-		684972A82EACB71B00C9C58A /* DatePickerCompactButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 683B2C5C2E5F73B800FECDF5 /* DatePickerCompactButton.m */; };
-		684972A92EACB71B00C9C58A /* DonationViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684113FE2E4A3492001B76B6 /* DonationViewController.m */; };
-		684972AA2EACB71B00C9C58A /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 687743342D4E08AD00375A2C /* SettingsViewController.m */; };
-		684972AB2EACB71B00C9C58A /* ChargingLimitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68B291252DC7547B0089BA1F /* ChargingLimitViewController.m */; };
-		684972AC2EACB71B00C9C58A /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
-		684972AD2EACB71B00C9C58A /* libsmc.c in Sources */ = {isa = PBXBuildFile; fileRef = 68171A2F2D5221C400DD4224 /* libsmc.c */; };
-		684972AF2EACB71B00C9C58A /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68B751412E2A468C003C94BC /* SystemConfiguration.framework */; };
-		684972B02EACB71B00C9C58A /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6838BF6E2DB8D89E007EB66C /* WebKit.framework */; };
-		684972B12EACB71B00C9C58A /* intl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; };
-		684972B22EACB71B00C9C58A /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68A3EAFC2D5204EA003381DF /* IOKit.framework */; };
-		684972B42EACB71B00C9C58A /* SF-Pro-Display-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */; };
-		684972B52EACB71B00C9C58A /* BattmanIcons@2x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */; };
-		684972B62EACB71B00C9C58A /* BattmanIcons@3x.artwork in Resources */ = {isa = PBXBuildFile; fileRef = 684575992E3CBD2500618DFD /* BattmanIcons@3x.artwork */; };
-		684972B72EACB71B00C9C58A /* license.html in Resources */ = {isa = PBXBuildFile; fileRef = 6838BF642DB8D06B007EB66C /* license.html */; };
-		684972B82EACB71B00C9C58A /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
 		684972E92EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		684972EA2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		684972EB2EAE1B5F00C9C58A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		684972FC2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FD2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684972FE2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
-		684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972FA2EB2050D00C9C58A /* GradientSDRView.m */; };
 		684973012EB2523C00C9C58A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684973002EB2523C00C9C58A /* CoreGraphics.framework */; };
 		684973062EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
 		684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
 		684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
-		6849730A2EB34BFA00C9C58A /* ThermAniTestViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973052EB348D900C9C58A /* ThermAniTestViewController.m */; };
 		684973322EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
 		684973332EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
 		684973342EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
-		684973352EB3789300C9C58A /* FooterHyperlinkView.m in Sources */ = {isa = PBXBuildFile; fileRef = 684973302EB3789300C9C58A /* FooterHyperlinkView.m */; };
 		684A9EF22D65F0AF006265DC /* intl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		686AECD52D3B93CD0059ECD0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 686AECD42D3B93CD0059ECD0 /* main.m */; };
 		687742B62D43838500375A2C /* locales in Resources */ = {isa = PBXBuildFile; fileRef = 687742B52D43837B00375A2C /* locales */; };
@@ -339,11 +260,9 @@
 		68AC00062F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
 		68AC00082F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
 		68AC000A2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
-		68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
 		68AC00262F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68AC00272F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68AC00282F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
-		68AC00292F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68E210012F20000000001001 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
 		68E210082F20000000001008 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E210092F20000000001009 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
@@ -356,12 +275,6 @@
 		68E2110A2F2000000000110A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
 		68E2110B2F2000000000110B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
 		68E2110C2F2000000000110C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
-		68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
-		68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
-		68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
-		68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
-		68E2120B2F2000000000120B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
-		68E2120C2F2000000000120C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
 		68E213012F20000000001301 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
 		68E213082F20000000001308 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E213092F20000000001309 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
@@ -378,11 +291,6 @@
 		68D101082F10000000000108 /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
 		68D101092F10000000000109 /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
 		68D1010A2F1000000000010A /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
-		68D1010B2F1000000000010B /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
-		68D1010C2F1000000000010C /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
-		68D1010D2F1000000000010D /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
-		68D1010E2F1000000000010E /* BTPluginIdentifiers.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100082F10000000000008 /* BTPluginIdentifiers.m */; };
-		68D1010F2F1000000000010F /* BTPluginRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D1000A2F1000000000000A /* BTPluginRegistry.m */; };
 		68D101102F10000000000110 /* BAAnalyticsBuiltInPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100022F10000000000002 /* BAAnalyticsBuiltInPlugin.m */; };
 		68D101112F10000000000111 /* BTEmbeddedPluginRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100042F10000000000004 /* BTEmbeddedPluginRegistration.m */; };
 		68D101122F10000000000112 /* BTPluginExtensionDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D100062F10000000000006 /* BTPluginExtensionDescriptor.m */; };
@@ -414,19 +322,6 @@
 		68F3110B2F3000000000110B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
 		68F3110C2F3000000000110C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
 		68F3110D2F3000000000110D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
-		68F312012F30000000001201 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
-		68F312022F30000000001202 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
-		68F312032F30000000001203 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
-		68F312042F30000000001204 /* BTPluginMachOInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300092F30000000000009 /* BTPluginMachOInspector.m */; };
-		68F312052F30000000001205 /* BTPluginP256.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000B2F3000000000000B /* BTPluginP256.m */; };
-		68F312062F30000000001206 /* BTPluginPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000D2F3000000000000D /* BTPluginPackageStructuralVerifier.m */; };
-		68F312072F30000000001207 /* BTPluginPackageVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3000F2F3000000000000F /* BTPluginPackageVerifier.m */; };
-		68F312082F30000000001208 /* BTPluginPlatformLoadabilityVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300112F30000000000011 /* BTPluginPlatformLoadabilityVerifier.m */; };
-		68F312092F30000000001209 /* BTPluginSignatureVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300132F30000000000013 /* BTPluginSignatureVerifier.m */; };
-		68F3120A2F3000000000120A /* BTPluginTrustEvaluator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300152F30000000000015 /* BTPluginTrustEvaluator.m */; };
-		68F3120B2F3000000000120B /* BTPluginTrustMetadataVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300172F30000000000017 /* BTPluginTrustMetadataVerifier.m */; };
-		68F3120C2F3000000000120C /* BTPluginTrustStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300192F30000000000019 /* BTPluginTrustStore.m */; };
-		68F3120D2F3000000000120D /* BTPluginOfficialTrustLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F3001B2F3000000000001B /* BTPluginOfficialTrustLoader.m */; };
 		68F313012F30000000001301 /* BTPluginQuarantineStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300022F30000000000002 /* BTPluginQuarantineStore.m */; };
 		68F313022F30000000001302 /* BTPluginPackageErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300042F30000000000004 /* BTPluginPackageErrors.m */; };
 		68F313032F30000000001303 /* BTPluginPackageManifest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F300062F30000000000006 /* BTPluginPackageManifest.m */; };
@@ -460,16 +355,6 @@
 		68F411072F40000000001107 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
 		68F4111E2F4000000000111E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
 		68F411082F40000000001108 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
-		68F412012F40000000001201 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
-		68F412022F40000000001202 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
-		68F412032F40000000001203 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
-		68F412042F40000000001204 /* BTPluginActivationStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400082F40000000000008 /* BTPluginActivationStore.m */; };
-		68F412212F40000000001221 /* BTPluginApplicationDataTransaction.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400222F40000000000022 /* BTPluginApplicationDataTransaction.m */; };
-		68F412052F40000000001205 /* BTPluginNativeImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000A2F4000000000000A /* BTPluginNativeImageLoader.m */; };
-		68F412062F40000000001206 /* BTPluginRuntimeEnvironment.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000C2F4000000000000C /* BTPluginRuntimeEnvironment.m */; };
-		68F412072F40000000001207 /* BTPluginRuntimeLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4000E2F4000000000000E /* BTPluginRuntimeLoader.m */; };
-		68F4121E2F4000000000121E /* BTPluginSafeModeRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001F2F4000000000001F /* BTPluginSafeModeRequest.m */; };
-		68F412082F40000000001208 /* BTPluginSealedPackageStructuralVerifier.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400112F40000000000011 /* BTPluginSealedPackageStructuralVerifier.m */; };
 		68F413012F40000000001301 /* BTPluginPlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400022F40000000000002 /* BTPluginPlatform.m */; };
 		68F413022F40000000001302 /* BTPluginDiscovery.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400042F40000000000004 /* BTPluginDiscovery.m */; };
 		68F413032F40000000001303 /* BTPluginSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400062F40000000000006 /* BTPluginSource.m */; };
@@ -484,8 +369,6 @@
 		68F4100A2F4000000000100A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
 		68F411092F40000000001109 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
 		68F4110A2F4000000000110A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
-		68F412092F40000000001209 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
-		68F4120A2F4000000000120A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
 		68F413092F40000000001309 /* BTPluginApplicationIntegration.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400132F40000000000013 /* BTPluginApplicationIntegration.m */; };
 		68F4130A2F4000000000130A /* BTPluginImportCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400152F40000000000015 /* BTPluginImportCoordinator.m */; };
 		68F4100B2F4000000000100B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
@@ -498,11 +381,6 @@
 		68F411222F40000000001122 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
 		68F4110D2F4000000000110D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
 		68F4110E2F4000000000110E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
-		68F4120B2F4000000000120B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
-		68F4120C2F4000000000120C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
-		68F412222F40000000001222 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
-		68F4120D2F4000000000120D /* BTPluginManagementViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001B2F4000000000001B /* BTPluginManagementViewController.m */; };
-		68F4120E2F4000000000120E /* BTPluginImportPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F4001D2F4000000000001D /* BTPluginImportPresenter.m */; };
 		68F4130B2F4000000000130B /* BTPluginApplicationDataStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400172F40000000000017 /* BTPluginApplicationDataStore.m */; };
 		68F4130C2F4000000000130C /* BTPluginManagementService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400192F40000000000019 /* BTPluginManagementService.m */; };
 		68F413222F40000000001322 /* BTPluginManagementLineage.m in Sources */ = {isa = PBXBuildFile; fileRef = 68F400242F40000000000024 /* BTPluginManagementLineage.m */; };
@@ -542,7 +420,6 @@
 		68BC0A0A2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
 		68BC0A0B2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
 		68BC0A0C2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
-		68BC0A0D2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68BC0A092ED5A43B0046407B /* BrightnessAdvancedViewController.m */; };
 		68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
 		68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
 		68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0C7342E9272F0006F73EA /* AnalyticsViewController.m */; };
@@ -555,97 +432,74 @@
 		68C4FA752EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
 		68C4FA762EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
 		68C4FA772EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
-		68C4FA782EDEB58C005F6542 /* NSBundle+Auto.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA742EDEB58C005F6542 /* NSBundle+Auto.m */; };
 		68C4FA802EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68C4FA812EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68C4FA822EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
-		68C4FA832EDEDF38005F6542 /* CrashLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA7E2EDEDF38005F6542 /* CrashLogger.m */; };
 		68C4FA8C2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
 		68C4FA8D2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
 		68C4FA8E2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
-		68C4FA8F2EE01584005F6542 /* ScrollableDetailCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */; };
 		68CFB5D82EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5D92EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5DA2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
-		68CFB5DB2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */; };
 		68CFB5E32EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
 		68CFB5E42EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
 		68CFB5E52EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
-		68CFB5E62EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */; };
 		68CFB5E92EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
 		68CFB5EA2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
 		68CFB5EB2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
-		68CFB5EC2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5E82EB9F486007ECAC8 /* CALayer+smoothCorners.m */; };
 		68CFB5EF2EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68CFB5F02EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68CFB5F12EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
-		68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */ = {isa = PBXBuildFile; fileRef = 68CFB5EE2EBA02C3007ECAC8 /* UIColor+compat.m */; };
 		68D438C62FF2D52800AE907E /* zh_TW.po in Resources */ = {isa = PBXBuildFile; fileRef = 68D438C22FF2D52800AE907E /* zh_TW.po */; };
 		68D6DEBE2D745DBC00E129A0 /* SegmentedViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D6DEBD2D745DBC00E129A0 /* SegmentedViewCell.m */; };
-		68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */; };
 		68D8007F2EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
 		68D800802EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
 		68D800812EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
-		68D800822EC5A5490012B84A /* backlight-control.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D8007E2EC5A5490012B84A /* backlight-control.c */; };
 		68D800842EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
 		68D800852EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
 		68D800862EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
-		68D800872EC5B8140012B84A /* dcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 68D800832EC5B8140012B84A /* dcp.c */; };
 		68D800BA2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
 		68D800BB2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
 		68D800BC2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
-		68D800BD2EC9CB250012B84A /* BrightnessCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800B92EC9CB250012B84A /* BrightnessCardCell.m */; };
 		68D800C22EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
 		68D800C32EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
 		68D800C42EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
-		68D800C52EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BE2EC9CD6F0012B84A /* TrueToneVectorIcon.m */; };
 		68D800C62EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
 		68D800C72EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
 		68D800C82EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
-		68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D800BF2EC9CD700012B84A /* NightShiftVectorIcon.m */; };
 		68E674482ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
 		68E674492ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
 		68E6744A2ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
-		68E6744B2ECC6D4C006F94DE /* CADisplay.h in Sources */ = {isa = PBXBuildFile; fileRef = 68E674472ECC6D4C006F94DE /* CADisplay.h */; };
 		68E674592ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
 		68E6745A2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
 		68E6745B2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
-		68E6745C2ED05349006F94DE /* VirtBriCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674572ED05349006F94DE /* VirtBriCardCell.m */; };
 		68E6745D2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68E6745E2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68E6745F2ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
-		68E674602ED05349006F94DE /* CardProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674582ED05349006F94DE /* CardProgressView.m */; };
 		68E674922ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
 		68E674932ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
 		68E674942ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
-		68E674952ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674862ED1A01A006F94DE /* IPadHomeButtonVectorIcon.m */; };
 		68E674962ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
 		68E674972ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
 		68E674982ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
-		68E674992ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674872ED1A01A006F94DE /* IPhoneD7VectorIcon.m */; };
 		68E6749A2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
 		68E6749B2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
 		68E6749C2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
-		68E6749D2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E674882ED1A01B006F94DE /* IPhoneVectorIcon.m */; };
 		68E6749E2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
 		68E6749F2ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
 		68E674A02ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
-		68E674A12ED1A01B006F94DE /* IPadVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748A2ED1A01B006F94DE /* IPadVectorIcon.m */; };
 		68E674A22ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
 		68E674A32ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
 		68E674A42ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
-		68E674A52ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748B2ED1A01B006F94DE /* DesktopVectorIcon.m */; };
 		68E674A62ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
 		68E674A72ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
 		68E674A82ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
-		68E674A92ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E6748E2ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m */; };
 		68ECFFBB2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBC2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBD2E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFB42E8D21E500BEAB59 /* PLBatteryUIMoveableGraphView.m */; };
 		68ECFFBE2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
 		68ECFFBF2E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
 		68ECFFC02E8D21E500BEAB59 /* PLGraphViewTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68ECFFBA2E8D21E500BEAB59 /* PLGraphViewTableCell.m */; };
-		68ECFFC12E8D2E9200BEAB59 /* SF-Pro-Display-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */; };
 		68FBDCE82DE1A1D40057870A /* protect.S in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCE72DE1A1D40057870A /* protect.S */; };
 		68FBDCF02DE30A5E0057870A /* worker.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCEF2DE30A5E0057870A /* worker.c */; };
 		68FBDD182DE30A8E0057870A /* CreditViewController.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD162DE30A8E0057870A /* CreditViewController.c */; };
@@ -653,99 +507,75 @@
 		D56D2A03CFB550ADD8C280F7 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
 		8FBCB3818FDA105DD6E1DA53 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
 		5F1E94DEB6318485B577A7DD /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
-		A498CD9A60FA14DD875C8160 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
 		386B1D550E09AB47FB3FB03B /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
 		3CD72F8F45033DE53D6A9B7A /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
 		2FF54132DC11656E170D8B14 /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
-		B3BAC3003BF7EE5E8BE5A7CA /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
 		5AB6D9A669053E5ACCF5779A /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
 		5CAF61CCEE617765BBB6303F /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
 		97A0F293EBB5A9984E782716 /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
-		FDAB166A56B976376A73C6CF /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
 		D68B2F253CE65539A16D482F /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
 		36FFF99843FD509C968E8712 /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
 		CC6298D71D4C97B677D8767F /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
-		6DBA63D20AF6E78AE2953119 /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
 		3A542CE8EF01B07F205CC426 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
 		4E31FEB53E82AE7DBE2E3238 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
 		83EC942677111C86D111AC77 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
-		F033E6F3275CA430686DEC58 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
 		DD58FD8D529721D1AFDDEA4E /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
 		F5CA8DADFA3892DD9BFD1A66 /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
 		5A9392A3EC27CE6842D1C93B /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
-		38CEA7DDDE3F3FF319D06FE8 /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
 		E80E065017262F5EC010EBF8 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
 		D937E36F44920D74E119C0D2 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
 		10AD9787FD679A6598B2E722 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
-		5B192BEFC91C1971A72AA577 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
 		C6B559F52CFAA676AF66B2FC /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
 		A8EE21076AFBED09A691BFF6 /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
 		3DF71DAADC83FB31EDE8535B /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
-		88D02E902DB519A56C36E402 /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
 		F85CDA03DD7B8F96F4BEB738 /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
 		43B52B98F937AFF2302834CC /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
 		4AFCAC85216E4813EEF00037 /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
-		03D1F63143CDECEEE314581F /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
 		1C6F7FE449BAD78C100248A3 /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
 		3BD607127416DB1FBF1BB72A /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
 		1F316BDC84E49008EAE495E6 /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
-		31D03C105FDF8869863E500A /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
 		DD0E3C8881E443E727B63EF1 /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
 		68F7CC62093BD4EE619284CC /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
 		CD0778665BA56B13C9413A08 /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
-		C45B542F950B99E7FD85FCAF /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
 		2B17849BC21A4F8F1F38875E /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
 		19BE070E1F42F665DE65F728 /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
 		08490C7888EC43C3CC4C5B2F /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
-		671BB500E87CDEB674F0B0BB /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
 		58607627EA578D60CF474514 /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
 		32C1AEE5BAB09CEAFA25A28F /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
 		38B8998B7C71701AAFDF6B08 /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
-		9B320D313DAA9186BFD1DCCA /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
 		31B457195851F6D8F684403A /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
 		42C6C7AE9E20F6498C34949E /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
 		8D9EA0A95D922B83BE2F3B82 /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
-		D27A9BEB8B99879FB7B33F80 /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
 		E6A69E1B3A3DD7F88D06E372 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
 		65805D55EB4B74ADDC77ABE1 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
 		5690B9D5DFC55DABDDBB32D3 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
-		2F3C5B569E7C8F5369E47AA5 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
 		3FE6AED6E32F51376B2F380B /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
 		FB7F4325E2023D074104E40C /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
 		AAA12C7436C37AAA7858988D /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
-		F714DF0F719AB117353819E3 /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
 		28985862965AE893F0E9620A /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
 		C6BDACBD803E27B773B87637 /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
 		63495A9023ADC68E5863BDCB /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
-		0857F94F0230805A73E08FA2 /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
 		5BC7F32EF77712C02079C9DC /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
 		F22ECDB351BAABEC3E1F3E86 /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
 		14714D72831DF7AE30F5AA87 /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
-		55B50E75FDEE95905E8BAFDF /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
 		E00CFBA8430E7CACB49CA490 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
 		241F0992C60AFAB5CC4B5D16 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
 		26953ECB53D7513328BDCEF2 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
-		ECD8D4D8F2B9D00C971FF269 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
 		0338FFEEDAC99C69B4563345 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
 		71C67EC960F4DAA86996AD72 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
 		30BEBC305F4E24BF6D11C775 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
-		9B67FA3EC7F1CBC35205E2A2 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
 		B91FFC2CE3527C07C510F79D /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
 		9C7DD3F3F96239E50D3A1815 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
 		841F5825E74B8958BB3B39B0 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
-		C86B90B5686D2E9F620409C4 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
 		D15AE354143DF7759E067B0B /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
 		DC41181A4C108244F86683DF /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
 		B84469E162E19539B6310433 /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
-		729B45E9F2550A591C861DE4 /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
 		36D2E720E72461E42708031D /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
 		166CEBDD245D2603A445E578 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
 		B60C2B81DAC918C99D4B1897 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
-		7454B67C95FFD2D59005B106 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
 		7D160DE162F3278904EDB11D /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 		BEAE9CBC4F6F1EA66AE046D6 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 		D781FFF568227DB57A07FAC7 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
-		A38401A3B313BDABCE8C7296 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -848,6 +678,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B7D157A10000000000000001 /* Distribution.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Distribution.m; sourceTree = "<group>"; };
 		68171A2E2D5221C400DD4224 /* libsmc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libsmc.h; sourceTree = "<group>"; };
 		68171A2F2D5221C400DD4224 /* libsmc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = libsmc.c; sourceTree = "<group>"; };
 		68171A322D534E6B00DD4224 /* BatteryDetailsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BatteryDetailsViewController.m; sourceTree = "<group>"; };
@@ -2184,8 +2015,6 @@
 		6846114F2E0D5250006B651D /* IOMFB_interaction.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = IOMFB_interaction.c; sourceTree = "<group>"; };
 		6849725E2EACA13300C9C58A /* UITextFieldStepper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UITextFieldStepper.m; sourceTree = "<group>"; };
 		684972622EACA13300C9C58A /* UITextFieldStepper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UITextFieldStepper.h; sourceTree = "<group>"; };
-		684972BD2EACB71B00C9C58A /* Battman.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Battman.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		684972BE2EACB71D00C9C58A /* Battman-havoc-tipa-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Battman-havoc-tipa-Info.plist"; sourceTree = "<group>"; };
 		684972E72EAE1B5F00C9C58A /* LanguageSelectionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LanguageSelectionViewController.h; sourceTree = "<group>"; };
 		684972E82EAE1B5F00C9C58A /* LanguageSelectionViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LanguageSelectionViewController.m; sourceTree = "<group>"; };
 		684972EC2EAF482500C9C58A /* de.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = de.po; sourceTree = "<group>"; };
@@ -2402,7 +2231,6 @@
 		68C4FA7F2EDEDF38005F6542 /* CrashLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrashLogger.h; sourceTree = "<group>"; };
 		68C4FA8A2EE01584005F6542 /* ScrollableDetailCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ScrollableDetailCell.h; sourceTree = "<group>"; };
 		68C4FA8B2EE01584005F6542 /* ScrollableDetailCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScrollableDetailCell.m; sourceTree = "<group>"; };
-		68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "SF-Pro-Display-Regular.otf"; path = "../SF-Pro-Display-Regular.otf"; sourceTree = "<group>"; };
 		68CFB5D62EB8A4ED007ECAC8 /* libbrightness.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libbrightness.h; sourceTree = "<group>"; };
 		68CFB5D72EB8A4ED007ECAC8 /* BSC_Provider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BSC_Provider.m; sourceTree = "<group>"; };
 		68CFB5E12EB9F3D7007ECAC8 /* ColorSegProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ColorSegProgressView.m; sourceTree = "<group>"; };
@@ -2546,17 +2374,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		684972AE2EACB71B00C9C58A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				684972AF2EACB71B00C9C58A /* SystemConfiguration.framework in Frameworks */,
-				684972B02EACB71B00C9C58A /* WebKit.framework in Frameworks */,
-				684972B12EACB71B00C9C58A /* intl.framework in Frameworks */,
-				684972B22EACB71B00C9C58A /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -14481,7 +14298,6 @@
 				687743162D461E5100375A2C /* Frameworks */,
 				684114C72E5323E4001B76B6 /* Battman-nonfree.plist */,
 				6841151D2E57BDE9001B76B6 /* Battman-havoc.plist */,
-				684972BE2EACB71D00C9C58A /* Battman-havoc-tipa-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -14495,7 +14311,6 @@
 				684575A32E3D4AAC00618DFD /* thermtune */,
 				684114C62E5323E2001B76B6 /* Battman.app */,
 				6841151C2E57BDE7001B76B6 /* Battman.app */,
-				684972BD2EACB71B00C9C58A /* Battman.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -14508,12 +14323,12 @@
 				68336DE82E979C4400E9F180 /* CGIconSet */,
 				68C0C7392E93B4FF006F73EA /* Helpers */,
 				6838BF632DB8D06B007EB66C /* license */,
-				68CC02872DB3C57B00914051 /* SF-Pro-Display-Regular.otf */,
 				68AE40A42D8EB7710023D7B0 /* CustomUIElements */,
 				687742B52D43837B00375A2C /* locales */,
 				68DCA5B42D40EDE8004D0104 /* Localizations */,
 				686AECD32D3B93CD0059ECD0 /* Info.plist */,
 				686AECD42D3B93CD0059ECD0 /* main.m */,
+				B7D157A10000000000000001 /* Distribution.m */,
 				68DCA5602D3D0AC5004D0104 /* main.h */,
 				68FBDD172DE30A8E0057870A /* common.c */,
 				68DCA5AA2D3F935E004D0104 /* common.h */,
@@ -15205,26 +15020,6 @@
 			productReference = 684575A32E3D4AAC00618DFD /* thermtune */;
 			productType = "com.apple.product-type.tool";
 		};
-		684972662EACB71B00C9C58A /* Battman-havoc-tipa */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 684972BA2EACB71B00C9C58A /* Build configuration list for PBXNativeTarget "Battman-havoc-tipa" */;
-			buildPhases = (
-				684972692EACB71B00C9C58A /* Generate Sources */,
-				6849726A2EACB71B00C9C58A /* Sources */,
-				684972AE2EACB71B00C9C58A /* Frameworks */,
-				684972B32EACB71B00C9C58A /* Resources */,
-				684972B92EACB71B00C9C58A /* ShellScript */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				684972672EACB71B00C9C58A /* PBXTargetDependency */,
-			);
-			name = "Battman-havoc-tipa";
-			productName = Battman;
-			productReference = 684972BD2EACB71B00C9C58A /* Battman.app */;
-			productType = "com.apple.product-type.application";
-		};
 		686AECBE2D3B93CB0059ECD0 /* Battman */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 686AECD82D3B93CD0059ECD0 /* Build configuration list for PBXNativeTarget "Battman" */;
@@ -15367,7 +15162,6 @@
 				684575A22E3D4AAB00618DFD /* thermtune */,
 				684114802E5323E2001B76B6 /* Battman-nonfree */,
 				684114D62E57BDE7001B76B6 /* Battman-havoc */,
-				684972662EACB71B00C9C58A /* Battman-havoc-tipa */,
 			);
 		};
 /* End PBXProject section */
@@ -15401,7 +15195,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68ECFFC12E8D2E9200BEAB59 /* SF-Pro-Display-Regular.otf in Resources */,
 				684114BE2E5323E2001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684114BF2E5323E2001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684114C02E5323E2001B76B6 /* license.html in Resources */,
@@ -15413,23 +15206,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6841151E2E57BEAF001B76B6 /* SF-Pro-Display-Regular.otf in Resources */,
 				684115142E57BDE7001B76B6 /* BattmanIcons@2x.artwork in Resources */,
 				684115152E57BDE7001B76B6 /* BattmanIcons@3x.artwork in Resources */,
 				684115162E57BDE7001B76B6 /* license.html in Resources */,
 				684115172E57BDE7001B76B6 /* locales in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		684972B32EACB71B00C9C58A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				684972B42EACB71B00C9C58A /* SF-Pro-Display-Regular.otf in Resources */,
-				684972B52EACB71B00C9C58A /* BattmanIcons@2x.artwork in Resources */,
-				684972B62EACB71B00C9C58A /* BattmanIcons@3x.artwork in Resources */,
-				684972B72EACB71B00C9C58A /* license.html in Resources */,
-				684972B82EACB71B00C9C58A /* locales in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15568,46 +15348,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
 		};
-		684972692EACB71B00C9C58A /* Generate Sources */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Battman/license/license.html",
-			);
-			name = "Generate Sources";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/constants.c",
-				"$(DERIVED_FILE_DIR)/BattmanBuildIdentity.json",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/Scripts/Build/generate-xcode-sources.sh\"";
-		};
-		684972B92EACB71B00C9C58A /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\"";
-		};
 		687742AF2D437EEA00375A2C /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -15695,6 +15435,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B7D157A10000000000000003 /* Distribution.m in Sources */,
 				30BEBC305F4E24BF6D11C775 /* BAAnalyticsReport.m in Sources */,
 				26953ECB53D7513328BDCEF2 /* BAAnalyticsHistoryService.m in Sources */,
 				14714D72831DF7AE30F5AA87 /* BAAnalyticsHistoryReader.m in Sources */,
@@ -15864,6 +15605,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B7D157A10000000000000004 /* Distribution.m in Sources */,
 				71C67EC960F4DAA86996AD72 /* BAAnalyticsReport.m in Sources */,
 				241F0992C60AFAB5CC4B5D16 /* BAAnalyticsHistoryService.m in Sources */,
 				F22ECDB351BAABEC3E1F3E86 /* BAAnalyticsHistoryReader.m in Sources */,
@@ -16037,179 +15779,11 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6849726A2EACB71B00C9C58A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				9B67FA3EC7F1CBC35205E2A2 /* BAAnalyticsReport.m in Sources */,
-				ECD8D4D8F2B9D00C971FF269 /* BAAnalyticsHistoryService.m in Sources */,
-				55B50E75FDEE95905E8BAFDF /* BAAnalyticsHistoryReader.m in Sources */,
-				0857F94F0230805A73E08FA2 /* BAAnalyticsHistoryModels.m in Sources */,
-				F714DF0F719AB117353819E3 /* BAStatisticsCanvasCards.m in Sources */,
-				A38401A3B313BDABCE8C7296 /* BAAnalyticsRhythmCanvasCard.m in Sources */,
-				7454B67C95FFD2D59005B106 /* BAAnalyticsCompareCanvasCard.m in Sources */,
-				729B45E9F2550A591C861DE4 /* BAAnalyticsDwellCanvasCard.m in Sources */,
-				C86B90B5686D2E9F620409C4 /* BAStatisticsDrawing.m in Sources */,
-				2F3C5B569E7C8F5369E47AA5 /* BAStatisticsAnalysis.m in Sources */,
-				D27A9BEB8B99879FB7B33F80 /* BAAnalyticsSessionCanvasCard.m in Sources */,
-				9B320D313DAA9186BFD1DCCA /* BAAnalyticsProcessDrawing.m in Sources */,
-				671BB500E87CDEB674F0B0BB /* BAAnalyticsProcessCanvasCards.m in Sources */,
-				C45B542F950B99E7FD85FCAF /* BAAnalyticsPathCanvasCard.m in Sources */,
-				31D03C105FDF8869863E500A /* BAAnalyticsEventsCanvasCard.m in Sources */,
-				03D1F63143CDECEEE314581F /* BAAnalyticsDischargeCanvasCard.m in Sources */,
-				88D02E902DB519A56C36E402 /* BAAnalyticsLiveDrawing.m in Sources */,
-				5B192BEFC91C1971A72AA577 /* BAAnalyticsLiveCanvasCard.m in Sources */,
-				38CEA7DDDE3F3FF319D06FE8 /* BAAnalyticsCellsCanvasCard.m in Sources */,
-				F033E6F3275CA430686DEC58 /* BAAnalyticsCapacityCanvasCard.m in Sources */,
-				6DBA63D20AF6E78AE2953119 /* BAAnalyticsDetailViewController.m in Sources */,
-				FDAB166A56B976376A73C6CF /* BAAnalyticsDetailSelection.m in Sources */,
-				B3BAC3003BF7EE5E8BE5A7CA /* BAAnalyticsCanvasView.m in Sources */,
-				A498CD9A60FA14DD875C8160 /* BAAnalyticsCanvasCard.m in Sources */,
-				6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */,
-				6849726C2EACB71B00C9C58A /* thermal.c in Sources */,
-				68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */,
-				68C4FA8F2EE01584005F6542 /* ScrollableDetailCell.m in Sources */,
-				68D800822EC5A5490012B84A /* backlight-control.c in Sources */,
-				6849726D2EACB71B00C9C58A /* UILabel+SFSymbolsOverride.m in Sources */,
-				68D800C52EC9CD700012B84A /* TrueToneVectorIcon.m in Sources */,
-				6849726E2EACB71B00C9C58A /* SegmentButton.m in Sources */,
-				6849726F2EACB71B00C9C58A /* BatteryCellView.m in Sources */,
-				684972702EACB71B00C9C58A /* UPSMonitor.m in Sources */,
-				684972712EACB71B00C9C58A /* ChargingManagementViewController.m in Sources */,
-				68E674992ED1A01B006F94DE /* IPhoneD7VectorIcon.m in Sources */,
-				684972722EACB71B00C9C58A /* BatteryInfoTableViewCell.m in Sources */,
-				684972732EACB71B00C9C58A /* selfcheck.c in Sources */,
-				684972742EACB71B00C9C58A /* UITextFieldStepper.m in Sources */,
-				684972752EACB71B00C9C58A /* accessory.c in Sources */,
-				684972762EACB71B00C9C58A /* Constants.m in Sources */,
-				684972772EACB71B00C9C58A /* MultiSelectSegmentedControl.m in Sources */,
-				684972782EACB71B00C9C58A /* DividerView.m in Sources */,
-				68E674A92ED1A01B006F94DE /* IPhoneHomeButtonVectorIcon.m in Sources */,
-				684972792EACB71B00C9C58A /* DatePickerTableViewCell.m in Sources */,
-				68E6745C2ED05349006F94DE /* VirtBriCardCell.m in Sources */,
-				6849727A2EACB71B00C9C58A /* BattmanVectorIcon.m in Sources */,
-				6849727B2EACB71B00C9C58A /* DonationPrompter.m in Sources */,
-				6849727C2EACB71B00C9C58A /* hid.m in Sources */,
-				6849727D2EACB71B00C9C58A /* BrightnessDetailsViewController.m in Sources */,
-				68C4FA782EDEB58C005F6542 /* NSBundle+Auto.m in Sources */,
-				6849727E2EACB71B00C9C58A /* UIImage+SVG.m in Sources */,
-				6849727F2EACB71B00C9C58A /* wrapper.c in Sources */,
-				684972802EACB71B00C9C58A /* NSData+HexString.m in Sources */,
-				684973352EB3789300C9C58A /* FooterHyperlinkView.m in Sources */,
-				68E674A52ED1A01B006F94DE /* DesktopVectorIcon.m in Sources */,
-				684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */,
-				684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */,
-				68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
-				68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */,
-				68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */,
-				68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */,
-				68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */,
-				68E2120B2F2000000000120B /* BAAnalyticsUnavailableCard.m in Sources */,
-				68E2120C2F2000000000120C /* BAAnalyticsMetricSnapshot.m in Sources */,
-				68AC00292F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */,
-				68D1010B2F1000000000010B /* BAAnalyticsBuiltInPlugin.m in Sources */,
-				68D1010C2F1000000000010C /* BTEmbeddedPluginRegistration.m in Sources */,
-				68D1010D2F1000000000010D /* BTPluginExtensionDescriptor.m in Sources */,
-				68D1010E2F1000000000010E /* BTPluginIdentifiers.m in Sources */,
-				68D1010F2F1000000000010F /* BTPluginRegistry.m in Sources */,
-				68F312012F30000000001201 /* BTPluginQuarantineStore.m in Sources */,
-				68F312022F30000000001202 /* BTPluginPackageErrors.m in Sources */,
-				68F312032F30000000001203 /* BTPluginPackageManifest.m in Sources */,
-				68F312042F30000000001204 /* BTPluginMachOInspector.m in Sources */,
-				68F312052F30000000001205 /* BTPluginP256.m in Sources */,
-				68F312062F30000000001206 /* BTPluginPackageStructuralVerifier.m in Sources */,
-				68F312072F30000000001207 /* BTPluginPackageVerifier.m in Sources */,
-				68F312082F30000000001208 /* BTPluginPlatformLoadabilityVerifier.m in Sources */,
-				68F312092F30000000001209 /* BTPluginSignatureVerifier.m in Sources */,
-				68F3120A2F3000000000120A /* BTPluginTrustEvaluator.m in Sources */,
-				68F3120B2F3000000000120B /* BTPluginTrustMetadataVerifier.m in Sources */,
-				68F3120C2F3000000000120C /* BTPluginTrustStore.m in Sources */,
-				68F3120D2F3000000000120D /* BTPluginOfficialTrustLoader.m in Sources */,
-				68F412012F40000000001201 /* BTPluginPlatform.m in Sources */,
-				68F412022F40000000001202 /* BTPluginDiscovery.m in Sources */,
-				68F412032F40000000001203 /* BTPluginSource.m in Sources */,
-				68F412042F40000000001204 /* BTPluginActivationStore.m in Sources */,
-				68F412212F40000000001221 /* BTPluginApplicationDataTransaction.m in Sources */,
-				68F412052F40000000001205 /* BTPluginNativeImageLoader.m in Sources */,
-				68F412062F40000000001206 /* BTPluginRuntimeEnvironment.m in Sources */,
-				68F412072F40000000001207 /* BTPluginRuntimeLoader.m in Sources */,
-				68F4121E2F4000000000121E /* BTPluginSafeModeRequest.m in Sources */,
-				68F412082F40000000001208 /* BTPluginSealedPackageStructuralVerifier.m in Sources */,
-				68F412092F40000000001209 /* BTPluginApplicationIntegration.m in Sources */,
-				68F4120A2F4000000000120A /* BTPluginImportCoordinator.m in Sources */,
-				68F4120B2F4000000000120B /* BTPluginApplicationDataStore.m in Sources */,
-				68F4120C2F4000000000120C /* BTPluginManagementService.m in Sources */,
-				68F412222F40000000001222 /* BTPluginManagementLineage.m in Sources */,
-				68F4120D2F4000000000120D /* BTPluginManagementViewController.m in Sources */,
-				68F4120E2F4000000000120E /* BTPluginImportPresenter.m in Sources */,
-				684972832EACB71B00C9C58A /* SimpleTemperatureViewController.m in Sources */,
-				684972842EACB71B00C9C58A /* localized.c in Sources */,
-				684972852EACB71B00C9C58A /* BatteryInfoViewController.m in Sources */,
-				684972862EACB71B00C9C58A /* BattmanPrefs.m in Sources */,
-				6849730A2EB34BFA00C9C58A /* ThermAniTestViewController.m in Sources */,
-				684972872EACB71B00C9C58A /* licensing.S in Sources */,
-				684972882EACB71B00C9C58A /* SPWaterProgressIndicatorView.m in Sources */,
-				684972892EACB71B00C9C58A /* WarnAccessoryView.m in Sources */,
-				6849728A2EACB71B00C9C58A /* main.m in Sources */,
-				6849728B2EACB71B00C9C58A /* StackViewGestureHandler.m in Sources */,
-				6849728C2EACB71B00C9C58A /* PLGraphViewTableCell.m in Sources */,
-				6849728D2EACB71B00C9C58A /* protect.S in Sources */,
-				6849728E2EACB71B00C9C58A /* TemperatureInfoTableViewCell.m in Sources */,
-				6849728F2EACB71B00C9C58A /* CreditViewController.c in Sources */,
-				684972902EACB71B00C9C58A /* worker.c in Sources */,
-				68CFB5DB2EB8A4ED007ECAC8 /* BSC_Provider.m in Sources */,
-				684972912EACB71B00C9C58A /* BrightnessInfoTableViewCell.m in Sources */,
-				684972922EACB71B00C9C58A /* MultilineViewCell.m in Sources */,
-				684972932EACB71B00C9C58A /* UIView+Fill.m in Sources */,
-				684972942EACB71B00C9C58A /* PreferencesViewController.m in Sources */,
-				684972952EACB71B00C9C58A /* UberSegmentedControl.m in Sources */,
-				684972962EACB71B00C9C58A /* SegmentedViewCell.m in Sources */,
-				684972972EACB71B00C9C58A /* FullSMCViewController.m in Sources */,
-				684972982EACB71B00C9C58A /* daemon.c in Sources */,
-				684972992EACB71B00C9C58A /* battery_info.c in Sources */,
-				68F000052F00000000000005 /* bin_display.m in Sources */,
-				68F100052F20000000000005 /* battery_diagnostics.c in Sources */,
-				68D800C92EC9CD700012B84A /* NightShiftVectorIcon.m in Sources */,
-				68D800872EC5B8140012B84A /* dcp.c in Sources */,
-				6849729A2EACB71B00C9C58A /* IOMFB_interaction.c in Sources */,
-				6849729B2EACB71B00C9C58A /* pmnotification.c in Sources */,
-				68CFB5EC2EB9F486007ECAC8 /* CALayer+smoothCorners.m in Sources */,
-				6849729C2EACB71B00C9C58A /* PickerAccessoryView.m in Sources */,
-				684972FF2EB2050E00C9C58A /* GradientSDRView.m in Sources */,
-				6849729D2EACB71B00C9C58A /* UIScreen+Auto.m in Sources */,
-				6849729E2EACB71B00C9C58A /* GradientArcView.m in Sources */,
-				68D800BD2EC9CB250012B84A /* BrightnessCardCell.m in Sources */,
-				6849729F2EACB71B00C9C58A /* BatterySubscriberViewControllerBase.c in Sources */,
-				68C4FA832EDEDF38005F6542 /* CrashLogger.m in Sources */,
-				684972A02EACB71B00C9C58A /* GradientHDRView.m in Sources */,
-				684972A12EACB71B00C9C58A /* SVG.m in Sources */,
-				684972A22EACB71B00C9C58A /* ThermalTunesViewContoller.m in Sources */,
-				684972A32EACB71B00C9C58A /* SliderTableViewCell.m in Sources */,
-				68E6749D2ED1A01B006F94DE /* IPhoneVectorIcon.m in Sources */,
-				68E674A12ED1A01B006F94DE /* IPadVectorIcon.m in Sources */,
-				684972A42EACB71B00C9C58A /* SegmentedTextField.m in Sources */,
-				68CFB5F22EBA02C3007ECAC8 /* UIColor+compat.m in Sources */,
-				684972A52EACB71B00C9C58A /* BatteryDetailsViewController.m in Sources */,
-				684972A62EACB71B00C9C58A /* CompatibilityHelper.c in Sources */,
-				684972A72EACB71B00C9C58A /* common.c in Sources */,
-				68BC0A0D2ED5A43B0046407B /* BrightnessAdvancedViewController.m in Sources */,
-				684972A82EACB71B00C9C58A /* DatePickerCompactButton.m in Sources */,
-				684972A92EACB71B00C9C58A /* DonationViewController.m in Sources */,
-				68E674952ED1A01B006F94DE /* IPadHomeButtonVectorIcon.m in Sources */,
-				68E6744B2ECC6D4C006F94DE /* CADisplay.h in Sources */,
-				684972AA2EACB71B00C9C58A /* SettingsViewController.m in Sources */,
-				684972AB2EACB71B00C9C58A /* ChargingLimitViewController.m in Sources */,
-				684972AC2EACB71B00C9C58A /* PLBatteryUIMoveableGraphView.m in Sources */,
-				68E674602ED05349006F94DE /* CardProgressView.m in Sources */,
-				684972AD2EACB71B00C9C58A /* libsmc.c in Sources */,
-				68CFB5E62EB9F3D7007ECAC8 /* ColorSegProgressView.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		686AECBB2D3B93CB0059ECD0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B7D157A10000000000000002 /* Distribution.m in Sources */,
 				0338FFEEDAC99C69B4563345 /* BAAnalyticsReport.m in Sources */,
 				E00CFBA8430E7CACB49CA490 /* BAAnalyticsHistoryService.m in Sources */,
 				5BC7F32EF77712C02079C9DC /* BAAnalyticsHistoryReader.m in Sources */,
@@ -16416,11 +15990,6 @@
 			isa = PBXTargetDependency;
 			target = 687742AB2D437EE400375A2C /* Gettext Localizations */;
 			targetProxy = 684114D82E57BDE7001B76B6 /* PBXContainerItemProxy */;
-		};
-		684972672EACB71B00C9C58A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 687742AB2D437EE400375A2C /* Gettext Localizations */;
-			targetProxy = 684972682EACB71B00C9C58A /* PBXContainerItemProxy */;
 		};
 		687742B82D43866400375A2C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -16676,121 +16245,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		684972BB2EACB71B00C9C58A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 687743192D46359200375A2C /* Config.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
-				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_INTEGER = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES;
-				CODE_SIGN_ENTITLEMENTS = "$(PROJECT_DIR)/Battman.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
-				CODE_SIGN_STYLE = Manual;
-				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
-				DEVELOPMENT_TEAM = "";
-				ENABLE_BITCODE = NO;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
-					"DEBUG=1",
-					"USE_GETTEXT=1",
-					"USE_ORIG_BUNDLE=1",
-					"DISABLE_PROTECT=1",
-				);
-				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
-				INFOPLIST_FILE = "Battman-havoc-tipa-Info.plist";
-				INSTALL_GROUP = "$(GROUP)";
-				INSTALL_OWNER = "$(USER)";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-				);
-				LLVM_LTO = YES;
-				LOCALIZED_STRING_MACRO_NAMES = _;
-				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MARKETING_VERSION = "$(BATTMAN_VERSION)";
-				OTHER_CFLAGS = (
-					"$(CUSTOM_CFLAGS)",
-					"-DLICENSE=LICENSE_NONFREE",
-					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
-					"-DUSE_MOBILEGESTALT",
-				);
-				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
-				PRODUCT_NAME = Battman;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_FILE = "$(PRODUCT_NAME)_vers.c";
-				WARNING_CFLAGS = "$(NO_WARN_CFLAGS)";
-			};
-			name = Debug;
-		};
-		684972BC2EACB71B00C9C58A /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 687743192D46359200375A2C /* Config.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
-				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_INTEGER = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES;
-				CODE_SIGN_ENTITLEMENTS = "$(PROJECT_DIR)/Battman.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
-				CODE_SIGN_STYLE = Manual;
-				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = "$(BATTMAN_VERSION)";
-				DEVELOPMENT_TEAM = "";
-				ENABLE_BITCODE = NO;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"BATTMAN_TEXTDOMAIN=\\\"battman\\\"",
-					"USE_GETTEXT=1",
-					"USE_ORIG_BUNDLE=1",
-					"DISABLE_PROTECT=1",
-				);
-				HEADER_SEARCH_PATHS = "$(DERIVED_FILE_DIR)";
-				INFOPLIST_FILE = "Battman-havoc-tipa-Info.plist";
-				INSTALL_GROUP = "$(GROUP)";
-				INSTALL_OWNER = "$(USER)";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-				);
-				LLVM_LTO = YES;
-				LOCALIZED_STRING_MACRO_NAMES = _;
-				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MARKETING_VERSION = "$(BATTMAN_VERSION)";
-				OTHER_CFLAGS = (
-					"$(CUSTOM_CFLAGS)",
-					"-DLICENSE=LICENSE_NONFREE",
-					"-DNONFREE_TYPE=NONFREE_TYPE_HAVOC",
-					"-DUSE_MOBILEGESTALT",
-				);
-				OTHER_LDFLAGS = "$(OLDFL) $(BATTMAN_BUILD_IDENTITY_LDFLAGS)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.torrekie.Battman;
-				PRODUCT_NAME = Battman;
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_FILE = "$(PRODUCT_NAME)_vers.c";
-				WARNING_CFLAGS = "$(NO_WARN_CFLAGS)";
 			};
 			name = Release;
 		};
@@ -17204,15 +16658,6 @@
 			buildConfigurations = (
 				684575A82E3D4AAC00618DFD /* Debug */,
 				684575A92E3D4AAC00618DFD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		684972BA2EACB71B00C9C58A /* Build configuration list for PBXNativeTarget "Battman-havoc-tipa" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				684972BB2EACB71B00C9C58A /* Debug */,
-				684972BC2EACB71B00C9C58A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
