@@ -50,7 +50,6 @@
 
 /* Begin PBXFileReference section */
 		687742F42D44E40700375A2C /* intl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = intl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		687742F82D44E40700375A2C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		687742FE2D44E61600375A2C /* libintl-iphoneos.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libintl-iphoneos.a"; sourceTree = "<group>"; };
 		687742FF2D44EACC00375A2C /* libintl-iphonesimulator.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libintl-iphonesimulator.a"; sourceTree = "<group>"; };
 		687743012D46143700375A2C /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
@@ -96,7 +95,6 @@
 		687742F62D44E40700375A2C /* intl */ = {
 			isa = PBXGroup;
 			children = (
-				687742F82D44E40700375A2C /* Info.plist */,
 				6877430D2D4619E600375A2C /* libintl.h */,
 			);
 			path = intl;
@@ -387,7 +385,9 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				INFOPLIST_FILE = intl/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = intl;
+				MARKETING_VERSION = 0.23;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";
@@ -470,7 +470,9 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
-				INFOPLIST_FILE = intl/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = intl;
+				MARKETING_VERSION = 0.23;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_DYLIB_INSTALL_NAME = "$(DYLIB_INSTALL_NAME_BASE:standardizepath)/$(EXECUTABLE_PATH)";

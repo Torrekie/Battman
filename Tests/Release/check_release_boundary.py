@@ -36,6 +36,8 @@ if project.count("/* Distribution.m in Sources */ =") != 3:
 if project.count('/* intl.framework in Embed Frameworks */ =') != 3:
     fail("every Xcode app target must embed its gettext runtime")
 intl_project = (ROOT / "gettext.xcodeproj/project.pbxproj").read_text(encoding="utf-8")
+if "intl/Info.plist" in intl_project or intl_project.count("GENERATE_INFOPLIST_FILE = YES;") != 2:
+    fail("gettext framework metadata must be generated without local inputs")
 gettext_builder = (ROOT / "Scripts/Build/build-gettext.sh").read_text(encoding="utf-8")
 for required in (
     "bf31a9b6bdf3e364669c7bd9858f97e4a0c408a8d22940c5d4ab638b65460f85",
