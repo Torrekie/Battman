@@ -16,6 +16,7 @@ FOUNDATION_EXPORT NSString *BALiveTime(NSDate * _Nullable date);
 FOUNDATION_EXPORT NSString *BALiveWindow(NSDate * _Nullable start, NSDate * _Nullable end);
 FOUNDATION_EXPORT NSString *BALiveAge(NSDate * _Nullable timestamp);
 FOUNDATION_EXPORT void BALiveHatch(CGRect rect);
+FOUNDATION_EXPORT void BALiveHatchRegions(CGRect bounds, NSArray<NSValue *> *rectangles);
 FOUNDATION_EXPORT void BALiveLine(CGPoint start, CGPoint end, UIColor *color, CGFloat width, BOOL dashed);
 FOUNDATION_EXPORT BAAnalyticsDetailSelection *BALiveSelection(BAAnalyticsCanvasView *view, NSString *kind, NSArray<NSString *> * _Nullable records, NSArray<NSString *> * _Nullable metrics, NSDate * _Nullable start, NSDate * _Nullable end, NSDictionary * _Nullable context);
 FOUNDATION_EXPORT id<BAAnalyticsCard> BAAnalyticsCreateCapacityCanvasCard(void);

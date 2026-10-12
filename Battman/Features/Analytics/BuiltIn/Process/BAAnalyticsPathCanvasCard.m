@@ -4,9 +4,23 @@
 #include <math.h>
 
 @interface BAAnalyticsPathCanvasView : BAAnalyticsCanvasView
+@property (nonatomic, weak) BAAnalyticsFamilyReport *preparedFamily;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, id> *preparedLatest;
+@property (nonatomic) BOOL preparedTraceRange;
+@property (nonatomic) double preparedTraceMinimum;
+@property (nonatomic) double preparedTraceMaximum;
 @end
 
 @implementation BAAnalyticsPathCanvasView
+
+- (void)setLatestReport:(BAAnalyticsReport *)latestReport {
+    if (!latestReport || latestReport != self.latestReport) {
+        self.preparedFamily = nil; self.preparedLatest = nil;
+        self.preparedTraceRange = NO; self.preparedTraceMinimum = 0; self.preparedTraceMaximum = 0;
+        BAProcessClearDisplayCaches(self);
+    }
+    [super setLatestReport:latestReport];
+}
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if ((self = [super initWithFrame:frame])) {
@@ -26,6 +40,13 @@
 // Every point is selected independently from normalized rows. This never
 // pretends that input and battery readings occurred at the same timestamp.
 - (BAAnalyticsObservation *)latestObservationForMetric:(NSString *)metric report:(BAAnalyticsFamilyReport *)family {
+    if (self.preparedFamily != family || !self.preparedLatest) {
+        self.preparedFamily = family;
+        self.preparedLatest = [NSMutableDictionary dictionary];
+        self.preparedTraceRange = NO;
+    }
+    id cached = self.preparedLatest[metric];
+    if (cached) return cached == NSNull.null ? nil : cached;
     BAAnalyticsObservation *latest = nil;
     id payload = family.payload[BAAnalyticsPayloadLatestObservation];
     if ([payload isKindOfClass:[BAAnalyticsObservation class]] && BAProcessValue(payload, metric)) latest = payload;
@@ -33,7 +54,8 @@
         if (!BAProcessValue(observation, metric)) continue;
         if (!latest || [observation.timestamp compare:latest.timestamp] == NSOrderedDescending) latest = observation;
     }
-    if (latest && ([latest.timestamp compare:family.window.startDate] == NSOrderedAscending || [latest.timestamp compare:family.window.endDate] == NSOrderedDescending)) return nil;
+    if (latest && ([latest.timestamp compare:family.window.startDate] == NSOrderedAscending || [latest.timestamp compare:family.window.endDate] == NSOrderedDescending)) latest = nil;
+    self.preparedLatest[metric] = latest ?: (id)NSNull.null;
     return latest;
 }
 
@@ -216,13 +238,21 @@
         CGFloat traceTop = chartBottom + 53;
         CGRect plot = CGRectMake(30, traceTop, width - 44, MAX(16, height - traceTop - 30));
         BAProcessText(@"W", CGRectMake(12, traceTop, 24, 20), caption, muted, NSTextAlignmentLeft);
-        double traceMin = minimum, traceMax = maximum;
-        for (BAAnalyticsObservation *observation in family.window.observations) {
-            for (NSString *metric in @[BAAnalyticsHistoryInputPowerWatts, BAAnalyticsHistoryBatteryPowerWatts]) {
-                NSNumber *value = BAProcessValue(observation, metric);
-                if (value) { traceMin = MIN(traceMin, value.doubleValue); traceMax = MAX(traceMax, value.doubleValue); }
+        if (!self.preparedTraceRange) {
+            self.preparedTraceMinimum = 0; self.preparedTraceMaximum = 0;
+            NSArray *traceMetrics = @[BAAnalyticsHistoryInputPowerWatts, BAAnalyticsHistoryBatteryPowerWatts];
+            for (BAAnalyticsObservation *observation in family.window.observations) {
+                for (NSString *metric in traceMetrics) {
+                    NSNumber *value = BAProcessValue(observation, metric);
+                    if (value) {
+                        self.preparedTraceMinimum = MIN(self.preparedTraceMinimum, value.doubleValue);
+                        self.preparedTraceMaximum = MAX(self.preparedTraceMaximum, value.doubleValue);
+                    }
+                }
             }
+            self.preparedTraceRange = YES;
         }
+        double traceMin = MIN(minimum, self.preparedTraceMinimum), traceMax = MAX(maximum, self.preparedTraceMaximum);
         [regions addObjectsFromArray:BAProcessTrace(self, family.window.observations, family.window.intervals, family.window.gaps,
             BAAnalyticsHistoryInputPowerWatts, _("input W"), family.window.startDate, family.window.endDate, plot, traceMin, traceMax, 1, UIColor.compatBlueColor, YES, nil)];
         [regions addObjectsFromArray:BAProcessTrace(self, family.window.observations, family.window.intervals, family.window.gaps,

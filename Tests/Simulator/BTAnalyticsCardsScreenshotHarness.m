@@ -187,6 +187,42 @@ static BAAnalyticsReport *PerformanceGeneration(BAAnalyticsReport *report, uint6
         fieldMetadata:report.fieldMetadata familyReports:report.familyReports error:nil];
 }
 
+static BAAnalyticsReport *PerformanceFragmentedReport(BAAnalyticsReport *base) {
+    NSMutableDictionary *families = [NSMutableDictionary dictionary];
+    NSMutableIndexSet *indices = [NSMutableIndexSet indexSet];
+    for (NSUInteger index=0;index<8000;index+=20) [indices addIndex:index];
+    for (NSNumber *index in @[@1777,@5333,@1234,@5678,@7999]) [indices addIndex:index.unsignedIntegerValue];
+    for (NSString *name in @[BAAnalyticsFamilyCapacity,BAAnalyticsFamilyCells]) {
+        BAAnalyticsFamilyReport *original = [base reportForFamily:name];
+        NSArray *points = [original.window.observations objectsAtIndexes:indices];
+        NSMutableArray *intervals = [NSMutableArray array], *gaps = [NSMutableArray array];
+        for (NSUInteger index=1;index<points.count;index++) {
+            BAAnalyticsObservation *a=points[index-1], *b=points[index];
+            [intervals addObject:[[BAAnalyticsHistoryInterval alloc] initWithStartDate:a.timestamp endDate:b.timestamp
+                startObservation:a endObservation:b coveredMetricIdentifiers:[NSSet setWithArray:b.values.allKeys] state:BAAnalyticsObservedStateUnknown]];
+            // Explicit gaps override apparently valid pairs and create many
+            // more original runs than a widget's display budget can retain.
+            if (index%2) [gaps addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:a.timestamp endDate:b.timestamp reason:@"Synthetic missing pair"]];
+        }
+        BAAnalyticsHistoryWindow *window = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:original.window.startDate endDate:original.window.endDate
+            observations:points intervals:intervals gaps:gaps coverageMetricIdentifiers:original.window.coverageMetricIdentifiers
+            coveredDuration:0 missingDuration:0 coverageSecondsByMetric:@{}];
+        families[name] = [[BAAnalyticsFamilyReport alloc] initWithFamily:name availability:BAAnalyticsReportAvailabilityPartial
+            window:window payload:@{BAAnalyticsPayloadLatestObservation:points.lastObject} limitations:@[@"Synthetic fragmented source"]];
+    }
+    return [[BAAnalyticsReport alloc] initWithSequenceNumber:601 generatedAt:base.generatedAt sourceProfileIdentifier:@"synthetic.fragmented.v1"
+        fieldMetadata:base.fieldMetadata familyReports:families error:nil];
+}
+
+static double FixtureMissingFraction(BAAnalyticsFamilyReport *family) {
+    NSTimeInterval missing=0, duration=[family.window.endDate timeIntervalSinceDate:family.window.startDate];
+    for (BAAnalyticsHistoryGap *gap in family.window.gaps) {
+        NSDate *start=[gap.startDate laterDate:family.window.startDate],*end=[gap.endDate earlierDate:family.window.endDate];
+        missing+=MAX(0,[end timeIntervalSinceDate:start]);
+    }
+    return duration>0?missing/duration:0;
+}
+
 static BAAnalyticsReport *PerformanceEventsReport(NSUInteger count) {
     BAAnalyticsReport *base = BAFixtureReport(@"ready");
     NSDate *origin = [base.generatedAt dateByAddingTimeInterval:-10.0 * (NSTimeInterval)count];
@@ -1042,6 +1078,186 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         @"hitRegions":@(canvas.hitRegions.count),@"language":FixtureLanguage}];
     [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview];
 }
+- (void)testProcessRenderingCaches {
+    FixtureLanguage = @"en"; ForcedCategory = nil;
+    NSDate *origin = [NSDate dateWithTimeIntervalSince1970:1700000000];
+    NSArray *metrics = @[BAAnalyticsHistorySOCPercent, BAAnalyticsHistoryTemperatureCelsius,
+        BAAnalyticsHistoryCurrentMilliamps, BAAnalyticsHistoryBatteryPowerWatts,
+        BAAnalyticsHistoryExternalConnected, BAAnalyticsHistoryIsCharging, BAAnalyticsHistoryFullyCharged];
+    NSMutableDictionary *metadata = [NSMutableDictionary dictionary];
+    for (NSString *metric in metrics) {
+        NSString *unit = [metric isEqual:BAAnalyticsHistorySOCPercent] ? @"%" :
+            [metric isEqual:BAAnalyticsHistoryTemperatureCelsius] ? @"°C" :
+            [metric isEqual:BAAnalyticsHistoryCurrentMilliamps] ? @"mA" :
+            [metric isEqual:BAAnalyticsHistoryBatteryPowerWatts] ? @"W" : @"boolean";
+        metadata[metric] = [[BAAnalyticsFieldMetadata alloc] initWithSourceTable:@"synthetic.primary"
+            sourceColumn:metric unit:unit decoderIdentifier:@"synthetic.process.v1" unitValidated:YES];
+    }
+    NSSet *covered = [NSSet setWithArray:metrics];
+    BAAnalyticsObservation *(^point)(NSString *, NSUInteger, NSDictionary *) =
+        ^BAAnalyticsObservation *(NSString *identifier, NSUInteger index, NSDictionary *values) {
+            NSDate *date = [origin dateByAddingTimeInterval:10 * index];
+            return [[BAAnalyticsObservation alloc] initWithIdentifier:identifier timestamp:date
+                sourceTimestamp:date.timeIntervalSince1970 timestampValidated:YES values:values fieldMetadata:metadata];
+        };
+    BAAnalyticsHistoryInterval *(^pair)(BAAnalyticsObservation *, BAAnalyticsObservation *, BAAnalyticsObservedState) =
+        ^BAAnalyticsHistoryInterval *(BAAnalyticsObservation *a, BAAnalyticsObservation *b, BAAnalyticsObservedState state) {
+            return [[BAAnalyticsHistoryInterval alloc] initWithStartDate:a.timestamp endDate:b.timestamp
+                startObservation:a endObservation:b coveredMetricIdentifiers:covered state:state];
+        };
+    NSDictionary *smallValues = @{BAAnalyticsHistorySOCPercent:@50, BAAnalyticsHistoryTemperatureCelsius:@32,
+        BAAnalyticsHistoryCurrentMilliamps:@1000, BAAnalyticsHistoryBatteryPowerWatts:@4,
+        BAAnalyticsHistoryExternalConnected:@YES, BAAnalyticsHistoryIsCharging:@YES, BAAnalyticsHistoryFullyCharged:@NO};
+    NSMutableArray<BAAnalyticsObservation *> *small = [NSMutableArray array];
+    for (NSUInteger index=0;index<7;index++)
+        [small addObject:point([NSString stringWithFormat:@"synthetic.process.small.%lu",(unsigned long)index],index,smallValues)];
+    BAAnalyticsCanvasView *probe = [BAAnalyticsCanvasView new];
+    NSArray *noGaps = @[];
+    NSArray *chain = @[pair(small[0],small[1],BAAnalyticsObservedStateCharging),
+        pair(small[1],small[2],BAAnalyticsObservedStateCharging)];
+    NSArray<BAProcessStateRun *> *runs = BAProcessStateRuns(probe,chain,noGaps,[small[0] timestamp],[small[2] timestamp]);
+    Require(runs.count==1 && [runs.firstObject.startDate isEqual:[small[0] timestamp]] &&
+        [runs.firstObject.endDate isEqual:[small[2] timestamp]] && runs.firstObject.state==BAAnalyticsObservedStateCharging,
+        @"Shared-endpoint state pairs failed to collapse into one exact continuous display band");
+    Require(BAProcessStateRuns(probe,chain,noGaps,[small[0] timestamp],[small[2] timestamp])==runs,
+        @"Unchanged immutable state evidence rebuilt its presentation cache");
+
+    NSArray *broken = @[pair(small[0],small[1],BAAnalyticsObservedStateCharging),
+        pair(small[1],small[2],BAAnalyticsObservedStateCharging),
+        pair(small[2],small[3],BAAnalyticsObservedStateCharging),
+        pair(small[3],small[4],BAAnalyticsObservedStateUnknown),
+        pair(small[4],small[5],BAAnalyticsObservedStateConnectedNotCharging),
+        pair(small[5],small[6],BAAnalyticsObservedStateCharging)];
+    NSArray *gaps = @[[[BAAnalyticsHistoryGap alloc] initWithStartDate:[small[1] timestamp]
+        endDate:[small[2] timestamp] reason:@"Synthetic source discontinuity"]];
+    runs = BAProcessStateRuns(probe,broken,gaps,[small[0] timestamp],[small[6] timestamp]);
+    Require(runs.count==4 && [runs[0].endDate isEqual:[small[1] timestamp]] &&
+        [runs[1].startDate isEqual:[small[2] timestamp]] && [runs[1].endDate isEqual:[small[3] timestamp]] &&
+        [runs[2].startDate isEqual:[small[4] timestamp]] && runs[2].state==BAAnalyticsObservedStateConnectedNotCharging &&
+        [runs[3].startDate isEqual:[small[5] timestamp]] && runs[3].state==BAAnalyticsObservedStateCharging,
+        @"State display merged across a source gap, Unknown interval or actual state change");
+
+    BAAnalyticsObservation *replacement = point(@"synthetic.process.other-source",1,smallValues);
+    NSArray *mismatched = @[pair(small[0],small[1],BAAnalyticsObservedStateCharging),
+        pair(replacement,small[2],BAAnalyticsObservedStateCharging)];
+    runs = BAProcessStateRuns(probe,mismatched,noGaps,[small[0] timestamp],[small[2] timestamp]);
+    Require(runs.count==2 && BAProcessStateRuns(probe,mismatched,noGaps,[small[0] timestamp],[small[2] timestamp])==runs,
+        @"State display bridged distinct source endpoint IDs or failed immutable cache reuse");
+    BAProcessClearDisplayCaches(probe);
+    Require(BAProcessStateRuns(probe,mismatched,noGaps,[small[0] timestamp],[small[2] timestamp])!=runs,
+        @"Explicit Process cache invalidation retained its previous display array");
+    BAProcessClearDisplayCaches(probe);
+
+    NSMutableDictionary *families = [NSMutableDictionary dictionary];
+    NSMutableDictionary *sessions = [NSMutableDictionary dictionary];
+    const NSUInteger count = 500;
+    for (NSNumber *flag in @[@NO,@YES]) {
+        BOOL unplugged = flag.boolValue;
+        NSString *family = unplugged ? BAAnalyticsFamilyDischarge : BAAnalyticsFamilySession;
+        NSMutableArray<BAAnalyticsObservation *> *observations = [NSMutableArray array];
+        NSMutableArray<BAAnalyticsHistoryInterval *> *intervals = [NSMutableArray array];
+        for (NSUInteger index=0;index<count;index++) {
+            double fraction = (double)index/(count-1);
+            double power = unplugged ? (index==123 ? -12.75 : index==234 ? 4.25 : index==345 ? 0 : -3-1.5*sin(index*.07)) : 8-4*fraction;
+            NSDictionary *values = @{BAAnalyticsHistorySOCPercent:@(unplugged ? 88-42*fraction : 18+66*fraction),
+                BAAnalyticsHistoryTemperatureCelsius:@(index==177 ? 39.5 : 30+4*sin(M_PI*fraction)),
+                BAAnalyticsHistoryCurrentMilliamps:@(power*250), BAAnalyticsHistoryBatteryPowerWatts:@(power),
+                BAAnalyticsHistoryExternalConnected:@(!unplugged), BAAnalyticsHistoryIsCharging:@(!unplugged),
+                BAAnalyticsHistoryFullyCharged:@NO};
+            BAAnalyticsObservation *observation = point([NSString stringWithFormat:@"synthetic.process.%@.%lu",family,(unsigned long)index],index,values);
+            if (observations.count) [intervals addObject:pair(observations.lastObject,observation,
+                unplugged ? BAAnalyticsObservedStateUnplugged : BAAnalyticsObservedStateCharging)];
+            [observations addObject:observation];
+        }
+        NSDate *end = [observations.lastObject timestamp];
+        NSTimeInterval duration = [end timeIntervalSinceDate:origin];
+        NSMutableDictionary *coverage = [NSMutableDictionary dictionary];
+        for (NSString *metric in metrics) coverage[metric]=@(duration);
+        BAAnalyticsHistorySession *session = [[BAAnalyticsHistorySession alloc] initWithIdentifier:
+            [@"synthetic.process.session." stringByAppendingString:family] kind:unplugged?@"unplugged":@"connected"
+            startDate:origin endDate:end startBoundaryKnown:YES endBoundaryKnown:YES observations:observations
+            intervals:intervals gaps:noGaps transitions:@[]];
+        BAAnalyticsHistoryWindow *window = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:origin endDate:end
+            observations:observations intervals:intervals gaps:noGaps coverageMetricIdentifiers:covered
+            coveredDuration:duration missingDuration:0 coverageSecondsByMetric:coverage];
+        families[family] = [[BAAnalyticsFamilyReport alloc] initWithFamily:family availability:BAAnalyticsReportAvailabilityReady
+            window:window payload:@{BAAnalyticsPayloadSelectedSession:session,BAAnalyticsPayloadSessions:@[session]}
+            limitations:@[@"Synthetic primary observations"]];
+        sessions[family]=session;
+    }
+    BAAnalyticsReport *report = [[BAAnalyticsReport alloc] initWithSequenceNumber:701
+        generatedAt:[origin dateByAddingTimeInterval:10*(count-1)] sourceProfileIdentifier:@"synthetic.process.v1"
+        fieldMetadata:metadata familyReports:families error:nil];
+    BAFixtureHistoryService *history = [BAFixtureHistoryService new]; history.fixtureReport=report;
+    for (BAAnalyticsCanvasCard *card in BAAnalyticsCreateProcessCanvasCards()) {
+        BOOL isSession = [card.familyIdentifier isEqual:BAAnalyticsFamilySession];
+        if (!isSession && ![card.familyIdentifier isEqual:BAAnalyticsFamilyDischarge]) continue;
+        card.historyService=history;
+        BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,346,346)];
+        [cell configureWithCard:card size:BAAnalyticsCardSize2x2 editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+        [self.window addSubview:cell]; [cell applyMetricSnapshot:BAFixtureSnapshot(NO)]; AwaitPreparedCanvases(cell);
+        BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+        BAAnalyticsHistorySession *session = sessions[card.familyIdentifier];
+        @try {
+            Require([canvas valueForKey:@"preparedSession"]==session && session.observations.count==count && session.intervals.count==count-1,
+                @"Dense Process presentation dropped raw observations or prepared a different session");
+            NSArray *stateRuns = BAProcessStateRuns(canvas,session.intervals,session.gaps,session.startDate,session.endDate);
+            Require(stateRuns.count==1,@"A stable dense Process session still produced one state band per sample pair");
+            if (isSession) {
+                NSArray *soc=[canvas valueForKey:@"preparedSOC"], *temperature=[canvas valueForKey:@"preparedTemperature"], *current=[canvas valueForKey:@"preparedCurrent"];
+                NSNumber *coverage=[canvas valueForKey:@"preparedSOCCoverage"];
+                Require(soc.count==count && temperature.count==count && current.count==count &&
+                    fabs(coverage.doubleValue-10*(count-1))<1e-6 &&
+                    fabs([[canvas valueForKey:@"preparedTemperatureCoverage"] doubleValue]-coverage.doubleValue)<1e-6 &&
+                    fabs([[canvas valueForKey:@"preparedCurrentCoverage"] doubleValue]-coverage.doubleValue)<1e-6,
+                    @"Session display reduction changed metric coverage or the exact observation population");
+                [canvas setNeedsLayout]; [canvas setNeedsDisplay]; [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+                Require([canvas valueForKey:@"preparedSOC"]==soc && [canvas valueForKey:@"preparedTemperature"]==temperature &&
+                    [canvas valueForKey:@"preparedCurrent"]==current && [[canvas valueForKey:@"preparedSOCCoverage"] isEqual:coverage] &&
+                    BAProcessStateRuns(canvas,session.intervals,session.gaps,session.startDate,session.endDate)==stateRuns,
+                    @"Unchanged Session drawing rebuilt immutable arrays, coverage or state bands");
+                self.performanceResults[@"sessionRawObservations"]=@(count);
+                self.performanceResults[@"sessionDisplayStateRuns"]=@(stateRuns.count);
+            } else {
+                NSIndexSet *indices=[canvas valueForKey:@"preparedPowerIndices"];
+                NSArray *intervals=[canvas valueForKey:@"preparedIntervals"];
+                NSData *missing=[canvas valueForKey:@"preparedPowerMissingRanges"];
+                Require(indices.count>0 && indices.count<=194 && [indices containsIndex:0] && [indices containsIndex:123] &&
+                    [indices containsIndex:234] && [indices containsIndex:345] && [indices containsIndex:count-1],
+                    @"Discharge power drawing exceeded its budget or lost negative/positive extrema, zero or endpoints");
+                Require(intervals.count==count-1 && missing.length==0,
+                    @"Dense unplugged display changed trusted power coverage or fabricated a missing span");
+                [canvas setNeedsLayout]; [canvas setNeedsDisplay]; [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+                Require([canvas valueForKey:@"preparedPowerIndices"]==indices && [canvas valueForKey:@"preparedIntervals"]==intervals &&
+                    [canvas valueForKey:@"preparedPowerMissingRanges"]==missing,
+                    @"Unchanged Discharge drawing rebuilt power indices, original intervals or missing ranges");
+                self.performanceResults[@"dischargeRawObservations"]=@(count);
+                self.performanceResults[@"dischargeDisplayPowerPoints"]=@(indices.count);
+            }
+            NSString *image = isSession ? @"performance-session-trend-2x2.png" : @"performance-discharge-trend-2x2.png";
+            [self saveView:cell name:image];
+            [self.manifest addObject:@{@"image":image,@"family":card.familyIdentifier,@"size":@(BAAnalyticsCardSize2x2),
+                @"width":@346,@"hitRegions":@(canvas.hitRegions.count),@"language":@"en"}];
+            [card analyticsCardDidReceiveMemoryWarning];
+            Require(card.latestReport==nil && canvas.latestReport==nil && [canvas valueForKey:@"preparedSession"]==nil,
+                @"Process memory pressure retained the report or selected-session cache");
+            Require(BAProcessStateRuns(canvas,session.intervals,session.gaps,session.startDate,session.endDate)!=stateRuns,
+                @"Process memory pressure failed to invalidate the associated state-run buffer");
+            BAProcessClearDisplayCaches(canvas);
+            if (isSession) Require([canvas valueForKey:@"preparedSOC"]==nil && [canvas valueForKey:@"preparedTemperature"]==nil &&
+                [canvas valueForKey:@"preparedCurrent"]==nil && [canvas valueForKey:@"preparedPeak"]==nil &&
+                [[canvas valueForKey:@"preparedSOCCoverage"] doubleValue]==0,
+                @"Session memory pressure retained source arrays, the peak or coverage cache");
+            else Require([canvas valueForKey:@"preparedIntervals"]==nil && [canvas valueForKey:@"preparedContext"]==nil &&
+                [canvas valueForKey:@"preparedPowerIndices"]==nil && [canvas valueForKey:@"preparedPowerMissingRanges"]==nil &&
+                [canvas valueForKey:@"preparedFirstSOC"]==nil && [canvas valueForKey:@"preparedLastSOC"]==nil,
+                @"Discharge memory pressure retained source intervals, power buffers or endpoint rows");
+        } @finally {
+            [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview]; [card analyticsCardDidReceiveMemoryWarning];
+        }
+    }
+    self.performanceResults[@"processStateBoundariesAndCacheLifecycle"]=@YES;
+}
 - (void)testDenseEventsPresentation {
     __block BAAnalyticsReport *report = nil;
     __block NSDictionary *reference = nil;
@@ -1169,13 +1385,23 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             [frozenDetails addObject:detail];
         }
         dispatch_resume(queue); queueSuspended = NO;
-        WaitForFixture(^BOOL {
+        @try {
+            WaitForFixture(^BOOL {
+                for (BAAnalyticsCardCell *cell in cells) {
+                    BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+                    if (canvas.latestReport != reportB || canvas.isPreparingHistory) return NO;
+                }
+                return YES;
+            }, 5, @"Prepared refresh did not replace every displayed card generation");
+        } @catch (NSException *exception) {
+            NSMutableArray *pending=[NSMutableArray array];
             for (BAAnalyticsCardCell *cell in cells) {
-                BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
-                if (canvas.latestReport != reportB || canvas.isPreparingHistory) return NO;
+                BAAnalyticsCanvasView *canvas=(id)cell.analyticsCardContentView;
+                if (canvas.latestReport!=reportB || canvas.isPreparingHistory)
+                    [pending addObject:[NSString stringWithFormat:@"%@: displayed=%llu, preparing=%d",canvas.familyIdentifier,(unsigned long long)canvas.latestReport.sequenceNumber,canvas.isPreparingHistory]];
             }
-            return YES;
-        }, 5, @"Prepared refresh did not replace every displayed card generation");
+            @throw [NSException exceptionWithName:exception.name reason:[NSString stringWithFormat:@"%@ (%@)",exception.reason,[pending componentsJoinedByString:@"; "]] userInfo:nil];
+        }
         for (NSUInteger i = 0; i < cards.count; i++) {
             BAAnalyticsCanvasCard *card = cards[i]; BAAnalyticsCanvasView *canvas = (id)cells[i].analyticsCardContentView;
             [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
@@ -1277,6 +1503,86 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     }
 }
 
+- (void)testDrawingBudgetsWithReport:(BAAnalyticsReport *)base {
+    BAAnalyticsReport *fragmented = PerformanceFragmentedReport(base);
+    BAFixtureHistoryService *history = [BAFixtureHistoryService new]; history.fixtureReport = fragmented;
+    for (BAAnalyticsCanvasCard *card in @[(id)BAAnalyticsCreateCapacityCanvasCard(),(id)BAAnalyticsCreateCellsCanvasCard()]) {
+        card.historyService = history;
+        BOOL capacity = [card.familyIdentifier isEqual:BAAnalyticsFamilyCapacity];
+        BAAnalyticsCardSize size = capacity ? BAAnalyticsCardSize2x1 : BAAnalyticsCardSize2x2;
+        BAAnalyticsCardCell *cell = [[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,346,capacity?167:346)];
+        [cell configureWithCard:card size:size editing:NO]; [cell setAnalyticsCardDisplayed:YES];
+        [self.window addSubview:cell]; [cell applyMetricSnapshot:BAFixtureSnapshot(NO)]; AwaitPreparedCanvases(cell);
+        BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+        BAAnalyticsFamilyReport *family = [fragmented reportForFamily:card.familyIdentifier];
+        Require(family.window.gaps.count > 192 && [canvas.latestReport reportForFamily:card.familyIdentifier].window.observations.count == family.window.observations.count,
+            @"Fragmented display lost original observations or source gaps");
+        if (capacity) {
+            NSArray *raw = [canvas valueForKey:@"capacityObservations"], *indices=[canvas valueForKey:@"displayIndices"], *markers=[canvas valueForKey:@"displayMarkerIndices"];
+            Require(indices.count<=128 && markers.count<=12 && [[canvas valueForKey:@"displayGaps"] count]>0,@"Fragmented capacity exceeded budgets or hid missing time");
+            NSMutableSet *ids=[NSMutableSet set];for (NSNumber *index in markers) [ids addObject:[raw[index.unsignedIntegerValue] identifier]];
+            Require([ids containsObject:@"performance.capacity.1777"] && [ids containsObject:@"performance.capacity.5333"],@"Fragmented capacity hid real extrema");
+            double missing=0;for(NSValue *value in [canvas valueForKey:@"displayGaps"])missing+=value.CGRectValue.size.width;
+            Require(fabs(missing-FixtureMissingFraction(family))<1e-6,@"Capacity gap grouping exaggerated fragmented missing-time coverage");
+        } else {
+            NSDictionary *indices=[canvas valueForKey:@"displayIndices"];
+            NSUInteger total=0;for (NSArray *channel in indices.allValues) total+=channel.count;
+            Require(total<=192 && [[canvas valueForKey:@"marks"] count]<=12 && [[canvas valueForKey:@"untrustedRects"] count]>0,@"Fragmented cell history exceeded budgets or hid missing time");
+            double missing=0;for(NSValue *value in [canvas valueForKey:@"untrustedRects"])missing+=value.CGRectValue.size.width;
+            CGRect plot=[[canvas valueForKey:@"plotRect"] CGRectValue];
+            Require(fabs(missing/plot.size.width-FixtureMissingFraction(family))<1e-6,@"Cell gap grouping exaggerated fragmented missing-time coverage");
+        }
+        [self capturePerformanceCard:card size:size name:capacity?@"performance-capacity-fragmented.png":@"performance-cells-fragmented.png"];
+        [cell setAnalyticsCardDisplayed:NO]; [cell removeFromSuperview]; [card analyticsCardDidReceiveMemoryWarning];
+    }
+    // A clipped original endpoint must not displace the real in-window
+    // minimum in a reduced edge bucket.
+    NSString *metric=BAAnalyticsHistoryCellVoltage0Millivolts;
+    NSDictionary *metadata=@{metric:[[BAAnalyticsFieldMetadata alloc] initWithSourceTable:@"synthetic.clipped" sourceColumn:@"CellVoltage0" unit:@"mV" decoderIdentifier:@"synthetic.mV" unitValidated:YES]};
+    NSMutableArray *points=[NSMutableArray array],*intervals=[NSMutableArray array];
+    NSMutableArray *specs=[@[@[@(-3605),@3000],@[@(-3598),@3800],@[@(-3597),@3200],@[@(-3596),@4200],@[@(-3595),@3900]] mutableCopy];
+    for (NSUInteger index=0;index<200;index++) [specs addObject:@[@(-3580+17*(NSInteger)index),@(3900+100*sin(index))]];
+    [specs addObject:@[@0,@3900]];
+    for (NSArray *spec in specs) {
+        NSDate *date=[base.generatedAt dateByAddingTimeInterval:[spec[0] doubleValue]];
+        BAAnalyticsObservation *point=[[BAAnalyticsObservation alloc] initWithIdentifier:[NSString stringWithFormat:@"clipped.%lu",(unsigned long)points.count]
+            timestamp:date sourceTimestamp:date.timeIntervalSince1970 timestampValidated:YES values:@{metric:spec[1]} fieldMetadata:metadata];
+        if (points.count) {
+            BAAnalyticsObservation *prior=points.lastObject;
+            [intervals addObject:[[BAAnalyticsHistoryInterval alloc] initWithStartDate:prior.timestamp endDate:date startObservation:prior endObservation:point coveredMetricIdentifiers:[NSSet setWithObject:metric] state:BAAnalyticsObservedStateUnknown]];
+        }
+        [points addObject:point];
+    }
+    BAAnalyticsHistoryWindow *window=[[BAAnalyticsHistoryWindow alloc] initWithStartDate:[base.generatedAt dateByAddingTimeInterval:-3600]
+        endDate:base.generatedAt observations:[points subarrayWithRange:NSMakeRange(1,points.count-1)] intervals:intervals gaps:@[] coverageMetricIdentifiers:[NSSet setWithObject:metric] coveredDuration:3600 missingDuration:0 coverageSecondsByMetric:@{metric:@3600}];
+    BAAnalyticsFamilyReport *family=[[BAAnalyticsFamilyReport alloc] initWithFamily:BAAnalyticsFamilyCells availability:BAAnalyticsReportAvailabilityReady
+        window:window payload:@{BAAnalyticsPayloadLatestObservation:points.lastObject} limitations:@[@"Synthetic clipped interval"]];
+    history.fixtureReport=[[BAAnalyticsReport alloc] initWithSequenceNumber:602 generatedAt:base.generatedAt sourceProfileIdentifier:@"synthetic.clipped.v1"
+        fieldMetadata:metadata familyReports:@{BAAnalyticsFamilyCells:family} error:nil];
+    BAAnalyticsCanvasCard *cells=(id)BAAnalyticsCreateCellsCanvasCard();cells.historyService=history;
+    BAAnalyticsCardCell *cell=[[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,346,346)];
+    [cell configureWithCard:cells size:BAAnalyticsCardSize2x2 editing:NO];[cell setAnalyticsCardDisplayed:YES];[self.window addSubview:cell];
+    AwaitPreparedCanvases(cell);BAAnalyticsCanvasView *canvas=(id)cell.analyticsCardContentView;
+    NSArray *kept=[[canvas valueForKey:@"displayIndices"] objectForKey:metric];
+    Require(kept.count<=192 && [kept containsObject:@1] && [kept containsObject:@2] && [kept containsObject:@3] && [kept containsObject:@(points.count-1)],@"Clipped endpoint displaced actual first/last/min/max in-window readings");
+    [cell setAnalyticsCardDisplayed:NO];[cell removeFromSuperview];[cells analyticsCardDidReceiveMemoryWarning];
+    BAAnalyticsCanvasCard *live=(id)BAAnalyticsCreateLiveCanvasCards().firstObject;live.historyService=history;
+    cell=[[BAAnalyticsCardCell alloc] initWithFrame:CGRectMake(0,0,346,346)];
+    [cell configureWithCard:live size:BAAnalyticsCardSize2x2 editing:NO];[cell setAnalyticsCardDisplayed:YES];[self.window addSubview:cell];
+    [cell applyMetricSnapshot:BAFixtureSnapshot(NO)];AwaitPreparedCanvases(cell);canvas=(id)cell.analyticsCardContentView;
+    Require(!canvas.detailEnabled && canvas.hitRegions.count<=52,@"Read-only live canvas produced unbounded/unused actions");
+    for (id track in [canvas valueForKey:@"tracks"]) {
+        NSArray<BAAnalyticsMetricPoint *> *raw=[track valueForKey:@"points"];NSIndexSet *markers=[track valueForKey:@"markerIndices"],*accessible=[track valueForKey:@"accessibleIndices"];
+        Require(raw.count==61 && markers.count<=4 && accessible.count<=16,@"Live trend reduction altered raw counts or exceeded marker/VoiceOver budget");
+        NSUInteger lo=0,hi=0;for (NSUInteger index=1;index<raw.count;index++) {
+            if ([raw[index] value]<[raw[lo] value]) lo=index;if ([raw[index] value]>[raw[hi] value]) hi=index;
+        }
+        Require([markers containsIndex:0]&&[markers containsIndex:raw.count-1]&&[markers containsIndex:lo]&&[markers containsIndex:hi],@"Live trend lost observed endpoints or extrema");
+    }
+    [self capturePerformanceCard:live size:BAAnalyticsCardSize2x2 name:@"performance-current-battery-trend.png"];
+    [cell setAnalyticsCardDisplayed:NO];[cell removeFromSuperview];[live analyticsCardDidReceiveMemoryWarning];
+    self.performanceResults[@"fragmentedAndLiveDrawingBudgets"] = @YES;
+}
 - (void)testPerformanceHistory {
     const NSUInteger count = 8000;
     self.performanceResults = [NSMutableDictionary dictionaryWithObject:@(count) forKey:@"recordsPerDenseFamily"];
@@ -1344,11 +1650,17 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         if ([card.familyIdentifier isEqual:BAAnalyticsFamilyCapacity]) {
             NSArray<BAAnalyticsObservation *> *raw = [canvas valueForKey:@"capacityObservations"];
             NSArray<NSNumber *> *indices = [canvas valueForKey:@"displayIndices"];
-            Require(raw.count == count && indices.count < count / 4, @"Capacity display envelope truncated raw evidence or did not reduce dense drawing");
+            Require(raw.count == count && indices.count <= 128, @"Capacity display envelope truncated raw evidence or exceeded its vertex budget");
+            NSArray *markers = [canvas valueForKey:@"displayMarkerIndices"];
+            Require(markers.count <= 12 && [markers containsObject:@0] && [markers containsObject:@(count-1)] &&
+                [markers containsObject:@1777] && [markers containsObject:@5333],@"Capacity circles lost endpoints/extrema or exceeded their budget");
+            self.performanceResults[@"capacityMarkerCount"] = @(markers.count);
             self.performanceResults[@"capacityDisplayPoints"] = @(indices.count);
             Require([indices containsObject:@1777] && [indices containsObject:@5333], @"Capacity display envelope lost isolated minimum/maximum");
             Require([[canvas valueForKey:@"boundaryIndices"] count] > 0 && [[canvas valueForKey:@"displayGaps"] count] > 0,
                 @"Capacity display lost configuration boundaries or missing spans");
+            double missing=0;for(NSValue *value in [canvas valueForKey:@"displayGaps"])missing+=value.CGRectValue.size.width;
+            Require(fabs(missing-FixtureMissingFraction(capacityFamily))<1e-6,@"Short capacity source gaps expanded into unobserved multi-day spans");
             [self saveView:cell name:@"performance-capacity-2x1.png"];
             [self.manifest addObject:@{@"image":@"performance-capacity-2x1.png",@"family":card.familyIdentifier,@"size":@(size),@"width":@346,@"hitRegions":@(canvas.hitRegions.count),@"language":@"en"}];
         } else if ([card.familyIdentifier isEqual:BAAnalyticsFamilyCells]) {
@@ -1363,6 +1675,10 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
                 displayCounts[metric] = @([displayChannels[metric] count]);
             }
             self.performanceResults[@"cellsDisplayPointsPerMetric"] = displayCounts;
+            NSUInteger totalDisplay = 0;
+            for (NSNumber *value in displayCounts.allValues) totalDisplay += value.unsignedIntegerValue;
+            Require(totalDisplay <= 192 && [[canvas valueForKey:@"marks"] count] <= 4*[[canvas valueForKey:@"visibleMetrics"] count],
+                @"Dense cell channels exceeded the shared line/marker budget");
             for (NSString *metric in displayChannels) for (NSNumber *index in displayChannels[metric]) {
                 BAAnalyticsObservation *observation = rawChannels[metric][index.unsignedIntegerValue];
                 if (observation.identifier) [shown addObject:observation.identifier];
@@ -1370,6 +1686,9 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             Require([shown containsObject:@"performance.cells.1234"] && [shown containsObject:@"performance.cells.5678"],
                 @"Cell display envelope lost isolated voltage minimum/maximum");
             Require([[canvas valueForKey:@"untrustedRects"] count] > 0, @"Cell voltage display lost the missing sampled spans");
+            double missing=0;for(NSValue *value in [canvas valueForKey:@"untrustedRects"])missing+=value.CGRectValue.size.width;
+            CGRect plot=[[canvas valueForKey:@"plotRect"] CGRectValue];
+            Require(fabs(missing/plot.size.width-FixtureMissingFraction(cellsFamily))<1e-6,@"Short cell source gaps expanded into unobserved multi-hour spans");
             Require([canvas.latestReport reportForFamily:BAAnalyticsFamilyCells].window.observations.count == count,
                 @"Cell preparation replaced raw history with the display envelope");
             [self saveView:cell name:@"performance-cells-2x2.png"];
@@ -1381,6 +1700,14 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             for (NSUInteger i=0;i<8;i++) [cell applyMetricSnapshot:BAFixtureSnapshot(NO)];
             Require(statistical.analysis == cached && statistical.derivedReport == report && !canvas.isPreparingHistory,
                 @"Pure history snapshot delivery invalidated prepared statistics");
+            [canvas.layer displayIfNeeded];
+            NSArray *before = canvas.hitRegions;
+            [card configureAnalyticsCardContentView:canvas forSize:size editing:NO];
+            Require(!canvas.layer.needsDisplay && canvas.hitRegions == before,@"Unchanged host configuration forced a statistical repaint");
+            [canvas setNeedsDisplay]; [canvas.layer displayIfNeeded];
+            Require(before.count == canvas.hitRegions.count,@"Statistical repaint changed the evidence population");
+            for (NSUInteger index=0;index<before.count;index++)
+                Require([before[index] selection] == canvas.hitRegions[index].selection,@"Statistical repaint serialized the same immutable evidence again");
         }
         [mounted addObject:cell];
     }
@@ -1400,6 +1727,8 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     [self capturePerformanceCard:chinese size:chinese.defaultAnalyticsCardSize name:@"performance-capacity-default-zh_CN.png"];
     [chinese analyticsCardDidReceiveMemoryWarning]; FixtureLanguage=@"en";
     Require(self.manifest.count<=8,@"Focused performance mode expanded beyond eight screenshots");
+    [self testDrawingBudgetsWithReport:report];
+    [self testProcessRenderingCaches];
     [self testStartupRefreshPresentationWithReport:report];
     BAFixtureHistoryService *processHistory = [BAFixtureHistoryService new]; processHistory.fixtureReport = BAFixtureReport(@"ready");
     for (BAAnalyticsCanvasCard *process in BAAnalyticsCreateProcessCanvasCards()) {

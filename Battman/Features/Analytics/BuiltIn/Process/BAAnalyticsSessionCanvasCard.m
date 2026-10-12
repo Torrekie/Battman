@@ -76,10 +76,35 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
 
 
 @interface BASessionCanvasView : BAAnalyticsCanvasView
+@property (nonatomic, weak) BAAnalyticsHistorySession *preparedSession;
+@property (nonatomic, copy) NSArray<BAAnalyticsObservation *> *preparedSOC;
+@property (nonatomic, copy) NSArray<BAAnalyticsObservation *> *preparedTemperature;
+@property (nonatomic, copy) NSArray<BAAnalyticsObservation *> *preparedCurrent;
+@property (nonatomic, strong) BAAnalyticsObservation *preparedPeak;
+@property (nonatomic) NSTimeInterval preparedSOCCoverage;
+@property (nonatomic) NSTimeInterval preparedTemperatureCoverage;
+@property (nonatomic) NSTimeInterval preparedCurrentCoverage;
+@property (nonatomic) double preparedTemperatureMinimum;
+@property (nonatomic) double preparedTemperatureMaximum;
+@property (nonatomic) double preparedCurrentMinimum;
+@property (nonatomic) double preparedCurrentMaximum;
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderCanvasWithAccessibilityValue:(NSString * _Nullable * _Nullable)value;
 @end
 
 @implementation BASessionCanvasView
+
+- (void)setLatestReport:(BAAnalyticsReport *)latestReport {
+    if (!latestReport || latestReport != self.latestReport) {
+        self.preparedSession = nil;
+        self.preparedSOC = nil; self.preparedTemperature = nil; self.preparedCurrent = nil;
+        self.preparedPeak = nil;
+        self.preparedSOCCoverage = 0; self.preparedTemperatureCoverage = 0; self.preparedCurrentCoverage = 0;
+        self.preparedTemperatureMinimum = 0; self.preparedTemperatureMaximum = 0;
+        self.preparedCurrentMinimum = 0; self.preparedCurrentMaximum = 0;
+        BAProcessClearDisplayCaches(self);
+    }
+    [super setLatestReport:latestReport];
+}
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -137,14 +162,29 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
         return regions;
     }
 
-    NSArray<BAAnalyticsObservation *> *soc = BASessionMetricObservations(session, BAAnalyticsHistorySOCPercent);
-    NSArray<BAAnalyticsObservation *> *temperature = BASessionMetricObservations(session, BAAnalyticsHistoryTemperatureCelsius);
-    NSArray<BAAnalyticsObservation *> *current = BASessionMetricObservations(session, BAAnalyticsHistoryCurrentMilliamps);
-    BAAnalyticsObservation *peak = BASessionPeak(temperature, BAAnalyticsHistoryTemperatureCelsius);
+    if (self.preparedSession != session) {
+        self.preparedSession = session;
+        self.preparedSOC = BASessionMetricObservations(session, BAAnalyticsHistorySOCPercent);
+        self.preparedTemperature = BASessionMetricObservations(session, BAAnalyticsHistoryTemperatureCelsius);
+        self.preparedCurrent = BASessionMetricObservations(session, BAAnalyticsHistoryCurrentMilliamps);
+        self.preparedPeak = BASessionPeak(self.preparedTemperature, BAAnalyticsHistoryTemperatureCelsius);
+        self.preparedSOCCoverage = BASessionCoverage(session, BAAnalyticsHistorySOCPercent);
+        self.preparedTemperatureCoverage = BASessionCoverage(session, BAAnalyticsHistoryTemperatureCelsius);
+        self.preparedCurrentCoverage = BASessionCoverage(session, BAAnalyticsHistoryCurrentMilliamps);
+        double low, high;
+        BASessionRange(self.preparedTemperature, BAAnalyticsHistoryTemperatureCelsius, 1, NO, &low, &high);
+        self.preparedTemperatureMinimum = low; self.preparedTemperatureMaximum = high;
+        BASessionRange(self.preparedCurrent, BAAnalyticsHistoryCurrentMilliamps, 1000, YES, &low, &high);
+        self.preparedCurrentMinimum = low; self.preparedCurrentMaximum = high;
+    }
+    NSArray<BAAnalyticsObservation *> *soc = self.preparedSOC;
+    NSArray<BAAnalyticsObservation *> *temperature = self.preparedTemperature;
+    NSArray<BAAnalyticsObservation *> *current = self.preparedCurrent;
+    BAAnalyticsObservation *peak = self.preparedPeak;
     NSTimeInterval duration = [session.endDate timeIntervalSinceDate:session.startDate];
-    NSTimeInterval socCoverage = BASessionCoverage(session, BAAnalyticsHistorySOCPercent);
-    NSTimeInterval temperatureCoverage = BASessionCoverage(session, BAAnalyticsHistoryTemperatureCelsius);
-    NSTimeInterval currentCoverage = BASessionCoverage(session, BAAnalyticsHistoryCurrentMilliamps);
+    NSTimeInterval socCoverage = self.preparedSOCCoverage;
+    NSTimeInterval temperatureCoverage = self.preparedTemperatureCoverage;
+    NSTimeInterval currentCoverage = self.preparedCurrentCoverage;
     BOOL partial = !session.startBoundaryKnown || !session.endBoundaryKnown || session.gaps.count > 0 ||
         socCoverage + 0.001 < duration || temperatureCoverage + 0.001 < duration || currentCoverage + 0.001 < duration;
     NSString *window = BAProcessWindow(session.startDate, session.endDate);
@@ -247,9 +287,8 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
     NSArray *units = @[_("SOC %"), @"°C", _("A ±")];
     NSArray *colors = @[UIColor.compatGreenColor, UIColor.compatOrangeColor, UIColor.compatBlueColor];
     NSArray *observed = @[soc, temperature, current];
-    double temperatureMinimum, temperatureMaximum, currentMinimum, currentMaximum;
-    BASessionRange(temperature, BAAnalyticsHistoryTemperatureCelsius, 1, NO, &temperatureMinimum, &temperatureMaximum);
-    BASessionRange(current, BAAnalyticsHistoryCurrentMilliamps, 1000, YES, &currentMinimum, &currentMaximum);
+    double temperatureMinimum = self.preparedTemperatureMinimum, temperatureMaximum = self.preparedTemperatureMaximum;
+    double currentMinimum = self.preparedCurrentMinimum, currentMaximum = self.preparedCurrentMaximum;
     double minima[] = {0, temperatureMinimum, currentMinimum};
     double maxima[] = {100, temperatureMaximum, currentMaximum};
     double divisors[] = {1, 1, 1000};
@@ -331,14 +370,13 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
 
     BAAnalyticsDrawGlyph(BAAnalyticsGlyphConnected, CGRectMake(12, CGRectGetMidY(statePlot) - 6.5, 13, 13), muted);
     BAProcessStateStrip(self, session.intervals, session.gaps, session.startDate, session.endDate, statePlot, session.identifier, regions);
-    for (BAAnalyticsHistoryInterval *interval in session.intervals) {
-        if (!BAProcessIntervalUsable(interval, @[], session.gaps) || interval.state == BAAnalyticsObservedStateUnknown) continue;
-        CGFloat startX = BAProcessTimeX(interval.startDate, session.startDate, session.endDate, statePlot);
-        CGFloat endX = BAProcessTimeX(interval.endDate, session.startDate, session.endDate, statePlot);
+    for (BAProcessStateRun *run in BAProcessStateRuns(self, session.intervals, session.gaps, session.startDate, session.endDate)) {
+        CGFloat startX = BAProcessTimeX(run.startDate, session.startDate, session.endDate, statePlot);
+        CGFloat endX = BAProcessTimeX(run.endDate, session.startDate, session.endDate, statePlot);
         if (endX - startX > 18) {
-            BAAnalyticsGlyph glyph = interval.state == BAAnalyticsObservedStateCharging ? BAAnalyticsGlyphBolt :
-                interval.state == BAAnalyticsObservedStateConnectedNotCharging ? BAAnalyticsGlyphPause :
-                interval.state == BAAnalyticsObservedStateFull ? BAAnalyticsGlyphCheck : BAAnalyticsGlyphUnplugged;
+            BAAnalyticsGlyph glyph = run.state == BAAnalyticsObservedStateCharging ? BAAnalyticsGlyphBolt :
+                run.state == BAAnalyticsObservedStateConnectedNotCharging ? BAAnalyticsGlyphPause :
+                run.state == BAAnalyticsObservedStateFull ? BAAnalyticsGlyphCheck : BAAnalyticsGlyphUnplugged;
             BAAnalyticsDrawGlyph(glyph, CGRectMake((startX + endX) / 2 - 6, CGRectGetMidY(statePlot) - 6, 12, 12), UIColor.compatLabelColor);
         }
     }

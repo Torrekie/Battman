@@ -196,8 +196,8 @@ id<BAAnalyticsCard> BAAnalyticsCreateRhythmCanvasCard(void) {
                     }
                     if (connected>0) BASFill(CGRectMake(cell.origin.x,cell.origin.y+validHeight,cell.size.width,connectedHeight),gray);
                     CGFloat knownHeight = MIN(cell.size.height, validHeight + connectedHeight);
-                    if (missing > 0) BASHatch(CGRectMake(cell.origin.x, cell.origin.y + knownHeight, cell.size.width, MAX(0, cell.size.height - knownHeight)));
                     if (valid<=0 && connected<=0) BASHatch(cell);
+                    else if (missing > 0) BASHatch(CGRectMake(cell.origin.x, cell.origin.y + knownHeight, cell.size.width, MAX(0, cell.size.height - knownHeight)));
                     NSString *label=[NSString stringWithFormat:@"%@, %@",day[@"label"],BASRhythmLabel(hour)];
                     [self addHit:hits rect:cell kind:@"hour" item:hour metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryExternalConnected] label:label]; part++;
                 }

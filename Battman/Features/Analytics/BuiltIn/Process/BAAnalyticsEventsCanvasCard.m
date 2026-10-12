@@ -9,6 +9,12 @@ typedef struct {
     NSTimeInterval end;
 } BAEventTimeRange;
 
+typedef struct {
+    NSTimeInterval start;
+    NSTimeInterval end;
+    BAAnalyticsObservedState state;
+} BAEventDisplayStateRun;
+
 static int BAEventCompareRanges(const void *left, const void *right) {
     const BAEventTimeRange *a = left, *b = right;
     return a->start == b->start ? 0 : a->start < b->start ? -1 : 1;
@@ -121,6 +127,11 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 @property (nonatomic, copy) NSData *transitionRanges;
 @property (nonatomic, copy) NSData *closedGapRanges;
 @property (nonatomic, copy) NSNumber *preparedKnownDuration;
+@property (nonatomic, copy) NSData *preparedStateRuns;
+@property (nonatomic) BOOL preparedCurrentRange;
+@property (nonatomic) BOOL preparedHasCurrent;
+@property (nonatomic) double preparedCurrentMinimum;
+@property (nonatomic) double preparedCurrentMaximum;
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderEvidence;
 @end
 
@@ -133,6 +144,10 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     self.transitionRanges = nil;
     self.closedGapRanges = nil;
     self.preparedKnownDuration = nil;
+    self.preparedStateRuns = nil;
+    self.preparedCurrentRange = NO;
+    self.preparedHasCurrent = NO; self.preparedCurrentMinimum = 0; self.preparedCurrentMaximum = 0;
+    BAProcessClearDisplayCaches(self);
 }
 
 - (void)setLatestReport:(BAAnalyticsReport *)latestReport {
@@ -258,6 +273,53 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
         return;
     }
     BAProcessHatch(plot, UIColor.compatSecondaryLabelColor);
+    if (dense && !collect) {
+        if (!self.preparedStateRuns) {
+            NSMutableData *runs = [NSMutableData data];
+            BAAnalyticsHistoryInterval *previous = nil;
+            BAEventDisplayStateRun run = {0, 0, BAAnalyticsObservedStateUnknown};
+            BOOL hasRun = NO;
+            NSUInteger transitionCursor = 0;
+            for (BAAnalyticsHistoryInterval *interval in self.preparedIntervals) {
+                if (!BAProcessIntervalUsable(interval, @[], window.gaps)) {
+                    if (hasRun) [runs appendBytes:&run length:sizeof run];
+                    hasRun = NO; previous = nil; continue;
+                }
+                NSDate *first = BAEventLater(interval.startDate, window.startDate);
+                NSDate *last = BAEventEarlier(interval.endDate, window.endDate);
+                if ([last compare:first] != NSOrderedDescending) continue;
+                BAAnalyticsObservedState state = [self stateForInterval:interval transitionCursor:&transitionCursor];
+                BOOL adjacent = hasRun && run.state == state && run.end == first.timeIntervalSince1970 &&
+                    [previous.endObservation.identifier isEqualToString:interval.startObservation.identifier] &&
+                    (state == BAAnalyticsObservedStateUnknown ||
+                     !BAAnalyticsHistoryHasGap(window.gaps, [NSDate dateWithTimeIntervalSince1970:run.start], last, NO));
+                if (hasRun && !adjacent) { [runs appendBytes:&run length:sizeof run]; hasRun = NO; }
+                if (!hasRun) { run.start = first.timeIntervalSince1970; run.state = state; hasRun = YES; }
+                run.end = last.timeIntervalSince1970; previous = interval;
+            }
+            if (hasRun) [runs appendBytes:&run length:sizeof run];
+            self.preparedStateRuns = runs;
+        }
+        const BAEventDisplayStateRun *runs = self.preparedStateRuns.bytes;
+        NSTimeInterval firstTime = window.startDate.timeIntervalSince1970;
+        NSTimeInterval duration = [window.endDate timeIntervalSinceDate:window.startDate];
+        CGFloat length = vertical ? plot.size.height : plot.size.width;
+        CGFloat origin = vertical ? plot.origin.y : plot.origin.x;
+        for (NSUInteger i = 0; i < self.preparedStateRuns.length / sizeof(BAEventDisplayStateRun); i++) {
+            CGFloat first = origin + (runs[i].start - firstTime) / duration * length;
+            CGFloat last = origin + (runs[i].end - firstTime) / duration * length;
+            CGRect band = vertical ? CGRectMake(plot.origin.x, first, plot.size.width, MAX(0, last - first)) :
+                CGRectMake(first, plot.origin.y, MAX(0, last - first), plot.size.height);
+            [self drawState:runs[i].state inRect:band vertical:vertical];
+        }
+        for (BAAnalyticsHistoryGap *gap in window.gaps) {
+            NSDate *first = BAEventLater(gap.startDate, window.startDate);
+            NSDate *last = BAEventEarlier(gap.endDate, window.endDate);
+            if ([last compare:first] == NSOrderedDescending)
+                [self drawState:BAAnalyticsObservedStateUnknown inRect:BAEventSpan(first, last, window, plot, vertical) vertical:vertical];
+        }
+        return;
+    }
     NSArray *ordered = self.preparedIntervals;
     NSDate *cursor = window.startDate;
     NSUInteger transitionCursor = 0;
@@ -618,16 +680,20 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     [regions addObject:BAProcessRegion(footerRect, BAProcessSelection(self, @"coverage", @[], BAEventStateMetrics(), window.startDate, window.endDate,
         @{@"knownStateSeconds":@(known), @"requestedSeconds":@(requested), @"observedTransitionCount":@(transitions.count),
           @"gapEventCountKnown":@(!hasUnknown)}), [NSString stringWithFormat:_("%@. %@. Transition times are bounded by samples"), summary, events])];
-    double minimum = 0, maximum = 0;
-    BOOL hasCurrent = NO;
-    for (BAAnalyticsObservation *observation in window.observations) {
-        NSNumber *value = BAProcessValue(observation, BAAnalyticsHistoryCurrentMilliamps);
-        if (!value || [observation.timestamp compare:window.startDate] == NSOrderedAscending ||
-            [observation.timestamp compare:window.endDate] == NSOrderedDescending) continue;
-        hasCurrent = YES;
-        minimum = MIN(minimum, value.doubleValue / 1000.0);
-        maximum = MAX(maximum, value.doubleValue / 1000.0);
+    if (!self.preparedCurrentRange) {
+        self.preparedCurrentMinimum = 0; self.preparedCurrentMaximum = 0; self.preparedHasCurrent = NO;
+        for (BAAnalyticsObservation *observation in window.observations) {
+            NSNumber *value = BAProcessValue(observation, BAAnalyticsHistoryCurrentMilliamps);
+            if (!value || [observation.timestamp compare:window.startDate] == NSOrderedAscending ||
+                [observation.timestamp compare:window.endDate] == NSOrderedDescending) continue;
+            self.preparedHasCurrent = YES;
+            self.preparedCurrentMinimum = MIN(self.preparedCurrentMinimum, value.doubleValue / 1000.0);
+            self.preparedCurrentMaximum = MAX(self.preparedCurrentMaximum, value.doubleValue / 1000.0);
+        }
+        self.preparedCurrentRange = YES;
     }
+    double minimum = self.preparedCurrentMinimum, maximum = self.preparedCurrentMaximum;
+    BOOL hasCurrent = self.preparedHasCurrent;
     double margin = MAX(0.05, (maximum - minimum) * 0.08);
     minimum -= margin;
     maximum += margin;

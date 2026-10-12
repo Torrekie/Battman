@@ -21,6 +21,19 @@ FOUNDATION_EXPORT void BAProcessHatch(CGRect rect, UIColor *color);
 FOUNDATION_EXPORT CGFloat BAProcessTimeX(NSDate *date, NSDate *start, NSDate *end, CGRect plot);
 FOUNDATION_EXPORT BOOL BAProcessIntervalUsable(BAAnalyticsHistoryInterval *interval, NSArray<NSString *> *metrics, NSArray<BAAnalyticsHistoryGap *> *gaps);
 FOUNDATION_EXPORT NSArray<BAAnalyticsHistoryInterval *> *BAProcessOrderedIntervals(NSArray<BAAnalyticsHistoryInterval *> *intervals);
+// Presentation runs join only identical states at a shared sampled endpoint.
+// Raw intervals remain unchanged for statistics and exact detail selections.
+@interface BAProcessStateRun : NSObject
+@property (nonatomic, readonly) NSDate *startDate;
+@property (nonatomic, readonly) NSDate *endDate;
+@property (nonatomic, readonly) BAAnalyticsObservedState state;
+@end
+FOUNDATION_EXPORT NSArray<BAProcessStateRun *> *BAProcessStateRuns(BAAnalyticsCanvasView *view,
+    NSArray<BAAnalyticsHistoryInterval *> *intervals, NSArray<BAAnalyticsHistoryGap *> *gaps,
+    NSDate *start, NSDate *end);
+// Called when a Process canvas drops or replaces its report, including memory
+// pressure. Associated display buffers must not outlive the retained evidence.
+FOUNDATION_EXPORT void BAProcessClearDisplayCaches(BAAnalyticsCanvasView *view);
 FOUNDATION_EXPORT BAAnalyticsDetailSelection *BAProcessSelection(BAAnalyticsCanvasView *view, NSString *kind,
     NSArray<NSString *> *records, NSArray<NSString *> *metrics, NSDate * _Nullable start, NSDate * _Nullable end,
     NSDictionary<NSString *, id> * _Nullable context);

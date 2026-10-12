@@ -43,19 +43,33 @@ void BALiveDrawText(NSString *text, CGRect rect, UIFont *font, UIColor *color, N
                         NSParagraphStyleAttributeName:paragraph} context:nil];
 }
 
+static NSDateFormatter *BALiveDateFormatter(NSString *template) {
+    NSMutableDictionary *thread = NSThread.currentThread.threadDictionary;
+    NSMutableDictionary *formats = thread[@"Battman.live.dateFormatters"];
+    if (!formats) { formats = [NSMutableDictionary dictionary]; thread[@"Battman.live.dateFormatters"] = formats; }
+    NSLocale *locale = NSLocale.currentLocale;
+    NSCalendar *calendar = NSCalendar.currentCalendar;
+    NSString *signature = [NSString stringWithFormat:@"%@/%@/%@", locale.localeIdentifier, calendar.calendarIdentifier, calendar.timeZone.name];
+    NSDictionary *entry = formats[template];
+    if (![entry[@"signature"] isEqual:signature]) {
+        NSDateFormatter *formatter = [NSDateFormatter new];
+        formatter.locale = locale; formatter.calendar = calendar; formatter.timeZone = calendar.timeZone;
+        [formatter setLocalizedDateFormatFromTemplate:template];
+        entry = @{@"signature":signature,@"formatter":formatter}; formats[template] = entry;
+    }
+    return entry[@"formatter"];
+}
+
 NSString *BALiveTime(NSDate *date) {
     if (!date) return _("Time unknown");
-    NSDateFormatter *formatter = [NSDateFormatter new];
-    [formatter setLocalizedDateFormatFromTemplate:@"HHmmss"];
-    return [formatter stringFromDate:date];
+    return [BALiveDateFormatter(@"HHmmss") stringFromDate:date];
 }
 
 NSString *BALiveWindow(NSDate *start, NSDate *end) {
     if (!start || !end || [end compare:start] == NSOrderedAscending)
         return _("Window unavailable");
-    NSDateFormatter *formatter = [NSDateFormatter new];
     BOOL sameDay = [[NSCalendar currentCalendar] isDate:start inSameDayAsDate:end];
-    [formatter setLocalizedDateFormatFromTemplate:sameDay ? @"HHmm" : @"MMdd"];
+    NSDateFormatter *formatter = BALiveDateFormatter(sameDay ? @"HHmm" : @"MMdd");
     return [NSString stringWithFormat:@"%@–%@", [formatter stringFromDate:start], [formatter stringFromDate:end]];
 }
 
@@ -84,6 +98,26 @@ void BALiveHatch(CGRect rect) {
     }
     CGContextStrokePath(context);
     CGContextRestoreGState(context);
+}
+
+void BALiveHatchRegions(CGRect bounds, NSArray<NSValue *> *rectangles) {
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    if (!context || CGRectIsEmpty(bounds) || !rectangles.count) return;
+    CGMutablePathRef mask = CGPathCreateMutable();
+    for (NSValue *value in rectangles) {
+        CGRect rect = CGRectIntersection(bounds, value.CGRectValue);
+        if (!CGRectIsEmpty(rect)) CGPathAddRect(mask, NULL, rect);
+    }
+    if (!CGPathIsEmpty(mask)) {
+        // One union mask and one hatch pass preserve the actual missing-time
+        // widths. Repeating a full diagonal stroke set for every narrow gap
+        // both wastes work and encourages misleading coarse quantization.
+        CGContextSaveGState(context);
+        CGContextAddPath(context, mask); CGContextClip(context);
+        BALiveHatch(bounds);
+        CGContextRestoreGState(context);
+    }
+    CGPathRelease(mask);
 }
 
 void BALiveLine(CGPoint start, CGPoint end, UIColor *color, CGFloat width, BOOL dashed) {

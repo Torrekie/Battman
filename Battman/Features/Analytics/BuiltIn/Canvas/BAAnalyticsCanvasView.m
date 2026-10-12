@@ -71,6 +71,9 @@ static CGRect BAAnalyticsCanvasExpandedTarget(CGRect rect, CGRect bounds) {
     self.accessibilityNeedsRebuild = YES;
     if (editing)
         self.selectedDetail = nil;
+    // Embedded accessibility-summary controls update their enabled state in
+    // layout, even when the immutable chart itself needs no repaint.
+    [self setNeedsLayout];
     [self rebuildCanvasAccessibility];
 }
 

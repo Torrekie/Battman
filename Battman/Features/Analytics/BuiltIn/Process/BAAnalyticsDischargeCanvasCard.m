@@ -156,6 +156,7 @@ static void BADischargeLine(CGPoint first, CGPoint last, UIColor *color, BOOL da
 static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *session, NSUInteger columns) {
     NSMutableDictionary<NSNumber *, NSMutableDictionary *> *buckets = [NSMutableDictionary dictionary];
     NSTimeInterval duration = [session.endDate timeIntervalSinceDate:session.startDate];
+    NSUInteger first = NSNotFound, last = NSNotFound;
     for (NSUInteger i = 0; i < session.observations.count; i++) {
         BAAnalyticsObservation *observation = session.observations[i];
         NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
@@ -164,8 +165,9 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
         double fraction = duration > 0 ? [observation.timestamp timeIntervalSinceDate:session.startDate] / duration : .5;
         NSNumber *column = @(MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns))));
         NSMutableDictionary *bucket = buckets[column];
-        if (!bucket) { bucket = [NSMutableDictionary dictionaryWithObject:@(i) forKey:@"first"]; buckets[column] = bucket; }
-        bucket[@"last"] = @(i);
+        if (!bucket) { bucket = [NSMutableDictionary dictionary]; buckets[column] = bucket; }
+        if (first == NSNotFound) first = i;
+        last = i;
         NSString *kind = power.doubleValue < 0 ? @"output" : power.doubleValue > 0 ? @"input" : @"zero";
         NSNumber *prior = bucket[kind];
         NSNumber *priorPower = prior ? BAProcessValue(session.observations[prior.unsignedIntegerValue], BAAnalyticsHistoryBatteryPowerWatts) : nil;
@@ -174,14 +176,92 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     }
     NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
     for (NSDictionary *bucket in buckets.allValues) for (NSNumber *index in bucket.allValues) [kept addIndex:index.unsignedIntegerValue];
+    if (first != NSNotFound) { [kept addIndex:first]; [kept addIndex:last]; }
     return kept;
 }
 
 @interface BAAnalyticsDischargeCanvasView : BAAnalyticsCanvasView
+@property (nonatomic, weak) BAAnalyticsHistorySession *preparedSession;
+@property (nonatomic, copy) NSArray<BAAnalyticsHistoryInterval *> *preparedIntervals;
+@property (nonatomic) BADischargeStatistics preparedStatistics;
+@property (nonatomic, copy) NSDictionary *preparedContext;
+@property (nonatomic, strong) BAAnalyticsStateTransition *preparedReconnection;
+@property (nonatomic, strong) BAAnalyticsObservation *preparedFirstSOC;
+@property (nonatomic, strong) BAAnalyticsObservation *preparedLastSOC;
+@property (nonatomic) double preparedPowerMaximum;
+@property (nonatomic) NSUInteger preparedPowerCount;
+@property (nonatomic) double preparedTemperatureMinimum;
+@property (nonatomic) double preparedTemperatureMaximum;
+@property (nonatomic) NSUInteger preparedPowerColumns;
+@property (nonatomic, copy) NSIndexSet *preparedPowerIndices;
+@property (nonatomic, copy) NSData *preparedPowerMissingRanges;
 - (NSArray<BAAnalyticsCanvasHitRegion *> *)renderCanvas;
 @end
 
 @implementation BAAnalyticsDischargeCanvasView
+
+- (void)setLatestReport:(BAAnalyticsReport *)latestReport {
+    if (!latestReport || latestReport != self.latestReport) {
+        self.preparedSession = nil; self.preparedIntervals = nil; self.preparedContext = nil;
+        self.preparedReconnection = nil; self.preparedFirstSOC = nil; self.preparedLastSOC = nil;
+        self.preparedPowerIndices = nil; self.preparedPowerMissingRanges = nil;
+        self.preparedPowerColumns = 0; self.preparedPowerMaximum = 0; self.preparedPowerCount = 0;
+        self.preparedTemperatureMinimum = INFINITY; self.preparedTemperatureMaximum = -INFINITY;
+        self.preparedStatistics = (BADischargeStatistics){0, 0, 0, 0};
+        BAProcessClearDisplayCaches(self);
+    }
+    [super setLatestReport:latestReport];
+}
+
+- (void)prepareSession:(BAAnalyticsHistorySession *)session {
+    if (self.preparedSession == session) return;
+    self.preparedSession = session;
+    self.preparedIntervals = BADischargeIntervals(session);
+    self.preparedStatistics = BADischargeSummarize(session, self.preparedIntervals);
+    self.preparedContext = BADischargeContext(session, self.preparedStatistics);
+    self.preparedReconnection = BADischargeReconnection(session);
+    self.preparedFirstSOC = nil; self.preparedLastSOC = nil;
+    self.preparedPowerMaximum = 0; self.preparedPowerCount = 0;
+    self.preparedTemperatureMinimum = INFINITY; self.preparedTemperatureMaximum = -INFINITY;
+    self.preparedPowerIndices = nil; self.preparedPowerColumns = 0;
+    NSMutableData *missing = [NSMutableData data];
+    NSDate *cursor = session.startDate;
+    for (BAAnalyticsHistoryInterval *interval in self.preparedIntervals) {
+        NSDate *first = nil, *last = nil;
+        if (!BAProcessIntervalUsable(interval, @[BAAnalyticsHistoryBatteryPowerWatts], session.gaps) ||
+            !BADischargeClip(interval, session, cursor, &first, &last)) continue;
+        if ([first compare:cursor] == NSOrderedDescending) {
+            double span[] = {cursor.timeIntervalSince1970, first.timeIntervalSince1970};
+            [missing appendBytes:span length:sizeof span];
+        }
+        cursor = last;
+    }
+    if ([session.endDate compare:cursor] == NSOrderedDescending) {
+        double span[] = {cursor.timeIntervalSince1970, session.endDate.timeIntervalSince1970};
+        [missing appendBytes:span length:sizeof span];
+    }
+    self.preparedPowerMissingRanges = missing;
+    for (BAAnalyticsObservation *observation in session.observations) {
+        NSNumber *temperature = BAProcessValue(observation, BAAnalyticsHistoryTemperatureCelsius);
+        if (temperature) {
+            self.preparedTemperatureMinimum = MIN(self.preparedTemperatureMinimum, temperature.doubleValue);
+            self.preparedTemperatureMaximum = MAX(self.preparedTemperatureMaximum, temperature.doubleValue);
+        }
+        if ([observation.timestamp compare:session.startDate] == NSOrderedAscending ||
+            [observation.timestamp compare:session.endDate] == NSOrderedDescending) continue;
+        if (BAProcessValue(observation, BAAnalyticsHistorySOCPercent)) {
+            if (!self.preparedFirstSOC || [observation.timestamp compare:self.preparedFirstSOC.timestamp] == NSOrderedAscending)
+                self.preparedFirstSOC = observation;
+            if (!self.preparedLastSOC || [observation.timestamp compare:self.preparedLastSOC.timestamp] == NSOrderedDescending)
+                self.preparedLastSOC = observation;
+        }
+        NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
+        if (power) {
+            self.preparedPowerMaximum = MAX(self.preparedPowerMaximum, MAX(0, -power.doubleValue));
+            self.preparedPowerCount++;
+        }
+    }
+}
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if ((self = [super initWithFrame:frame])) {
@@ -214,62 +294,76 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     NSMutableArray *regions = [NSMutableArray array];
     if (CGRectIsEmpty(plot)) return regions;
     NSDictionary *base = @{@"sessionIdentifier":session.identifier, @"displayConvention":_("Battery output magnitude |W|; detail preserves signed W.")};
-    BOOL collect = UIGraphicsGetCurrentContext() == NULL;
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    BOOL collect = context == NULL;
     BOOL dense = session.observations.count + intervals.count > 192;
     if (dense) [regions addObjectsFromArray:BAProcessTimeSliceRegions(self, @[BAAnalyticsHistoryBatteryPowerWatts],
         session.startDate, session.endDate, plot, NO, session.identifier, base)];
-    NSDate *cursor = session.startDate;
-    for (BAAnalyticsHistoryInterval *interval in intervals) {
-        NSDate *first = nil, *last = nil;
-        if (!BAProcessIntervalUsable(interval, @[BAAnalyticsHistoryBatteryPowerWatts], session.gaps) ||
-            !BADischargeClip(interval, session, cursor, &first, &last)) continue;
-        CGFloat x0 = BAProcessTimeX(first, session.startDate, session.endDate, plot);
-        CGFloat x1 = BAProcessTimeX(last, session.startDate, session.endDate, plot);
-        if ([first compare:cursor] == NSOrderedDescending) {
-            CGFloat gapX = BAProcessTimeX(cursor, session.startDate, session.endDate, plot);
-            CGRect missing = CGRectMake(gapX, plot.origin.y, x0 - gapX, plot.size.height);
+    if (dense && collect) return regions;
+    if (dense && self.preparedPowerMissingRanges.length) {
+        const double *missing = self.preparedPowerMissingRanges.bytes;
+        double start = session.startDate.timeIntervalSince1970;
+        NSTimeInterval duration = [session.endDate timeIntervalSinceDate:session.startDate];
+        CGMutablePathRef mask = CGPathCreateMutable();
+        for (NSUInteger i = 0; i < self.preparedPowerMissingRanges.length / (2 * sizeof(double)); i++) {
+            CGFloat x0 = plot.origin.x + (missing[2 * i] - start) / duration * plot.size.width;
+            CGFloat x1 = plot.origin.x + (missing[2 * i + 1] - start) / duration * plot.size.width;
+            CGPathAddRect(mask, NULL, CGRectMake(x0, plot.origin.y, MAX(0, x1 - x0), plot.size.height));
+        }
+        CGContextSaveGState(context); CGContextAddPath(context, mask); CGContextClip(context);
+        BAProcessHatch(plot, UIColor.compatSecondaryLabelColor);
+        CGContextRestoreGState(context); CGPathRelease(mask);
+    }
+    if (!dense) {
+        NSDate *cursor = session.startDate;
+        for (BAAnalyticsHistoryInterval *interval in intervals) {
+            NSDate *first = nil, *last = nil;
+            if (!BAProcessIntervalUsable(interval, @[BAAnalyticsHistoryBatteryPowerWatts], session.gaps) ||
+                !BADischargeClip(interval, session, cursor, &first, &last)) continue;
+            CGFloat x0 = BAProcessTimeX(first, session.startDate, session.endDate, plot);
+            CGFloat x1 = BAProcessTimeX(last, session.startDate, session.endDate, plot);
+            if ([first compare:cursor] == NSOrderedDescending) {
+                CGFloat gapX = BAProcessTimeX(cursor, session.startDate, session.endDate, plot);
+                CGRect missing = CGRectMake(gapX, plot.origin.y, x0 - gapX, plot.size.height);
+                BAProcessHatch(missing, UIColor.compatSecondaryLabelColor);
+                if (collect && !dense) [regions addObject:BAProcessRegion(missing, BAProcessSelection(self, @"gap", @[], @[BAAnalyticsHistoryBatteryPowerWatts], cursor, first, base),
+                    [NSString stringWithFormat:_("Battery power unavailable, %@"), BAProcessWindow(cursor, first)])];
+            }
+            cursor = last;
+            if (collect && !dense) {
+                NSMutableDictionary *details = [base mutableCopy];
+                details[@"clippedStartTimestamp"] = @(first.timeIntervalSince1970);
+                details[@"clippedEndTimestamp"] = @(last.timeIntervalSince1970);
+                [regions addObject:BAProcessRegion(CGRectMake(x0, plot.origin.y, MAX(1, x1 - x0), plot.size.height),
+                    BAProcessSelection(self, @"interval", @[interval.startObservation.identifier, interval.endObservation.identifier],
+                        @[BAAnalyticsHistoryBatteryPowerWatts], interval.startObservation.timestamp, interval.endObservation.timestamp, details),
+                    [NSString stringWithFormat:_("Trusted unplugged battery power, approximately %@"), BAProcessWindow(first, last)])];
+            }
+        }
+        if ([session.endDate compare:cursor] == NSOrderedDescending) {
+            CGFloat x = BAProcessTimeX(cursor, session.startDate, session.endDate, plot);
+            CGRect missing = CGRectMake(x, plot.origin.y, CGRectGetMaxX(plot) - x, plot.size.height);
             BAProcessHatch(missing, UIColor.compatSecondaryLabelColor);
-            if (collect && !dense) [regions addObject:BAProcessRegion(missing, BAProcessSelection(self, @"gap", @[], @[BAAnalyticsHistoryBatteryPowerWatts], cursor, first, base),
-                [NSString stringWithFormat:_("Battery power unavailable, %@"), BAProcessWindow(cursor, first)])];
-        }
-        cursor = last;
-        if (collect && !dense) {
-            NSMutableDictionary *details = [base mutableCopy];
-            details[@"clippedStartTimestamp"] = @(first.timeIntervalSince1970);
-            details[@"clippedEndTimestamp"] = @(last.timeIntervalSince1970);
-            [regions addObject:BAProcessRegion(CGRectMake(x0, plot.origin.y, MAX(1, x1 - x0), plot.size.height),
-                BAProcessSelection(self, @"interval", @[interval.startObservation.identifier, interval.endObservation.identifier],
-                    @[BAAnalyticsHistoryBatteryPowerWatts], interval.startObservation.timestamp, interval.endObservation.timestamp, details),
-                [NSString stringWithFormat:_("Trusted unplugged battery power, approximately %@"), BAProcessWindow(first, last)])];
+            if (collect && !dense) [regions addObject:BAProcessRegion(missing, BAProcessSelection(self, @"gap", @[], @[BAAnalyticsHistoryBatteryPowerWatts], cursor, session.endDate, base),
+                [NSString stringWithFormat:_("Battery power unavailable, %@"), BAProcessWindow(cursor, session.endDate)])];
         }
     }
-    if ([session.endDate compare:cursor] == NSOrderedDescending) {
-        CGFloat x = BAProcessTimeX(cursor, session.startDate, session.endDate, plot);
-        CGRect missing = CGRectMake(x, plot.origin.y, CGRectGetMaxX(plot) - x, plot.size.height);
-        BAProcessHatch(missing, UIColor.compatSecondaryLabelColor);
-        if (collect && !dense) [regions addObject:BAProcessRegion(missing, BAProcessSelection(self, @"gap", @[], @[BAAnalyticsHistoryBatteryPowerWatts], cursor, session.endDate, base),
-            [NSString stringWithFormat:_("Battery power unavailable, %@"), BAProcessWindow(cursor, session.endDate)])];
-    }
-    double maximum = 0;
-    NSUInteger count = 0;
-    for (BAAnalyticsObservation *observation in session.observations) {
-        NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
-        if (!power || [observation.timestamp compare:session.startDate] == NSOrderedAscending ||
-            [observation.timestamp compare:session.endDate] == NSOrderedDescending) continue;
-        maximum = MAX(maximum, MAX(0, -power.doubleValue));
-        count++;
-    }
+    double maximum = self.preparedPowerMaximum;
+    NSUInteger count = self.preparedPowerCount;
     // A real zero has a baseline mark. Missing power has a hatch, never a zero.
     double scale = maximum > 0 ? maximum * 1.08 : 1;
     CGFloat barWidth = MIN(8, MAX(2, plot.size.width / MAX((NSUInteger)1, count) * 0.6));
-    CGContextRef context = UIGraphicsGetCurrentContext();
     BADischargeLine(plot.origin, CGPointMake(CGRectGetMaxX(plot), plot.origin.y), UIColor.compatSeparatorColor, NO);
-    NSIndexSet *displayIndices = dense && context ? BADischargePowerDisplayIndices(session,
-        MAX(1, MIN(512, (NSUInteger)ceil(plot.size.width / 3)))) : nil;
+    NSUInteger columns = MAX(1, MIN(64, (NSUInteger)ceil(plot.size.width / 8)));
+    if (dense && context && (self.preparedPowerColumns != columns || !self.preparedPowerIndices)) {
+        self.preparedPowerColumns = columns;
+        self.preparedPowerIndices = BADischargePowerDisplayIndices(session, columns);
+    }
+    NSIndexSet *displayIndices = dense && context ? self.preparedPowerIndices : nil;
     CGMutablePathRef outputPath = dense && context ? CGPathCreateMutable() : NULL;
     CGMutablePathRef inputPath = dense && context ? CGPathCreateMutable() : NULL;
-    for (NSUInteger index = 0; index < session.observations.count; index++) {
-        if (displayIndices && ![displayIndices containsIndex:index]) continue;
+    for (NSUInteger index = displayIndices ? displayIndices.firstIndex : 0; index < session.observations.count;
+         index = displayIndices ? [displayIndices indexGreaterThanIndex:index] : index + 1) {
         BAAnalyticsObservation *observation = session.observations[index];
         NSNumber *power = BAProcessValue(observation, BAAnalyticsHistoryBatteryPowerWatts);
         if (!power || [observation.timestamp compare:session.startDate] == NSOrderedAscending ||
@@ -337,10 +431,11 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
             @{@"availability":unavailable}), unavailable)];
         return regions;
     }
-    NSArray *intervals = BADischargeIntervals(session);
-    BADischargeStatistics statistics = BADischargeSummarize(session, intervals);
-    NSDictionary *context = BADischargeContext(session, statistics);
-    BAAnalyticsStateTransition *reconnection = BADischargeReconnection(session);
+    [self prepareSession:session];
+    NSArray *intervals = self.preparedIntervals;
+    BADischargeStatistics statistics = self.preparedStatistics;
+    NSDictionary *context = self.preparedContext;
+    BAAnalyticsStateTransition *reconnection = self.preparedReconnection;
     BOOL tall = self.cardSize == BAAnalyticsCardSize2x2;
     BOOL largeText = BAProcessLargeText(self);
     NSTimeInterval duration = MAX(0, [session.endDate timeIntervalSinceDate:session.startDate]);
@@ -352,14 +447,7 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     if (!session.startBoundaryKnown || !session.endBoundaryKnown) boundary = [boundary stringByAppendingString:_(" · partial")];
     NSString *powerCaption = [NSString stringWithFormat:_("Output |W| · %@ valid"), BAProcessDuration(statistics.powerSeconds)];
 
-    BAAnalyticsObservation *firstSOC = nil, *lastSOC = nil;
-    for (BAAnalyticsObservation *observation in session.observations) {
-        if (!BAProcessValue(observation, BAAnalyticsHistorySOCPercent) ||
-            [observation.timestamp compare:session.startDate] == NSOrderedAscending ||
-            [observation.timestamp compare:session.endDate] == NSOrderedDescending) continue;
-        if (!firstSOC || [observation.timestamp compare:firstSOC.timestamp] == NSOrderedAscending) firstSOC = observation;
-        if (!lastSOC || [observation.timestamp compare:lastSOC.timestamp] == NSOrderedDescending) lastSOC = observation;
-    }
+    BAAnalyticsObservation *firstSOC = self.preparedFirstSOC, *lastSOC = self.preparedLastSOC;
 
     // Large text reduces secondary tracks and summary text, rather than
     // shrinking every label. Exact rate/energy remain accessible selections.
@@ -451,11 +539,7 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
         session.startDate, session.endDate, context), [NSString stringWithFormat:_("%@; %@; precise readings retain signed W"), powerCaption, powerSummary])];
     if (showTemperature) {
         CGRect temperature = CGRectMake(plotX, CGRectGetMaxY(powerPlot) + 9, plotWidth, 28);
-        double low = INFINITY, high = -INFINITY;
-        for (BAAnalyticsObservation *observation in session.observations) {
-            NSNumber *value = BAProcessValue(observation, BAAnalyticsHistoryTemperatureCelsius);
-            if (value) { low = MIN(low, value.doubleValue); high = MAX(high, value.doubleValue); }
-        }
+        double low = self.preparedTemperatureMinimum, high = self.preparedTemperatureMaximum;
         BAProcessText(@"°C", CGRectMake(12, temperature.origin.y, 25, caption.lineHeight), caption, UIColor.compatOrangeColor, NSTextAlignmentLeft);
         if (isfinite(low) && isfinite(high)) {
             double padding = MAX(1, (high - low) * 0.1);

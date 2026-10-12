@@ -35,18 +35,23 @@ static void BACellsStroke(CGPoint a, CGPoint b, NSUInteger ordinal) {
     CGContextStrokePath(context); CGContextRestoreGState(context);
 }
 
+static void BACellsAppendMarker(CGMutablePathRef path, CGPoint point, NSUInteger ordinal) {
+    CGRect rect = CGRectMake(point.x - 2.5, point.y - 2.5, 5, 5);
+    switch (ordinal % 3) {
+        case 1: CGPathAddRect(path, NULL, rect); break;
+        case 2:
+            CGPathMoveToPoint(path, NULL, point.x, point.y - 3.5); CGPathAddLineToPoint(path, NULL, point.x + 3.5, point.y);
+            CGPathAddLineToPoint(path, NULL, point.x, point.y + 3.5); CGPathAddLineToPoint(path, NULL, point.x - 3.5, point.y);
+            CGPathCloseSubpath(path); break;
+        default: CGPathAddEllipseInRect(path, NULL, rect); break;
+    }
+}
+
 static void BACellsMarker(CGPoint point, NSUInteger ordinal) {
     CGContextRef c = UIGraphicsGetCurrentContext(); if (!c) return;
-    CGRect rect = CGRectMake(point.x - 2.5, point.y - 2.5, 5, 5);
+    CGMutablePathRef path = CGPathCreateMutable(); BACellsAppendMarker(path, point, ordinal);
     CGContextSetFillColorWithColor(c, UIColor.compatBlueColor.CGColor);
-    switch (ordinal % 3) {
-        case 1: CGContextFillRect(c, rect); break;
-        case 2:
-            CGContextMoveToPoint(c, point.x, point.y - 3.5); CGContextAddLineToPoint(c, point.x + 3.5, point.y);
-            CGContextAddLineToPoint(c, point.x, point.y + 3.5); CGContextAddLineToPoint(c, point.x - 3.5, point.y);
-            CGContextClosePath(c); CGContextFillPath(c); break;
-        default: CGContextFillEllipseInRect(c, rect); break;
-    }
+    CGContextAddPath(c, path); CGContextFillPath(c); CGPathRelease(path);
 }
 
 typedef struct {
@@ -232,18 +237,23 @@ static BACellsPreparedHistory *BACellsPrepare(BAAnalyticsFamilyReport *family, N
 static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, NSTimeInterval end, NSUInteger columns) {
     NSUInteger count = data.length / sizeof(BACellsSample); if (!count) return @[];
     NSMutableIndexSet *kept = [NSMutableIndexSet indexSet]; const BACellsSample *samples = data.bytes;
-    if (count <= 192) [kept addIndexesInRange:NSMakeRange(0, count)];
+    if (count <= 4 * columns) [kept addIndexesInRange:NSMakeRange(0, count)];
     else {
         NSUInteger first = 0, minimum = 0, maximum = 0, last = 0, priorColumn = NSNotFound;
+        NSUInteger windowFirst = NSNotFound, windowLast = NSNotFound, windowMinimum = NSNotFound, windowMaximum = NSNotFound;
         for (NSUInteger i = 0; i < count; i++) {
+            if (samples[i].time >= start && samples[i].time <= end) {
+                if (windowFirst == NSNotFound) windowFirst = windowMinimum = windowMaximum = i;
+                windowLast = i;
+                if (samples[i].value < samples[windowMinimum].value) windowMinimum = i;
+                if (samples[i].value > samples[windowMaximum].value) windowMaximum = i;
+            }
             double fraction = end > start ? (samples[i].time - start) / (end - start) : .5;
             NSUInteger column = MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns)));
-            BOOL runChanged = i && samples[i].run != samples[i - 1].run;
-            BOOL previousConnected = i > 1 && samples[i - 1].run == samples[i - 2].run;
-            BOOL currentConnected = i + 1 < count && samples[i].run == samples[i + 1].run;
-            // Singleton readings remain scatter points; only trusted runs
-            // need explicit endpoints in addition to the column extrema.
-            if (column != priorColumn || (runChanged && (previousConnected || currentConnected))) {
+            // Four original points per time bucket also bounds fragmented
+            // sources. A retained pair may join only when its original run
+            // IDs match, so omitted boundaries never become inferred lines.
+            if (column != priorColumn) {
                 if (priorColumn != NSNotFound) { [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last]; }
                 first = minimum = maximum = i; priorColumn = column;
             }
@@ -252,9 +262,35 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
             last = i;
         }
         [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last];
+        // Clipped interval endpoints can dominate an edge bucket's extrema.
+        // Reserve the actual measured window endpoints and extrema as well,
+        // so the scale and markers describe every original in-window reading.
+        // The caller reserves four slots per channel before sizing buckets.
+        if (windowFirst != NSNotFound) {
+            [kept addIndex:windowFirst]; [kept addIndex:windowLast];
+            [kept addIndex:windowMinimum]; [kept addIndex:windowMaximum];
+        }
     }
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:kept.count];
     [kept enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:@(index)]; }]; return result;
+}
+
+static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indices, NSTimeInterval start, NSTimeInterval end) {
+    const BACellsSample *samples = data.bytes;
+    NSUInteger first = NSNotFound, last = NSNotFound, minimum = NSNotFound, maximum = NSNotFound;
+    for (NSNumber *number in indices) {
+        NSUInteger index = number.unsignedIntegerValue;
+        // Off-window endpoints can shape a clipped line, but never claim a
+        // measured sample at the window edge.
+        if (samples[index].time < start || samples[index].time > end) continue;
+        if (first == NSNotFound) first = minimum = maximum = index;
+        last = index;
+        if (samples[index].value < samples[minimum].value) minimum = index;
+        if (samples[index].value > samples[maximum].value) maximum = index;
+    }
+    NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
+    if (first != NSNotFound) { [kept addIndex:first]; [kept addIndex:last]; [kept addIndex:minimum]; [kept addIndex:maximum]; }
+    return kept;
 }
 
 @interface BACellsMark : NSObject
@@ -592,7 +628,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
     self.plotRect = CGRectMake(36, top, MAX(0, width - (self.compact ? 58 : 72)), MAX(0, CGRectGetMinY(self.countRect) - top - row));
     NSUInteger capacity = self.compact ? MAX(1, (NSUInteger)floor(self.plotRect.size.width / 20)) : MAX(1, (NSUInteger)floor(self.plotRect.size.height / 13));
     // A dense pack still retains its actual count; overflow opens the full group.
-    self.visibleMetrics = [self.cellMetrics subarrayWithRange:NSMakeRange(0, MIN(capacity, self.cellMetrics.count))];
+    self.visibleMetrics = [self.cellMetrics subarrayWithRange:NSMakeRange(0, MIN(MIN(capacity, (NSUInteger)12), self.cellMetrics.count))];
     if (CGRectEqualToRect(self.geometryRect, self.plotRect) && [self.geometryMetrics isEqualToArray:self.visibleMetrics]) return;
     self.geometryRect = self.plotRect; self.geometryMetrics = self.visibleMetrics;
     NSMutableArray<BAAnalyticsCanvasHitRegion *> *regions = [NSMutableArray array];
@@ -614,34 +650,30 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
         }
     } else {
         NSTimeInterval start = self.cellsReport.window.startDate.timeIntervalSince1970, end = self.cellsReport.window.endDate.timeIntervalSince1970;
-        NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(self.plotRect.size.width / 3)));
+        // Share a 192-vertex budget across all visible channels. Their latest
+        // concurrent delta and exact readings still use the original records.
+        NSUInteger channelBudget = 192 / MAX((NSUInteger)1, self.visibleMetrics.count);
+        NSUInteger columns = MAX(1, MIN(32, MIN((NSUInteger)ceil(self.plotRect.size.width / 10),
+            (channelBudget - 4) / 4)));
         for (NSUInteger ordinal = 0; ordinal < self.visibleMetrics.count; ordinal++) {
             NSString *metric = self.visibleMetrics[ordinal]; NSData *data = self.preparedHistory.samplesByMetric[metric];
             NSArray<BAAnalyticsObservation *> *points = self.preparedHistory.pointsByMetric[metric];
             const BACellsSample *samples = data.bytes;
             NSArray<NSNumber *> *indices = BACellsEnvelope(data, start, end, columns); display[metric] = indices;
-            for (NSNumber *number in indices) {
-                NSUInteger index = number.unsignedIntegerValue;
-                // Clipped original endpoints contribute to lines, not to a
-                // claimed observation at the visible window boundary.
-                if (samples[index].time < start || samples[index].time > end) continue;
-                BOOL endpoint = !index || index + 1 == points.count ||
-                    samples[index].run != samples[index - 1].run || samples[index].run != samples[index + 1].run;
+            NSIndexSet *markerIndices = BACellsMarkerIndices(data, indices, start, end);
+            [markerIndices enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
                 CGPoint point = CGPointMake([self xForDate:points[index].timestamp], [self yForValue:samples[index].value]);
-                BACellsMark *priorMark = marks.lastObject;
-                if (dense && !endpoint && samples[index].value != self.preparedHistory.minimum && samples[index].value != self.preparedHistory.maximum &&
-                    [priorMark.metric isEqualToString:metric] && fabs(point.x - priorMark.point.x) < 12) continue;
                 BACellsMark *mark = [BACellsMark new]; mark.observation = points[index]; mark.metric = metric; mark.ordinal = ordinal;
                 mark.point = point; [marks addObject:mark];
                 if (self.detailEnabled && !dense) [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(mark.point.x - 3, mark.point.y - 3, 6, 6)
                     selection:[self selectionForObservation:mark.observation metric:metric] accessibilityLabel:[self labelForObservation:mark.observation metric:metric]]];
-            }
+            }];
             CGRect identity = CGRectMake(CGRectGetMaxX(self.plotRect) + 13, self.plotRect.origin.y + ordinal * 13, 18, 13);
             if (self.detailEnabled) [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:identity selection:[self selectionForObservation:self.latestCellObservation metric:metric]
                 accessibilityLabel:[self labelForObservation:self.latestCellObservation metric:metric]]];
         }
         if (self.detailEnabled && dense && !CGRectIsEmpty(self.plotRect)) {
-            NSUInteger slices = end > start ? MAX(1, MIN(64, (NSUInteger)ceil(self.plotRect.size.width / 6))) : 1;
+            NSUInteger slices = end > start ? MAX(1, MIN(64, (NSUInteger)floor(self.plotRect.size.width / 44))) : 1;
             for (NSUInteger slice = 0; slice < slices; slice++) {
                 NSDate *a = [NSDate dateWithTimeIntervalSince1970:start + (end - start) * slice / slices];
                 NSDate *b = [NSDate dateWithTimeIntervalSince1970:start + (end - start) * (slice + 1) / slices];
@@ -665,19 +697,14 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
 - (void)rebuildUntrustedRects {
     if (self.compact || self.largeType || CGRectIsEmpty(self.plotRect)) { self.untrustedRects = @[]; return; }
     NSTimeInterval start = self.cellsReport.window.startDate.timeIntervalSince1970, span = [self.cellsReport.window.endDate timeIntervalSinceDate:self.cellsReport.window.startDate];
-    NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(self.plotRect.size.width / 3)));
-    NSMutableIndexSet *missing = [NSMutableIndexSet indexSet];
     const double *ranges = self.preparedHistory.missingRanges.bytes;
-    for (NSUInteger i = 0; span > 0 && i < self.preparedHistory.missingRanges.length / (2 * sizeof(double)); i++) {
-        NSUInteger a = MIN(columns - 1, (NSUInteger)MAX(0, floor((ranges[2 * i] - start) / span * columns)));
-        NSUInteger b = MIN(columns, (NSUInteger)MAX(0, ceil((ranges[2 * i + 1] - start) / span * columns)));
-        if (b > a) [missing addIndexesInRange:NSMakeRange(a, b - a)];
-    }
     NSMutableArray *rects = [NSMutableArray array]; CGRect plot = self.plotRect;
-    [missing enumerateRangesUsingBlock:^(NSRange range, BOOL *stop) {
-        [rects addObject:[NSValue valueWithCGRect:CGRectMake(plot.origin.x + (double)range.location / columns * plot.size.width, plot.origin.y,
-            (double)range.length / columns * plot.size.width, plot.size.height)]];
-    }];
+    for (NSUInteger i = 0; span > 0 && i < self.preparedHistory.missingRanges.length / (2 * sizeof(double)); i++) {
+        double a = MAX(0, MIN(1, (ranges[2 * i] - start) / span));
+        double b = MAX(0, MIN(1, (ranges[2 * i + 1] - start) / span));
+        if (b > a) [rects addObject:[NSValue valueWithCGRect:CGRectMake(plot.origin.x + a * plot.size.width, plot.origin.y,
+            (b - a) * plot.size.width, plot.size.height)]];
+    }
     self.untrustedRects = rects;
 }
 
@@ -751,7 +778,7 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
                 CGRectMake(mark.point.x - step / 2, CGRectGetMaxY(self.plotRect) + 1, step, small.lineHeight), small, secondary, NSTextAlignmentCenter);
         }
     } else {
-        for (NSValue *value in self.untrustedRects) BALiveHatch(value.CGRectValue);
+        BALiveHatchRegions(self.plotRect, self.untrustedRects);
         CGContextRef context = UIGraphicsGetCurrentContext();
         CGContextSaveGState(context); CGContextClipToRect(context, CGRectInset(self.plotRect, -3, -3));
         CGContextSetStrokeColorWithColor(context, UIColor.compatBlueColor.CGColor); CGContextSetLineWidth(context, 1.7);
@@ -765,18 +792,19 @@ static NSArray<NSNumber *> *BACellsEnvelope(NSData *data, NSTimeInterval start, 
             NSTimeInterval start = self.cellsReport.window.startDate.timeIntervalSince1970, duration = [self.cellsReport.window.endDate timeIntervalSinceDate:self.cellsReport.window.startDate];
             for (NSNumber *number in indices) {
                 NSUInteger index = number.unsignedIntegerValue;
+                CGFloat bx = self.plotRect.origin.x + (duration > 0 ? (samples[index].time - start) / duration : .5) * self.plotRect.size.width;
                 if (previous != NSNotFound && samples[index].run == samples[previous].run) {
-                    CGFloat ax = self.plotRect.origin.x + (duration > 0 ? (samples[previous].time - start) / duration : .5) * self.plotRect.size.width;
-                    CGFloat bx = self.plotRect.origin.x + (duration > 0 ? (samples[index].time - start) / duration : .5) * self.plotRect.size.width;
-                    CGContextMoveToPoint(context, ax, [self yForValue:samples[previous].value]);
                     CGContextAddLineToPoint(context, bx, [self yForValue:samples[index].value]);
-                }
+                } else CGContextMoveToPoint(context, bx, [self yForValue:samples[index].value]);
                 previous = index;
             }
             CGContextStrokePath(context);
         }
         CGContextSetLineDash(context, 0, NULL, 0);
-        for (BACellsMark *mark in self.marks) BACellsMarker(mark.point, mark.ordinal);
+        CGMutablePathRef markerPath = CGPathCreateMutable();
+        for (BACellsMark *mark in self.marks) BACellsAppendMarker(markerPath, mark.point, mark.ordinal);
+        CGContextSetFillColorWithColor(context, UIColor.compatBlueColor.CGColor);
+        CGContextAddPath(context, markerPath); CGContextFillPath(context); CGPathRelease(markerPath);
         CGContextRestoreGState(context);
         for (NSUInteger ordinal = 0; ordinal < self.visibleMetrics.count; ordinal++) {
             NSString *metric = self.visibleMetrics[ordinal]; NSNumber *value = self.latestValues[metric];

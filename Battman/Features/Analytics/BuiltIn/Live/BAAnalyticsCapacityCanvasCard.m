@@ -177,7 +177,7 @@ static BACapacityPreparedHistory *BACapacityPrepare(BAAnalyticsFamilyReport *fam
 static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepared, NSUInteger columns) {
     NSUInteger count = prepared.points.count;
     if (!count) return @[];
-    if (count <= 192) {
+    if (count <= 4 * columns) {
         NSMutableArray *all = [NSMutableArray arrayWithCapacity:count];
         for (NSUInteger i = 0; i < count; i++) [all addObject:@(i)];
         return all;
@@ -188,13 +188,10 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     NSUInteger first = 0, minimum = 0, maximum = 0, last = 0, priorColumn = NSNotFound;
     for (NSUInteger i = 0; i < count; i++) {
         NSUInteger column = span > 0 ? MIN(columns - 1, (NSUInteger)floor((samples[i].time - samples[0].time) / span * columns)) : 0;
-        BOOL runChanged = i && samples[i].run != samples[i - 1].run;
-        BOOL previousConnected = i > 1 && samples[i - 1].run == samples[i - 2].run;
-        BOOL currentConnected = i + 1 < count && samples[i].run == samples[i + 1].run;
-        // Keep both endpoints of a drawable trusted run. Isolated untrusted
-        // points share an envelope column, but their distinct run IDs prevent
-        // any line from being invented between the retained scatter points.
-        if (column != priorColumn || (runChanged && (previousConnected || currentConnected))) {
+        // Bound even a heavily fragmented history to four original points per
+        // time bucket. Monotone original run IDs below still prohibit a line
+        // across any omitted untrusted edge or configuration change.
+        if (column != priorColumn) {
             if (priorColumn != NSNotFound) { [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last]; }
             first = minimum = maximum = i; priorColumn = column;
         }
@@ -203,6 +200,42 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         last = i;
     }
     [kept addIndex:first]; [kept addIndex:minimum]; [kept addIndex:maximum]; [kept addIndex:last];
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:kept.count];
+    [kept enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:@(index)]; }];
+    return result;
+}
+
+static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepared, NSArray<NSNumber *> *indices, NSUInteger budget) {
+    if (!indices.count) return @[];
+    const BACapacitySample *samples = prepared.samples.bytes;
+    NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
+    NSUInteger minimum = indices.firstObject.unsignedIntegerValue, maximum = minimum;
+    for (NSNumber *number in indices) {
+        NSUInteger index = number.unsignedIntegerValue;
+        if (samples[index].value < samples[minimum].value) minimum = index;
+        if (samples[index].value > samples[maximum].value) maximum = index;
+    }
+    [kept addIndex:indices.firstObject.unsignedIntegerValue];
+    [kept addIndex:indices.lastObject.unsignedIntegerValue];
+    [kept addIndex:minimum]; [kept addIndex:maximum];
+    // Circles distinguish sparse estimates without obscuring the trend. The
+    // endpoints and measured extrema are mandatory; remaining space is spread
+    // across the complete window rather than filled with every run endpoint.
+    NSTimeInterval first = samples[indices.firstObject.unsignedIntegerValue].time;
+    NSTimeInterval span = samples[indices.lastObject.unsignedIntegerValue].time - first;
+    NSUInteger remaining = budget > kept.count ? budget - kept.count : 0;
+    for (NSUInteger slot = 0; slot < remaining; slot++) {
+        double target = first + span * (slot + 1) / (remaining + 1);
+        NSUInteger nearest = indices.firstObject.unsignedIntegerValue;
+        double distance = DBL_MAX;
+        for (NSNumber *number in indices) {
+            NSUInteger index = number.unsignedIntegerValue;
+            if ([kept containsIndex:index]) continue;
+            double candidate = fabs(samples[index].time - target);
+            if (candidate < distance) { nearest = index; distance = candidate; }
+        }
+        if (distance != DBL_MAX) [kept addIndex:nearest];
+    }
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:kept.count];
     [kept enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:@(index)]; }];
     return result;
@@ -225,8 +258,11 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 @property (nonatomic, getter=isPreparingHistory) BOOL preparingHistory;
 @property (nonatomic) NSUInteger preparationGeneration;
 @property (nonatomic, copy) NSArray<NSNumber *> *displayIndices;
+@property (nonatomic, copy) NSArray<NSNumber *> *displayMarkerIndices;
 @property (nonatomic, copy) NSArray<NSNumber *> *boundaryIndices;
 @property (nonatomic, copy) NSArray<NSValue *> *displayGaps;
+@property (nonatomic, copy) NSArray<NSValue *> *displayGapRects;
+@property (nonatomic) CGRect displayGapGeometry;
 @property (nonatomic) CGFloat displayWidth;
 @property (nonatomic, strong) NSDateFormatter *pointFormatter;
 @property (nonatomic, strong) BACapacityPreparationToken *preparationToken;
@@ -251,7 +287,8 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         _capacityObservations = @[];
         _currentRecordIdentifiers = @[];
         _currentSource = @"unavailable";
-        _displayIndices = @[]; _boundaryIndices = @[]; _displayGaps = @[];
+        _displayIndices = @[]; _displayMarkerIndices = @[]; _boundaryIndices = @[]; _displayGaps = @[]; _displayGapRects = @[];
+        _displayGapGeometry = CGRectNull;
         _pointFormatter = [NSDateFormatter new];
         [_pointFormatter setLocalizedDateFormatFromTemplate:@"MMddHHmmss"];
         // At accessibility sizes a compact card cannot hold the complete
@@ -338,7 +375,7 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
             family.availability != BAAnalyticsReportAvailabilityUnavailable;
         if (!retainDisplayed) {
             self.preparedHistory = nil; self.capacityObservations = @[];
-            self.displayIndices = @[]; self.boundaryIndices = @[]; self.displayGaps = @[]; self.displayWidth = -1;
+            self.displayIndices = @[]; self.displayMarkerIndices = @[]; self.boundaryIndices = @[]; self.displayGaps = @[]; self.displayGapRects = @[]; self.displayGapGeometry = CGRectNull; self.displayWidth = -1;
             self.hitRegions = @[];
             [self adoptDisplayedReport:self.incomingReport];
         }
@@ -548,10 +585,15 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         return span > 0 ? graph.origin.x + (time - first) / span * graph.size.width : CGRectGetMidX(graph);
     };
     CGFloat (^y)(double) = ^CGFloat(double value) { return CGRectGetMaxY(graph) - (value - low) / (high - low) * graph.size.height; };
-    NSUInteger columns = MAX(1, MIN(512, (NSUInteger)ceil(graph.size.width / 3)));
+    // A widget trend has at most 128 vertices, independent of history length
+    // or the number of original trusted/untrusted runs. Exact records remain
+    // available to its detail selection and all summary statistics.
+    NSUInteger columns = MAX(1, MIN(32, (NSUInteger)ceil(graph.size.width / 10)));
     if (self.displayWidth != columns) {
         self.displayWidth = columns;
         self.displayIndices = BACapacityEnvelope(prepared, columns);
+        NSUInteger markerBudget = MAX(4, MIN(12, (NSUInteger)floor(graph.size.width / 24)));
+        self.displayMarkerIndices = BACapacityMarkers(prepared, self.displayIndices, markerBudget);
         NSMutableArray *boundaries = [NSMutableArray array]; NSUInteger lastColumn = NSNotFound;
         for (NSUInteger i = 1; i < points.count; i++) if (samples[i].boundary) {
             double fraction = span > 0 ? ((samples[i - 1].time + samples[i].time) * .5 - first) / span : .5;
@@ -559,53 +601,45 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
             if (column != lastColumn) { [boundaries addObject:@(i)]; lastColumn = column; }
         }
         self.boundaryIndices = boundaries;
-        NSMutableIndexSet *missing = [NSMutableIndexSet indexSet];
         const double *gaps = prepared.gaps.bytes;
-        for (NSUInteger i = 0; span > 0 && i < prepared.gaps.length / (2 * sizeof(double)); i++) {
-            NSUInteger a = MIN(columns - 1, (NSUInteger)MAX(0, floor((gaps[2 * i] - first) / span * columns)));
-            NSUInteger b = MIN(columns, (NSUInteger)MAX(0, ceil((gaps[2 * i + 1] - first) / span * columns)));
-            if (b > a) [missing addIndexesInRange:NSMakeRange(a, b - a)];
-        }
         NSMutableArray *displayGaps = [NSMutableArray array];
-        [missing enumerateRangesUsingBlock:^(NSRange range, BOOL *stop) {
-            [displayGaps addObject:[NSValue valueWithCGRect:CGRectMake((double)range.location / columns, 0, (double)range.length / columns, 1)]];
-        }];
+        for (NSUInteger i = 0; span > 0 && i < prepared.gaps.length / (2 * sizeof(double)); i++) {
+            double a = MAX(0, MIN(1, (gaps[2 * i] - first) / span));
+            double b = MAX(0, MIN(1, (gaps[2 * i + 1] - first) / span));
+            if (b > a) [displayGaps addObject:[NSValue valueWithCGRect:CGRectMake(a, 0, b - a, 1)]];
+        }
         self.displayGaps = displayGaps;
+        self.displayGapGeometry = CGRectNull;
+    }
+    if (!CGRectEqualToRect(self.displayGapGeometry, graph)) {
+        NSMutableArray *rects = [NSMutableArray arrayWithCapacity:self.displayGaps.count];
+        for (NSValue *value in self.displayGaps) {
+            CGRect range = value.CGRectValue;
+            [rects addObject:[NSValue valueWithCGRect:CGRectMake(graph.origin.x + range.origin.x * graph.size.width,
+                graph.origin.y, range.size.width * graph.size.width, graph.size.height)]];
+        }
+        self.displayGapRects = rects; self.displayGapGeometry = graph;
     }
     if (c) {
         CGContextSaveGState(c); CGContextClipToRect(c, CGRectInset(graph, -4, -4));
-        for (NSValue *value in self.displayGaps) {
-            CGRect range = value.CGRectValue;
-            BALiveHatch(CGRectMake(graph.origin.x + range.origin.x * graph.size.width, graph.origin.y, range.size.width * graph.size.width, graph.size.height));
-        }
+        BALiveHatchRegions(graph, self.displayGapRects);
         BALiveLine(CGPointMake(graph.origin.x, CGRectGetMaxY(graph)), CGPointMake(CGRectGetMaxX(graph), CGRectGetMaxY(graph)), UIColor.compatSeparatorColor, .7, NO);
         CGContextSetStrokeColorWithColor(c, UIColor.compatGreenColor.CGColor); CGContextSetLineWidth(c, 1.2);
         NSUInteger previous = NSNotFound;
         for (NSNumber *number in self.displayIndices) {
             NSUInteger index = number.unsignedIntegerValue;
             if (previous != NSNotFound && samples[previous].run == samples[index].run) {
-                CGContextMoveToPoint(c, x(samples[previous].time), y(samples[previous].value));
                 CGContextAddLineToPoint(c, x(samples[index].time), y(samples[index].value));
-            }
+            } else CGContextMoveToPoint(c, x(samples[index].time), y(samples[index].value));
             previous = index;
         }
         CGContextStrokePath(c);
         CGContextSetFillColorWithColor(c, UIColor.compatBackgroundColor.CGColor);
-        BOOL dense = points.count > 192; CGFloat previousMarkerX = -CGFLOAT_MAX;
-        BOOL markedMinimum = NO, markedMaximum = NO;
         CGMutablePathRef markerPath = CGPathCreateMutable();
-        for (NSNumber *number in self.displayIndices) {
+        for (NSNumber *number in self.displayMarkerIndices) {
             NSUInteger index = number.unsignedIntegerValue;
-            BOOL endpoint = !index || index + 1 == points.count ||
-                samples[index].run != samples[index - 1].run || samples[index].run != samples[index + 1].run;
             CGFloat markerX = x(samples[index].time);
-            BOOL extreme = (!markedMinimum && samples[index].value == prepared.minimum) ||
-                (!markedMaximum && samples[index].value == prepared.maximum);
-            if (dense && !endpoint && !extreme && fabs(markerX - previousMarkerX) < 12) continue;
-            if (samples[index].value == prepared.minimum) markedMinimum = YES;
-            if (samples[index].value == prepared.maximum) markedMaximum = YES;
             CGPathAddEllipseInRect(markerPath, NULL, CGRectMake(markerX - 3, y(samples[index].value) - 3, 6, 6));
-            previousMarkerX = markerX;
         }
         CGContextAddPath(c, markerPath); CGContextDrawPath(c, kCGPathFillStroke); CGPathRelease(markerPath);
         CGContextSetStrokeColorWithColor(c, UIColor.compatSecondaryLabelColor.CGColor);

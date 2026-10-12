@@ -91,8 +91,9 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
     view.latestSnapshot = self.latestSnapshot;
     view.latestReport = self.latestReport;
     [self updateCanvasView:view];
-    [view setNeedsLayout];
-    [view setNeedsDisplay];
+    // Each built-in invalidates its own changed presentation. In particular,
+    // a completed statistical canvas must not repaint merely because the host
+    // repeats configuration or visibility delivery with the same evidence.
 }
 
 - (void)updateCanvasView:(BAAnalyticsCanvasView *)view {

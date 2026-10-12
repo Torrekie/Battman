@@ -39,10 +39,18 @@ void BASLine(CGPoint a, CGPoint b, UIColor *color, CGFloat width) {
     p.lineWidth = width; [color setStroke]; [p stroke];
 }
 void BASHatch(CGRect rect) {
+    if (CGRectIsEmpty(rect)) return;
     CGContextRef c = UIGraphicsGetCurrentContext(); CGContextSaveGState(c);
     CGContextClipToRect(c, rect); BASFill(rect, [UIColor tertiaryCompatFillColor]);
-    for (CGFloat x = CGRectGetMinX(rect) - rect.size.height; x < CGRectGetMaxX(rect); x += 6)
-        BASLine(CGPointMake(x, CGRectGetMaxY(rect)), CGPointMake(x + rect.size.height, CGRectGetMinY(rect)), [UIColor compatSecondaryLabelColor], .6);
+    CGContextSetStrokeColorWithColor(c, UIColor.compatSecondaryLabelColor.CGColor);
+    CGContextSetLineWidth(c, .6);
+    // One stroke for all parallel segments avoids allocating and stroking a
+    // separate Bezier path for each line of every missing-data heatmap cell.
+    for (CGFloat x = CGRectGetMinX(rect) - rect.size.height; x < CGRectGetMaxX(rect); x += 6) {
+        CGContextMoveToPoint(c, x, CGRectGetMaxY(rect));
+        CGContextAddLineToPoint(c, x + rect.size.height, CGRectGetMinY(rect));
+    }
+    CGContextStrokePath(c);
     CGContextRestoreGState(c);
 }
 void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
@@ -56,6 +64,10 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
 @end
 
 // Drawing consumes an already derived immutable result. No I/O or statistics in layout.
+@interface BASStatisticalView ()
+@property (nonatomic, strong) NSMapTable *selectionCache;
+@end
+
 @implementation BASStatisticalView
 - (BOOL)isPreparingHistory {
     return self.preparingAnalysis;
@@ -73,11 +85,17 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
     [super traitCollectionDidChange:previous]; [self setNeedsLayout]; [self setNeedsDisplay];
 }
 - (void)setAnalysis:(NSDictionary *)analysis {
-    _analysis = [analysis copy]; self.largeTextRows = nil; self.hitRegions = @[]; [self setNeedsLayout]; [self setNeedsDisplay];
+    if (_analysis == analysis) return;
+    _analysis = [analysis copy]; self.selectionCache = nil; self.largeTextRows = nil; self.hitRegions = @[]; [self setNeedsLayout]; [self setNeedsDisplay];
+}
+- (void)setLatestReport:(BAAnalyticsReport *)report {
+    if (self.latestReport != report) self.selectionCache = nil;
+    [super setLatestReport:report];
 }
 - (void)setFamilyReport:(BAAnalyticsFamilyReport *)familyReport {
     if (_familyReport == familyReport) return;
     _familyReport = familyReport;
+    self.selectionCache = nil;
     self.largeTextRows = nil;
 }
 - (BOOL)usesLargeText {
@@ -85,13 +103,26 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
     return BASFont(12).pointSize > 14;
 }
 - (BAAnalyticsDetailSelection *)selection:(NSString *)kind item:(NSDictionary *)item metrics:(NSArray *)metrics {
+    // Items belong to one immutable analysis. Repainting their coordinates
+    // must not recursively bound and serialize the same evidence each time.
+    id itemKey = item.count ? (id)item : NSNull.null;
+    NSString *role = [NSString stringWithFormat:@"%@/%@",kind,[metrics componentsJoinedByString:@","] ?: @""];
+    NSMutableDictionary *cached = [self.selectionCache objectForKey:itemKey];
+    BAAnalyticsDetailSelection *selection = cached[role];
+    if (selection) return selection;
     NSMutableDictionary *context = [NSMutableDictionary dictionaryWithDictionary:item[@"context"] ?: self.analysis[@"context"] ?: @{}];
     context[@"reportSequence"] = @(self.latestReport.sequenceNumber);
     if (self.latestReport.sourceProfileIdentifier) context[@"sourceProfile"] = self.latestReport.sourceProfileIdentifier;
     if (self.familyReport.limitations.count) context[@"limitations"] = [self.familyReport.limitations subarrayWithRange:NSMakeRange(0, MIN(12, self.familyReport.limitations.count))];
     if (item[@"identifier"]) context[@"identifier"] = item[@"identifier"];
     if (item[@"label"]) context[@"selectedBin"] = item[@"label"];
-    return [BAAnalyticsDetailSelection selectionForFamily:self.familyIdentifier kind:kind recordIdentifiers:item[@"recordIdentifiers"] ?: (item[@"identifier"] ? @[item[@"identifier"]] : @[]) metricIdentifiers:metrics startDate:item[@"startDate"] ?: self.familyReport.window.startDate endDate:item[@"endDate"] ?: self.familyReport.window.endDate context:BAStatisticsBoundedDetailContext(context)];
+    selection = [BAAnalyticsDetailSelection selectionForFamily:self.familyIdentifier kind:kind recordIdentifiers:item[@"recordIdentifiers"] ?: (item[@"identifier"] ? @[item[@"identifier"]] : @[]) metricIdentifiers:metrics startDate:item[@"startDate"] ?: self.familyReport.window.startDate endDate:item[@"endDate"] ?: self.familyReport.window.endDate context:BAStatisticsBoundedDetailContext(context)];
+    if (!self.selectionCache) self.selectionCache = [[NSMapTable alloc] initWithKeyOptions:NSPointerFunctionsStrongMemory | NSPointerFunctionsObjectPointerPersonality valueOptions:NSPointerFunctionsStrongMemory capacity:64];
+    if (!cached && self.selectionCache.count < 256) {
+        cached = [NSMutableDictionary dictionary]; [self.selectionCache setObject:cached forKey:itemKey];
+    }
+    if (cached.count < 8) cached[role] = selection;
+    return selection;
 }
 - (void)addHit:(NSMutableArray *)hits rect:(CGRect)rect kind:(NSString *)kind item:(NSDictionary *)item metrics:(NSArray *)metrics label:(NSString *)label {
     [hits addObject:[BAAnalyticsCanvasHitRegion regionWithRect:rect selection:[self selection:kind item:item metrics:metrics] accessibilityLabel:label]];

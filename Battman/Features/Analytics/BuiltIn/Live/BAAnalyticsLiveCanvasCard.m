@@ -25,6 +25,8 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
 @property (nonatomic, copy) NSString *unit;
 @property (nonatomic, strong) UIColor *color;
 @property (nonatomic, copy) NSArray<BAAnalyticsMetricPoint *> *points;
+@property (nonatomic, copy) NSIndexSet *markerIndices;
+@property (nonatomic, copy) NSIndexSet *accessibleIndices;
 @property (nonatomic) CGRect rect;
 @property (nonatomic) double minimum;
 @property (nonatomic) double maximum;
@@ -141,13 +143,25 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         track.points = [self shortPointsForMetric:track.metric];
         double minimum = DBL_MAX, maximum = -DBL_MAX;
         NSDate *previous = nil;
+        NSUInteger pointIndex = 0, minimumIndex = 0, maximumIndex = 0;
         for (BAAnalyticsMetricPoint *point in track.points) {
+            if (point.value < minimum) minimumIndex = pointIndex;
+            if (point.value > maximum) maximumIndex = pointIndex;
             minimum = MIN(minimum, point.value); maximum = MAX(maximum, point.value);
             if (!first || [point.timestamp compare:first] == NSOrderedAscending) first = point.timestamp;
             if (!last || [point.timestamp compare:last] == NSOrderedDescending) last = point.timestamp;
             if (previous && [point.timestamp timeIntervalSinceDate:previous] > BALiveMaximumJoinSeconds) gaps = YES;
             previous = point.timestamp;
+            pointIndex++;
         }
+        NSMutableIndexSet *markers = [NSMutableIndexSet indexSet];
+        if (track.points.count <= 12) [markers addIndexesInRange:NSMakeRange(0,track.points.count)];
+        else { [markers addIndex:0]; [markers addIndex:track.points.count-1]; [markers addIndex:minimumIndex]; [markers addIndex:maximumIndex]; }
+        track.markerIndices = markers;
+        NSMutableIndexSet *accessible = [markers mutableCopy];
+        if (track.points.count > 12)
+            for (NSUInteger index=0;index<12;index++) [accessible addIndex:index*(track.points.count-1)/11];
+        track.accessibleIndices = accessible;
         count = MAX(count, track.points.count);
         if (track.points.count == 0) { minimum = 0; maximum = 1; }
         if (![track.unit isEqualToString:@"°C"]) { minimum = MIN(minimum, 0); maximum = MAX(maximum, 0); }
@@ -288,6 +302,9 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     self.socLabel.font = BALiveGraphicFont(self.compact ? 27 : 30, 36, UIFontWeightSemibold);
     self.socLabel.textColor = self.soc ? ([self usesLightSOCInk] ? UIColor.whiteColor : UIColor.blackColor) : UIColor.compatLabelColor;
     NSMutableArray *regions = [NSMutableArray array];
+    // This self-contained card has no detail controller. Keep readable values
+    // for VoiceOver without serializing an unused action for every live point.
+    BAAnalyticsDetailSelection *readOnly = [BAAnalyticsDetailSelection selectionForFamily:self.familyIdentifier kind:@"overview" context:nil];
     NSArray *marks = @[
         @[[NSValue valueWithCGRect:self.batteryRect], @[BAAnalyticsMetricStateOfChargePercent, BAAnalyticsMetricRemainingCapacityMilliampHours], [self socText]],
         @[[NSValue valueWithCGRect:self.currentRect], @[self.currentMetric], [NSString stringWithFormat:@"%@ %@", self.tracks[1].label, [self currentText]]],
@@ -298,18 +315,17 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         CGRect rect = [mark[0] CGRectValue];
         if (CGRectIsEmpty(rect)) continue;
         [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:rect
-              selection:[self currentSelectionForMetrics:mark[1]] accessibilityLabel:mark[2]]];
+              selection:readOnly accessibilityLabel:mark[2]]];
     }
     for (BALiveTrack *track in self.tracks) {
         if (CGRectIsEmpty(track.rect)) continue;
-        for (BAAnalyticsMetricPoint *point in track.points) {
+        [track.accessibleIndices enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+            BAAnalyticsMetricPoint *point = track.points[index];
             CGPoint position = [self point:point inTrack:track];
             NSString *label = [NSString stringWithFormat:@"%@, %.2f %@, %@", track.label, point.value, track.unit, BALiveTime(point.timestamp)];
-            BAAnalyticsDetailSelection *selection = BALiveSelection(self, @"metric-point", nil, @[track.metric], point.timestamp, point.timestamp,
-                @{@"value":@(point.value), @"unit":track.unit, @"scope":@"foreground short window", @"maximumJoinSeconds":@(BALiveMaximumJoinSeconds)});
             [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(position.x - 3, position.y - 3, 6, 6)
-                                                        selection:selection accessibilityLabel:label]];
-        }
+                                                        selection:readOnly accessibilityLabel:label]];
+        }];
     }
     self.hitRegions = regions;
     [self setNeedsDisplay];
@@ -328,20 +344,32 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         CGFloat zeroY = CGRectGetMaxY(track.rect) - (0 - track.minimum) / (track.maximum - track.minimum) * CGRectGetHeight(track.rect);
         BALiveLine(CGPointMake(minX, zeroY), CGPointMake(maxX, zeroY), UIColor.compatGray4Color, 1, YES);
     }
+    CGMutablePathRef path = CGPathCreateMutable();
     BAAnalyticsMetricPoint *previous = nil;
     for (BAAnalyticsMetricPoint *point in track.points) {
         CGPoint position = [self point:point inTrack:track];
         if (previous) {
             CGPoint prior = [self point:previous inTrack:track];
             if ([point.timestamp timeIntervalSinceDate:previous.timestamp] <= BALiveMaximumJoinSeconds)
-                BALiveLine(prior, position, track.color, 1.8, track.dashed);
-            else if (elapsed > 0)
-                BALiveHatch(CGRectMake(prior.x, track.rect.origin.y, position.x - prior.x, track.rect.size.height));
-        }
-        [track.color setFill];
-        [[UIBezierPath bezierPathWithOvalInRect:CGRectMake(position.x - 1.8, position.y - 1.8, 3.6, 3.6)] fill];
+                CGPathAddLineToPoint(path,NULL,position.x,position.y);
+            else {
+                if (elapsed > 0) BALiveHatch(CGRectMake(prior.x, track.rect.origin.y, position.x - prior.x, track.rect.size.height));
+                CGPathMoveToPoint(path,NULL,position.x,position.y);
+            }
+        } else CGPathMoveToPoint(path,NULL,position.x,position.y);
         previous = point;
     }
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSaveGState(context);
+    CGContextSetStrokeColorWithColor(context,track.color.CGColor); CGContextSetLineWidth(context,1.8);
+    if (track.dashed) { CGFloat dash[]={4,3}; CGContextSetLineDash(context,0,dash,2); }
+    CGContextAddPath(context,path); CGContextStrokePath(context); CGPathRelease(path);
+    CGContextSetFillColorWithColor(context,track.color.CGColor);
+    [track.markerIndices enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+        CGPoint point = [self point:track.points[index] inTrack:track];
+        CGContextAddEllipseInRect(context,CGRectMake(point.x-1.8,point.y-1.8,3.6,3.6));
+    }];
+    CGContextFillPath(context); CGContextRestoreGState(context);
 }
 
 - (void)drawRect:(CGRect)rect {
