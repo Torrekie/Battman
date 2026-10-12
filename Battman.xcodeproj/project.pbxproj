@@ -576,6 +576,9 @@
 		7D160DE162F3278904EDB11D /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 		BEAE9CBC4F6F1EA66AE046D6 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 		D781FFF568227DB57A07FAC7 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
+		6245AC049C1790A4CB6B2B2F /* intl.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		671F456CAF8605C3BC4A64FB /* intl.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C2C504A885DE4B35B3DF0E33 /* intl.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 687743152D461E4400375A2C /* intl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -674,6 +677,39 @@
 			);
 			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		332E72968E4806E0C1ED92A0 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				6245AC049C1790A4CB6B2B2F /* intl.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA03EE654750DA8709FB697C /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				671F456CAF8605C3BC4A64FB /* intl.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8DB1D8A6D59AD1631AEB68B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				C2C504A885DE4B35B3DF0E33 /* intl.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -14971,6 +15007,7 @@
 				684114842E5323E2001B76B6 /* Sources */,
 				684114B82E5323E2001B76B6 /* Frameworks */,
 				684114BD2E5323E2001B76B6 /* Resources */,
+				E8DB1D8A6D59AD1631AEB68B /* Embed Frameworks */,
 				684114C22E5323E2001B76B6 /* ShellScript */,
 			);
 			buildRules = (
@@ -14991,6 +15028,7 @@
 				684114DA2E57BDE7001B76B6 /* Sources */,
 				6841150E2E57BDE7001B76B6 /* Frameworks */,
 				684115132E57BDE7001B76B6 /* Resources */,
+				EA03EE654750DA8709FB697C /* Embed Frameworks */,
 				684115182E57BDE7001B76B6 /* ShellScript */,
 			);
 			buildRules = (
@@ -15028,6 +15066,7 @@
 				686AECBB2D3B93CB0059ECD0 /* Sources */,
 				686AECBC2D3B93CB0059ECD0 /* Frameworks */,
 				686AECBD2D3B93CB0059ECD0 /* Resources */,
+				332E72968E4806E0C1ED92A0 /* Embed Frameworks */,
 				68171A2A2D520AB400DD4224 /* ShellScript */,
 			);
 			buildRules = (

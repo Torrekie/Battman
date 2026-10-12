@@ -45,6 +45,12 @@ three roots, official publisher, SDK-example publisher, and release checksum.
 Apple/ad-hoc/TrollStore platform signing is a separate mechanism and does not
 replace any of them.
 
+Xcode app products embed the built `intl.framework` and its LGPL license.
+The app finalizer signs this framework before signing the app; framework-target
+signing is disabled so recent Xcode versions do not request a development
+certificate for a distributable ad-hoc build. The compiled gettext catalogs
+remain in the app's `locales` directory.
+
 ## 2. Required decisions and inputs
 
 Before strict assembly:

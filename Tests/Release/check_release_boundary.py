@@ -33,6 +33,12 @@ if "Battman-havoc-tipa" in project:
 if project.count("/* Distribution.m in Sources */ =") != 3:
     fail("every Xcode app target must compile its distribution identity")
 
+if project.count('/* intl.framework in Embed Frameworks */ =') != 3:
+    fail("every Xcode app target must embed its gettext runtime")
+intl_project = (ROOT / "gettext.xcodeproj/project.pbxproj").read_text(encoding="utf-8")
+if "COPYING.LIB in Resources" not in intl_project or intl_project.count("CODE_SIGNING_ALLOWED = NO;") != 2:
+    fail("gettext must carry its license and defer signing to app finalization")
+
 for forbidden in (
     "dpkg-deb", "tree-nonfree", "tree-havoc", "deb-nonfree", "deb-havoc",
     "6841152D2E57E166001B76B6 /* control in Sources */",

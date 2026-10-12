@@ -37,6 +37,8 @@ tag, sign, upload, publish, or install artifacts.
 
 ### Fixed
 
+- Embed and sign the gettext runtime in Xcode app products, including its license,
+  so localizations also work without a system gettext installation.
 - Preserved valid cable-change events and prevented gaps in an independent
   history table from hiding available measurements.
 - Fixed the lifetime and cleanup of asynchronous power notifications.

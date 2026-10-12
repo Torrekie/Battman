@@ -35,6 +35,7 @@
 		687743022D46143700375A2C /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743012D46143700375A2C /* libiconv.tbd */; };
 		687743042D46144D00375A2C /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 687743032D46144D00375A2C /* CoreFoundation.framework */; };
 		6877430E2D4619F800375A2C /* libintl.h in Headers */ = {isa = PBXBuildFile; fileRef = 6877430D2D4619E600375A2C /* libintl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F069158A38666A498D0B5694 /* COPYING.LIB in Resources */ = {isa = PBXBuildFile; fileRef = F069158A38666A498D0B5693 /* COPYING.LIB */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		6877430B2D46198900375A2C /* libintl-iphonesimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "libintl-iphonesimulator.h"; sourceTree = "<group>"; };
 		6877430C2D46199600375A2C /* libintl-iphoneos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "libintl-iphoneos.h"; sourceTree = "<group>"; };
 		6877430D2D4619E600375A2C /* libintl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libintl.h; sourceTree = "<group>"; };
+		F069158A38666A498D0B5693 /* COPYING.LIB */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gettext-0.23/gettext-runtime/intl/COPYING.LIB"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +206,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F069158A38666A498D0B5694 /* COPYING.LIB in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -379,6 +382,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
 				INFOPLIST_FILE = intl/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
@@ -461,6 +466,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
 				INFOPLIST_FILE = intl/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;

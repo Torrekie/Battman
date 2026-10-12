@@ -404,7 +404,13 @@ int main(int argc, char * argv[]) {
     if (is_carbon()) {
 #if TARGET_OS_IPHONE
 	    @autoreleasepool{
-		    const char *pluginLanguage = use_libintl ? getenv("LANGUAGE") : "en";
+		    const char *pluginLanguage = "en";
+#ifdef USE_GETTEXT
+		    gettext_init();
+		    pluginLanguage = use_libintl ? getenv("LANGUAGE") : "en";
+#else
+		    pluginLanguage = preferred_language_code() == 1 ? "zh-CN" : "en";
+#endif
 		    BTPluginSetPreferredLanguage(pluginLanguage ? [NSString stringWithUTF8String:pluginLanguage] : @"en");
 		    extern NSString *battman_bootstrap(char *, int);
 		    NSString *applicationDelegateClassName = battman_bootstrap("", 0);

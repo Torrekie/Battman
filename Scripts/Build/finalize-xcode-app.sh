@@ -60,6 +60,12 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
     --source "${PROJECT_DIR}/OfficialPlugins/Trust/PluginTrust" \
     --app "${app_path}"
 
+framework_path="${app_path}/Frameworks/intl.framework"
+if [ ! -f "${framework_path}/intl" ] || [ ! -f "${framework_path}/COPYING.LIB" ]; then
+    echo "error: the built gettext runtime and license must be embedded" >&2
+    exit 2
+fi
+
 if [ "${PLATFORM_NAME}" = "iphoneos" ]; then
     if [ ! -f "${executable_path}" ]; then
         echo "error: app executable is missing: ${executable_path}" >&2
@@ -68,10 +74,12 @@ if [ "${PLATFORM_NAME}" = "iphoneos" ]; then
     signing_tool=${BATTMAN_CODESIGN_TOOL:-auto}
     if { [ "${signing_tool}" = auto ] || [ "${signing_tool}" = ldid ]; } && \
             command -v ldid >/dev/null 2>&1; then
+        ldid -S "${app_path}/Frameworks/intl.framework/intl"
         ldid -S"${PROJECT_DIR}/Battman.entitlements" "${executable_path}"
         ldid -h "${executable_path}" >/dev/null
     elif { [ "${signing_tool}" = auto ] || [ "${signing_tool}" = codesign ]; } && \
             command -v codesign >/dev/null 2>&1; then
+        codesign --force --sign - "${app_path}/Frameworks/intl.framework"
         codesign --force --sign - --entitlements "${PROJECT_DIR}/Battman.entitlements" \
             --generate-entitlement-der "${app_path}"
         codesign --verify --strict "${app_path}"
@@ -79,4 +87,10 @@ if [ "${PLATFORM_NAME}" = "iphoneos" ]; then
         echo "error: iphoneos finalization requires ldid or Apple codesign" >&2
         exit 2
     fi
+fi
+
+if [ "${PLATFORM_NAME}" = "iphonesimulator" ]; then
+    codesign --force --sign - "${framework_path}"
+    codesign --force --sign - "${app_path}"
+    codesign --verify --strict "${app_path}"
 fi
