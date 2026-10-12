@@ -114,7 +114,9 @@ static NSString *valueForSMCBufferSafe(uint8_t *bytes, int size, char *ptype, in
 @implementation FullSMCViewController
 
 - (instancetype)init {
-	self = [super initWithStyle:UITableViewStyleGrouped];
+	UITableViewStyle style = UITableViewStyleGrouped;
+	if (@available(iOS 13.0, *)) style = UITableViewStyleInsetGrouped;
+	self = [super initWithStyle:style];
 	SMCParamStruct input = {0};
 	SMCParamStruct output;
 	input.param.data8 = kSMCGetKeyCount;

@@ -337,60 +337,32 @@
 		68A3EAFB2D5204D2003381DF /* battery_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 68A3EAF62D5204D2003381DF /* battery_info.c */; };
 		68A3EAFD2D5204EA003381DF /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68A3EAFC2D5204EA003381DF /* IOKit.framework */; };
 		68AC00062F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
-		68AC00072F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
 		68AC00082F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
-		68AC00092F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
 		68AC000A2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
-		68AC000B2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
 		68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00012F00000100AC0000 /* AnalyticsCardCell.m */; };
-		68AC000D2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00032F00000100AC0000 /* BAAnalyticsBuiltInCard.m */; };
 		68AC00262F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68AC00272F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68AC00282F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68AC00292F00000100AC0000 /* AnalyticsCardGridLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 68AC00212F00000100AC0000 /* AnalyticsCardGridLayout.m */; };
 		68E210012F20000000001001 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
-		68E210022F20000000001002 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
-		68E210032F20000000001003 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
-		68E210042F20000000001004 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
-		68E210052F20000000001005 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
-		68E210062F20000000001006 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
-		68E210072F20000000001007 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
 		68E210082F20000000001008 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E210092F20000000001009 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
 		68E2100A2F2000000000100A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
 		68E2100B2F2000000000100B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
 		68E2100C2F2000000000100C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
 		68E211012F20000000001101 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
-		68E211022F20000000001102 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
-		68E211032F20000000001103 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
-		68E211042F20000000001104 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
-		68E211052F20000000001105 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
-		68E211062F20000000001106 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
-		68E211072F20000000001107 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
 		68E211082F20000000001108 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E211092F20000000001109 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
 		68E2110A2F2000000000110A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
 		68E2110B2F2000000000110B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
 		68E2110C2F2000000000110C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
 		68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
-		68E212022F20000000001202 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
-		68E212032F20000000001203 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
-		68E212042F20000000001204 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
-		68E212052F20000000001205 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
-		68E212062F20000000001206 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
-		68E212072F20000000001207 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
 		68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
 		68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
 		68E2120B2F2000000000120B /* BAAnalyticsUnavailableCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000B2F2000000000000B /* BAAnalyticsUnavailableCard.m */; };
 		68E2120C2F2000000000120C /* BAAnalyticsMetricSnapshot.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000C2F2000000000000C /* BAAnalyticsMetricSnapshot.m */; };
 		68E213012F20000000001301 /* BAAnalyticsBuiltInCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200012F20000000000001 /* BAAnalyticsBuiltInCards.m */; };
-		68E213022F20000000001302 /* BAAnalyticsBatterySummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200022F20000000000002 /* BAAnalyticsBatterySummaryCard.m */; };
-		68E213032F20000000001303 /* BAAnalyticsChargingLimitCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200032F20000000000003 /* BAAnalyticsChargingLimitCard.m */; };
-		68E213042F20000000001304 /* BAAnalyticsCycleSummaryCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200042F20000000000004 /* BAAnalyticsCycleSummaryCard.m */; };
-		68E213052F20000000001305 /* BAAnalyticsPowerAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200052F20000000000005 /* BAAnalyticsPowerAverageCard.m */; };
-		68E213062F20000000001306 /* BAAnalyticsRemainingCapacityCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200062F20000000000006 /* BAAnalyticsRemainingCapacityCard.m */; };
-		68E213072F20000000001307 /* BAAnalyticsTemperatureAverageCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200072F20000000000007 /* BAAnalyticsTemperatureAverageCard.m */; };
 		68E213082F20000000001308 /* BAAnalyticsMetricService.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200082F20000000000008 /* BAAnalyticsMetricService.m */; };
 		68E213092F20000000001309 /* BAAnalyticsSystemMetricSource.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E200092F20000000000009 /* BAAnalyticsSystemMetricSource.m */; };
 		68E2130A2F2000000000130A /* BAAnalyticsCardLayoutStore.m in Sources */ = {isa = PBXBuildFile; fileRef = 68E2000A2F2000000000000A /* BAAnalyticsCardLayoutStore.m */; };
@@ -678,6 +650,102 @@
 		68FBDCF02DE30A5E0057870A /* worker.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDCEF2DE30A5E0057870A /* worker.c */; };
 		68FBDD182DE30A8E0057870A /* CreditViewController.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD162DE30A8E0057870A /* CreditViewController.c */; };
 		68FBDD192DE30A8E0057870A /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = 68FBDD172DE30A8E0057870A /* common.c */; };
+		D56D2A03CFB550ADD8C280F7 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
+		8FBCB3818FDA105DD6E1DA53 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
+		5F1E94DEB6318485B577A7DD /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
+		A498CD9A60FA14DD875C8160 /* BAAnalyticsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */; };
+		386B1D550E09AB47FB3FB03B /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
+		3CD72F8F45033DE53D6A9B7A /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
+		2FF54132DC11656E170D8B14 /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
+		B3BAC3003BF7EE5E8BE5A7CA /* BAAnalyticsCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */; };
+		5AB6D9A669053E5ACCF5779A /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
+		5CAF61CCEE617765BBB6303F /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
+		97A0F293EBB5A9984E782716 /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
+		FDAB166A56B976376A73C6CF /* BAAnalyticsDetailSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */; };
+		D68B2F253CE65539A16D482F /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
+		36FFF99843FD509C968E8712 /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
+		CC6298D71D4C97B677D8767F /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
+		6DBA63D20AF6E78AE2953119 /* BAAnalyticsDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */; };
+		3A542CE8EF01B07F205CC426 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
+		4E31FEB53E82AE7DBE2E3238 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
+		83EC942677111C86D111AC77 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
+		F033E6F3275CA430686DEC58 /* BAAnalyticsCapacityCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */; };
+		DD58FD8D529721D1AFDDEA4E /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
+		F5CA8DADFA3892DD9BFD1A66 /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
+		5A9392A3EC27CE6842D1C93B /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
+		38CEA7DDDE3F3FF319D06FE8 /* BAAnalyticsCellsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */; };
+		E80E065017262F5EC010EBF8 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
+		D937E36F44920D74E119C0D2 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
+		10AD9787FD679A6598B2E722 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
+		5B192BEFC91C1971A72AA577 /* BAAnalyticsLiveCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */; };
+		C6B559F52CFAA676AF66B2FC /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
+		A8EE21076AFBED09A691BFF6 /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
+		3DF71DAADC83FB31EDE8535B /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
+		88D02E902DB519A56C36E402 /* BAAnalyticsLiveDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */; };
+		F85CDA03DD7B8F96F4BEB738 /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
+		43B52B98F937AFF2302834CC /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
+		4AFCAC85216E4813EEF00037 /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
+		03D1F63143CDECEEE314581F /* BAAnalyticsDischargeCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */; };
+		1C6F7FE449BAD78C100248A3 /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
+		3BD607127416DB1FBF1BB72A /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
+		1F316BDC84E49008EAE495E6 /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
+		31D03C105FDF8869863E500A /* BAAnalyticsEventsCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */; };
+		DD0E3C8881E443E727B63EF1 /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
+		68F7CC62093BD4EE619284CC /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
+		CD0778665BA56B13C9413A08 /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
+		C45B542F950B99E7FD85FCAF /* BAAnalyticsPathCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */; };
+		2B17849BC21A4F8F1F38875E /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
+		19BE070E1F42F665DE65F728 /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
+		08490C7888EC43C3CC4C5B2F /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
+		671BB500E87CDEB674F0B0BB /* BAAnalyticsProcessCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */; };
+		58607627EA578D60CF474514 /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
+		32C1AEE5BAB09CEAFA25A28F /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
+		38B8998B7C71701AAFDF6B08 /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
+		9B320D313DAA9186BFD1DCCA /* BAAnalyticsProcessDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */; };
+		31B457195851F6D8F684403A /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
+		42C6C7AE9E20F6498C34949E /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
+		8D9EA0A95D922B83BE2F3B82 /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
+		D27A9BEB8B99879FB7B33F80 /* BAAnalyticsSessionCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */; };
+		E6A69E1B3A3DD7F88D06E372 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
+		65805D55EB4B74ADDC77ABE1 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
+		5690B9D5DFC55DABDDBB32D3 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
+		2F3C5B569E7C8F5369E47AA5 /* BAStatisticsAnalysis.m in Sources */ = {isa = PBXBuildFile; fileRef = 29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */; };
+		3FE6AED6E32F51376B2F380B /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
+		FB7F4325E2023D074104E40C /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
+		AAA12C7436C37AAA7858988D /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
+		F714DF0F719AB117353819E3 /* BAStatisticsCanvasCards.m in Sources */ = {isa = PBXBuildFile; fileRef = D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */; };
+		28985862965AE893F0E9620A /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
+		C6BDACBD803E27B773B87637 /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
+		63495A9023ADC68E5863BDCB /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
+		0857F94F0230805A73E08FA2 /* BAAnalyticsHistoryModels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */; };
+		5BC7F32EF77712C02079C9DC /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
+		F22ECDB351BAABEC3E1F3E86 /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
+		14714D72831DF7AE30F5AA87 /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
+		55B50E75FDEE95905E8BAFDF /* BAAnalyticsHistoryReader.m in Sources */ = {isa = PBXBuildFile; fileRef = A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */; };
+		E00CFBA8430E7CACB49CA490 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
+		241F0992C60AFAB5CC4B5D16 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
+		26953ECB53D7513328BDCEF2 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
+		ECD8D4D8F2B9D00C971FF269 /* BAAnalyticsHistoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */; };
+		0338FFEEDAC99C69B4563345 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
+		71C67EC960F4DAA86996AD72 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
+		30BEBC305F4E24BF6D11C775 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
+		9B67FA3EC7F1CBC35205E2A2 /* BAAnalyticsReport.m in Sources */ = {isa = PBXBuildFile; fileRef = FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */; };
+		B91FFC2CE3527C07C510F79D /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
+		9C7DD3F3F96239E50D3A1815 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
+		841F5825E74B8958BB3B39B0 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
+		C86B90B5686D2E9F620409C4 /* BAStatisticsDrawing.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */; };
+		D15AE354143DF7759E067B0B /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
+		DC41181A4C108244F86683DF /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
+		B84469E162E19539B6310433 /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
+		729B45E9F2550A591C861DE4 /* BAAnalyticsDwellCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */; };
+		36D2E720E72461E42708031D /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
+		166CEBDD245D2603A445E578 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
+		B60C2B81DAC918C99D4B1897 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
+		7454B67C95FFD2D59005B106 /* BAAnalyticsCompareCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */; };
+		7D160DE162F3278904EDB11D /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
+		BEAE9CBC4F6F1EA66AE046D6 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
+		D781FFF568227DB57A07FAC7 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
+		A38401A3B313BDABCE8C7296 /* BAAnalyticsRhythmCanvasCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2407,6 +2475,47 @@
 		68FBDD162DE30A8E0057870A /* CreditViewController.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CreditViewController.c; sourceTree = "<group>"; };
 		68FBDD172DE30A8E0057870A /* common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = common.c; sourceTree = "<group>"; };
 		68FBDD1E2DE4493B0057870A /* cpp_magic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpp_magic.h; sourceTree = "<group>"; };
+		67DA99C650EEB9DDB3E12B6F /* BAAnalyticsCanvasCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsCanvasCard.h; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsCanvasCard.h; sourceTree = SOURCE_ROOT; };
+		78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCanvasView.m; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsCanvasView.m; sourceTree = SOURCE_ROOT; };
+		131A18DDE0F09CDC206A33F8 /* BAAnalyticsDetailSelection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsDetailSelection.h; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailSelection.h; sourceTree = SOURCE_ROOT; };
+		1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsDetailSelection.m; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailSelection.m; sourceTree = SOURCE_ROOT; };
+		57E7D0977E42A0518313E58F /* BAAnalyticsDetailViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsDetailViewController.h; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailViewController.h; sourceTree = SOURCE_ROOT; };
+		A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsDetailViewController.m; path = Battman/Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailViewController.m; sourceTree = SOURCE_ROOT; };
+		FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCapacityCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsCapacityCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCellsCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsCellsCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsLiveCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsLiveCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		512A3D9937B89514E540D920 /* BAAnalyticsLiveDrawing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsLiveDrawing.h; path = Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsLiveDrawing.h; sourceTree = SOURCE_ROOT; };
+		FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsLiveDrawing.m; path = Battman/Features/Analytics/BuiltIn/Live/BAAnalyticsLiveDrawing.m; sourceTree = SOURCE_ROOT; };
+		C3EA469AF51BA8B03211FA79 /* BAAnalyticsDischargeCanvasCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsDischargeCanvasCard.h; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsDischargeCanvasCard.h; sourceTree = SOURCE_ROOT; };
+		CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsDischargeCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsDischargeCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		74E396BEB3B8705B306FA6D3 /* BAAnalyticsEventsCanvasCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsEventsCanvasCard.h; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsEventsCanvasCard.h; sourceTree = SOURCE_ROOT; };
+		A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsEventsCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsEventsCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		F1637CF94A9F5519737D1D49 /* BAAnalyticsPathCanvasCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsPathCanvasCard.h; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsPathCanvasCard.h; sourceTree = SOURCE_ROOT; };
+		684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsPathCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsPathCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsProcessCanvasCards.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsProcessCanvasCards.m; sourceTree = SOURCE_ROOT; };
+		10556D1C0868F95F92E22366 /* BAAnalyticsProcessDrawing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsProcessDrawing.h; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsProcessDrawing.h; sourceTree = SOURCE_ROOT; };
+		E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsProcessDrawing.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsProcessDrawing.m; sourceTree = SOURCE_ROOT; };
+		0ED924BE90A626E20D4FE6AD /* BAAnalyticsSessionCanvasCard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsSessionCanvasCard.h; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsSessionCanvasCard.h; sourceTree = SOURCE_ROOT; };
+		9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsSessionCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Process/BAAnalyticsSessionCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		39E2EDECEA4E9D103A9C9617 /* BAStatisticsAnalysis.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAStatisticsAnalysis.h; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsAnalysis.h; sourceTree = SOURCE_ROOT; };
+		29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAStatisticsAnalysis.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsAnalysis.m; sourceTree = SOURCE_ROOT; };
+		366F5C3A597CA2DC6B43B2FE /* BAStatisticsCanvasCards.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAStatisticsCanvasCards.h; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsCanvasCards.h; sourceTree = SOURCE_ROOT; };
+		D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAStatisticsCanvasCards.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsCanvasCards.m; sourceTree = SOURCE_ROOT; };
+		0AC75C090FC3418E1FB1FD89 /* BAStatisticsMath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAStatisticsMath.h; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsMath.h; sourceTree = SOURCE_ROOT; };
+		78C4FA726D7ACEF34FA9F3D9 /* BAAnalyticsHistoryModels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsHistoryModels.h; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.h; sourceTree = SOURCE_ROOT; };
+		5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsHistoryModels.m; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.m; sourceTree = SOURCE_ROOT; };
+		450DD51127ACF4770FB0D6D3 /* BAAnalyticsHistoryReader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsHistoryReader.h; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryReader.h; sourceTree = SOURCE_ROOT; };
+		A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsHistoryReader.m; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryReader.m; sourceTree = SOURCE_ROOT; };
+		E7761EA2F87CCC9D6B60CD6E /* BAAnalyticsHistoryService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsHistoryService.h; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryService.h; sourceTree = SOURCE_ROOT; };
+		A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsHistoryService.m; path = Battman/Features/Analytics/Data/BAAnalyticsHistoryService.m; sourceTree = SOURCE_ROOT; };
+		30B93127BF870AB46D4699C7 /* BAAnalyticsReport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAAnalyticsReport.h; path = Battman/Features/Analytics/Data/BAAnalyticsReport.h; sourceTree = SOURCE_ROOT; };
+		FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsReport.m; path = Battman/Features/Analytics/Data/BAAnalyticsReport.m; sourceTree = SOURCE_ROOT; };
+		890AE1720DCFB7E0C31003B5 /* BAStatisticsDrawing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BAStatisticsDrawing.h; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsDrawing.h; sourceTree = SOURCE_ROOT; };
+		85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAStatisticsDrawing.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAStatisticsDrawing.m; sourceTree = SOURCE_ROOT; };
+		1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsDwellCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAAnalyticsDwellCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsCompareCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAAnalyticsCompareCanvasCard.m; sourceTree = SOURCE_ROOT; };
+		4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BAAnalyticsRhythmCanvasCard.m; path = Battman/Features/Analytics/BuiltIn/Statistics/BAAnalyticsRhythmCanvasCard.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14355,6 +14464,7 @@
 		686AECB62D3B93CB0059ECD0 = {
 			isa = PBXGroup;
 			children = (
+				0A01CC794D6C8A0F27010826 /* Analytics V3 */,
 				68D102052F10000000000205 /* PluginSDK */,
 				684973262EB3502300C9C58A /* FLEX.xcodeproj */,
 				6845759B2E3CBFE500618DFD /* BattmanIcons@2x.artwork */,
@@ -14987,6 +15097,54 @@
 			path = cobjc;
 			sourceTree = "<group>";
 		};
+		0A01CC794D6C8A0F27010826 /* Analytics V3 */ = {
+			isa = PBXGroup;
+			children = (
+				67DA99C650EEB9DDB3E12B6F /* BAAnalyticsCanvasCard.h */,
+				78EF0D44D9C75FCCF9CF5382 /* BAAnalyticsCanvasCard.m */,
+				7E027F6F3FABBB4EE85F01B5 /* BAAnalyticsCanvasView.m */,
+				131A18DDE0F09CDC206A33F8 /* BAAnalyticsDetailSelection.h */,
+				1475F81AA15806139CAEFEE4 /* BAAnalyticsDetailSelection.m */,
+				57E7D0977E42A0518313E58F /* BAAnalyticsDetailViewController.h */,
+				A5562438A34D1C07FBB925D9 /* BAAnalyticsDetailViewController.m */,
+				FBAFE7C8AECAA5BE437156EB /* BAAnalyticsCapacityCanvasCard.m */,
+				432FA1F4E202ED388EAB775D /* BAAnalyticsCellsCanvasCard.m */,
+				4B1E50DAEFC6599DC1F6A510 /* BAAnalyticsLiveCanvasCard.m */,
+				512A3D9937B89514E540D920 /* BAAnalyticsLiveDrawing.h */,
+				FB30F489DABA140E5A163FEF /* BAAnalyticsLiveDrawing.m */,
+				C3EA469AF51BA8B03211FA79 /* BAAnalyticsDischargeCanvasCard.h */,
+				CFDD2013FCD22D8A5E301CE6 /* BAAnalyticsDischargeCanvasCard.m */,
+				74E396BEB3B8705B306FA6D3 /* BAAnalyticsEventsCanvasCard.h */,
+				A986A793E95ED8B1A275B01F /* BAAnalyticsEventsCanvasCard.m */,
+				F1637CF94A9F5519737D1D49 /* BAAnalyticsPathCanvasCard.h */,
+				684BE9591C664BFE7C80BF0E /* BAAnalyticsPathCanvasCard.m */,
+				7F70EA6A6281F03C009C142D /* BAAnalyticsProcessCanvasCards.m */,
+				10556D1C0868F95F92E22366 /* BAAnalyticsProcessDrawing.h */,
+				E1CA62ABCBEE9AA1FE3C3A18 /* BAAnalyticsProcessDrawing.m */,
+				0ED924BE90A626E20D4FE6AD /* BAAnalyticsSessionCanvasCard.h */,
+				9284A0667662643913463BE2 /* BAAnalyticsSessionCanvasCard.m */,
+				39E2EDECEA4E9D103A9C9617 /* BAStatisticsAnalysis.h */,
+				29F52E6AF93309E2E93B1C67 /* BAStatisticsAnalysis.m */,
+				366F5C3A597CA2DC6B43B2FE /* BAStatisticsCanvasCards.h */,
+				D983E976C0A50397AC0ACAA8 /* BAStatisticsCanvasCards.m */,
+				890AE1720DCFB7E0C31003B5 /* BAStatisticsDrawing.h */,
+				85A31DAE164685D99A6C3BE9 /* BAStatisticsDrawing.m */,
+				1F6BCD26B081625451DC0329 /* BAAnalyticsDwellCanvasCard.m */,
+				0E3F8EEC89795C052D04E5B7 /* BAAnalyticsCompareCanvasCard.m */,
+				4E5835870438043A1E8CED5B /* BAAnalyticsRhythmCanvasCard.m */,
+				0AC75C090FC3418E1FB1FD89 /* BAStatisticsMath.h */,
+				78C4FA726D7ACEF34FA9F3D9 /* BAAnalyticsHistoryModels.h */,
+				5563FADCEEBF8D2A4723BAF4 /* BAAnalyticsHistoryModels.m */,
+				450DD51127ACF4770FB0D6D3 /* BAAnalyticsHistoryReader.h */,
+				A37B42396BAAD246FED6C0F0 /* BAAnalyticsHistoryReader.m */,
+				E7761EA2F87CCC9D6B60CD6E /* BAAnalyticsHistoryService.h */,
+				A5F38F43ACE19023FE7752D8 /* BAAnalyticsHistoryService.m */,
+				30B93127BF870AB46D4699C7 /* BAAnalyticsReport.h */,
+				FD39D1AF6C288740095FCEC3 /* BAAnalyticsReport.m */,
+			);
+			name = "Analytics V3";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -15537,6 +15695,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				30BEBC305F4E24BF6D11C775 /* BAAnalyticsReport.m in Sources */,
+				26953ECB53D7513328BDCEF2 /* BAAnalyticsHistoryService.m in Sources */,
+				14714D72831DF7AE30F5AA87 /* BAAnalyticsHistoryReader.m in Sources */,
+				63495A9023ADC68E5863BDCB /* BAAnalyticsHistoryModels.m in Sources */,
+				AAA12C7436C37AAA7858988D /* BAStatisticsCanvasCards.m in Sources */,
+				D781FFF568227DB57A07FAC7 /* BAAnalyticsRhythmCanvasCard.m in Sources */,
+				B60C2B81DAC918C99D4B1897 /* BAAnalyticsCompareCanvasCard.m in Sources */,
+				B84469E162E19539B6310433 /* BAAnalyticsDwellCanvasCard.m in Sources */,
+				841F5825E74B8958BB3B39B0 /* BAStatisticsDrawing.m in Sources */,
+				5690B9D5DFC55DABDDBB32D3 /* BAStatisticsAnalysis.m in Sources */,
+				8D9EA0A95D922B83BE2F3B82 /* BAAnalyticsSessionCanvasCard.m in Sources */,
+				38B8998B7C71701AAFDF6B08 /* BAAnalyticsProcessDrawing.m in Sources */,
+				08490C7888EC43C3CC4C5B2F /* BAAnalyticsProcessCanvasCards.m in Sources */,
+				CD0778665BA56B13C9413A08 /* BAAnalyticsPathCanvasCard.m in Sources */,
+				1F316BDC84E49008EAE495E6 /* BAAnalyticsEventsCanvasCard.m in Sources */,
+				4AFCAC85216E4813EEF00037 /* BAAnalyticsDischargeCanvasCard.m in Sources */,
+				3DF71DAADC83FB31EDE8535B /* BAAnalyticsLiveDrawing.m in Sources */,
+				10AD9787FD679A6598B2E722 /* BAAnalyticsLiveCanvasCard.m in Sources */,
+				5A9392A3EC27CE6842D1C93B /* BAAnalyticsCellsCanvasCard.m in Sources */,
+				83EC942677111C86D111AC77 /* BAAnalyticsCapacityCanvasCard.m in Sources */,
+				CC6298D71D4C97B677D8767F /* BAAnalyticsDetailViewController.m in Sources */,
+				97A0F293EBB5A9984E782716 /* BAAnalyticsDetailSelection.m in Sources */,
+				2FF54132DC11656E170D8B14 /* BAAnalyticsCanvasView.m in Sources */,
+				5F1E94DEB6318485B577A7DD /* BAAnalyticsCanvasCard.m in Sources */,
 				684114852E5323E2001B76B6 /* iokit_connection.c in Sources */,
 				684114862E5323E2001B76B6 /* thermal.c in Sources */,
 				684114872E5323E2001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
@@ -15574,14 +15756,7 @@
 				684973072EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7362E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				68AC00082F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
-				68AC00092F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
 				68E210012F20000000001001 /* BAAnalyticsBuiltInCards.m in Sources */,
-				68E210022F20000000001002 /* BAAnalyticsBatterySummaryCard.m in Sources */,
-				68E210032F20000000001003 /* BAAnalyticsChargingLimitCard.m in Sources */,
-				68E210042F20000000001004 /* BAAnalyticsCycleSummaryCard.m in Sources */,
-				68E210052F20000000001005 /* BAAnalyticsPowerAverageCard.m in Sources */,
-				68E210062F20000000001006 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
-				68E210072F20000000001007 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
 				68E210082F20000000001008 /* BAAnalyticsMetricService.m in Sources */,
 				68E210092F20000000001009 /* BAAnalyticsSystemMetricSource.m in Sources */,
 				68E2100A2F2000000000100A /* BAAnalyticsCardLayoutStore.m in Sources */,
@@ -15689,6 +15864,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71C67EC960F4DAA86996AD72 /* BAAnalyticsReport.m in Sources */,
+				241F0992C60AFAB5CC4B5D16 /* BAAnalyticsHistoryService.m in Sources */,
+				F22ECDB351BAABEC3E1F3E86 /* BAAnalyticsHistoryReader.m in Sources */,
+				C6BDACBD803E27B773B87637 /* BAAnalyticsHistoryModels.m in Sources */,
+				FB7F4325E2023D074104E40C /* BAStatisticsCanvasCards.m in Sources */,
+				BEAE9CBC4F6F1EA66AE046D6 /* BAAnalyticsRhythmCanvasCard.m in Sources */,
+				166CEBDD245D2603A445E578 /* BAAnalyticsCompareCanvasCard.m in Sources */,
+				DC41181A4C108244F86683DF /* BAAnalyticsDwellCanvasCard.m in Sources */,
+				9C7DD3F3F96239E50D3A1815 /* BAStatisticsDrawing.m in Sources */,
+				65805D55EB4B74ADDC77ABE1 /* BAStatisticsAnalysis.m in Sources */,
+				42C6C7AE9E20F6498C34949E /* BAAnalyticsSessionCanvasCard.m in Sources */,
+				32C1AEE5BAB09CEAFA25A28F /* BAAnalyticsProcessDrawing.m in Sources */,
+				19BE070E1F42F665DE65F728 /* BAAnalyticsProcessCanvasCards.m in Sources */,
+				68F7CC62093BD4EE619284CC /* BAAnalyticsPathCanvasCard.m in Sources */,
+				3BD607127416DB1FBF1BB72A /* BAAnalyticsEventsCanvasCard.m in Sources */,
+				43B52B98F937AFF2302834CC /* BAAnalyticsDischargeCanvasCard.m in Sources */,
+				A8EE21076AFBED09A691BFF6 /* BAAnalyticsLiveDrawing.m in Sources */,
+				D937E36F44920D74E119C0D2 /* BAAnalyticsLiveCanvasCard.m in Sources */,
+				F5CA8DADFA3892DD9BFD1A66 /* BAAnalyticsCellsCanvasCard.m in Sources */,
+				4E31FEB53E82AE7DBE2E3238 /* BAAnalyticsCapacityCanvasCard.m in Sources */,
+				36FFF99843FD509C968E8712 /* BAAnalyticsDetailViewController.m in Sources */,
+				5CAF61CCEE617765BBB6303F /* BAAnalyticsDetailSelection.m in Sources */,
+				3CD72F8F45033DE53D6A9B7A /* BAAnalyticsCanvasView.m in Sources */,
+				8FBCB3818FDA105DD6E1DA53 /* BAAnalyticsCanvasCard.m in Sources */,
 				684114DB2E57BDE7001B76B6 /* iokit_connection.c in Sources */,
 				684114DC2E57BDE7001B76B6 /* thermal.c in Sources */,
 				684114DD2E57BDE7001B76B6 /* UILabel+SFSymbolsOverride.m in Sources */,
@@ -15726,14 +15925,7 @@
 				684973082EB348D900C9C58A /* ThermAniTestViewController.m in Sources */,
 				68C0C7372E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				68AC000A2F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
-				68AC000B2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
 				68E211012F20000000001101 /* BAAnalyticsBuiltInCards.m in Sources */,
-				68E211022F20000000001102 /* BAAnalyticsBatterySummaryCard.m in Sources */,
-				68E211032F20000000001103 /* BAAnalyticsChargingLimitCard.m in Sources */,
-				68E211042F20000000001104 /* BAAnalyticsCycleSummaryCard.m in Sources */,
-				68E211052F20000000001105 /* BAAnalyticsPowerAverageCard.m in Sources */,
-				68E211062F20000000001106 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
-				68E211072F20000000001107 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
 				68E211082F20000000001108 /* BAAnalyticsMetricService.m in Sources */,
 				68E211092F20000000001109 /* BAAnalyticsSystemMetricSource.m in Sources */,
 				68E2110A2F2000000000110A /* BAAnalyticsCardLayoutStore.m in Sources */,
@@ -15849,6 +16041,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B67FA3EC7F1CBC35205E2A2 /* BAAnalyticsReport.m in Sources */,
+				ECD8D4D8F2B9D00C971FF269 /* BAAnalyticsHistoryService.m in Sources */,
+				55B50E75FDEE95905E8BAFDF /* BAAnalyticsHistoryReader.m in Sources */,
+				0857F94F0230805A73E08FA2 /* BAAnalyticsHistoryModels.m in Sources */,
+				F714DF0F719AB117353819E3 /* BAStatisticsCanvasCards.m in Sources */,
+				A38401A3B313BDABCE8C7296 /* BAAnalyticsRhythmCanvasCard.m in Sources */,
+				7454B67C95FFD2D59005B106 /* BAAnalyticsCompareCanvasCard.m in Sources */,
+				729B45E9F2550A591C861DE4 /* BAAnalyticsDwellCanvasCard.m in Sources */,
+				C86B90B5686D2E9F620409C4 /* BAStatisticsDrawing.m in Sources */,
+				2F3C5B569E7C8F5369E47AA5 /* BAStatisticsAnalysis.m in Sources */,
+				D27A9BEB8B99879FB7B33F80 /* BAAnalyticsSessionCanvasCard.m in Sources */,
+				9B320D313DAA9186BFD1DCCA /* BAAnalyticsProcessDrawing.m in Sources */,
+				671BB500E87CDEB674F0B0BB /* BAAnalyticsProcessCanvasCards.m in Sources */,
+				C45B542F950B99E7FD85FCAF /* BAAnalyticsPathCanvasCard.m in Sources */,
+				31D03C105FDF8869863E500A /* BAAnalyticsEventsCanvasCard.m in Sources */,
+				03D1F63143CDECEEE314581F /* BAAnalyticsDischargeCanvasCard.m in Sources */,
+				88D02E902DB519A56C36E402 /* BAAnalyticsLiveDrawing.m in Sources */,
+				5B192BEFC91C1971A72AA577 /* BAAnalyticsLiveCanvasCard.m in Sources */,
+				38CEA7DDDE3F3FF319D06FE8 /* BAAnalyticsCellsCanvasCard.m in Sources */,
+				F033E6F3275CA430686DEC58 /* BAAnalyticsCapacityCanvasCard.m in Sources */,
+				6DBA63D20AF6E78AE2953119 /* BAAnalyticsDetailViewController.m in Sources */,
+				FDAB166A56B976376A73C6CF /* BAAnalyticsDetailSelection.m in Sources */,
+				B3BAC3003BF7EE5E8BE5A7CA /* BAAnalyticsCanvasView.m in Sources */,
+				A498CD9A60FA14DD875C8160 /* BAAnalyticsCanvasCard.m in Sources */,
 				6849726B2EACB71B00C9C58A /* iokit_connection.c in Sources */,
 				6849726C2EACB71B00C9C58A /* thermal.c in Sources */,
 				68D8007D2EC476BD0012B84A /* LanguageSelectionViewController.m in Sources */,
@@ -15884,14 +16100,7 @@
 				684972812EACB71B00C9C58A /* UPSMonitor-new.m in Sources */,
 				684972822EACB71B00C9C58A /* AnalyticsViewController.m in Sources */,
 				68AC000C2F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
-				68AC000D2F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
 				68E212012F20000000001201 /* BAAnalyticsBuiltInCards.m in Sources */,
-				68E212022F20000000001202 /* BAAnalyticsBatterySummaryCard.m in Sources */,
-				68E212032F20000000001203 /* BAAnalyticsChargingLimitCard.m in Sources */,
-				68E212042F20000000001204 /* BAAnalyticsCycleSummaryCard.m in Sources */,
-				68E212052F20000000001205 /* BAAnalyticsPowerAverageCard.m in Sources */,
-				68E212062F20000000001206 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
-				68E212072F20000000001207 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
 				68E212082F20000000001208 /* BAAnalyticsMetricService.m in Sources */,
 				68E212092F20000000001209 /* BAAnalyticsSystemMetricSource.m in Sources */,
 				68E2120A2F2000000000120A /* BAAnalyticsCardLayoutStore.m in Sources */,
@@ -16001,6 +16210,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0338FFEEDAC99C69B4563345 /* BAAnalyticsReport.m in Sources */,
+				E00CFBA8430E7CACB49CA490 /* BAAnalyticsHistoryService.m in Sources */,
+				5BC7F32EF77712C02079C9DC /* BAAnalyticsHistoryReader.m in Sources */,
+				28985862965AE893F0E9620A /* BAAnalyticsHistoryModels.m in Sources */,
+				3FE6AED6E32F51376B2F380B /* BAStatisticsCanvasCards.m in Sources */,
+				7D160DE162F3278904EDB11D /* BAAnalyticsRhythmCanvasCard.m in Sources */,
+				36D2E720E72461E42708031D /* BAAnalyticsCompareCanvasCard.m in Sources */,
+				D15AE354143DF7759E067B0B /* BAAnalyticsDwellCanvasCard.m in Sources */,
+				B91FFC2CE3527C07C510F79D /* BAStatisticsDrawing.m in Sources */,
+				E6A69E1B3A3DD7F88D06E372 /* BAStatisticsAnalysis.m in Sources */,
+				31B457195851F6D8F684403A /* BAAnalyticsSessionCanvasCard.m in Sources */,
+				58607627EA578D60CF474514 /* BAAnalyticsProcessDrawing.m in Sources */,
+				2B17849BC21A4F8F1F38875E /* BAAnalyticsProcessCanvasCards.m in Sources */,
+				DD0E3C8881E443E727B63EF1 /* BAAnalyticsPathCanvasCard.m in Sources */,
+				1C6F7FE449BAD78C100248A3 /* BAAnalyticsEventsCanvasCard.m in Sources */,
+				F85CDA03DD7B8F96F4BEB738 /* BAAnalyticsDischargeCanvasCard.m in Sources */,
+				C6B559F52CFAA676AF66B2FC /* BAAnalyticsLiveDrawing.m in Sources */,
+				E80E065017262F5EC010EBF8 /* BAAnalyticsLiveCanvasCard.m in Sources */,
+				DD58FD8D529721D1AFDDEA4E /* BAAnalyticsCellsCanvasCard.m in Sources */,
+				3A542CE8EF01B07F205CC426 /* BAAnalyticsCapacityCanvasCard.m in Sources */,
+				D68B2F253CE65539A16D482F /* BAAnalyticsDetailViewController.m in Sources */,
+				5AB6D9A669053E5ACCF5779A /* BAAnalyticsDetailSelection.m in Sources */,
+				386B1D550E09AB47FB3FB03B /* BAAnalyticsCanvasView.m in Sources */,
+				D56D2A03CFB550ADD8C280F7 /* BAAnalyticsCanvasCard.m in Sources */,
 				6834254B2D7C4F560070CE6F /* iokit_connection.c in Sources */,
 				68B68F6C2E21026600431E14 /* thermal.c in Sources */,
 				68336E372E9F7F7A00E9F180 /* BrightnessDetailsViewController.m in Sources */,
@@ -16031,14 +16264,7 @@
 				6838BF762DBF810D007EB66C /* localized.c in Sources */,
 				68C0C7352E9272F0006F73EA /* AnalyticsViewController.m in Sources */,
 				68AC00062F00000100AC0000 /* AnalyticsCardCell.m in Sources */,
-				68AC00072F00000100AC0000 /* BAAnalyticsBuiltInCard.m in Sources */,
 				68E213012F20000000001301 /* BAAnalyticsBuiltInCards.m in Sources */,
-				68E213022F20000000001302 /* BAAnalyticsBatterySummaryCard.m in Sources */,
-				68E213032F20000000001303 /* BAAnalyticsChargingLimitCard.m in Sources */,
-				68E213042F20000000001304 /* BAAnalyticsCycleSummaryCard.m in Sources */,
-				68E213052F20000000001305 /* BAAnalyticsPowerAverageCard.m in Sources */,
-				68E213062F20000000001306 /* BAAnalyticsRemainingCapacityCard.m in Sources */,
-				68E213072F20000000001307 /* BAAnalyticsTemperatureAverageCard.m in Sources */,
 				68E213082F20000000001308 /* BAAnalyticsMetricService.m in Sources */,
 				68E213092F20000000001309 /* BAAnalyticsSystemMetricSource.m in Sources */,
 				68E2130A2F2000000000130A /* BAAnalyticsCardLayoutStore.m in Sources */,

@@ -24,6 +24,12 @@ static UIColor *BAAnalyticsPressedCardBackgroundColor(void) {
 	return BAAnalyticsCellIsDarkInterface() ? UIColorWithRGBA8(44, 44, 46, 255) : UIColorWithRGBA8(229, 229, 234, 255);
 }
 
+static UIColor *BAAnalyticsAccessoryBackgroundColor(void) {
+	// An overlay needs an opaque backing. The translucent system fill lets
+	// numbers and traces remain visible through the button's symbol.
+	return BAAnalyticsCellIsDarkInterface() ? UIColorWithRGBA8(58, 58, 60, 255) : UIColorWithRGBA8(232, 232, 235, 255);
+}
+
 static NSString *const BAAnalyticsCardJiggleRotationAnimationKey = @"BAAnalyticsCardJiggleRotation";
 static NSString *const BAAnalyticsCardJiggleTranslationXAnimationKey = @"BAAnalyticsCardJiggleTranslationX";
 static NSString *const BAAnalyticsCardJiggleTranslationYAnimationKey = @"BAAnalyticsCardJiggleTranslationY";
@@ -167,8 +173,8 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	_resizeButton = [UIButton buttonWithType:UIButtonTypeSystem];
 	_resizeButton.translatesAutoresizingMaskIntoConstraints = NO;
 	_resizeButton.tintColor = [UIColor compatLabelColor];
-	_resizeButton.backgroundColor = [UIColor secondaryCompatFillColor];
-	_resizeButton.layer.cornerRadius = 14.0;
+	_resizeButton.backgroundColor = BAAnalyticsAccessoryBackgroundColor();
+	_resizeButton.layer.cornerRadius = 22.0;
 	[_resizeButton.layer setSmoothCorners:YES];
 	_resizeButton.layer.masksToBounds = YES;
 	if (@available(iOS 13.0, *)) {
@@ -179,10 +185,14 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 		[_resizeButton.titleLabel setFont:[UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold]];
 		[_resizeButton setTitle:@"+" forState:UIControlStateNormal];
 	}
-	[_cardView addSubview:_resizeButton];
+	// Accessories are siblings of the clipped card, like SpringBoard's remove
+	// badge. A plug-in's canvas and its layers cannot draw above this sibling.
+	_resizeButton.layer.zPosition = 1.0;
+	[_jiggleView addSubview:_resizeButton];
 
 	_removeButton = [BAAnalyticsRemoveBadgeView buttonWithType:UIButtonTypeCustom];
 	_removeButton.translatesAutoresizingMaskIntoConstraints = NO;
+	_removeButton.layer.zPosition = 1.0;
 	[_jiggleView addSubview:_removeButton];
 
 	[NSLayoutConstraint activateConstraints:@[
@@ -194,10 +204,10 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 		[_cardView.bottomAnchor constraintEqualToAnchor:_jiggleView.bottomAnchor],
 		[_cardView.leadingAnchor constraintEqualToAnchor:_jiggleView.leadingAnchor],
 		[_cardView.trailingAnchor constraintEqualToAnchor:_jiggleView.trailingAnchor],
-		[_resizeButton.topAnchor constraintEqualToAnchor:_cardView.topAnchor constant:10.0],
+		[_resizeButton.topAnchor constraintEqualToAnchor:_cardView.topAnchor constant:4.0],
 		[_resizeButton.trailingAnchor constraintEqualToAnchor:_cardView.trailingAnchor constant:-10.0],
-		[_resizeButton.widthAnchor constraintEqualToConstant:32.0],
-		[_resizeButton.heightAnchor constraintEqualToConstant:32.0],
+		[_resizeButton.widthAnchor constraintEqualToConstant:44.0],
+		[_resizeButton.heightAnchor constraintEqualToConstant:44.0],
 		// Match SpringBoard's corner-radius-derived editing-accessory placement.
 		// For Battman's 18-point continuous corner this resolves to about 3.4 pt.
 		[_removeButton.centerXAnchor constraintEqualToAnchor:_cardView.leadingAnchor constant:3.4],
@@ -224,6 +234,19 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 		return NO;
 	CGPoint removePoint = [_removeButton convertPoint:point fromView:self];
 	return [_removeButton pointInside:removePoint withEvent:event];
+}
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+	if (self.userInteractionEnabled && !self.hidden && self.alpha > 0.01) {
+		for (UIButton *accessory in @[_removeButton, _resizeButton]) {
+			if (!accessory.hidden && accessory.alpha > 0.01 && accessory.userInteractionEnabled) {
+				CGPoint local = [accessory convertPoint:point fromView:self];
+				UIView *target = [accessory hitTest:local withEvent:event];
+				if (target) return target;
+			}
+		}
+	}
+	return [super hitTest:point withEvent:event];
 }
 
 - (NSString *)mountedCardIdentifier {
@@ -380,6 +403,7 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 - (void)updateRemoveButtonStyle {
 	_removeButton.backgroundColor = [UIColor clearColor];
 	[_removeButton setNeedsLayout];
+	_resizeButton.backgroundColor = BAAnalyticsAccessoryBackgroundColor();
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
@@ -390,7 +414,7 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 - (void)mountContentViewForCard:(id<BAAnalyticsCard>)card {
 	_cardContentView = [card makeAnalyticsCardContentView];
 	_cardContentView.translatesAutoresizingMaskIntoConstraints = NO;
-	[_cardView insertSubview:_cardContentView belowSubview:_resizeButton];
+	[_cardView addSubview:_cardContentView];
 
 	_contentTopConstraint = [_cardContentView.topAnchor constraintEqualToAnchor:_cardView.topAnchor];
 	_contentBottomConstraint = [_cardContentView.bottomAnchor constraintEqualToAnchor:_cardView.bottomAnchor];
@@ -431,14 +455,23 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	[card configureAnalyticsCardContentView:_cardContentView forSize:size editing:editing];
 	if ([card respondsToSelector:@selector(analyticsCardContentView:didChangeEditing:)])
 		[card analyticsCardContentView:_cardContentView didChangeEditing:editing];
+	// Also gate embedded controls/gestures, not only the canvas's detail action.
+	_cardContentView.userInteractionEnabled = !editing;
+	_cardContentView.accessibilityElementsHidden = editing;
 
 	BOOL supportsResizing = BAAnalyticsCardOrderedSizesForMask(card.supportedAnalyticsCardSizes).count > 1;
 	_resizeButton.hidden = !editing || !supportsResizing;
 	_resizeButton.alpha = _resizeButton.hidden ? 0.0 : 1.0;
-	_resizeButton.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", _("Manage"), card.analyticsCardIdentifier];
+	// Editing leaves the complete drawing surface intact; accessories overlay
+	// it and retain priority for both compositing and touch delivery.
+	_contentTopConstraint.constant = 0.0;
+	[_jiggleView bringSubviewToFront:_resizeButton];
+	[_jiggleView bringSubviewToFront:_removeButton];
+	[self setNeedsLayout];
+	_resizeButton.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", _("Resize"), card.analyticsCardDisplayName];
 	_removeButton.hidden = !editing;
 	_removeButton.alpha = editing ? 1.0 : 0.0;
-	_removeButton.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", _("Remove"), card.analyticsCardIdentifier];
+	_removeButton.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", _("Remove"), card.analyticsCardDisplayName];
 
 	[self removeActionButtons];
 	if (!editing && [card respondsToSelector:@selector(analyticsCardActionsForSize:)]) {
@@ -465,5 +498,7 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	else
 		self.accessibilityLabel = card.analyticsCardIdentifier;
 }
+
+- (UIView *)analyticsCardContentView { return _cardContentView; }
 
 @end

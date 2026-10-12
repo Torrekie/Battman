@@ -14,8 +14,11 @@
 #include <CoreFoundation/CFPlugInCOM.h>
 #endif
 #include <dispatch/dispatch.h>
+#include <TargetConditionals.h>
 
-#if __has_include(<IOKit/IOKitLib.h>)
+// Some custom iOS SDKs carry macOS IOKit headers whose availability
+// annotations reject iOS. Preserve the existing private iOS declarations.
+#if !TARGET_OS_IPHONE && __has_include(<IOKit/IOKitLib.h>)
 #include <IOKit/IOKitLib.h>
 #else
 #if __has_include(<mach/mach.h>)

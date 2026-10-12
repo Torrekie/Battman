@@ -79,6 +79,8 @@ def analytics_source_strings() -> set[str]:
         if path.suffix not in {".h", ".m"}:
             continue
         source = path.read_text(encoding="utf-8")
+        if "NSLocalizedString(" in source:
+            raise ValueError(f"{path}: use Battman's gettext _() instead of NSBundle localization")
         for encoded in LOCALIZED_STRING_PATTERN.findall(source):
             strings.add(decode_po_string(f'"{encoded}"'))
     return strings
@@ -86,6 +88,11 @@ def analytics_source_strings() -> set[str]:
 
 def main() -> None:
     required = analytics_source_strings()
+    format_pattern = re.compile(r'(?:stringWithFormat|stringByAppendingFormat|localizedStringWithFormat):\s*_\(\s*"((?:\\.|[^"\\])*)"\s*\)')
+    formatted = set()
+    for source_path in ANALYTICS_ROOT.rglob("*.m"):
+        for encoded in format_pattern.findall(source_path.read_text(encoding="utf-8")):
+            formatted.add(decode_po_string(f'"{encoded}"'))
     if not required:
         raise SystemExit("no Analytics localization strings were discovered")
 
@@ -98,6 +105,15 @@ def main() -> None:
             untranslated = sorted(msgid for msgid in required if not entries[msgid].strip())
             if untranslated:
                 raise SystemExit(f"{path}: untranslated Analytics msgids: {', '.join(untranslated)}")
+
+    # Check Objective-C printf substitutions, including catalogs without flags.
+    placeholder = re.compile(r"(?<!%)%(?!%)(?:[0-9]+\$)?[-+ #0]*(?:[0-9]+|\*)?(?:\.(?:[0-9]+|\*))?(?:hh|ll|[hljztL])?[@diuoxXfFeEgGaAcsp]")
+    for path, entries in parsed_catalogs.items():
+        if path.suffix != ".po":
+            continue
+        for msgid in required & formatted:
+            if placeholder.findall(msgid) != placeholder.findall(entries[msgid]):
+                raise SystemExit(f"{path}: changed format placeholders in {msgid!r}")
 
     msgfmt = shutil.which("msgfmt")
     if msgfmt:

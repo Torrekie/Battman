@@ -50,7 +50,7 @@ are weakly linked correctly at link time."
 #error Please define BATTMAN_VERSION_STRING before building!
 #endif
 
-#if !defined(__arm64__) && !defined(__aarch64__) && !defined(__arm64e__)
+#if !defined(__arm64__) && !defined(__aarch64__) && !defined(__arm64e__) && !(TARGET_OS_SIMULATOR && defined(BATTMAN_SIMULATOR_UI_FIXTURE))
 #error Current Battman is arm64 only! \
 Please file an issue if you would like to contribute!
 #endif

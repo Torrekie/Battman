@@ -94,12 +94,28 @@ static NSDictionary *BAAnalyticsBoundedRestorationState(id candidate) {
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
 		legacyIdentifiers = @{
-			@"battery.summary": @"com.torrekie.battman.analytics.battery.summary",
-			@"temperature.average": @"com.torrekie.battman.analytics.temperature.average",
-			@"power.average": @"com.torrekie.battman.analytics.power.average",
-			@"cycle.summary": @"com.torrekie.battman.analytics.cycle.summary",
-			@"capacity.remaining": @"com.torrekie.battman.analytics.capacity.remaining",
-			@"charge.history": @"com.torrekie.battman.analytics.charging-limit",
+			@"battery.summary": @"com.torrekie.battman.analytics.live",
+			@"temperature.average": @"com.torrekie.battman.analytics.session",
+			@"power.average": @"com.torrekie.battman.analytics.rhythm",
+			@"cycle.summary": @"com.torrekie.battman.analytics.capacity",
+			@"capacity.remaining": @"com.torrekie.battman.analytics.live",
+			@"charge.history": @"com.torrekie.battman.analytics.session",
+			@"com.torrekie.battman.analytics.battery.summary": @"com.torrekie.battman.analytics.live",
+			@"com.torrekie.battman.analytics.temperature.average": @"com.torrekie.battman.analytics.session",
+			@"com.torrekie.battman.analytics.power.average": @"com.torrekie.battman.analytics.rhythm",
+			@"com.torrekie.battman.analytics.cycle.summary": @"com.torrekie.battman.analytics.capacity",
+			@"com.torrekie.battman.analytics.capacity.remaining": @"com.torrekie.battman.analytics.live",
+			@"com.torrekie.battman.analytics.charging-limit": @"com.torrekie.battman.analytics.path",
+			@"builtin.live": @"com.torrekie.battman.analytics.live",
+			@"builtin.capacity": @"com.torrekie.battman.analytics.capacity",
+			@"builtin.cells": @"com.torrekie.battman.analytics.cells",
+			@"builtin.session": @"com.torrekie.battman.analytics.session",
+			@"builtin.discharge": @"com.torrekie.battman.analytics.discharge",
+			@"builtin.events": @"com.torrekie.battman.analytics.events",
+			@"builtin.path": @"com.torrekie.battman.analytics.path",
+			@"builtin.dwell": @"com.torrekie.battman.analytics.dwell",
+			@"builtin.compare": @"com.torrekie.battman.analytics.compare",
+			@"builtin.rhythm": @"com.torrekie.battman.analytics.rhythm",
 		};
 	});
 	return legacyIdentifiers[storedIdentifier] ?: storedIdentifier;
@@ -125,11 +141,12 @@ static NSDictionary *BAAnalyticsBoundedRestorationState(id candidate) {
 	if (sizeValue < 0 || sizeValue > 3)
 		return nil;
 
+	BOOL migrated = ![identifier isEqualToString:rawIdentifier];
 	NSUInteger restorationSchemaVersion = 0;
 	id rawSchemaVersion = entry[@"restorationSchemaVersion"];
 	if ([rawSchemaVersion isKindOfClass:[NSNumber class]] && [rawSchemaVersion integerValue] >= 0)
-		restorationSchemaVersion = [rawSchemaVersion unsignedIntegerValue];
-	NSDictionary *restorationState = legacy ? nil : BAAnalyticsBoundedRestorationState(entry[@"restorationState"]);
+		restorationSchemaVersion = migrated ? 0 : [rawSchemaVersion unsignedIntegerValue];
+	NSDictionary *restorationState = (legacy || migrated) ? nil : BAAnalyticsBoundedRestorationState(entry[@"restorationState"]);
 	return [[BAAnalyticsCardLayoutRecord alloc] initWithCardIdentifier:identifier
 													 displayName:displayName
 													   sizeValue:sizeValue

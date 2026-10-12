@@ -158,8 +158,11 @@ for path in simulator_surfaces:
         fail(f"Simulator runner contains a machine-local user path: {path}")
     if literal_udid.search(text):
         fail(f"Simulator runner contains a literal local device UDID: {path}")
-    for match in re.finditer(r"\bxcrun\s+simctl\s+(create|boot|install)\b", text):
-        if path.name == "run-plugin-management-screenshots.sh" and match.group(1) == "install":
+    for match in re.finditer(r"\bxcrun\s+simctl\s+(create|boot|bootstatus|erase|delete|clone|shutdown|install)\b", text):
+        if path.name in {
+            "run-plugin-management-screenshots.sh",
+            "run-analytics-card-screenshots.sh",
+        } and match.group(1) == "install":
             continue
         fail(f"Simulator runner gained an unbounded device mutation: {path}")
 for path in simulator_runners:
@@ -168,19 +171,124 @@ for path in simulator_runners:
     ):
         fail(f"Simulator runner bypasses portable environment selection: {path}")
 
+analytics_runner_text = (simulator_root / "run-analytics-card-screenshots.sh").read_text(
+    encoding="utf-8"
+)
+for required in (
+    'SIMULATOR_UDID="$(battman_select_booted_iphone_simulator)"',
+    'TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/battman-analytics-v3.XXXXXX")"',
+    'BUNDLE_ID="com.torrekie.Battman.AnalyticsV3Fixture.$(uuidgen | tr -d \'-\')"',
+    'APP_DIR="$TEST_TMP/AnalyticsV3Fixture.app"',
+    "INSTALLED=0",
+    "SUCCEEDED=0",
+    '"${BATTMAN_KEEP_FIXTURE:-0}" != 1 || "$SUCCEEDED" != 1',
+    "trap cleanup EXIT",
+    'rm -rf "$TEST_TMP"',
+    'if [[ -n "$EXISTING_APP" && -d "$EXISTING_APP" ]]; then',
+    'xcrun simctl install "$SIMULATOR_UDID" "$APP_DIR"\nINSTALLED=1',
+    'xcrun simctl terminate "$SIMULATOR_UDID" "$BUNDLE_ID"',
+    'xcrun simctl uninstall "$SIMULATOR_UDID" "$BUNDLE_ID"',
+    "-DBATTMAN_SIMULATOR_UI_FIXTURE=1",
+    "'BAAnalyticsSystemMetricSource.m'",
+    "if p.name not in legacy and 'Tests' not in p.parts:",
+    '"$REPO_ROOT/Tests/Simulator/BAAnalyticsV3Fixtures.m"',
+):
+    if required not in analytics_runner_text:
+        fail(f"Analytics fixture runner omits its bounded contract: {required}")
+if analytics_runner_text.index("trap cleanup EXIT") > analytics_runner_text.index(
+    'xcrun simctl install "$SIMULATOR_UDID" "$APP_DIR"'
+):
+    fail("Analytics fixture must register cleanup before installation")
+for variable in ("SIMULATOR_UDID", "BUNDLE_ID", "APP_DIR"):
+    if len(re.findall(rf"^{variable}=", analytics_runner_text, re.MULTILINE)) != 1:
+        fail(f"Analytics fixture must not replace its selected target: {variable}")
+analytics_simctl_commands = {
+    "terminate": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
+    "uninstall": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
+    "get_app_container": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
+    "install": '"$SIMULATOR_UDID" "$APP_DIR"',
+    "launch": '"$SIMULATOR_UDID" "$BUNDLE_ID"',
+}
+for match in re.finditer(r"\bxcrun\s+simctl\s+(\S+)\s+([^\n]+)", analytics_runner_text):
+    expected = analytics_simctl_commands.get(match.group(1))
+    if expected is None or not match.group(2).startswith(expected):
+        fail("Analytics fixture may operate only on its temporary app and selected Booted simulator")
+if len(re.findall(r"\bxcrun\s+simctl\s+install\b", analytics_runner_text)) != 1:
+    fail("Analytics fixture must install exactly one temporary app")
+for forbidden in ("BTPluginPlatform.m", "battery_info.c", "UPSMonitor-new.m"):
+    if forbidden in analytics_runner_text:
+        fail(f"Analytics fixture links a physical acquisition/composition source: {forbidden}")
+
 analytics_harness_text = (simulator_root / "BTAnalyticsCardsScreenshotHarness.m").read_text(
     encoding="utf-8"
 )
 for required in (
-    "ANALYTICS CARDS - SYNTHETIC FIXTURE",
-    "NO DEVICE DATA - fixed test metrics",
-    "BTSyntheticMetricSnapshot",
+    "All measurements are synthetic",
+    "self.history=[BAFixtureHistoryService new]",
+    'self.history.fixtureReport=BAFixtureReport(@"ready")',
+    "self.metrics=[BAFixtureMetricService new]",
+    "self.metrics.fixtureSnapshot=BAFixtureSnapshot(NO)",
+    "initWithCards:self.cards metricService:self.metrics historyService:self.history userDefaults:self.defaults",
+    '@"Synthetic data · UI validation"',
 ):
     if required not in analytics_harness_text:
         fail(f"Analytics screenshot harness omits synthetic boundary: {required}")
-for forbidden in ("BAAnalyticsSystemMetricSource", "BAAnalyticsMetricService"):
+for class_name, method in (
+    ("BAAnalyticsSystemMetricSource", '- (NSDictionary *)readAnalyticsMetricValues'),
+    ("BTPluginPlatform", '+ (instancetype)sharedPlatform'),
+):
+    implementation = re.search(
+        rf"@implementation\s+{class_name}\s*(.*?)@end",
+        analytics_harness_text,
+        re.DOTALL,
+    )
+    if implementation is None or not re.fullmatch(
+        rf"\s*{re.escape(method)}\s*\{{\s*Require\(NO,@\"[^\"]+\"\);\s*return\s+(?:@\{{\}}|nil);\s*\}}\s*",
+        implementation.group(1),
+    ):
+        fail(f"Analytics fixture does not fail closed at the physical boundary: {class_name}")
+# The actual history service is exercised only against an explicitly injected,
+# random missing path inside the fixture's temporary directory. It must never
+# fall back to locating a real device or host Powerlog database.
+if analytics_harness_text.count("[[BAAnalyticsHistoryService alloc] initWithDatabaseURL:") != 2:
+    fail("Analytics fixture history injection scope changed")
+if analytics_harness_text.count("initWithDatabaseURL:[NSURL fileURLWithPath:path]") != 2:
+    fail("Analytics fixture must supply every actual history service's database URL")
+for required in (
+    'battman-analytics-missing-%@/fixture.PLSQL',
+    'battman-analytics-host-missing-%@/fixture.PLSQL',
+    "[NSTemporaryDirectory() stringByAppendingPathComponent:",
+    "NSUUID.UUID.UUIDString",
+):
+    if required not in analytics_harness_text:
+        fail(f"Analytics fixture omits isolated history test input: {required}")
+for forbidden in (
+    "defaultDatabaseURL", "discoverDatabaseURL", "CurrentPowerlog", "SystemGroup",
+    "/var/db/powerlog", "[BAAnalyticsHistoryService new]", "[BAAnalyticsSystemMetricSource new]",
+):
     if forbidden in analytics_harness_text:
-        fail(f"Analytics screenshot harness imports a live metric surface: {forbidden}")
+        fail(f"Analytics fixture can reach a real acquisition input: {forbidden}")
+
+analytics_fixture_text = (simulator_root / "BAAnalyticsV3Fixtures.m").read_text(encoding="utf-8")
+for required in (
+    "super initWithDatabaseURL:nil",
+    "super initWithSource:[BAFixtureSource new]",
+    'NSAssert(NO,@"Fixture must never poll")',
+    "BAAnalyticsReport *BAFixtureReport(NSString *scenario)",
+    "BAAnalyticsMetricSnapshot *BAFixtureSnapshot(BOOL unavailable)",
+    'sourceProfileIdentifier:@"synthetic.simulator.v3"',
+    'initWithSourceTable:@"synthetic.fixture"',
+    "Synthetic Simulator data; no device database or sensor access",
+):
+    if required not in analytics_fixture_text:
+        fail(f"Analytics fixture factory omits synthetic isolation: {required}")
+for forbidden in (
+    "BAAnalyticsSystemMetricSource", "BTPluginPlatform", "BAAnalyticsHistoryReader",
+    "NSURL", "sqlite3", "NSFileManager", "dataWithContentsOf", "stringWithContentsOf",
+    "CurrentPowerlog", "SystemGroup", "IORegistry", "UPSMonitor",
+):
+    if forbidden in analytics_fixture_text:
+        fail(f"Analytics fixture factory gained an acquisition input: {forbidden}")
 
 # Review evidence, screenshots, release decisions, and the readiness ledger are
 # deliberately owner-local.  The public checkout must prove that none of
@@ -289,12 +397,16 @@ for required_asset in (
         fail(f"release matrix omits required GitHub asset: {required_asset}")
 if matrix.get("officialPluginSelection") != {
     "embeddedAnalyticsCards": [
-        "com.torrekie.battman.analytics.battery.summary",
-        "com.torrekie.battman.analytics.temperature.average",
-        "com.torrekie.battman.analytics.power.average",
-        "com.torrekie.battman.analytics.cycle.summary",
-        "com.torrekie.battman.analytics.capacity.remaining",
-        "com.torrekie.battman.analytics.charging-limit",
+        "com.torrekie.battman.analytics.live",
+        "com.torrekie.battman.analytics.capacity",
+        "com.torrekie.battman.analytics.cells",
+        "com.torrekie.battman.analytics.session",
+        "com.torrekie.battman.analytics.discharge",
+        "com.torrekie.battman.analytics.events",
+        "com.torrekie.battman.analytics.path",
+        "com.torrekie.battman.analytics.dwell",
+        "com.torrekie.battman.analytics.compare",
+        "com.torrekie.battman.analytics.rhythm",
     ],
     "separatelyShipped": ["com.torrekie.battman.plugin.charge-gauge"],
     "replacementTIPAIncludesSeparatelyShipped": True,

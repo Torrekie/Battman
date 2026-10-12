@@ -12,6 +12,7 @@
 @property (nonatomic, readonly) UIButton *removeButton;
 @property (nonatomic, readonly) NSArray<UIButton *> *actionButtons;
 @property (nonatomic, copy, readonly) NSString *mountedCardIdentifier;
+@property (nonatomic, readonly) UIView *analyticsCardContentView;
 - (void)configureWithCard:(id<BAAnalyticsCard>)card
 						 size:(BAAnalyticsCardSize)size
 					  editing:(BOOL)editing;

@@ -47,12 +47,16 @@
   ],
   "officialPluginSelection": {
     "embeddedAnalyticsCards": [
-      "com.torrekie.battman.analytics.battery.summary",
-      "com.torrekie.battman.analytics.temperature.average",
-      "com.torrekie.battman.analytics.power.average",
-      "com.torrekie.battman.analytics.cycle.summary",
-      "com.torrekie.battman.analytics.capacity.remaining",
-      "com.torrekie.battman.analytics.charging-limit"
+      "com.torrekie.battman.analytics.live",
+      "com.torrekie.battman.analytics.capacity",
+      "com.torrekie.battman.analytics.cells",
+      "com.torrekie.battman.analytics.session",
+      "com.torrekie.battman.analytics.discharge",
+      "com.torrekie.battman.analytics.events",
+      "com.torrekie.battman.analytics.path",
+      "com.torrekie.battman.analytics.dwell",
+      "com.torrekie.battman.analytics.compare",
+      "com.torrekie.battman.analytics.rhythm"
     ],
     "separatelyShipped": [
       "com.torrekie.battman.plugin.charge-gauge"

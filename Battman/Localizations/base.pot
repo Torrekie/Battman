@@ -167,27 +167,20 @@ msgstr ""
 msgid "Low Power Mode"
 msgstr ""
 
-msgid ""
-"These values can’t be overridden when the Charging Limit daemon is running."
+msgid "These values can’t be overridden when the Charging Limit daemon is running."
 msgstr ""
 
 msgid "Certain values may not be overridable when no wired A/C connected."
 msgstr ""
 
-msgid ""
-"Certain values may not be overridable when Optimized Battery Charging is "
-"enabled."
+msgid "Certain values may not be overridable when Optimized Battery Charging is enabled."
 msgstr ""
 
 #, objc-format
-msgid ""
-"Block Charging suspends battery charging and allows the battery to discharge "
-"while maintaining power source operation. %@"
+msgid "Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation. %@"
 msgstr ""
 
-msgid ""
-"Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
-"in, or the date you scheduled, whichever one comes first."
+msgid "Smart Charging will start 900 seconds (15 minutes) after power is plugged-in, or the date you scheduled, whichever one comes first."
 msgstr ""
 
 msgid "Enabled"
@@ -240,9 +233,7 @@ msgstr ""
 msgid "Engaged"
 msgstr ""
 
-msgid ""
-"Smart Charging has been engaged. It will start after 15 minutes of power "
-"supply, or at the date you picked, whichever comes first."
+msgid "Smart Charging has been engaged. It will start after 15 minutes of power supply, or at the date you picked, whichever comes first."
 msgstr ""
 
 msgid "Block Charging"
@@ -281,9 +272,7 @@ msgstr ""
 msgid "Set the temperature range shown in Thermometer."
 msgstr ""
 
-msgid ""
-"This preview shows how the pointer adjusts to match the current temperature "
-"based on your selected range."
+msgid "This preview shows how the pointer adjusts to match the current temperature based on your selected range."
 msgstr ""
 
 msgid "Min Temperature"
@@ -362,16 +351,10 @@ msgstr ""
 msgid "Daemon State"
 msgstr ""
 
-msgid ""
-"ThermalMonitor is a critical system component responsible for managing "
-"device and battery health. Disabling it may lead to unexpected behavior and "
-"is not recommended."
+msgid "ThermalMonitor is a critical system component responsible for managing device and battery health. Disabling it may lead to unexpected behavior and is not recommended."
 msgstr ""
 
-msgid ""
-"Maximum device‑skin temperature per thermal‑monitoring cycle. Exceeding this "
-"threshold within the cycle automatically generates an AppleCare "
-"thermal‑exception log."
+msgid "Maximum device‑skin temperature per thermal‑monitoring cycle. Exceeding this threshold within the cycle automatically generates an AppleCare thermal‑exception log."
 msgstr ""
 
 msgid "Running"
@@ -554,9 +537,7 @@ msgid "Type Change"
 msgstr ""
 
 #, objc-format
-msgid ""
-"Are you sure you want to interpret the item \"%.4s\" as type \"%.4s\"? This "
-"may cause undefined behavior."
+msgid "Are you sure you want to interpret the item \"%.4s\" as type \"%.4s\"? This may cause undefined behavior."
 msgstr ""
 
 msgid "Proceed"
@@ -566,10 +547,7 @@ msgid "Are you 100% sure?"
 msgstr ""
 
 #, objc-format
-msgid ""
-"The type \"%.4s\" you requested is %d bytes long, which doesn't match the "
-"current length of %d bytes. Only continue if you're certain of the "
-"consequences. Proceed?"
+msgid "The type \"%.4s\" you requested is %d bytes long, which doesn't match the current length of %d bytes. Only continue if you're certain of the consequences. Proceed?"
 msgstr ""
 
 msgid "Array"
@@ -611,9 +589,7 @@ msgstr ""
 msgid "Please read the entire message."
 msgstr ""
 
-msgid ""
-"Writing to the SMC can be harmful. If unexpected behavior occurs, the "
-"developers offer NO WARRANTY to the fullest extent permitted by law."
+msgid "Writing to the SMC can be harmful. If unexpected behavior occurs, the developers offer NO WARRANTY to the fullest extent permitted by law."
 msgstr ""
 
 msgid "Make sure you understand what you're doing before continuing."
@@ -675,20 +651,13 @@ msgstr ""
 msgid "Thermal Levels"
 msgstr ""
 
-msgid ""
-"Changing the default thermal behavior may increase wear on your battery and "
-"reduce its lifespan."
+msgid "Changing the default thermal behavior may increase wear on your battery and reduce its lifespan."
 msgstr ""
 
-msgid ""
-"Hot-In-Pocket Protection automatically reduces CPU & GPU power when the "
-"display is off and no media is playing, to prevent overheating while the "
-"device is stored in a pocket."
+msgid "Hot-In-Pocket Protection automatically reduces CPU & GPU power when the display is off and no media is playing, to prevent overheating while the device is stored in a pocket."
 msgstr ""
 
-msgid ""
-"Thermal levels are normally controlled by the system. Changing them can "
-"affect power, media playback, backlight, flashlight and wireless charging."
+msgid "Thermal levels are normally controlled by the system. Changing them can affect power, media playback, backlight, flashlight and wireless charging."
 msgstr ""
 
 msgid "State Updates"
@@ -731,9 +700,7 @@ msgid "Reset"
 msgstr ""
 
 #, objc-format
-msgid ""
-"Setting thermal pressure to %@ may trigger a persistent temperature warning "
-"screen. Do you want to continue?"
+msgid "Setting thermal pressure to %@ may trigger a persistent temperature warning screen. Do you want to continue?"
 msgstr ""
 
 msgid "Thermal Tuning failed with error"
@@ -745,14 +712,10 @@ msgstr ""
 msgid "Unregistered Locale"
 msgstr ""
 
-msgid ""
-"You are using a localization file which not officially provided by Battman, "
-"the translations may inaccurate."
+msgid "You are using a localization file which not officially provided by Battman, the translations may inaccurate."
 msgstr ""
 
-msgid ""
-"stdio logs not redirected in Simulator build, please check stdio in Xcode "
-"console output instead."
+msgid "stdio logs not redirected in Simulator build, please check stdio in Xcode console output instead."
 msgstr ""
 
 msgid "Battman CLI not implemented yet."
@@ -776,14 +739,10 @@ msgstr ""
 msgid "Charging Limit (Experimental)"
 msgstr ""
 
-msgid ""
-"The system logs battery charge–level changes for the past 7 days. If this "
-"graph is empty, the power-log service may not be running correctly."
+msgid "The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly."
 msgstr ""
 
-msgid ""
-"Charging Limit uses a background service to monitor your battery's charge "
-"level and automatically adjust charging behavior."
+msgid "Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior."
 msgstr ""
 
 msgid "Invalid Setup"
@@ -861,8 +820,7 @@ msgstr ""
 msgid "Battman hasn't added your language yet. %@"
 msgstr ""
 
-msgid ""
-"Battery information updates automatically depending on system conditions."
+msgid "Battery information updates automatically depending on system conditions."
 msgstr ""
 
 #, objc-format
@@ -872,9 +830,7 @@ msgstr ""
 msgid "Using a shorter interval may affect performance."
 msgstr ""
 
-msgid ""
-"Battery information doesn’t update automatically. Pull down to refresh "
-"manually."
+msgid "Battery information doesn’t update automatically. Pull down to refresh manually."
 msgstr ""
 
 msgid "Configure how often battery information is refreshed."
@@ -889,9 +845,7 @@ msgstr ""
 msgid "Data Management"
 msgstr ""
 
-msgid ""
-"This will permanently delete all Battman data, preferences, and cached "
-"files. This action cannot be undone."
+msgid "This will permanently delete all Battman data, preferences, and cached files. This action cannot be undone."
 msgstr ""
 
 msgid "Language"
@@ -950,9 +904,7 @@ msgstr ""
 msgid "Dry Run Complete"
 msgstr ""
 
-msgid ""
-"Analysis complete. Check the console/logs to see what would be deleted. No "
-"data was actually removed."
+msgid "Analysis complete. Check the console/logs to see what would be deleted. No data was actually removed."
 msgstr ""
 
 msgid "Data Wiped"
@@ -973,10 +925,7 @@ msgstr ""
 msgid "Support Battman"
 msgstr ""
 
-msgid ""
-"If Battman saved you time or made your day easier, please consider a small "
-"donation. Even a few dollars make a real difference and help me keep adding "
-"improvements (also helps my living)."
+msgid "If Battman saved you time or made your day easier, please consider a small donation. Even a few dollars make a real difference and help me keep adding improvements (also helps my living)."
 msgstr ""
 
 msgid "You can at least get Battman early accesses by donating us 🥺"
@@ -988,9 +937,7 @@ msgstr ""
 msgid "Having Problems?"
 msgstr ""
 
-msgid ""
-"We'd love to hear from you! Let us know if you find any bugs or have "
-"suggestions to make things better."
+msgid "We'd love to hear from you! Let us know if you find any bugs or have suggestions to make things better."
 msgstr ""
 
 msgid "Send an Email"
@@ -1019,17 +966,10 @@ msgstr ""
 msgid "Specs (Basic)"
 msgstr ""
 
-msgid ""
-"These limitations are typically determined by the hardware and returned by "
-"the Brightness system."
+msgid "These limitations are typically determined by the hardware and returned by the Brightness system."
 msgstr ""
 
-msgid ""
-"These parameters are sourced from the system’s high-level graphics layer. "
-"Because the display is ultimately composed through CoreAnimation and "
-"backboardd before it reaches the screen hardware, the values shown here are "
-"estimates and may not precisely reflect the true behavior of the physical "
-"display."
+msgid "These parameters are sourced from the system’s high-level graphics layer. Because the display is ultimately composed through CoreAnimation and backboardd before it reaches the screen hardware, the values shown here are estimates and may not precisely reflect the true behavior of the physical display."
 msgstr ""
 
 msgid "Brightness Backend"
@@ -1062,20 +1002,16 @@ msgstr ""
 msgid "Copied!"
 msgstr ""
 
-msgid ""
-"No value returned from sensor, device should be checked by service "
-"technician."
+msgid "No value returned from sensor, device should be checked by service technician."
 msgstr ""
 
-msgid ""
-"Value exceeded the designed, device should be checked by service technician."
+msgid "Value exceeded the designed, device should be checked by service technician."
 msgstr ""
 
 msgid "Unusual value, device should be checked by service technician."
 msgstr ""
 
-msgid ""
-"Significant abnormal data, device should be checked by service technician."
+msgid "Significant abnormal data, device should be checked by service technician."
 msgstr ""
 
 msgid "Error Data"
@@ -1099,17 +1035,13 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-msgid ""
-"\"External Power\" indicator may suggest that the connected adapter is a "
-"wireless charger. Most information may not be displayed because wireless "
-"chargers are handled differently by the hardware."
+msgid "\"External Power\" indicator may suggest that the connected adapter is a wireless charger. Most information may not be displayed because wireless chargers are handled differently by the hardware."
 msgstr ""
 
 msgid "Remaining Capacity"
 msgstr ""
 
-msgid ""
-"Unusual Remaining Capacity, a non-genuine battery component may be in use."
+msgid "Unusual Remaining Capacity, a non-genuine battery component may be in use."
 msgstr ""
 
 msgid "Estimated Remaining"
@@ -1121,9 +1053,7 @@ msgstr ""
 msgid "Cycle Count"
 msgstr ""
 
-msgid ""
-"Cycle count exceeds the battery's design target. Capacity or peak "
-"performance may be reduced."
+msgid "Cycle count exceeds the battery's design target. Capacity or peak performance may be reduced."
 msgstr ""
 
 msgid "Time to Empty"
@@ -1450,19 +1380,13 @@ msgstr ""
 msgid "Gas Gauge (Basic)"
 msgstr ""
 
-msgid ""
-"All Gas Gauge metrics are dynamically retrieved from the onboard sensor "
-"array in real time. Should anomalies be detected in specific readings, this "
-"may indicate the presence of unauthorized components or require diagnostics "
-"through Apple Authorised Service Provider."
+msgid "All Gas Gauge metrics are dynamically retrieved from the onboard sensor array in real time. Should anomalies be detected in specific readings, this may indicate the presence of unauthorized components or require diagnostics through Apple Authorised Service Provider."
 msgstr ""
 
 msgid "Device Name"
 msgstr ""
 
-msgid ""
-"This indicates the name of the current Gas Gauge IC used by the installed "
-"battery."
+msgid "This indicates the name of the current Gas Gauge IC used by the installed battery."
 msgstr ""
 
 msgid "Health"
@@ -1492,17 +1416,13 @@ msgstr ""
 msgid "Qmax"
 msgstr ""
 
-msgid ""
-"Chemical depth of discharge recorded while the battery was last at rest. "
-"This value may differ from the current depth of discharge."
+msgid "Chemical depth of discharge recorded while the battery was last at rest. This value may differ from the current depth of discharge."
 msgstr ""
 
 msgid "Passed Charge"
 msgstr ""
 
-msgid ""
-"Signed charge measured since the battery gauge's last reference update. "
-"This value is not lifetime charge or cycle count."
+msgid "Signed charge measured since the battery gauge's last reference update. This value is not lifetime charge or cycle count."
 msgstr ""
 
 msgid "Voltage"
@@ -1526,9 +1446,7 @@ msgstr ""
 msgid "State of Charge (UI)"
 msgstr ""
 
-msgid ""
-"The \"Battery Percentage\" displayed exactly on your status bar. This is the "
-"SoC that Apple wants to tell you."
+msgid "The \"Battery Percentage\" displayed exactly on your status bar. This is the SoC that Apple wants to tell you."
 msgstr ""
 
 msgid "Resistance Scale"
@@ -1540,9 +1458,7 @@ msgstr ""
 msgid "Chemistry ID"
 msgstr ""
 
-msgid ""
-"Chemistry unique identifier (ChemID) assigned to each battery in Texas "
-"Instruments' database. It ensures accurate calculations and predictions."
+msgid "Chemistry unique identifier (ChemID) assigned to each battery in Texas Instruments' database. It ensures accurate calculations and predictions."
 msgstr ""
 
 msgid "Flags"
@@ -1566,17 +1482,13 @@ msgstr ""
 msgid "IT Misc Status"
 msgstr ""
 
-msgid ""
-"This field refers to the miscellaneous data returned by battery Impedance "
-"Track™ Gas Gauge IC."
+msgid "This field refers to the miscellaneous data returned by battery Impedance Track™ Gas Gauge IC."
 msgstr ""
 
 msgid "Simulation Rate"
 msgstr ""
 
-msgid ""
-"This field refers to the rate of Gas Gauge performing Impedance Track™ "
-"simulations."
+msgid "This field refers to the rate of Gas Gauge performing Impedance Track™ simulations."
 msgstr ""
 
 msgid "Daily Max SoC"
@@ -1588,20 +1500,13 @@ msgstr ""
 msgid "Adapter Details"
 msgstr ""
 
-msgid ""
-"All adapter information is dynamically retrieved from the hardware of the "
-"currently connected adapter (or cable if you are using Lightning ports). If "
-"any of the data is missing, it may indicate that the power source is not "
-"providing the relevant information, or there may be a hardware issue with "
-"the power source."
+msgid "All adapter information is dynamically retrieved from the hardware of the currently connected adapter (or cable if you are using Lightning ports). If any of the data is missing, it may indicate that the power source is not providing the relevant information, or there may be a hardware issue with the power source."
 msgstr ""
 
 msgid "Port"
 msgstr ""
 
-msgid ""
-"Port of currently connected adapter. On macOS, this is the USB port that the "
-"adapter currently attached."
+msgid "Port of currently connected adapter. On macOS, this is the USB port that the adapter currently attached."
 msgstr ""
 
 msgid "Adapter Type"
@@ -1610,33 +1515,25 @@ msgstr ""
 msgid "Compatibility"
 msgstr ""
 
-msgid ""
-"This field refers to the Family Code (kIOPSPowerAdapterFamilyKey) of "
-"currently connected power adapter."
+msgid "This field refers to the Family Code (kIOPSPowerAdapterFamilyKey) of currently connected power adapter."
 msgstr ""
 
 msgid "Reason"
 msgstr ""
 
-msgid ""
-"If this field appears in the list, it indicates that an issue has occurred "
-"or that a condition was met, causing charging to stop."
+msgid "If this field appears in the list, it indicates that an issue has occurred or that a condition was met, causing charging to stop."
 msgstr ""
 
 msgid "Current Rating"
 msgstr ""
 
-msgid ""
-"Current rating of connected power source, this does not indicates the real-"
-"time passing current."
+msgid "Current rating of connected power source, this does not indicates the real-time passing current."
 msgstr ""
 
 msgid "Voltage Rating"
 msgstr ""
 
-msgid ""
-"Voltage rating of connected power source, this does not indicates the real-"
-"time passing voltage."
+msgid "Voltage rating of connected power source, this does not indicates the real-time passing voltage."
 msgstr ""
 
 msgid "Input Current"
@@ -1684,9 +1581,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-msgid ""
-"Short description provided by Apple PMU on current power adapter Family "
-"Code. Sometimes may not set."
+msgid "Short description provided by Apple PMU on current power adapter Family Code. Sometimes may not set."
 msgstr ""
 
 msgid "Serial No."
@@ -1695,8 +1590,7 @@ msgstr ""
 msgid "PMU Configuration"
 msgstr ""
 
-msgid ""
-"The Configuration values is the max allowed Charging Current configurations."
+msgid "The Configuration values is the max allowed Charging Current configurations."
 msgstr ""
 
 msgid "Charger Configuration"
@@ -1705,9 +1599,7 @@ msgstr ""
 msgid "HVC Mode"
 msgstr ""
 
-msgid ""
-"High Voltage Charging (HVC) Mode may accquired by your power adapter or "
-"system, all supported modes will be listed below."
+msgid "High Voltage Charging (HVC) Mode may accquired by your power adapter or system, all supported modes will be listed below."
 msgstr ""
 
 msgid "Inductive Port"
@@ -1812,9 +1704,7 @@ msgstr ""
 msgid "Inductive Region Code"
 msgstr ""
 
-msgid ""
-"This indicates if current inductive accesory is following specific region "
-"configuration."
+msgid "This indicates if current inductive accesory is following specific region configuration."
 msgstr ""
 
 msgid "Inductive Auth Timeout"
@@ -1889,9 +1779,7 @@ msgstr ""
 msgid "Wireless Charging Detected"
 msgstr ""
 
-msgid ""
-"Charging limit controls are not supported with wireless charging. Use a wired "
-"connection for reliable functionality."
+msgid "Charging limit controls are not supported with wireless charging. Use a wired connection for reliable functionality."
 msgstr ""
 
 msgid "Accelerometer"
@@ -2050,9 +1938,7 @@ msgstr ""
 msgid "Notice"
 msgstr ""
 
-msgid ""
-"Turning this off will keep the display from dimming and may shorten battery "
-"life."
+msgid "Turning this off will keep the display from dimming and may shorten battery life."
 msgstr ""
 
 msgid "Powerlog database is unavailable."
@@ -2148,7 +2034,19 @@ msgstr ""
 msgid "Native Plug-ins"
 msgstr ""
 
-msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgid ""
+"Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n"
+"\n"
+"Name: %@\n"
+"ID: %@\n"
+"Publisher: %@\n"
+"Package: %@\n"
+"Extension points:\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"Nothing loads until Battman restarts."
 msgstr ""
 
 msgid "No Installed Plug-ins"
@@ -2355,7 +2253,22 @@ msgstr ""
 msgid "Homepage"
 msgstr ""
 
-msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
+msgid ""
+"Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n"
+"\n"
+"Name: %@\n"
+"Author: %@\n"
+"ID: %@\n"
+"Version: %@ (%@)\n"
+"Release sequence: %llu\n"
+"Publisher fingerprint: %@\n"
+"Package digest: %@\n"
+"Extension points:\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"Nothing loads until Battman restarts."
 msgstr ""
 
 msgid "Release Sequence"
@@ -2458,4 +2371,1098 @@ msgid "Cumulative charge throughput cycles reported by the battery controller. S
 msgstr ""
 
 msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
+msgstr ""
+
+msgid ""
+"Found a bug or have an idea? Please choose one way to contact us:\n"
+"open a GitHub Issue (public — great for steps/logs)\n"
+"or Send Email (for private info or attachments). We really appreciate your help!"
+msgstr ""
+
+msgid "Send Email"
+msgstr ""
+
+# Analytics V3 canvases and evidence views.
+msgid " · "
+msgstr ""
+
+msgid " · gap events unknown"
+msgstr ""
+
+msgid " · gaps"
+msgstr ""
+
+msgid " · partial"
+msgstr ""
+
+#, objc-format
+msgid "%+.2f W"
+msgstr ""
+
+#, objc-format
+msgid "%+.3f watts"
+msgstr ""
+
+#, objc-format
+msgid "%+.3g A"
+msgstr ""
+
+#, objc-format
+msgid "%.0f d ago"
+msgstr ""
+
+#, objc-format
+msgid "%.0f h ago"
+msgstr ""
+
+#, objc-format
+msgid "%.0f min"
+msgstr ""
+
+#, objc-format
+msgid "%.0f min %.0f s"
+msgstr ""
+
+#, objc-format
+msgid "%.0f min ago"
+msgstr ""
+
+#, objc-format
+msgid "%.0f s"
+msgstr ""
+
+#, objc-format
+msgid "%.0f s ago"
+msgstr ""
+
+#, objc-format
+msgid "%.1f h"
+msgstr ""
+
+#, objc-format
+msgid "%.1f min"
+msgstr ""
+
+#, objc-format
+msgid "%.1f pp · %@ covered"
+msgstr ""
+
+#, objc-format
+msgid "%.1f ≈ min"
+msgstr ""
+
+#, objc-format
+msgid "%.2f W"
+msgstr ""
+
+#, objc-format
+msgid "%.2f Wh · %@ covered"
+msgstr ""
+
+#, objc-format
+msgid "%.2f h"
+msgstr ""
+
+#, objc-format
+msgid "%.2f pp/h"
+msgstr ""
+
+#, objc-format
+msgid "%.2f–%.2f min"
+msgstr ""
+
+#, objc-format
+msgid ""
+"%@\n"
+"→ %@"
+msgstr ""
+
+#, objc-format
+msgid "%@  %+.3g W"
+msgstr ""
+
+#, objc-format
+msgid "%@  — W"
+msgstr ""
+
+#, objc-format
+msgid "%@ / %@ · %@ missing"
+msgstr ""
+
+#, objc-format
+msgid "%@ means %@; sampled state in this window"
+msgstr ""
+
+#, objc-format
+msgid "%@ missing, %@"
+msgstr ""
+
+#, objc-format
+msgid "%@ observations, %@"
+msgstr ""
+
+#, objc-format
+msgid "%@ sampled interval, %@"
+msgstr ""
+
+#, objc-format
+msgid "%@ target, %.3f W, observed %@"
+msgstr ""
+
+#, objc-format
+msgid "%@ track, %@"
+msgstr ""
+
+#, objc-format
+msgid "%@ · ≈ %.1f min%@"
+msgstr ""
+
+#, objc-format
+msgid "%@, %+.3g %@"
+msgstr ""
+
+#, objc-format
+msgid "%@, %@"
+msgstr ""
+
+#, objc-format
+msgid "%@, %@%@"
+msgstr ""
+
+#, objc-format
+msgid "%@, %@. This is the observed maximum, not the unobserved session maximum."
+msgstr ""
+
+#, objc-format
+msgid "%@, approximately %@"
+msgstr ""
+
+#, objc-format
+msgid "%@, approximately %@, sampled interval %@"
+msgstr ""
+
+#, objc-format
+msgid "%@, hourly SOC decline and observation coverage"
+msgstr ""
+
+#, objc-format
+msgid "%@, n=%lu, %@ %.1f min"
+msgstr ""
+
+#, objc-format
+msgid "%@, signed battery current %+.3g A"
+msgstr ""
+
+#, objc-format
+msgid "%@, signed battery power %+.3g W%@"
+msgstr ""
+
+#, objc-format
+msgid "%@, trusted unplugged intervals only"
+msgstr ""
+
+#, objc-format
+msgid "%@. %@"
+msgstr ""
+
+#, objc-format
+msgid "%@. %@. %@. %@. SOC and power have independent coverage; no interpolation across gaps."
+msgstr ""
+
+#, objc-format
+msgid "%@. %@. %@. FCC observation window %@; %lu valid points. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."
+msgstr ""
+
+#, objc-format
+msgid "%@. %@. No verified readings."
+msgstr ""
+
+#, objc-format
+msgid "%@. %@. Transition times are bounded by samples"
+msgstr ""
+
+#, objc-format
+msgid "%@. Approximately %@, %@, %@. %@. %@. %@. %@. %lu source records. Positive current charges the battery; negative current discharges it. State changes are sampled bounds; hatching means missing observations."
+msgstr ""
+
+#, objc-format
+msgid "%@; %@; precise readings retain signed W"
+msgstr ""
+
+#, objc-format
+msgid "%lu FCC points · mAh"
+msgstr ""
+
+#, objc-format
+msgid "%lu sampled changes%@"
+msgstr ""
+
+#, objc-format
+msgid "%lu source records"
+msgstr ""
+
+#, objc-format
+msgid "%lu valid cells"
+msgstr ""
+
+#, objc-format
+msgid "%lu valid · +%lu in detail"
+msgstr ""
+
+msgid ", net input, not output"
+msgstr ""
+
+#, objc-format
+msgid ", observed %@"
+msgstr ""
+
+#, objc-format
+msgid "0–%.1f pp/h"
+msgstr ""
+
+#, objc-format
+msgid "0–%.2f h"
+msgstr ""
+
+msgid "20 → 80% · ≈ min"
+msgstr ""
+
+#, objc-format
+msgid "20 → 80%% · n=%lu · %@"
+msgstr ""
+
+msgid "20–80% charge duration distribution"
+msgstr ""
+
+msgid "20–80% duration"
+msgstr ""
+
+#, objc-format
+msgid "20–80%% charge duration, %lu independent sessions"
+msgstr ""
+
+msgid "23 h"
+msgstr ""
+
+#, objc-format
+msgid "; system reason code %@, meaning not inferred"
+msgstr ""
+
+msgid "A ±"
+msgstr ""
+
+msgid "Age unknown"
+msgstr ""
+
+msgid "All verified observations in this visible time slice; original samples are retained"
+msgstr ""
+
+msgid "Average current"
+msgstr ""
+
+#, objc-format
+msgid "Battery current unavailable, %@"
+msgstr ""
+
+msgid "Battery discharge"
+msgstr ""
+
+#, objc-format
+msgid "Battery discharge. %@"
+msgstr ""
+
+msgid "Battery net"
+msgstr ""
+
+msgid "Battery net · avg"
+msgstr ""
+
+msgid "Battery output energy"
+msgstr ""
+
+msgid "Battery output magnitude |W|; detail preserves signed W."
+msgstr ""
+
+#, objc-format
+msgid "Battery power unavailable, %@"
+msgstr ""
+
+msgid "Budget"
+msgstr ""
+
+#, objc-format
+msgid "Budget %.3g W"
+msgstr ""
+
+msgid "Capacity observations"
+msgstr ""
+
+#, objc-format
+msgid "Cell %ld"
+msgstr ""
+
+#, objc-format
+msgid "Cell %lld, %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "Cell %lld: %@"
+msgstr ""
+
+msgid "Cell consistency"
+msgstr ""
+
+msgid "Cell count unavailable"
+msgstr ""
+
+msgid "Cell voltage history"
+msgstr ""
+
+msgid "Charge"
+msgstr ""
+
+msgid "Charging comparison"
+msgstr ""
+
+msgid "Clock mismatch"
+msgstr ""
+
+#, objc-format
+msgid "Connected %@"
+msgstr ""
+
+msgid "Connected idle"
+msgstr ""
+
+msgid "Connected session"
+msgstr ""
+
+#, objc-format
+msgid "Connected session, %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "Connected session. %@"
+msgstr ""
+
+msgid "Connected time"
+msgstr ""
+
+msgid "Connected, not charging"
+msgstr ""
+
+msgid "Connection and charging states"
+msgstr ""
+
+#, objc-format
+msgid "Coverage SOC %.0f%% T %.0f%% A %.0f%%"
+msgstr ""
+
+#, objc-format
+msgid "Coverage SOC %.0f%% · °C %.0f%% · A %.0f%%"
+msgstr ""
+
+#, objc-format
+msgid "Covered SOC %@; °C %@; A %@ / %@"
+msgstr ""
+
+msgid "Current Battery"
+msgstr ""
+
+#, objc-format
+msgid "Current battery. Charge %@. %@ %@. %@ %@. Temperature %@. %@. Short window %@; %@. %@"
+msgstr ""
+
+msgid "Current unavailable"
+msgstr ""
+
+msgid "Cycle count"
+msgstr ""
+
+msgid "Dashed lines show budget and power targets"
+msgstr ""
+
+msgid "Data updated"
+msgstr ""
+
+msgid "Day SOC decline"
+msgstr ""
+
+#, objc-format
+msgid "Design %@ mAh. Full / design %@"
+msgstr ""
+
+msgid "Design capacity"
+msgstr ""
+
+msgid "Design capacity unknown"
+msgstr ""
+
+msgid "Design unknown"
+msgstr ""
+
+msgid "Discharge rhythm"
+msgstr ""
+
+msgid "Duplicate session"
+msgstr ""
+
+msgid "Dwell time"
+msgstr ""
+
+msgid "Each dot is one independent session"
+msgstr ""
+
+msgid "Empty session"
+msgstr ""
+
+msgid "End ?"
+msgstr ""
+
+msgid "Estimated median"
+msgstr ""
+
+msgid "Exact readings"
+msgstr ""
+
+msgid "Excluded sessions"
+msgstr ""
+
+#, objc-format
+msgid "FCC %@ mAh, %@, %@"
+msgstr ""
+
+msgid "Field units, sampling and statistical scope"
+msgstr ""
+
+#, objc-format
+msgid "First observed %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "First observed SOC %.0f percent, %@"
+msgstr ""
+
+msgid "First trusted upward 20% crossing to the first upward 80% crossing in one complete connected session. Pauses are included; temperature is an observed peak, not a predicted maximum."
+msgstr ""
+
+msgid "Foreground · +charge / −discharge"
+msgstr ""
+
+msgid "Full"
+msgstr ""
+
+msgid "Full / design"
+msgstr ""
+
+#, objc-format
+msgid "Full charge %@ mAh"
+msgstr ""
+
+msgid "Full charge (mAh)"
+msgstr ""
+
+msgid "Full charge capacity"
+msgstr ""
+
+msgid "Full charge unavailable"
+msgstr ""
+
+msgid "Gap inside session"
+msgstr ""
+
+msgid "Gaps are not interpolated. Values are frozen when this view opens."
+msgstr ""
+
+msgid "Group delta unavailable"
+msgstr ""
+
+msgid "Hide exact readings"
+msgstr ""
+
+msgid "Hide sources and definitions"
+msgstr ""
+
+msgid "Historical time unavailable"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "History time range unavailable"
+msgstr ""
+
+msgid "History unavailable"
+msgstr ""
+
+msgid "Incompatible measurement sources"
+msgstr ""
+
+msgid "Incomplete 20–80% range"
+msgstr ""
+
+msgid "Incomplete session boundaries"
+msgstr ""
+
+msgid "Independent sessions"
+msgstr ""
+
+msgid "Input"
+msgstr ""
+
+#, objc-format
+msgid "Known %@ / %@"
+msgstr ""
+
+#, objc-format
+msgid "Last %+.2f A"
+msgstr ""
+
+#, objc-format
+msgid "Last observed %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "Last observed SOC %.0f percent, %@"
+msgstr ""
+
+msgid "Linear interpolation within trusted unplugged sample pairs; overlapping durations unioned separately per metric. SOC loss is the signed net percentage-point change over SOC-covered intervals. Output energy integrates only the negative half of signed battery power; gaps contribute neither time nor energy."
+msgstr ""
+
+msgid "Linear within the trusted original sampled pair"
+msgstr ""
+
+msgid "Live snapshot"
+msgstr ""
+
+msgid "Loading history…"
+msgstr ""
+
+msgid "Measurement points"
+msgstr ""
+
+#, objc-format
+msgid "Measurement points in watts, %@"
+msgstr ""
+
+msgid "Measurement points · W"
+msgstr ""
+
+#, objc-format
+msgid "Measurement points, %@. Each point has its own observation time. Targets use dashed lines."
+msgstr ""
+
+#, objc-format
+msgid "Measurement points, %@. Input and battery net are independent measured points. Dashed lines are budget and power targets. Hatched regions are unavailable."
+msgstr ""
+
+msgid "Method"
+msgstr ""
+
+msgid "Middle 50%"
+msgstr ""
+
+#, objc-format
+msgid "Missing %@"
+msgstr ""
+
+msgid "Missing SOC"
+msgstr ""
+
+msgid "Missing time"
+msgstr ""
+
+msgid "Missing trusted observations"
+msgstr ""
+
+msgid "More readings"
+msgstr ""
+
+msgid "Net"
+msgstr ""
+
+msgid "No complete 20–80% crossings"
+msgstr ""
+
+msgid "No readings"
+msgstr ""
+
+msgid "No short window"
+msgstr ""
+
+msgid "No valid session time range"
+msgstr ""
+
+msgid "No valid unplugged SOC"
+msgstr ""
+
+msgid "No validated FCC"
+msgstr ""
+
+msgid "No validated history"
+msgstr ""
+
+msgid "No verified observations"
+msgstr ""
+
+msgid "No verified states"
+msgstr ""
+
+#, objc-format
+msgid "Observed %@"
+msgstr ""
+
+#, objc-format
+msgid "Observed %@ to %@, between %@ and %@; exact transition time unknown%@"
+msgstr ""
+
+msgid "Observed SOC"
+msgstr ""
+
+#, objc-format
+msgid "Observed cells delta %.0f mV; maximum minus minimum in the same record"
+msgstr ""
+
+msgid "Observed charge"
+msgstr ""
+
+msgid "Observed design, source or cycle-count boundary; cause unknown"
+msgstr ""
+
+msgid "Observed dwell distribution"
+msgstr ""
+
+msgid "Observed dwell · h"
+msgstr ""
+
+#, objc-format
+msgid "Observed evidence, %@"
+msgstr ""
+
+#, objc-format
+msgid "Observed peak %.1f °C"
+msgstr ""
+
+msgid "Observed peak temperature"
+msgstr ""
+
+msgid "Observed states"
+msgstr ""
+
+#, objc-format
+msgid "Observed states, %@. %@. %@. C charging; two bars connected but not charging; F full; U unplugged; question mark unknown."
+msgstr ""
+
+#, objc-format
+msgid "Observed states. %@"
+msgstr ""
+
+msgid "Observed unplugged time"
+msgstr ""
+
+msgid "Observed window"
+msgstr ""
+
+msgid "Original observations in this visible time slice, including missing fields. No inference across unknown spans."
+msgstr ""
+
+msgid "Other excluded sessions"
+msgstr ""
+
+msgid "Output energy unavailable"
+msgstr ""
+
+msgid "Output |W|"
+msgstr ""
+
+#, objc-format
+msgid "Output |W| · %@ valid"
+msgstr ""
+
+#, objc-format
+msgid "Output ~%.2f Wh · %@ valid"
+msgstr ""
+
+msgid "Overlapping observations"
+msgstr ""
+
+msgid "Overlapping sessions"
+msgstr ""
+
+msgid "Partial observations"
+msgstr ""
+
+#, objc-format
+msgid "Peak (obs.) %.1f°C"
+msgstr ""
+
+msgid "Positive is charge; negative is discharge."
+msgstr ""
+
+msgid "Power"
+msgstr ""
+
+msgid ""
+"Q1–Q3\n"
+"obs min/max"
+msgstr ""
+
+msgid "Q1–Q3 · obs min/max"
+msgstr ""
+
+msgid "Raw system code; no pause cause or diagnosis inferred"
+msgstr ""
+
+#, objc-format
+msgid "Reconnected ~%@"
+msgstr ""
+
+msgid "Reconnection not observed"
+msgstr ""
+
+msgid "Required fields unavailable"
+msgstr ""
+
+msgid "Required fields unavailable or sampling gap"
+msgstr ""
+
+msgid "Resize"
+msgstr ""
+
+msgid "SOC"
+msgstr ""
+
+msgid "SOC %"
+msgstr ""
+
+msgid ""
+"SOC %\n"
+"°C\n"
+"A ±"
+msgstr ""
+
+msgid "SOC % · h"
+msgstr ""
+
+msgid "SOC % × °C · h"
+msgstr ""
+
+#, objc-format
+msgid "SOC %.0f → %.0f%%"
+msgstr ""
+
+#, objc-format
+msgid "SOC %@ / %@"
+msgstr ""
+
+#, objc-format
+msgid "SOC %@ / %@ · %@"
+msgstr ""
+
+#, objc-format
+msgid "SOC %@ · %@"
+msgstr ""
+
+#, objc-format
+msgid "SOC %@ · h"
+msgstr ""
+
+#, objc-format
+msgid "SOC %@, %@"
+msgstr ""
+
+msgid "SOC decline"
+msgstr ""
+
+msgid "SOC dwell"
+msgstr ""
+
+msgid "SOC loss over covered intervals"
+msgstr ""
+
+msgid "SOC or connection unavailable"
+msgstr ""
+
+msgid "SOC unavailable"
+msgstr ""
+
+#, objc-format
+msgid "SOC × °C · %@"
+msgstr ""
+
+msgid "SOC — %"
+msgstr ""
+
+msgid "SOC ↓ · pp/h"
+msgstr ""
+
+msgid "Sampled ranges; mixed and unknown states remain separate in the evidence"
+msgstr ""
+
+msgid "Sampled ranges; unknown spans do not establish a cable event or pause"
+msgstr ""
+
+msgid "Sampling"
+msgstr ""
+
+msgid "Selected hour"
+msgstr ""
+
+msgid "Selected range"
+msgstr ""
+
+msgid "Selected record IDs"
+msgstr ""
+
+msgid "Selected session"
+msgstr ""
+
+msgid "Session duration"
+msgstr ""
+
+msgid "Sessions shown"
+msgstr ""
+
+msgid "Share of observed time"
+msgstr ""
+
+msgid "Short window unavailable"
+msgstr ""
+
+msgid "Show exact readings"
+msgstr ""
+
+msgid "Shown day"
+msgstr ""
+
+msgid "Signed SOC decline divided by trusted unplugged time. Connected and missing intervals do not enter the rate. A negative value is an observed SOC rise, not inferred charging."
+msgstr ""
+
+#, objc-format
+msgid "Signed battery current, approximately %@, %+.3g to %+.3g A"
+msgstr ""
+
+msgid "Signed battery power"
+msgstr ""
+
+msgid "Signed current"
+msgstr ""
+
+msgid "Single cell"
+msgstr ""
+
+msgid "Source records"
+msgstr ""
+
+msgid "Sources"
+msgstr ""
+
+msgid "Sources and definitions"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Summary"
+msgstr ""
+
+#, objc-format
+msgid "Target %.3g W"
+msgstr ""
+
+msgid "Targets"
+msgstr ""
+
+#, objc-format
+msgid "Temperature %@"
+msgstr ""
+
+msgid "Temperature unavailable"
+msgstr ""
+
+msgid "Time unknown"
+msgstr ""
+
+msgid "Time weighted across trusted sample pairs. Missing time is excluded from bins; the distribution is not a battery damage score."
+msgstr ""
+
+msgid "Time zone"
+msgstr ""
+
+msgid "Time/age unavailable"
+msgstr ""
+
+#, objc-format
+msgid "Trusted unplugged battery power, approximately %@"
+msgstr ""
+
+msgid "Unknown connection time"
+msgstr ""
+
+#, objc-format
+msgid "Unknown state, %@"
+msgstr ""
+
+#, objc-format
+msgid "Unknown state, %@, %@; no event count inferred"
+msgstr ""
+
+#, objc-format
+msgid "Unknown state, %@; events in this gap are unknown"
+msgstr ""
+
+msgid "Unplugged"
+msgstr ""
+
+#, objc-format
+msgid "Unplugged %@"
+msgstr ""
+
+msgid "Unplugged or unknown connection"
+msgstr ""
+
+msgid "Unplugged session"
+msgstr ""
+
+#, objc-format
+msgid "Unplugged session, %@"
+msgstr ""
+
+msgid "Unplugged time"
+msgstr ""
+
+msgid "Unplugged · SOC % / output |W|"
+msgstr ""
+
+msgid "View exact readings, times and sources"
+msgstr ""
+
+msgid "View readings"
+msgstr ""
+
+msgid "Waiting for history"
+msgstr ""
+
+msgid "Waiting for layout"
+msgstr ""
+
+msgid "Window observation coverage"
+msgstr ""
+
+msgid "Window unavailable"
+msgstr ""
+
+msgid "avg "
+msgstr ""
+
+msgid "battery net W"
+msgstr ""
+
+msgid ""
+"cells\n"
+"mV"
+msgstr ""
+
+msgid "connected"
+msgstr ""
+
+msgid "covered observations"
+msgstr ""
+
+#, objc-format
+msgid "design %@ mAh"
+msgstr ""
+
+msgid "design unknown"
+msgstr ""
+
+msgid "earliest/latest sampled ranges"
+msgstr ""
+
+msgid "estimated median"
+msgstr ""
+
+msgid "estimated minutes"
+msgstr ""
+
+msgid "excluded"
+msgstr ""
+
+msgid "foreground"
+msgstr ""
+
+msgid "input W"
+msgstr ""
+
+#, objc-format
+msgid "min %.1f · Q1 %.1f · median %.1f · Q3 %.1f · max %.1f min"
+msgstr ""
+
+msgid "missing"
+msgstr ""
+
+msgid "n < 3 · points"
+msgstr ""
+
+#, objc-format
+msgid "obs. %.1f °C"
+msgstr ""
+
+msgid "observed peak"
+msgstr ""
+
+msgid "partial boundaries"
+msgstr ""
+
+msgid "partial observations"
+msgstr ""
+
+msgid "points"
+msgstr ""
+
+msgid "pp/h unavailable"
+msgstr ""
+
+msgid "sampled boundaries"
+msgstr ""
+
+msgid "signed A"
+msgstr ""
+
+msgid "temperature unavailable"
+msgstr ""
+
+msgid "unavailable"
+msgstr ""
+
+msgid "unplugged"
+msgstr ""
+
+#, objc-format
+msgid "~%.1f pp/h"
+msgstr ""
+
+#, objc-format
+msgid "±%.1f pp/h"
+msgstr ""
+
+#, objc-format
+msgid "Δobs %.0f"
+msgstr ""
+
+msgid "— A"
+msgstr ""
+
+msgid "— °C"
+msgstr ""
+
+#, objc-format
+msgid "≈ %.2f min"
+msgstr ""
+
+msgid "≈ min"
+msgstr ""
+
+#, objc-format
+msgid "≈%@ · n=%lu%@"
 msgstr ""

@@ -35,7 +35,7 @@ WEAK_LINK_FORCE_IMPORT(kCGColorSpaceExtendedLinearITUR_2020);
 
 #pragma clang diagnostic pop
 
-@interface CALayer ()
+@interface CALayer (BattmanHDRCompatibility)
 @property (atomic, assign) BOOL wantsExtendedDynamicRangeContent;
 @end
 

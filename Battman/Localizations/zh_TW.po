@@ -167,30 +167,21 @@ msgstr "優化電池充電"
 msgid "Low Power Mode"
 msgstr "低電量模式"
 
-msgid ""
-"These values can’t be overridden when the Charging Limit daemon is running."
+msgid "These values can’t be overridden when the Charging Limit daemon is running."
 msgstr "當「充電限制」值守進程正在運行時，這些數值將無法更改。"
 
 msgid "Certain values may not be overridable when no wired A/C connected."
 msgstr "在未連接有線電源時，部分數值可能無法更改。"
 
-msgid ""
-"Certain values may not be overridable when Optimized Battery Charging is "
-"enabled."
+msgid "Certain values may not be overridable when Optimized Battery Charging is enabled."
 msgstr "當「優化電池充電」功能啓用時，某些數值可能無法被覆蓋。"
 
 #, objc-format
-msgid ""
-"Block Charging suspends battery charging and allows the battery to discharge "
-"while maintaining power source operation. %@"
+msgid "Block Charging suspends battery charging and allows the battery to discharge while maintaining power source operation. %@"
 msgstr "「阻止充電」將暫停電池充電並允許電池放電，但仍保持電源供電。%@"
 
-msgid ""
-"Smart Charging will start 900 seconds (15 minutes) after power is plugged-"
-"in, or the date you scheduled, whichever one comes first."
-msgstr ""
-"「優化電池充電」將在接通電源 900 秒（15 分鐘）後，或您選擇的日期開始，以較早者"
-"為準。"
+msgid "Smart Charging will start 900 seconds (15 minutes) after power is plugged-in, or the date you scheduled, whichever one comes first."
+msgstr "「優化電池充電」將在接通電源 900 秒（15 分鐘）後，或您選擇的日期開始，以較早者為準。"
 
 msgid "Enabled"
 msgstr "已啓用"
@@ -242,12 +233,8 @@ msgstr "無法開啓優化電池充電。"
 msgid "Engaged"
 msgstr "已啓用"
 
-msgid ""
-"Smart Charging has been engaged. It will start after 15 minutes of power "
-"supply, or at the date you picked, whichever comes first."
-msgstr ""
-"優化電池充電功能已啓用。它將在接通電源 900 秒（15 分鐘）後，或您選擇的日期開"
-"始，以較早者為準。"
+msgid "Smart Charging has been engaged. It will start after 15 minutes of power supply, or at the date you picked, whichever comes first."
+msgstr "優化電池充電功能已啓用。它將在接通電源 900 秒（15 分鐘）後，或您選擇的日期開始，以較早者為準。"
 
 msgid "Block Charging"
 msgstr "阻止充電"
@@ -285,9 +272,7 @@ msgstr "「溫度計」預覽"
 msgid "Set the temperature range shown in Thermometer."
 msgstr "設置「溫度計」中顯示的溫度範圍。"
 
-msgid ""
-"This preview shows how the pointer adjusts to match the current temperature "
-"based on your selected range."
+msgid "This preview shows how the pointer adjusts to match the current temperature based on your selected range."
 msgstr "此預覽顯示指針如何根據當前溫度在您設定的範圍內調整位置。"
 
 msgid "Min Temperature"
@@ -366,21 +351,11 @@ msgstr "某些傳感器可能無法實時提供溫度數據。"
 msgid "Daemon State"
 msgstr "值守進程狀態"
 
-msgid ""
-"ThermalMonitor is a critical system component responsible for managing "
-"device and battery health. Disabling it may lead to unexpected behavior and "
-"is not recommended."
-msgstr ""
-"溫度監測器是維護設備與電池健康的重要系統組件。手動禁用可能導致不可預期的行"
-"為，不建議進行此操作。"
+msgid "ThermalMonitor is a critical system component responsible for managing device and battery health. Disabling it may lead to unexpected behavior and is not recommended."
+msgstr "溫度監測器是維護設備與電池健康的重要系統組件。手動禁用可能導致不可預期的行為，不建議進行此操作。"
 
-msgid ""
-"Maximum device‑skin temperature per thermal‑monitoring cycle. Exceeding this "
-"threshold within the cycle automatically generates an AppleCare "
-"thermal‑exception log."
-msgstr ""
-"單次溫控監測週期內允許的最高機身表面溫度。若在該週期內超過此閾值，系統將自動"
-"記錄 AppleCare 溫控異常日誌。"
+msgid "Maximum device‑skin temperature per thermal‑monitoring cycle. Exceeding this threshold within the cycle automatically generates an AppleCare thermal‑exception log."
+msgstr "單次溫控監測週期內允許的最高機身表面溫度。若在該週期內超過此閾值，系統將自動記錄 AppleCare 溫控異常日誌。"
 
 msgid "Running"
 msgstr "正在運行"
@@ -562,9 +537,7 @@ msgid "Type Change"
 msgstr "更改類型"
 
 #, objc-format
-msgid ""
-"Are you sure you want to interpret the item \"%.4s\" as type \"%.4s\"? This "
-"may cause undefined behavior."
+msgid "Are you sure you want to interpret the item \"%.4s\" as type \"%.4s\"? This may cause undefined behavior."
 msgstr "您確定要將項目「%.4s」解釋為類型「%.4s」嗎？這可能導致未定義行為。"
 
 msgid "Proceed"
@@ -574,13 +547,8 @@ msgid "Are you 100% sure?"
 msgstr "你是否百分百確定？"
 
 #, objc-format
-msgid ""
-"The type \"%.4s\" you requested is %d bytes long, which doesn't match the "
-"current length of %d bytes. Only continue if you're certain of the "
-"consequences. Proceed?"
-msgstr ""
-"您請求的類型「%.4s」的長度為 %d 字節，與當前長度 %d 字節不符。請確保萬無一失後"
-"再繼續。是否繼續？"
+msgid "The type \"%.4s\" you requested is %d bytes long, which doesn't match the current length of %d bytes. Only continue if you're certain of the consequences. Proceed?"
+msgstr "您請求的類型「%.4s」的長度為 %d 字節，與當前長度 %d 字節不符。請確保萬無一失後再繼續。是否繼續？"
 
 msgid "Array"
 msgstr "數組"
@@ -621,12 +589,8 @@ msgstr "免責聲明"
 msgid "Please read the entire message."
 msgstr "請完整閱讀此信息。"
 
-msgid ""
-"Writing to the SMC can be harmful. If unexpected behavior occurs, the "
-"developers offer NO WARRANTY to the fullest extent permitted by law."
-msgstr ""
-"寫入 SMC 可能會造成損壞。如發生意外情況，開發者在法律允許的最大範圍內不承擔任"
-"何保證責任。"
+msgid "Writing to the SMC can be harmful. If unexpected behavior occurs, the developers offer NO WARRANTY to the fullest extent permitted by law."
+msgstr "寫入 SMC 可能會造成損壞。如發生意外情況，開發者在法律允許的最大範圍內不承擔任何保證責任。"
 
 msgid "Make sure you understand what you're doing before continuing."
 msgstr "在繼續之前，請確保您完全理解自己的操作。"
@@ -687,25 +651,14 @@ msgstr "口袋過熱（Hot-In-Pocket）模式"
 msgid "Thermal Levels"
 msgstr "溫控等級"
 
-msgid ""
-"Changing the default thermal behavior may increase wear on your battery and "
-"reduce its lifespan."
+msgid "Changing the default thermal behavior may increase wear on your battery and reduce its lifespan."
 msgstr "更改默認溫控行為可能會增加電池損耗並縮短電池使用壽命。"
 
-msgid ""
-"Hot-In-Pocket Protection automatically reduces CPU & GPU power when the "
-"display is off and no media is playing, to prevent overheating while the "
-"device is stored in a pocket."
-msgstr ""
-"口袋過熱（Hot-In-Pocket）保護在屏幕關閉且不播放任何媒體時自動降低 CPU 與 GPU "
-"活動，避免設備在口袋中積熱。"
+msgid "Hot-In-Pocket Protection automatically reduces CPU & GPU power when the display is off and no media is playing, to prevent overheating while the device is stored in a pocket."
+msgstr "口袋過熱（Hot-In-Pocket）保護在屏幕關閉且不播放任何媒體時自動降低 CPU 與 GPU 活動，避免設備在口袋中積熱。"
 
-msgid ""
-"Thermal levels are normally controlled by the system. Changing them can "
-"affect power, media playback, backlight, flashlight and wireless charging."
-msgstr ""
-"溫控等級通常由系統控制。更改這些設置可能會影響功耗、媒體播放、背光、手電筒和"
-"無線充電。"
+msgid "Thermal levels are normally controlled by the system. Changing them can affect power, media playback, backlight, flashlight and wireless charging."
+msgstr "溫控等級通常由系統控制。更改這些設置可能會影響功耗、媒體播放、背光、手電筒和無線充電。"
 
 msgid "State Updates"
 msgstr "狀態更新"
@@ -747,9 +700,7 @@ msgid "Reset"
 msgstr "重置"
 
 #, objc-format
-msgid ""
-"Setting thermal pressure to %@ may trigger a persistent temperature warning "
-"screen. Do you want to continue?"
+msgid "Setting thermal pressure to %@ may trigger a persistent temperature warning screen. Do you want to continue?"
 msgstr "將溫控壓力設置為「%@」可能會觸發持續的溫度警告屏幕。是否繼續？"
 
 msgid "Thermal Tuning failed with error"
@@ -761,16 +712,11 @@ msgstr "繁體中文"
 msgid "Unregistered Locale"
 msgstr "未註冊的本地化"
 
-msgid ""
-"You are using a localization file which not officially provided by Battman, "
-"the translations may inaccurate."
+msgid "You are using a localization file which not officially provided by Battman, the translations may inaccurate."
 msgstr "您正在使用的本地化文件並非由 Battman 官方所提供，譯文可能存在偏差。"
 
-msgid ""
-"stdio logs not redirected in Simulator build, please check stdio in Xcode "
-"console output instead."
-msgstr ""
-"標準輸出日誌在Simulator構建中不被重定向，請直接在Xcode Console中查看輸出。"
+msgid "stdio logs not redirected in Simulator build, please check stdio in Xcode console output instead."
+msgstr "標準輸出日誌在Simulator構建中不被重定向，請直接在Xcode Console中查看輸出。"
 
 msgid "Battman CLI not implemented yet."
 msgstr "Battman 命令行工具尚未實現。"
@@ -793,16 +739,10 @@ msgstr "7天電池電量"
 msgid "Charging Limit (Experimental)"
 msgstr "充電限制（實驗性功能）"
 
-msgid ""
-"The system logs battery charge–level changes for the past 7 days. If this "
-"graph is empty, the power-log service may not be running correctly."
-msgstr ""
-"系統會記錄過去 7 天的電池電量變化。若此圖無數據顯示，可能是電源日誌服務未正常"
-"運行。"
+msgid "The system logs battery charge–level changes for the past 7 days. If this graph is empty, the power-log service may not be running correctly."
+msgstr "系統會記錄過去 7 天的電池電量變化。若此圖無數據顯示，可能是電源日誌服務未正常運行。"
 
-msgid ""
-"Charging Limit uses a background service to monitor your battery's charge "
-"level and automatically adjust charging behavior."
+msgid "Charging Limit uses a background service to monitor your battery's charge level and automatically adjust charging behavior."
 msgstr "「充電限制」需要在後台運行服務，以監控電池電量並自動調整充電行為。"
 
 msgid "Invalid Setup"
@@ -880,8 +820,7 @@ msgstr "創建新的 GitHub 疑述"
 msgid "Battman hasn't added your language yet. %@"
 msgstr "Battman 尚未支持你的語言，%@"
 
-msgid ""
-"Battery information updates automatically depending on system conditions."
+msgid "Battery information updates automatically depending on system conditions."
 msgstr "「電池信息」會根據系統狀況自動更新。"
 
 #, objc-format
@@ -891,9 +830,7 @@ msgstr "「電池信息」會按所選間隔更新。%@"
 msgid "Using a shorter interval may affect performance."
 msgstr "間隔過短可能會影響性能。"
 
-msgid ""
-"Battery information doesn’t update automatically. Pull down to refresh "
-"manually."
+msgid "Battery information doesn’t update automatically. Pull down to refresh manually."
 msgstr "「電池信息」不會自動更新。下拉以手動刷新。"
 
 msgid "Configure how often battery information is refreshed."
@@ -908,11 +845,8 @@ msgstr "外觀"
 msgid "Data Management"
 msgstr "數據管理"
 
-msgid ""
-"This will permanently delete all Battman data, preferences, and cached "
-"files. This action cannot be undone."
-msgstr ""
-"這將永久刪除 Battman 的全部數據，設置項以及緩存文件。這項操作無法撤銷。"
+msgid "This will permanently delete all Battman data, preferences, and cached files. This action cannot be undone."
+msgstr "這將永久刪除 Battman 的全部數據，設置項以及緩存文件。這項操作無法撤銷。"
 
 msgid "Language"
 msgstr "語言"
@@ -972,11 +906,8 @@ msgstr "請等待直至刪除全部數據。"
 msgid "Dry Run Complete"
 msgstr "試運行完成"
 
-msgid ""
-"Analysis complete. Check the console/logs to see what would be deleted. No "
-"data was actually removed."
-msgstr ""
-"統計完成，檢查控制台或日誌以查看可被刪除的數據。這個過程沒有數據被刪除。"
+msgid "Analysis complete. Check the console/logs to see what would be deleted. No data was actually removed."
+msgstr "統計完成，檢查控制台或日誌以查看可被刪除的數據。這個過程沒有數據被刪除。"
 
 msgid "Data Wiped"
 msgstr "數據已抹除"
@@ -996,13 +927,8 @@ msgstr "引力圈"
 msgid "Support Battman"
 msgstr "支持 Battman"
 
-msgid ""
-"If Battman saved you time or made your day easier, please consider a small "
-"donation. Even a few dollars make a real difference and help me keep adding "
-"improvements (also helps my living)."
-msgstr ""
-"如果 Battman 幫助到了您，可以考慮給我們一點點的捐贈。即使是幾塊錢也可以推進一"
-"切，促使我繼續完善更新（而且也能幫助我的生活）。"
+msgid "If Battman saved you time or made your day easier, please consider a small donation. Even a few dollars make a real difference and help me keep adding improvements (also helps my living)."
+msgstr "如果 Battman 幫助到了您，可以考慮給我們一點點的捐贈。即使是幾塊錢也可以推進一切，促使我繼續完善更新（而且也能幫助我的生活）。"
 
 msgid "You can at least get Battman early accesses by donating us 🥺"
 msgstr "捐贈我們至少可以得到 Battman 的優先預覽🥺"
@@ -1013,12 +939,8 @@ msgstr "請不要擔心騷擾，這個頁面只會主動彈出一次🥺"
 msgid "Having Problems?"
 msgstr "遇到問題？"
 
-msgid ""
-"We'd love to hear from you! Let us know if you find any bugs or have "
-"suggestions to make things better."
-msgstr ""
-"我們非常樂意聽取您的意見！請讓我們知道您是否遇到了任何故障或是有什麼提議，以"
-"便讓一切朝著更好的方向發展。"
+msgid "We'd love to hear from you! Let us know if you find any bugs or have suggestions to make things better."
+msgstr "我們非常樂意聽取您的意見！請讓我們知道您是否遇到了任何故障或是有什麼提議，以便讓一切朝著更好的方向發展。"
 
 msgid "Send an Email"
 msgstr "發送郵件"
@@ -1046,21 +968,11 @@ msgstr "高級"
 msgid "Specs (Basic)"
 msgstr "參數（基本）"
 
-msgid ""
-"These limitations are typically determined by the hardware and returned by "
-"the Brightness system."
+msgid "These limitations are typically determined by the hardware and returned by the Brightness system."
 msgstr "這些限制通常由硬件定義，並由亮度系統返回。"
 
-msgid ""
-"These parameters are sourced from the system’s high-level graphics layer. "
-"Because the display is ultimately composed through CoreAnimation and "
-"backboardd before it reaches the screen hardware, the values shown here are "
-"estimates and may not precisely reflect the true behavior of the physical "
-"display."
-msgstr ""
-"這些參數來自系統的圖形層。由於顯示內容最終是通過 CoreAnimation 和 backboardd "
-"後傳遞給屏幕硬件，因此此處顯示的數值只是大致估算，且可能無法完全反映顯示器硬"
-"件的真實行為。"
+msgid "These parameters are sourced from the system’s high-level graphics layer. Because the display is ultimately composed through CoreAnimation and backboardd before it reaches the screen hardware, the values shown here are estimates and may not precisely reflect the true behavior of the physical display."
+msgstr "這些參數來自系統的圖形層。由於顯示內容最終是通過 CoreAnimation 和 backboardd 後傳遞給屏幕硬件，因此此處顯示的數值只是大致估算，且可能無法完全反映顯示器硬件的真實行為。"
 
 msgid "Brightness Backend"
 msgstr "亮度後端"
@@ -1092,20 +1004,16 @@ msgstr "當前部件可能不是正品。"
 msgid "Copied!"
 msgstr "已複製"
 
-msgid ""
-"No value returned from sensor, device should be checked by service "
-"technician."
+msgid "No value returned from sensor, device should be checked by service technician."
 msgstr "無法獲取設備傳感器數據，建議預約授權服務商進行設備檢測。"
 
-msgid ""
-"Value exceeded the designed, device should be checked by service technician."
+msgid "Value exceeded the designed, device should be checked by service technician."
 msgstr "數據超出設計範圍，建議預約授權服務商進行設備檢測。"
 
 msgid "Unusual value, device should be checked by service technician."
 msgstr "不正常的數據，建議預約授權服務商進行設備檢測。"
 
-msgid ""
-"Significant abnormal data, device should be checked by service technician."
+msgid "Significant abnormal data, device should be checked by service technician."
 msgstr "明顯異常的數據，建議預約授權服務商進行設備檢測。"
 
 msgid "Error Data"
@@ -1129,19 +1037,13 @@ msgstr "設備電池"
 msgid "Type"
 msgstr "類型"
 
-msgid ""
-"\"External Power\" indicator may suggest that the connected adapter is a "
-"wireless charger. Most information may not be displayed because wireless "
-"chargers are handled differently by the hardware."
-msgstr ""
-"「外部電源」可能表示所連接的適配器為無線充電器。大部分信息可能未顯示，因為無線"
-"充電器由硬件以不同方式處理。"
+msgid "\"External Power\" indicator may suggest that the connected adapter is a wireless charger. Most information may not be displayed because wireless chargers are handled differently by the hardware."
+msgstr "「外部電源」可能表示所連接的適配器為無線充電器。大部分信息可能未顯示，因為無線充電器由硬件以不同方式處理。"
 
 msgid "Remaining Capacity"
 msgstr "剩餘容量"
 
-msgid ""
-"Unusual Remaining Capacity, a non-genuine battery component may be in use."
+msgid "Unusual Remaining Capacity, a non-genuine battery component may be in use."
 msgstr "電池剩餘容量數據異常，使用的可能是未經認證的電池部件。"
 
 msgid "Estimated Remaining"
@@ -1153,9 +1055,7 @@ msgstr "未獲取到剩餘容量。"
 msgid "Cycle Count"
 msgstr "循環計數"
 
-msgid ""
-"Cycle count exceeds the battery's design target. Capacity or peak "
-"performance may be reduced."
+msgid "Cycle count exceeds the battery's design target. Capacity or peak performance may be reduced."
 msgstr "循環計數已超過電池的設計目標。容量或峰值效能可能降低。"
 
 msgid "Time to Empty"
@@ -1482,22 +1382,13 @@ msgstr "Hr"
 msgid "Gas Gauge (Basic)"
 msgstr "電量監測計（基本）"
 
-msgid ""
-"All Gas Gauge metrics are dynamically retrieved from the onboard sensor "
-"array in real time. Should anomalies be detected in specific readings, this "
-"may indicate the presence of unauthorized components or require diagnostics "
-"through Apple Authorised Service Provider."
-msgstr ""
-"本設備所有電量監測計（Gas Gauge）數據均實時讀取自內置傳感器系統。若您發現部分"
-"數值存在異常，則可能涉及未經認證的組件、集成或設備傳感單元。如果需要檢測。建"
-"議通過 Apple 認證服務渠道進行專業診斷。"
+msgid "All Gas Gauge metrics are dynamically retrieved from the onboard sensor array in real time. Should anomalies be detected in specific readings, this may indicate the presence of unauthorized components or require diagnostics through Apple Authorised Service Provider."
+msgstr "本設備所有電量監測計（Gas Gauge）數據均實時讀取自內置傳感器系統。若您發現部分數值存在異常，則可能涉及未經認證的組件、集成或設備傳感單元。如果需要檢測。建議通過 Apple 認證服務渠道進行專業診斷。"
 
 msgid "Device Name"
 msgstr "設備名稱"
 
-msgid ""
-"This indicates the name of the current Gas Gauge IC used by the installed "
-"battery."
+msgid "This indicates the name of the current Gas Gauge IC used by the installed battery."
 msgstr "當前電池使用的電量監測計芯片的名稱。"
 
 msgid "Health"
@@ -1527,20 +1418,14 @@ msgstr "從電池管理系統啓動開始的時長。"
 msgid "Qmax"
 msgstr "最大化學容量"
 
-msgid ""
-"Chemical depth of discharge recorded while the battery was last at rest. "
-"This value may differ from the current depth of discharge."
-msgstr ""
-"電池上次靜置時記錄的化學放電深度。此值可能與目前的放電深度不同。"
+msgid "Chemical depth of discharge recorded while the battery was last at rest. This value may differ from the current depth of discharge."
+msgstr "電池上次靜置時記錄的化學放電深度。此值可能與目前的放電深度不同。"
 
 msgid "Passed Charge"
 msgstr "通過電量"
 
-msgid ""
-"Signed charge measured since the battery gauge's last reference update. "
-"This value is not lifetime charge or cycle count."
-msgstr ""
-"電量計自上次參考值更新以來測得的有符號電荷量。此值不是總充放電量或循環計數。"
+msgid "Signed charge measured since the battery gauge's last reference update. This value is not lifetime charge or cycle count."
+msgstr "電量計自上次參考值更新以來測得的有符號電荷量。此值不是總充放電量或循環計數。"
 
 msgid "Voltage"
 msgstr "電壓"
@@ -1563,9 +1448,7 @@ msgstr "充電狀態"
 msgid "State of Charge (UI)"
 msgstr "充電狀態（UI）"
 
-msgid ""
-"The \"Battery Percentage\" displayed exactly on your status bar. This is the "
-"SoC that Apple wants to tell you."
+msgid "The \"Battery Percentage\" displayed exactly on your status bar. This is the SoC that Apple wants to tell you."
 msgstr "狀態欄上所顯示的「電量百分比」，是 Apple 想讓用戶知道的「充電狀態」。"
 
 msgid "Resistance Scale"
@@ -1577,12 +1460,8 @@ msgstr "電池序列號"
 msgid "Chemistry ID"
 msgstr "化合物ID"
 
-msgid ""
-"Chemistry unique identifier (ChemID) assigned to each battery in Texas "
-"Instruments' database. It ensures accurate calculations and predictions."
-msgstr ""
-"化合物ID（ChemID）是德州儀器數據庫中為每個電池配置分配的唯一標識符，其可確保"
-"準確的計算和預測。"
+msgid "Chemistry unique identifier (ChemID) assigned to each battery in Texas Instruments' database. It ensures accurate calculations and predictions."
+msgstr "化合物ID（ChemID）是德州儀器數據庫中為每個電池配置分配的唯一標識符，其可確保準確的計算和預測。"
 
 msgid "Flags"
 msgstr "標示位"
@@ -1605,17 +1484,13 @@ msgstr "最大負荷電流2"
 msgid "IT Misc Status"
 msgstr "IT 雜項數據"
 
-msgid ""
-"This field refers to the miscellaneous data returned by battery Impedance "
-"Track™ Gas Gauge IC."
+msgid "This field refers to the miscellaneous data returned by battery Impedance Track™ Gas Gauge IC."
 msgstr "此項指電池的 Impedance Track™ 所返回的電量監測計雜項數據。"
 
 msgid "Simulation Rate"
 msgstr "模擬頻率"
 
-msgid ""
-"This field refers to the rate of Gas Gauge performing Impedance Track™ "
-"simulations."
+msgid "This field refers to the rate of Gas Gauge performing Impedance Track™ simulations."
 msgstr "此項指電量監測計執行 Impedance Track™ 模擬的頻率。"
 
 msgid "Daily Max SoC"
@@ -1627,23 +1502,13 @@ msgstr "單日最小餘量"
 msgid "Adapter Details"
 msgstr "適配器信息"
 
-msgid ""
-"All adapter information is dynamically retrieved from the hardware of the "
-"currently connected adapter (or cable if you are using Lightning ports). If "
-"any of the data is missing, it may indicate that the power source is not "
-"providing the relevant information, or there may be a hardware issue with "
-"the power source."
-msgstr ""
-"所有電源適配器信息均來源於當前設備連接的電源適配器硬件（或者 Lightning 數據"
-"線）。如果其中任何一項信息為空，可能意味著所連接的電源未提供相關數據，或電源"
-"可能存在硬件故障。"
+msgid "All adapter information is dynamically retrieved from the hardware of the currently connected adapter (or cable if you are using Lightning ports). If any of the data is missing, it may indicate that the power source is not providing the relevant information, or there may be a hardware issue with the power source."
+msgstr "所有電源適配器信息均來源於當前設備連接的電源適配器硬件（或者 Lightning 數據線）。如果其中任何一項信息為空，可能意味著所連接的電源未提供相關數據，或電源可能存在硬件故障。"
 
 msgid "Port"
 msgstr "端口"
 
-msgid ""
-"Port of currently connected adapter. On macOS, this is the USB port that the "
-"adapter currently attached."
+msgid "Port of currently connected adapter. On macOS, this is the USB port that the adapter currently attached."
 msgstr "已連接的適配器所在的端口，在 macOS 中，表示當前所連接的 USB 端口。"
 
 msgid "Adapter Type"
@@ -1652,34 +1517,25 @@ msgstr "適配器類型"
 msgid "Compatibility"
 msgstr "兼容性"
 
-msgid ""
-"This field refers to the Family Code (kIOPSPowerAdapterFamilyKey) of "
-"currently connected power adapter."
+msgid "This field refers to the Family Code (kIOPSPowerAdapterFamilyKey) of currently connected power adapter."
 msgstr "此參數表示當前電源適配器的「類型代碼」（kIOPSPowerAdapterFamilyKey）。"
 
 msgid "Reason"
 msgstr "原因"
 
-msgid ""
-"If this field appears in the list, it indicates that an issue has occurred "
-"or that a condition was met, causing charging to stop."
-msgstr ""
-"當此項出現在列表中時，表示發生了問題或滿足了某個條件，從而導致充電停止。"
+msgid "If this field appears in the list, it indicates that an issue has occurred or that a condition was met, causing charging to stop."
+msgstr "當此項出現在列表中時，表示發生了問題或滿足了某個條件，從而導致充電停止。"
 
 msgid "Current Rating"
 msgstr "額定電流"
 
-msgid ""
-"Current rating of connected power source, this does not indicates the real-"
-"time passing current."
+msgid "Current rating of connected power source, this does not indicates the real-time passing current."
 msgstr "當前電源的額定電流，此參數不表示實時輸入電流。"
 
 msgid "Voltage Rating"
 msgstr "額定電壓"
 
-msgid ""
-"Voltage rating of connected power source, this does not indicates the real-"
-"time passing voltage."
+msgid "Voltage rating of connected power source, this does not indicates the real-time passing voltage."
 msgstr "當前電源的額定電壓，此參數不表示實時輸入電壓。"
 
 msgid "Input Current"
@@ -1727,9 +1583,7 @@ msgstr "硬件版本"
 msgid "Description"
 msgstr "描述"
 
-msgid ""
-"Short description provided by Apple PMU on current power adapter Family "
-"Code. Sometimes may not set."
+msgid "Short description provided by Apple PMU on current power adapter Family Code. Sometimes may not set."
 msgstr "Apple 電源管理單元對當前電源適配器類型提供的簡短描述，有時可能為空。"
 
 msgid "Serial No."
@@ -1738,8 +1592,7 @@ msgstr "序列號"
 msgid "PMU Configuration"
 msgstr "電源管理單元配置"
 
-msgid ""
-"The Configuration values is the max allowed Charging Current configurations."
+msgid "The Configuration values is the max allowed Charging Current configurations."
 msgstr "「配置」數值是允許的最大「充電電流」配置。"
 
 msgid "Charger Configuration"
@@ -1748,11 +1601,8 @@ msgstr "充電器配置"
 msgid "HVC Mode"
 msgstr "高壓充電模式"
 
-msgid ""
-"High Voltage Charging (HVC) Mode may accquired by your power adapter or "
-"system, all supported modes will be listed below."
-msgstr ""
-"高壓充電（HVC）模式可能由您的電源適配器或系統啓用。所有支持的模式將列於下方。"
+msgid "High Voltage Charging (HVC) Mode may accquired by your power adapter or system, all supported modes will be listed below."
+msgstr "高壓充電（HVC）模式可能由您的電源適配器或系統啓用。所有支持的模式將列於下方。"
 
 msgid "Inductive Port"
 msgstr "非接觸式接口"
@@ -1856,9 +1706,7 @@ msgstr "非接觸式固件模式"
 msgid "Inductive Region Code"
 msgstr "非接觸式區域代碼"
 
-msgid ""
-"This indicates if current inductive accesory is following specific region "
-"configuration."
+msgid "This indicates if current inductive accesory is following specific region configuration."
 msgstr "此項表示目前配件是否遵循地區特定配置。"
 
 msgid "Inductive Auth Timeout"
@@ -1933,11 +1781,8 @@ msgstr "充電限制不可用"
 msgid "Wireless Charging Detected"
 msgstr "檢測到無線充電"
 
-msgid ""
-"Charging limit controls are not supported with wireless charging. Use a wired "
-"connection for reliable functionality."
-msgstr ""
-"無線充電不支持充電限制控制。請使用有線連接以確保功能正常。"
+msgid "Charging limit controls are not supported with wireless charging. Use a wired connection for reliable functionality."
+msgstr "無線充電不支持充電限制控制。請使用有線連接以確保功能正常。"
 
 msgid "Accelerometer"
 msgstr "加速計"
@@ -2095,9 +1940,7 @@ msgstr "接入電源時自動調暗/鎖定"
 msgid "Notice"
 msgstr "提示"
 
-msgid ""
-"Turning this off will keep the display from dimming and may shorten battery "
-"life."
+msgid "Turning this off will keep the display from dimming and may shorten battery life."
 msgstr "關閉此選項後，屏幕將不會變暗，可能會縮短電池續航。"
 
 msgid "Powerlog database is unavailable."
@@ -2193,8 +2036,32 @@ msgstr "管理原生擴充功能與復原"
 msgid "Native Plug-ins"
 msgstr "原生外掛模組"
 
-msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nID: %@\nPublisher: %@\nPackage: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
-msgstr "原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限和網路存取，取代介面並危害 App。開放原始碼和有效簽章並不代表程式碼安全。\n\n名稱：%@\nID：%@\n發行者：%@\n套件：%@\n擴充點：\n%@\n\n%@\n\n只有重新啟動 Battman 後才會載入。"
+msgid ""
+"Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n"
+"\n"
+"Name: %@\n"
+"ID: %@\n"
+"Publisher: %@\n"
+"Package: %@\n"
+"Extension points:\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"Nothing loads until Battman restarts."
+msgstr ""
+"原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限和網路存取，取代介面並危害 App。開放原始碼和有效簽章並不代表程式碼安全。\n"
+"\n"
+"名稱：%@\n"
+"ID：%@\n"
+"發行者：%@\n"
+"套件：%@\n"
+"擴充點：\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"只有重新啟動 Battman 後才會載入。"
 
 msgid "No Installed Plug-ins"
 msgstr "沒有已安裝的外掛模組"
@@ -2400,8 +2267,38 @@ msgstr "已複製"
 msgid "Homepage"
 msgstr "首頁"
 
-msgid "Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n\nName: %@\nAuthor: %@\nID: %@\nVersion: %@ (%@)\nRelease sequence: %llu\nPublisher fingerprint: %@\nPackage digest: %@\nExtension points:\n%@\n\n%@\n\nNothing loads until Battman restarts."
-msgstr "原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限與網路存取、取代介面並入侵 App。開放原始碼和有效簽章都不能保證程式碼安全。\n\n名稱：%@\n作者：%@\nID：%@\n版本：%@（%@）\n發行序列：%llu\n發行者指紋：%@\n套件摘要：%@\n擴充點：\n%@\n\n%@\n\nBattman 重新啟動前不會載入任何內容。"
+msgid ""
+"Native plug-ins are not isolated from Battman. They can use its data, entitlements, and network access, replace UI, and compromise the app. Open source and valid signatures do not make code safe.\n"
+"\n"
+"Name: %@\n"
+"Author: %@\n"
+"ID: %@\n"
+"Version: %@ (%@)\n"
+"Release sequence: %llu\n"
+"Publisher fingerprint: %@\n"
+"Package digest: %@\n"
+"Extension points:\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"Nothing loads until Battman restarts."
+msgstr ""
+"原生外掛模組與 Battman 之間沒有隔離。它們可以使用 Battman 的資料、權限與網路存取、取代介面並入侵 App。開放原始碼和有效簽章都不能保證程式碼安全。\n"
+"\n"
+"名稱：%@\n"
+"作者：%@\n"
+"ID：%@\n"
+"版本：%@（%@）\n"
+"發行序列：%llu\n"
+"發行者指紋：%@\n"
+"套件摘要：%@\n"
+"擴充點：\n"
+"%@\n"
+"\n"
+"%@\n"
+"\n"
+"Battman 重新啟動前不會載入任何內容。"
 
 msgid "Release Sequence"
 msgstr "發行序列"
@@ -2504,3 +2401,1110 @@ msgstr "電池控制器回報的累計充放電循環次數。某些裝置不會
 
 msgid "The manufacturer's cycle-life target, when exposed by the battery controller. It is a reference rather than a guaranteed service limit."
 msgstr "電池控制器提供的製造商循環壽命目標（如有）。這是參考值，不是保證的使用上限。"
+
+msgid ""
+"Found a bug or have an idea? Please choose one way to contact us:\n"
+"open a GitHub Issue (public — great for steps/logs)\n"
+"or Send Email (for private info or attachments). We really appreciate your help!"
+msgstr ""
+"發現問題或有好點子？請選擇一種方式聯繫我們：\n"
+"在 GitHub 提交 Issue（公開，適合附上重現步驟/日誌）\n"
+"或通過電子郵件發送給我們（適合私密信息或附件）。\n"
+"非常感謝你的反饋！"
+
+msgid "Send Email"
+msgstr "發送郵件"
+
+# Analytics V3 canvases and evidence views.
+msgid " · "
+msgstr " · "
+
+msgid " · gap events unknown"
+msgstr " · 缺測期間事件未知"
+
+msgid " · gaps"
+msgstr " · 缺測"
+
+msgid " · partial"
+msgstr " · 部分資料"
+
+#, objc-format
+msgid "%+.2f W"
+msgstr "%+.2f W"
+
+#, objc-format
+msgid "%+.3f watts"
+msgstr "%+.3f 瓦"
+
+#, objc-format
+msgid "%+.3g A"
+msgstr "%+.3g A"
+
+#, objc-format
+msgid "%.0f d ago"
+msgstr "%.0f 天前"
+
+#, objc-format
+msgid "%.0f h ago"
+msgstr "%.0f 小時前"
+
+#, objc-format
+msgid "%.0f min"
+msgstr "%.0f 分"
+
+#, objc-format
+msgid "%.0f min %.0f s"
+msgstr "%.0f 分 %.0f 秒"
+
+#, objc-format
+msgid "%.0f min ago"
+msgstr "%.0f 分鐘前"
+
+#, objc-format
+msgid "%.0f s"
+msgstr "%.0f 秒"
+
+#, objc-format
+msgid "%.0f s ago"
+msgstr "%.0f 秒前"
+
+#, objc-format
+msgid "%.1f h"
+msgstr "%.1f 小時"
+
+#, objc-format
+msgid "%.1f min"
+msgstr "%.1f 分"
+
+#, objc-format
+msgid "%.1f pp · %@ covered"
+msgstr "%.1f 百分點 · 涵蓋 %@"
+
+#, objc-format
+msgid "%.1f ≈ min"
+msgstr "%.1f ≈ 分"
+
+#, objc-format
+msgid "%.2f W"
+msgstr "%.2f W"
+
+#, objc-format
+msgid "%.2f Wh · %@ covered"
+msgstr "%.2f Wh · 涵蓋 %@"
+
+#, objc-format
+msgid "%.2f h"
+msgstr "%.2f 小時"
+
+#, objc-format
+msgid "%.2f pp/h"
+msgstr "%.2f 百分點/時"
+
+#, objc-format
+msgid "%.2f–%.2f min"
+msgstr "%.2f–%.2f 分"
+
+#, objc-format
+msgid ""
+"%@\n"
+"→ %@"
+msgstr ""
+"%@\n"
+"→ %@"
+
+#, objc-format
+msgid "%@  %+.3g W"
+msgstr "%@  %+.3g W"
+
+#, objc-format
+msgid "%@  — W"
+msgstr "%@  — W"
+
+#, objc-format
+msgid "%@ / %@ · %@ missing"
+msgstr "%@ / %@ · 缺測 %@"
+
+#, objc-format
+msgid "%@ means %@; sampled state in this window"
+msgstr "%@ 表示 %@；此時段內的取樣狀態"
+
+#, objc-format
+msgid "%@ missing, %@"
+msgstr "缺測 %@，%@"
+
+#, objc-format
+msgid "%@ observations, %@"
+msgstr "%@ 觀測，%@"
+
+#, objc-format
+msgid "%@ sampled interval, %@"
+msgstr "%@ 取樣區間，%@"
+
+#, objc-format
+msgid "%@ target, %.3f W, observed %@"
+msgstr "%@ 目標，%.3f W，觀測於 %@"
+
+#, objc-format
+msgid "%@ track, %@"
+msgstr "%@ 曲線，%@"
+
+#, objc-format
+msgid "%@ · ≈ %.1f min%@"
+msgstr "%@ · ≈ %.1f 分%@"
+
+#, objc-format
+msgid "%@, %+.3g %@"
+msgstr "%@，%+.3g %@"
+
+#, objc-format
+msgid "%@, %@"
+msgstr "%@，%@"
+
+#, objc-format
+msgid "%@, %@%@"
+msgstr "%@，%@%@"
+
+#, objc-format
+msgid "%@, %@. This is the observed maximum, not the unobserved session maximum."
+msgstr "%@，%@。這是已觀測到的最大值；工作階段未取樣期間的最大值未知。"
+
+#, objc-format
+msgid "%@, approximately %@"
+msgstr "%@，約 %@"
+
+#, objc-format
+msgid "%@, approximately %@, sampled interval %@"
+msgstr "%@，約 %@，取樣區間 %@"
+
+#, objc-format
+msgid "%@, hourly SOC decline and observation coverage"
+msgstr "%@，每小時電量下降與觀測涵蓋率"
+
+#, objc-format
+msgid "%@, n=%lu, %@ %.1f min"
+msgstr "%@，n=%lu，%@ %.1f 分"
+
+#, objc-format
+msgid "%@, signed battery current %+.3g A"
+msgstr "%@，有正負號的電池電流 %+.3g A"
+
+#, objc-format
+msgid "%@, signed battery power %+.3g W%@"
+msgstr "%@，有正負號的電池功率 %+.3g W%@"
+
+#, objc-format
+msgid "%@, trusted unplugged intervals only"
+msgstr "%@，僅包含可信的未接電區間"
+
+#, objc-format
+msgid "%@. %@"
+msgstr "%@。%@"
+
+#, objc-format
+msgid "%@. %@. %@. %@. SOC and power have independent coverage; no interpolation across gaps."
+msgstr "%@。%@。%@。%@。電量和功率分別計算涵蓋率；不對缺測區間內插。"
+
+#, objc-format
+msgid "%@. %@. %@. FCC observation window %@; %lu valid points. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."
+msgstr "%@。%@。%@。滿充容量觀測區間 %@；%lu 個有效點。僅為稀疏觀測點估計；不連接缺測區間或設定變更。容量保有率不代表健康評分。"
+
+#, objc-format
+msgid "%@. %@. No verified readings."
+msgstr "%@。%@。無已驗證讀數。"
+
+#, objc-format
+msgid "%@. %@. Transition times are bounded by samples"
+msgstr "%@。%@。狀態切換時間以取樣時刻為界"
+
+#, objc-format
+msgid "%@. Approximately %@, %@, %@. %@. %@. %@. %@. %lu source records. Positive current charges the battery; negative current discharges it. State changes are sampled bounds; hatching means missing observations."
+msgstr "%@。約 %@，%@，%@。%@。%@。%@。%@。%lu 筆來源記錄。正電流表示充電，負電流表示放電。狀態切換以取樣時刻為界；斜線表示缺測。"
+
+#, objc-format
+msgid "%@; %@; precise readings retain signed W"
+msgstr "%@；%@；精確功率讀數保留正負號"
+
+#, objc-format
+msgid "%lu FCC points · mAh"
+msgstr "%lu 個 FCC 點 · mAh"
+
+#, objc-format
+msgid "%lu sampled changes%@"
+msgstr "%lu 次已取樣變化%@"
+
+#, objc-format
+msgid "%lu source records"
+msgstr "%lu 筆來源記錄"
+
+#, objc-format
+msgid "%lu valid cells"
+msgstr "%lu 個有效電芯"
+
+#, objc-format
+msgid "%lu valid · +%lu in detail"
+msgstr "%lu 個有效 · 詳情另有 %lu 個"
+
+msgid ", net input, not output"
+msgstr "，淨輸入，非輸出"
+
+#, objc-format
+msgid ", observed %@"
+msgstr "，觀測於 %@"
+
+#, objc-format
+msgid "0–%.1f pp/h"
+msgstr "0–%.1f 百分點/時"
+
+#, objc-format
+msgid "0–%.2f h"
+msgstr "0–%.2f 小時"
+
+msgid "20 → 80% · ≈ min"
+msgstr "20 → 80% · ≈ 分"
+
+#, objc-format
+msgid "20 → 80%% · n=%lu · %@"
+msgstr "20 → 80%% · n=%lu · %@"
+
+msgid "20–80% charge duration distribution"
+msgstr "20–80% 充電時長分布"
+
+msgid "20–80% duration"
+msgstr "20–80% 時長"
+
+#, objc-format
+msgid "20–80%% charge duration, %lu independent sessions"
+msgstr "20–80%% 充電時長，%lu 次獨立工作階段"
+
+msgid "23 h"
+msgstr "23 小時"
+
+#, objc-format
+msgid "; system reason code %@, meaning not inferred"
+msgstr "；系統原因碼 %@，未推斷其含義"
+
+msgid "A ±"
+msgstr "A ±"
+
+msgid "Age unknown"
+msgstr "讀數時間未知"
+
+msgid "All verified observations in this visible time slice; original samples are retained"
+msgstr "此可見時段內的全部已驗證觀測；保留原始取樣"
+
+msgid "Average current"
+msgstr "平均電流"
+
+#, objc-format
+msgid "Battery current unavailable, %@"
+msgstr "電池電流無法取得，%@"
+
+msgid "Battery discharge"
+msgstr "電池放電"
+
+#, objc-format
+msgid "Battery discharge. %@"
+msgstr "電池放電。%@"
+
+msgid "Battery net"
+msgstr "電池淨功率"
+
+msgid "Battery net · avg"
+msgstr "電池淨功率 · 均值"
+
+msgid "Battery output energy"
+msgstr "電池輸出能量"
+
+msgid "Battery output magnitude |W|; detail preserves signed W."
+msgstr "電池輸出顯示功率大小 |W|；詳情保留正負號。"
+
+#, objc-format
+msgid "Battery power unavailable, %@"
+msgstr "電池功率無法取得，%@"
+
+msgid "Budget"
+msgstr "預算"
+
+#, objc-format
+msgid "Budget %.3g W"
+msgstr "預算 %.3g W"
+
+msgid "Capacity observations"
+msgstr "容量觀測"
+
+#, objc-format
+msgid "Cell %ld"
+msgstr "電芯 %ld"
+
+#, objc-format
+msgid "Cell %lld, %@, %@"
+msgstr "電芯 %lld，%@，%@"
+
+#, objc-format
+msgid "Cell %lld: %@"
+msgstr "電芯 %lld：%@"
+
+msgid "Cell consistency"
+msgstr "電芯一致性"
+
+msgid "Cell count unavailable"
+msgstr "電芯數量無法取得"
+
+msgid "Cell voltage history"
+msgstr "電芯電壓歷史"
+
+msgid "Charge"
+msgstr "電量"
+
+msgid "Charging comparison"
+msgstr "充電比較"
+
+msgid "Clock mismatch"
+msgstr "時鐘不一致"
+
+#, objc-format
+msgid "Connected %@"
+msgstr "已接電 %@"
+
+msgid "Connected idle"
+msgstr "接電閒置"
+
+msgid "Connected session"
+msgstr "接電工作階段"
+
+#, objc-format
+msgid "Connected session, %@, %@"
+msgstr "接電工作階段，%@，%@"
+
+#, objc-format
+msgid "Connected session. %@"
+msgstr "接電工作階段。%@"
+
+msgid "Connected time"
+msgstr "接電時長"
+
+msgid "Connected, not charging"
+msgstr "已接電，未充電"
+
+msgid "Connection and charging states"
+msgstr "接電與充電狀態"
+
+#, objc-format
+msgid "Coverage SOC %.0f%% T %.0f%% A %.0f%%"
+msgstr "涵蓋 SOC %.0f%% T %.0f%% A %.0f%%"
+
+#, objc-format
+msgid "Coverage SOC %.0f%% · °C %.0f%% · A %.0f%%"
+msgstr "涵蓋 SOC %.0f%% · °C %.0f%% · A %.0f%%"
+
+#, objc-format
+msgid "Covered SOC %@; °C %@; A %@ / %@"
+msgstr "涵蓋 SOC %@；°C %@；A %@ / %@"
+
+msgid "Current Battery"
+msgstr "目前電池"
+
+#, objc-format
+msgid "Current battery. Charge %@. %@ %@. %@ %@. Temperature %@. %@. Short window %@; %@. %@"
+msgstr "目前電池。電量 %@。%@ %@。%@ %@。溫度 %@。%@。短時區間 %@；%@。%@"
+
+msgid "Current unavailable"
+msgstr "電流無法取得"
+
+msgid "Cycle count"
+msgstr "循環次數"
+
+msgid "Dashed lines show budget and power targets"
+msgstr "虛線表示預算與功率目標"
+
+msgid "Data updated"
+msgstr "資料已更新"
+
+msgid "Day SOC decline"
+msgstr "每日電量下降"
+
+#, objc-format
+msgid "Design %@ mAh. Full / design %@"
+msgstr "設計容量 %@ mAh。滿充 / 設計 %@"
+
+msgid "Design capacity"
+msgstr "設計容量"
+
+msgid "Design capacity unknown"
+msgstr "設計容量未知"
+
+msgid "Design unknown"
+msgstr "設計未知"
+
+msgid "Discharge rhythm"
+msgstr "放電規律"
+
+msgid "Duplicate session"
+msgstr "重複工作階段"
+
+msgid "Dwell time"
+msgstr "停留時間"
+
+msgid "Each dot is one independent session"
+msgstr "每個點代表一次獨立工作階段"
+
+msgid "Empty session"
+msgstr "空工作階段"
+
+msgid "End ?"
+msgstr "結束 ?"
+
+msgid "Estimated median"
+msgstr "估計中位數"
+
+msgid "Exact readings"
+msgstr "精確讀數"
+
+msgid "Excluded sessions"
+msgstr "排除的工作階段"
+
+#, objc-format
+msgid "FCC %@ mAh, %@, %@"
+msgstr "滿充容量 %@ mAh，%@，%@"
+
+msgid "Field units, sampling and statistical scope"
+msgstr "欄位單位、取樣及統計範圍"
+
+#, objc-format
+msgid "First observed %@, %@"
+msgstr "首次觀測 %@，%@"
+
+#, objc-format
+msgid "First observed SOC %.0f percent, %@"
+msgstr "首次觀測電量為百分之 %.0f，%@"
+
+msgid "First trusted upward 20% crossing to the first upward 80% crossing in one complete connected session. Pauses are included; temperature is an observed peak, not a predicted maximum."
+msgstr "同一次完整接電工作階段內，首次可信向上跨過 20% 至首次向上跨過 80% 的時長。包含暫停時間；溫度為已觀測峰值，非預測最大值。"
+
+msgid "Foreground · +charge / −discharge"
+msgstr "前景 · +充電 / −放電"
+
+msgid "Full"
+msgstr "已充滿"
+
+msgid "Full / design"
+msgstr "滿充 / 設計"
+
+#, objc-format
+msgid "Full charge %@ mAh"
+msgstr "滿充容量 %@ mAh"
+
+msgid "Full charge (mAh)"
+msgstr "滿充容量 (mAh)"
+
+msgid "Full charge capacity"
+msgstr "滿充容量"
+
+msgid "Full charge unavailable"
+msgstr "滿充容量無法取得"
+
+msgid "Gap inside session"
+msgstr "工作階段內缺測"
+
+msgid "Gaps are not interpolated. Values are frozen when this view opens."
+msgstr "不對缺測區間內插。此檢視中的值固定於開啟時刻。"
+
+msgid "Group delta unavailable"
+msgstr "群組差異無法取得"
+
+msgid "Hide exact readings"
+msgstr "隱藏精確讀數"
+
+msgid "Hide sources and definitions"
+msgstr "隱藏來源與定義"
+
+msgid "Historical time unavailable"
+msgstr "歷史時間無法取得"
+
+msgid "History"
+msgstr "歷史"
+
+msgid "History time range unavailable"
+msgstr "歷史時間範圍無法取得"
+
+msgid "History unavailable"
+msgstr "歷史無法取得"
+
+msgid "Incompatible measurement sources"
+msgstr "量測來源不相容"
+
+msgid "Incomplete 20–80% range"
+msgstr "20–80% 區間不完整"
+
+msgid "Incomplete session boundaries"
+msgstr "工作階段邊界不完整"
+
+msgid "Independent sessions"
+msgstr "獨立工作階段"
+
+msgid "Input"
+msgstr "輸入"
+
+#, objc-format
+msgid "Known %@ / %@"
+msgstr "已知 %@ / %@"
+
+#, objc-format
+msgid "Last %+.2f A"
+msgstr "最新 %+.2f A"
+
+#, objc-format
+msgid "Last observed %@, %@"
+msgstr "末次觀測 %@，%@"
+
+#, objc-format
+msgid "Last observed SOC %.0f percent, %@"
+msgstr "末次觀測電量為百分之 %.0f，%@"
+
+msgid "Linear interpolation within trusted unplugged sample pairs; overlapping durations unioned separately per metric. SOC loss is the signed net percentage-point change over SOC-covered intervals. Output energy integrates only the negative half of signed battery power; gaps contribute neither time nor energy."
+msgstr "在可信的未接電取樣對內線性內插；各指標的重疊時長分別合併。電量損失是電量涵蓋區間內以百分點表示的有正負號淨變化。輸出能量僅積分有正負號電池功率的負值部分；缺測區間不計入時長或能量。"
+
+msgid "Linear within the trusted original sampled pair"
+msgstr "在可信的原始取樣對內線性內插"
+
+msgid "Live snapshot"
+msgstr "即時快照"
+
+msgid "Loading history…"
+msgstr "正在載入歷史…"
+
+msgid "Measurement points"
+msgstr "量測點"
+
+#, objc-format
+msgid "Measurement points in watts, %@"
+msgstr "量測點，單位瓦，%@"
+
+msgid "Measurement points · W"
+msgstr "量測點 · W"
+
+#, objc-format
+msgid "Measurement points, %@. Each point has its own observation time. Targets use dashed lines."
+msgstr "量測點，%@。每個點都有自己的觀測時刻。目標以虛線表示。"
+
+#, objc-format
+msgid "Measurement points, %@. Input and battery net are independent measured points. Dashed lines are budget and power targets. Hatched regions are unavailable."
+msgstr "量測點，%@。輸入與電池淨功率是獨立量測點。虛線表示預算與功率目標。斜線區域表示無法取得。"
+
+msgid "Method"
+msgstr "計算方法"
+
+msgid "Middle 50%"
+msgstr "中間 50%"
+
+#, objc-format
+msgid "Missing %@"
+msgstr "缺測 %@"
+
+msgid "Missing SOC"
+msgstr "電量缺測"
+
+msgid "Missing time"
+msgstr "缺測時長"
+
+msgid "Missing trusted observations"
+msgstr "缺少可信觀測"
+
+msgid "More readings"
+msgstr "更多讀數"
+
+msgid "Net"
+msgstr "淨值"
+
+msgid "No complete 20–80% crossings"
+msgstr "無完整 20–80% 跨越"
+
+msgid "No readings"
+msgstr "無讀數"
+
+msgid "No short window"
+msgstr "無短時區間"
+
+msgid "No valid session time range"
+msgstr "無有效工作階段時間範圍"
+
+msgid "No valid unplugged SOC"
+msgstr "無有效未接電電量"
+
+msgid "No validated FCC"
+msgstr "無已驗證滿充容量"
+
+msgid "No validated history"
+msgstr "無已驗證歷史"
+
+msgid "No verified observations"
+msgstr "無已驗證觀測"
+
+msgid "No verified states"
+msgstr "無已驗證狀態"
+
+#, objc-format
+msgid "Observed %@"
+msgstr "已觀測 %@"
+
+#, objc-format
+msgid "Observed %@ to %@, between %@ and %@; exact transition time unknown%@"
+msgstr "觀測從 %@ 到 %@，介於 %@ 與 %@；確切切換時刻未知%@"
+
+msgid "Observed SOC"
+msgstr "已觀測電量"
+
+#, objc-format
+msgid "Observed cells delta %.0f mV; maximum minus minimum in the same record"
+msgstr "已觀測電芯差值 %.0f mV；同一筆記錄內最大值減最小值"
+
+msgid "Observed charge"
+msgstr "觀測電量"
+
+msgid "Observed design, source or cycle-count boundary; cause unknown"
+msgstr "觀測到設計、來源或循環次數邊界；原因未知"
+
+msgid "Observed dwell distribution"
+msgstr "已觀測停留分布"
+
+msgid "Observed dwell · h"
+msgstr "已觀測停留 · 時"
+
+#, objc-format
+msgid "Observed evidence, %@"
+msgstr "觀測證據，%@"
+
+#, objc-format
+msgid "Observed peak %.1f °C"
+msgstr "觀測峰值 %.1f °C"
+
+msgid "Observed peak temperature"
+msgstr "觀測溫度峰值"
+
+msgid "Observed states"
+msgstr "已觀測狀態"
+
+#, objc-format
+msgid "Observed states, %@. %@. %@. C charging; two bars connected but not charging; F full; U unplugged; question mark unknown."
+msgstr "已觀測狀態，%@。%@。%@。C 表示充電；雙直線表示接電未充電；F 表示充滿；U 表示未接電；問號表示未知。"
+
+#, objc-format
+msgid "Observed states. %@"
+msgstr "已觀測狀態。%@"
+
+msgid "Observed unplugged time"
+msgstr "已觀測未接電時長"
+
+msgid "Observed window"
+msgstr "觀測區間"
+
+msgid "Original observations in this visible time slice, including missing fields. No inference across unknown spans."
+msgstr "此可見時段內的原始觀測，包括缺失欄位。不跨越未知區間作推斷。"
+
+msgid "Other excluded sessions"
+msgstr "其他排除的工作階段"
+
+msgid "Output energy unavailable"
+msgstr "輸出能量無法取得"
+
+msgid "Output |W|"
+msgstr "輸出 |W|"
+
+#, objc-format
+msgid "Output |W| · %@ valid"
+msgstr "輸出 |W| · %@ 有效"
+
+#, objc-format
+msgid "Output ~%.2f Wh · %@ valid"
+msgstr "輸出 ~%.2f Wh · %@ 有效"
+
+msgid "Overlapping observations"
+msgstr "重疊觀測"
+
+msgid "Overlapping sessions"
+msgstr "重疊工作階段"
+
+msgid "Partial observations"
+msgstr "部分觀測"
+
+#, objc-format
+msgid "Peak (obs.) %.1f°C"
+msgstr "峰值（觀測）%.1f°C"
+
+msgid "Positive is charge; negative is discharge."
+msgstr "正值表示充電，負值表示放電。"
+
+msgid "Power"
+msgstr "功率"
+
+msgid ""
+"Q1–Q3\n"
+"obs min/max"
+msgstr ""
+"Q1–Q3\n"
+"觀測最小/最大"
+
+msgid "Q1–Q3 · obs min/max"
+msgstr "Q1–Q3 · 觀測最小/最大"
+
+msgid "Raw system code; no pause cause or diagnosis inferred"
+msgstr "系統原始代碼；不推斷暫停原因或診斷"
+
+#, objc-format
+msgid "Reconnected ~%@"
+msgstr "重新接電 ~%@"
+
+msgid "Reconnection not observed"
+msgstr "未觀測到重新接電"
+
+msgid "Required fields unavailable"
+msgstr "所需欄位無法取得"
+
+msgid "Required fields unavailable or sampling gap"
+msgstr "所需欄位無法取得或存在取樣缺測"
+
+msgid "Resize"
+msgstr "調整大小"
+
+msgid "SOC"
+msgstr "SOC"
+
+msgid "SOC %"
+msgstr "SOC %"
+
+msgid ""
+"SOC %\n"
+"°C\n"
+"A ±"
+msgstr ""
+"SOC %\n"
+"°C\n"
+"A ±"
+
+msgid "SOC % · h"
+msgstr "SOC % · 時"
+
+msgid "SOC % × °C · h"
+msgstr "SOC % × °C · 時"
+
+#, objc-format
+msgid "SOC %.0f → %.0f%%"
+msgstr "SOC %.0f → %.0f%%"
+
+#, objc-format
+msgid "SOC %@ / %@"
+msgstr "SOC %@ / %@"
+
+#, objc-format
+msgid "SOC %@ / %@ · %@"
+msgstr "SOC %@ / %@ · %@"
+
+#, objc-format
+msgid "SOC %@ · %@"
+msgstr "SOC %@ · %@"
+
+#, objc-format
+msgid "SOC %@ · h"
+msgstr "SOC %@ · 時"
+
+#, objc-format
+msgid "SOC %@, %@"
+msgstr "SOC %@，%@"
+
+msgid "SOC decline"
+msgstr "電量下降"
+
+msgid "SOC dwell"
+msgstr "電量停留"
+
+msgid "SOC loss over covered intervals"
+msgstr "涵蓋區間內的電量損失"
+
+msgid "SOC or connection unavailable"
+msgstr "電量或接電狀態無法取得"
+
+msgid "SOC unavailable"
+msgstr "電量無法取得"
+
+#, objc-format
+msgid "SOC × °C · %@"
+msgstr "SOC × °C · %@"
+
+msgid "SOC — %"
+msgstr "SOC — %"
+
+msgid "SOC ↓ · pp/h"
+msgstr "SOC ↓ · 百分點/時"
+
+msgid "Sampled ranges; mixed and unknown states remain separate in the evidence"
+msgstr "取樣範圍；混合狀態與未知狀態在證據中保持分離"
+
+msgid "Sampled ranges; unknown spans do not establish a cable event or pause"
+msgstr "取樣範圍；未知區間不能證明發生接線事件或暫停"
+
+msgid "Sampling"
+msgstr "取樣"
+
+msgid "Selected hour"
+msgstr "所選小時"
+
+msgid "Selected range"
+msgstr "所選範圍"
+
+msgid "Selected record IDs"
+msgstr "所選記錄 ID"
+
+msgid "Selected session"
+msgstr "所選工作階段"
+
+msgid "Session duration"
+msgstr "工作階段時長"
+
+msgid "Sessions shown"
+msgstr "顯示的工作階段"
+
+msgid "Share of observed time"
+msgstr "佔已觀測時間比例"
+
+msgid "Short window unavailable"
+msgstr "短時區間無法取得"
+
+msgid "Show exact readings"
+msgstr "顯示精確讀數"
+
+msgid "Shown day"
+msgstr "顯示日期"
+
+msgid "Signed SOC decline divided by trusted unplugged time. Connected and missing intervals do not enter the rate. A negative value is an observed SOC rise, not inferred charging."
+msgstr "有正負號的電量下降除以可信未接電時長。接電與缺測區間不計入速率。負值表示已觀測電量上升，不據此推斷充電。"
+
+#, objc-format
+msgid "Signed battery current, approximately %@, %+.3g to %+.3g A"
+msgstr "有正負號的電池電流，約 %@，%+.3g 至 %+.3g A"
+
+msgid "Signed battery power"
+msgstr "有正負號的電池功率"
+
+msgid "Signed current"
+msgstr "有正負號的電流"
+
+msgid "Single cell"
+msgstr "單個電芯"
+
+msgid "Source records"
+msgstr "來源記錄"
+
+msgid "Sources"
+msgstr "來源"
+
+msgid "Sources and definitions"
+msgstr "來源與定義"
+
+msgid "State"
+msgstr "狀態"
+
+msgid "Summary"
+msgstr "概覽"
+
+#, objc-format
+msgid "Target %.3g W"
+msgstr "目標 %.3g W"
+
+msgid "Targets"
+msgstr "目標"
+
+#, objc-format
+msgid "Temperature %@"
+msgstr "溫度 %@"
+
+msgid "Temperature unavailable"
+msgstr "溫度無法取得"
+
+msgid "Time unknown"
+msgstr "時間未知"
+
+msgid "Time weighted across trusted sample pairs. Missing time is excluded from bins; the distribution is not a battery damage score."
+msgstr "按可信取樣對的時長加權。缺測時長不計入分組；此分布不是電池損傷評分。"
+
+msgid "Time zone"
+msgstr "時區"
+
+msgid "Time/age unavailable"
+msgstr "時刻或讀數時間無法取得"
+
+#, objc-format
+msgid "Trusted unplugged battery power, approximately %@"
+msgstr "可信未接電電池功率，約 %@"
+
+msgid "Unknown connection time"
+msgstr "接電狀態未知時長"
+
+#, objc-format
+msgid "Unknown state, %@"
+msgstr "未知狀態，%@"
+
+#, objc-format
+msgid "Unknown state, %@, %@; no event count inferred"
+msgstr "未知狀態，%@，%@；不推斷事件次數"
+
+#, objc-format
+msgid "Unknown state, %@; events in this gap are unknown"
+msgstr "未知狀態，%@；此缺測區間內的事件未知"
+
+msgid "Unplugged"
+msgstr "未接電"
+
+#, objc-format
+msgid "Unplugged %@"
+msgstr "未接電 %@"
+
+msgid "Unplugged or unknown connection"
+msgstr "未接電或接電狀態未知"
+
+msgid "Unplugged session"
+msgstr "未接電工作階段"
+
+#, objc-format
+msgid "Unplugged session, %@"
+msgstr "未接電工作階段，%@"
+
+msgid "Unplugged time"
+msgstr "未接電時長"
+
+msgid "Unplugged · SOC % / output |W|"
+msgstr "未接電 · SOC % / 輸出 |W|"
+
+msgid "View exact readings, times and sources"
+msgstr "檢視精確讀數、時刻與來源"
+
+msgid "View readings"
+msgstr "檢視讀數"
+
+msgid "Waiting for history"
+msgstr "等待歷史"
+
+msgid "Waiting for layout"
+msgstr "等待版面配置"
+
+msgid "Window observation coverage"
+msgstr "區間觀測涵蓋率"
+
+msgid "Window unavailable"
+msgstr "區間無法取得"
+
+msgid "avg "
+msgstr "均值 "
+
+msgid "battery net W"
+msgstr "電池淨功率 W"
+
+msgid ""
+"cells\n"
+"mV"
+msgstr ""
+"電芯\n"
+"mV"
+
+msgid "connected"
+msgstr "已接電"
+
+msgid "covered observations"
+msgstr "已涵蓋觀測"
+
+#, objc-format
+msgid "design %@ mAh"
+msgstr "設計 %@ mAh"
+
+msgid "design unknown"
+msgstr "設計未知"
+
+msgid "earliest/latest sampled ranges"
+msgstr "最早/最晚取樣範圍"
+
+msgid "estimated median"
+msgstr "估計中位數"
+
+msgid "estimated minutes"
+msgstr "估計分鐘數"
+
+msgid "excluded"
+msgstr "已排除"
+
+msgid "foreground"
+msgstr "前景"
+
+msgid "input W"
+msgstr "輸入 W"
+
+#, objc-format
+msgid "min %.1f · Q1 %.1f · median %.1f · Q3 %.1f · max %.1f min"
+msgstr "最小 %.1f · Q1 %.1f · 中位 %.1f · Q3 %.1f · 最大 %.1f 分"
+
+msgid "missing"
+msgstr "缺測"
+
+msgid "n < 3 · points"
+msgstr "n < 3 · 散點"
+
+#, objc-format
+msgid "obs. %.1f °C"
+msgstr "觀測 %.1f °C"
+
+msgid "observed peak"
+msgstr "觀測峰值"
+
+msgid "partial boundaries"
+msgstr "邊界不完整"
+
+msgid "partial observations"
+msgstr "部分觀測"
+
+msgid "points"
+msgstr "散點"
+
+msgid "pp/h unavailable"
+msgstr "百分點/時無法取得"
+
+msgid "sampled boundaries"
+msgstr "取樣邊界"
+
+msgid "signed A"
+msgstr "有正負號 A"
+
+msgid "temperature unavailable"
+msgstr "溫度無法取得"
+
+msgid "unavailable"
+msgstr "無法取得"
+
+msgid "unplugged"
+msgstr "未接電"
+
+#, objc-format
+msgid "~%.1f pp/h"
+msgstr "~%.1f 百分點/時"
+
+#, objc-format
+msgid "±%.1f pp/h"
+msgstr "±%.1f 百分點/時"
+
+#, objc-format
+msgid "Δobs %.0f"
+msgstr "Δ觀測 %.0f"
+
+msgid "— A"
+msgstr "— A"
+
+msgid "— °C"
+msgstr "— °C"
+
+#, objc-format
+msgid "≈ %.2f min"
+msgstr "≈ %.2f 分"
+
+msgid "≈ min"
+msgstr "≈ 分"
+
+#, objc-format
+msgid "≈%@ · n=%lu%@"
+msgstr "≈%@ · n=%lu%@"

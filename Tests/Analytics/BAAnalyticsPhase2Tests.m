@@ -133,7 +133,7 @@ static void TestLayoutMigrationAndBounds(void) {
 
 	NSArray<BAAnalyticsCardLayoutRecord *> *records = [BAAnalyticsCardLayoutStore loadRecordsFromUserDefaults:defaults];
 	Assert(records.count == 2, "layout parser bounded invalid and duplicate entries");
-	Assert([records[0].cardIdentifier isEqualToString:@"com.torrekie.battman.analytics.battery.summary"], "legacy built-in identifier migrated");
+	Assert([records[0].cardIdentifier isEqualToString:@"com.torrekie.battman.analytics.live"], "legacy built-in identifier migrated");
 	Assert([records[1].cardIdentifier isEqualToString:@"future.vendor.card"], "unknown provider identifier preserved");
 
 	NSMutableDictionary *mutableState = [@{@"selection": @"week"} mutableCopy];
@@ -148,6 +148,17 @@ static void TestLayoutMigrationAndBounds(void) {
 	Assert(records.count == 1, "v3 layout round trip");
 	Assert([records[0].restorationState[@"selection"] isEqual:@"week"], "restoration state copied immutably");
 	Assert(records[0].restorationSchemaVersion == 4, "restoration schema preserved");
+	[defaults setObject:@{@"version": @3, @"cards": @[
+		@{@"id": @"builtin.live", @"size": @0, @"restorationSchemaVersion": @9, @"restorationState": @{@"obsolete": @YES}},
+		@{@"id": @"com.torrekie.battman.analytics.live", @"size": @2},
+		@{@"id": @"com.torrekie.battman.analytics.temperature.average", @"size": @1},
+		@{@"id": @"future.vendor.card", @"size": @3, @"restorationSchemaVersion": @4, @"restorationState": @{@"selection": @"week"}},
+	]} forKey:BAAnalyticsCardLayoutDefaultsKey];
+	records = [BAAnalyticsCardLayoutStore loadRecordsFromUserDefaults:defaults];
+	Assert(records.count == 3, "migrated aliases deduplicated");
+	Assert([records[0].cardIdentifier isEqualToString:@"com.torrekie.battman.analytics.live"] && records[0].restorationSchemaVersion == 0 && records[0].restorationState == nil, "retired template state reset during migration");
+	Assert([records[1].cardIdentifier isEqualToString:@"com.torrekie.battman.analytics.session"], "old namespaced template migrated");
+	Assert(records[2].restorationSchemaVersion == 4 && [records[2].restorationState[@"selection"] isEqual:@"week"], "third-party restoration preserved during migration");
 
 	NSString *oversized = [@"x" stringByPaddingToLength:20000 withString:@"x" startingAtIndex:0];
 	BAAnalyticsCardLayoutRecord *bounded = [[BAAnalyticsCardLayoutRecord alloc] initWithCardIdentifier:@"future.vendor.large"

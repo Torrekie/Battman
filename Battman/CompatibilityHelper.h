@@ -36,11 +36,14 @@ TODO: Test on such iOS versions
 
 #import <UIKit/UIKit.h>
 
-#define UITableViewStyleInsetGrouped UITableViewStyleGrouped
+// Keep the iOS 13 enum value when building with an older SDK. All uses are
+// runtime guarded; aliasing to Grouped would defeat the iOS 13+ layout choice.
+#define UITableViewStyleInsetGrouped ((UITableViewStyle)2)
 
 @interface UIColor ()
 + (instancetype)secondaryLabelColor;
 + (instancetype)systemRedColor;
++ (instancetype)systemYellowColor;
 // systemRedColor is only defined after iOS 13.0, although Apple documentation
 // 	suggests that it is available since iOS 7.0.
 + (instancetype)linkColor;

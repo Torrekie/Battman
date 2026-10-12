@@ -2,7 +2,6 @@
 //  GradientSDRView.m
 //  Battman
 //
-//  Created by ChatGPT on behalf of Torrekie.
 //  This implements the same radial gradient visual, without Metal/HDR.
 //
 

@@ -182,16 +182,33 @@ SEGMENT_CONTROL_SOURCES := \
 	UberSegmentedControl/UberSegmentedControl.m
 
 ANALYTICS_SOURCES := \
-	Features/Analytics/BuiltIn/BAAnalyticsBatterySummaryCard.m \
-	Features/Analytics/BuiltIn/BAAnalyticsBuiltInCard.m \
 	Features/Analytics/BuiltIn/BAAnalyticsBuiltInCards.m \
 	Features/Analytics/BuiltIn/BAAnalyticsBuiltInPlugin.m \
-	Features/Analytics/BuiltIn/BAAnalyticsChargingLimitCard.m \
-	Features/Analytics/BuiltIn/BAAnalyticsCycleSummaryCard.m \
-	Features/Analytics/BuiltIn/BAAnalyticsPowerAverageCard.m \
-	Features/Analytics/BuiltIn/BAAnalyticsRemainingCapacityCard.m \
-	Features/Analytics/BuiltIn/BAAnalyticsTemperatureAverageCard.m \
+	Features/Analytics/BuiltIn/Canvas/BAAnalyticsCanvasCard.m \
+	Features/Analytics/BuiltIn/Canvas/BAAnalyticsCanvasView.m \
+	Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailSelection.m \
+	Features/Analytics/BuiltIn/Canvas/BAAnalyticsDetailViewController.m \
+	Features/Analytics/BuiltIn/Live/BAAnalyticsCapacityCanvasCard.m \
+	Features/Analytics/BuiltIn/Live/BAAnalyticsCellsCanvasCard.m \
+	Features/Analytics/BuiltIn/Live/BAAnalyticsLiveCanvasCard.m \
+	Features/Analytics/BuiltIn/Live/BAAnalyticsLiveDrawing.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsDischargeCanvasCard.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsEventsCanvasCard.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsPathCanvasCard.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsProcessCanvasCards.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsProcessDrawing.m \
+	Features/Analytics/BuiltIn/Process/BAAnalyticsSessionCanvasCard.m \
+	Features/Analytics/BuiltIn/Statistics/BAStatisticsAnalysis.m \
+	Features/Analytics/BuiltIn/Statistics/BAStatisticsCanvasCards.m \
+	Features/Analytics/BuiltIn/Statistics/BAStatisticsDrawing.m \
+	Features/Analytics/BuiltIn/Statistics/BAAnalyticsDwellCanvasCard.m \
+	Features/Analytics/BuiltIn/Statistics/BAAnalyticsCompareCanvasCard.m \
+	Features/Analytics/BuiltIn/Statistics/BAAnalyticsRhythmCanvasCard.m \
+	Features/Analytics/Data/BAAnalyticsHistoryModels.m \
+	Features/Analytics/Data/BAAnalyticsHistoryReader.m \
+	Features/Analytics/Data/BAAnalyticsHistoryService.m \
 	Features/Analytics/Data/BAAnalyticsMetricService.m \
+	Features/Analytics/Data/BAAnalyticsReport.m \
 	Features/Analytics/Data/BAAnalyticsSystemMetricSource.m \
 	Features/Analytics/Host/AnalyticsCardCell.m \
 	Features/Analytics/Host/AnalyticsCardGridLayout.m \
@@ -286,12 +303,24 @@ PROTOTYPE_SOURCES :=
 
 # These dormant test helpers were selected only by the old wildcard and are not
 # members of any Xcode application target.
-DEVELOPMENT_ONLY_SOURCES := battery_utils/smctest.c license/test.S
+DEVELOPMENT_ONLY_SOURCES := battery_utils/smctest.c license/test.S \
+	Features/Analytics/BuiltIn/Statistics/Tests/BAStatisticsAnalysisTests.m \
+	Features/Analytics/BuiltIn/Statistics/Tests/BAStatisticsMathTests.c
+
+# Superseded placeholders stay available as historical sources, never linked.
+RETIRED_ANALYTICS_SOURCES := \
+	Features/Analytics/BuiltIn/BAAnalyticsBuiltInCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsBatterySummaryCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsTemperatureAverageCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsPowerAverageCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsCycleSummaryCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsRemainingCapacityCard.m \
+	Features/Analytics/BuiltIn/BAAnalyticsChargingLimitCard.m
 
 # Wildcards are permitted only for the audit. Any new source must be classified
 # above before the build can proceed.
 DISCOVERED_SOURCE_FILES := $(sort $(shell find . -path ./build -prune -o -type f \( -name '*.m' -o -name '*.c' -o -name '*.S' \) -print | $(SED) 's|^\./||'))
-CLASSIFIED_NONPRODUCTION_SOURCES := $(PROTOTYPE_SOURCES) $(DEVELOPMENT_ONLY_SOURCES)
+CLASSIFIED_NONPRODUCTION_SOURCES := $(PROTOTYPE_SOURCES) $(DEVELOPMENT_ONLY_SOURCES) $(RETIRED_ANALYTICS_SOURCES)
 UNCLASSIFIED_SOURCE_FILES := $(filter-out $(SOURCES) $(CLASSIFIED_NONPRODUCTION_SOURCES),$(DISCOVERED_SOURCE_FILES))
 MISSING_CLASSIFIED_SOURCE_FILES := $(filter-out $(DISCOVERED_SOURCE_FILES),$(SOURCES) $(CLASSIFIED_NONPRODUCTION_SOURCES))
 PROTOTYPE_BUILD_LEAKS := $(filter $(PROTOTYPE_SOURCES),$(SOURCES))

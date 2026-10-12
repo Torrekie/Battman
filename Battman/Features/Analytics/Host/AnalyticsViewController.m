@@ -11,6 +11,8 @@
 #import "BAAnalyticsCardLayoutStore.h"
 #import "BAAnalyticsUnavailableCard.h"
 #import "../Data/BAAnalyticsMetricService.h"
+#import "../Data/BAAnalyticsHistoryService.h"
+#import "../BuiltIn/Canvas/BAAnalyticsCanvasCard.h"
 #import "../Data/BAAnalyticsSystemMetricSource.h"
 #import "../../../PluginHost/Application/BTPluginPlatform.h"
 #import "../../../PluginHost/BTPluginRegistry.h"
@@ -38,7 +40,8 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 @interface AnalyticsViewController () <UICollectionViewDataSource, BAAnalyticsCardGridLayoutDelegate, UIGestureRecognizerDelegate, BAAnalyticsMetricServiceSubscriber>
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) BAAnalyticsCardGridLayout *collectionLayout;
-@property (nonatomic, strong) BTPluginRegistry *pluginRegistry;
+@property (nonatomic, strong) BAAnalyticsHistoryService *historyService;
+@property (nonatomic, strong) NSUserDefaults *layoutDefaults;
 @property (nonatomic, copy) NSArray<id<BAAnalyticsCard>> *availableCards;
 @property (nonatomic, strong) NSMutableArray<BAAnalyticsCardState *> *cardStates;
 @property (nonatomic, strong) BAAnalyticsMetricService *metricService;
@@ -64,6 +67,14 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 }
 
 - (instancetype)init {
+	NSArray *cards = [BTPluginPlatform.sharedPlatform.registry extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
+	return [self initWithCards:cards metricService:[[BAAnalyticsMetricService alloc] initWithSource:[BAAnalyticsSystemMetricSource new]]
+		historyService:BAAnalyticsHistoryService.sharedService userDefaults:NSUserDefaults.standardUserDefaults];
+}
+
+- (instancetype)initWithCards:(NSArray<id<BAAnalyticsCard>> *)cards metricService:(BAAnalyticsMetricService *)metricService
+			   historyService:(BAAnalyticsHistoryService *)historyService userDefaults:(NSUserDefaults *)userDefaults {
+	NSParameterAssert(cards && metricService && historyService && userDefaults);
 	self = [super initWithNibName:nil bundle:nil];
 	if (!self)
 		return nil;
@@ -82,16 +93,19 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	tabbarItem.tag = 0;
 	self.tabBarItem = tabbarItem;
 
-	self.pluginRegistry = BTPluginPlatform.sharedPlatform.registry;
-	self.availableCards = (NSArray<id<BAAnalyticsCard>> *)[self.pluginRegistry
-		extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
+	self.availableCards = [cards copy];
+	self.metricService = metricService;
+	self.historyService = historyService;
+	self.layoutDefaults = userDefaults;
+	for (id<BAAnalyticsCard> card in cards)
+		if ([card isKindOfClass:BAAnalyticsCanvasCard.class]) ((BAAnalyticsCanvasCard *)card).historyService = historyService;
 	self.cardStates = [self configuredCardStates];
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
 	if ([userDefaults objectForKey:BAAnalyticsCardLayoutDefaultsKey] == nil && [userDefaults objectForKey:BAAnalyticsLegacyCardLayoutDefaultsKey] != nil)
 		[self saveCardLayout];
-	self.metricService = [[BAAnalyticsMetricService alloc] initWithSource:[BAAnalyticsSystemMetricSource new]];
 	self.visibleCardCells = [NSHashTable weakObjectsHashTable];
-	[self.metricService setApplicationActive:[UIApplication sharedApplication].applicationState != UIApplicationStateBackground];
+	BOOL active = UIApplication.sharedApplication.applicationState != UIApplicationStateBackground;
+	[self.metricService setApplicationActive:active];
+	[self.historyService setApplicationActive:active];
 
 	return self;
 }
@@ -113,7 +127,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 	self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionLayout];
 	self.collectionView.translatesAutoresizingMaskIntoConstraints = NO;
-	self.collectionView.backgroundColor = [UIColor compatBackgroundColor];
+	self.collectionView.backgroundColor = [UIColor tertiaryCompatFillColor];
 	self.collectionView.alwaysBounceVertical = YES;
 	self.collectionView.dataSource = self;
 	self.collectionView.delegate = self;
@@ -159,6 +173,8 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 - (void)viewDidAppear:(BOOL)animated {
 	[super viewDidAppear:animated];
+	// The lazy view may have missed activation after the host was created in the background.
+	[self.historyService setApplicationActive:UIApplication.sharedApplication.applicationState != UIApplicationStateBackground];
 	for (BAAnalyticsCardCell *cell in self.collectionView.visibleCells) {
 		[cell setAnalyticsCardDisplayed:YES];
 		[self.visibleCardCells addObject:cell];
@@ -176,19 +192,23 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 
 - (void)applicationWillResignActive:(NSNotification *)notification {
 	[self.metricService setApplicationActive:NO];
+	[self.historyService setApplicationActive:NO];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification *)notification {
 	[self.metricService setApplicationActive:NO];
+	[self.historyService setApplicationActive:NO];
 }
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
 	[self.metricService setApplicationActive:YES];
+	[self.historyService setApplicationActive:YES];
 	[self.metricService refreshNow];
 }
 
 - (void)applicationDidReceiveMemoryWarning:(NSNotification *)notification {
 	[self.metricService handleMemoryPressure];
+	[self.historyService handleMemoryPressure];
 	for (id<BAAnalyticsCard> card in self.availableCards) {
 		if ([card respondsToSelector:@selector(analyticsCardDidReceiveMemoryWarning)])
 			[card analyticsCardDidReceiveMemoryWarning];
@@ -209,7 +229,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
 	[super traitCollectionDidChange:previousTraitCollection];
 	self.view.backgroundColor = [UIColor compatBackgroundColor];
-	self.collectionView.backgroundColor = [UIColor compatBackgroundColor];
+	self.collectionView.backgroundColor = [UIColor tertiaryCompatFillColor];
 	[self.collectionLayout invalidateLayout];
 	if (!self.movingCard)
 		[self.collectionView reloadData];
@@ -230,7 +250,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 #pragma mark - Card State
 
 - (NSMutableArray<BAAnalyticsCardState *> *)configuredCardStates {
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+	NSUserDefaults *userDefaults = self.layoutDefaults;
 	BOOL hasSavedLayout = [userDefaults objectForKey:BAAnalyticsCardLayoutDefaultsKey] != nil || [userDefaults objectForKey:BAAnalyticsLegacyCardLayoutDefaultsKey] != nil;
 	NSArray<BAAnalyticsCardLayoutRecord *> *savedLayout = [BAAnalyticsCardLayoutStore loadRecordsFromUserDefaults:userDefaults];
 
@@ -364,7 +384,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 															 restorationState:restorationState];
 		[layout addObject:record];
 	}
-	[BAAnalyticsCardLayoutStore saveRecords:layout toUserDefaults:[NSUserDefaults standardUserDefaults]];
+	[BAAnalyticsCardLayoutStore saveRecords:layout toUserDefaults:self.layoutDefaults];
 }
 
 #pragma mark - Collection View
@@ -377,6 +397,11 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	BAAnalyticsCardCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:BAAnalyticsCardCellIdentifier forIndexPath:indexPath];
 	BAAnalyticsCardState *state = self.cardStates[indexPath.item];
 	[cell configureWithCard:state.card size:state.size editing:self.editing];
+	if ([cell.analyticsCardContentView isKindOfClass:BAAnalyticsCanvasView.class]) {
+		BAAnalyticsCanvasView *canvas = (BAAnalyticsCanvasView *)cell.analyticsCardContentView;
+		[canvas removeTarget:self action:@selector(openCanvasDetail:) forControlEvents:UIControlEventTouchUpInside];
+		[canvas addTarget:self action:@selector(openCanvasDetail:) forControlEvents:UIControlEventTouchUpInside];
+	}
 	[cell.resizeButton addTarget:self action:@selector(resizeCardFromButton:) forControlEvents:UIControlEventTouchUpInside];
 	[cell.removeButton addTarget:self action:@selector(removeCardFromButton:) forControlEvents:UIControlEventTouchUpInside];
 	for (UIButton *button in cell.actionButtons)
@@ -616,6 +641,29 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 		[state.card analyticsCardPerformAction:action presentingViewController:self];
 }
 
+- (void)openCanvasDetail:(BAAnalyticsCanvasView *)sender {
+	if (self.editing || self.movingCard) return;
+	CGPoint point = [sender convertPoint:CGPointMake(CGRectGetMidX(sender.bounds), CGRectGetMidY(sender.bounds)) toView:self.collectionView];
+	NSIndexPath *indexPath = [self.collectionView indexPathForItemAtPoint:point];
+	if (!indexPath || indexPath.item >= self.cardStates.count) return;
+	BAAnalyticsCardState *state = self.cardStates[indexPath.item];
+	if (![state.card isKindOfClass:BAAnalyticsCanvasCard.class]) return;
+	UIViewController *detail = [(BAAnalyticsCanvasCard *)state.card detailViewControllerForSelection:sender.selectedDetail size:state.size];
+	[self openDetailController:detail];
+}
+
+- (void)openDetailController:(UIViewController *)viewController {
+	// A control touch and collection selection can both request the same
+	// detail. Once the host has navigated away, ignore that second delivery.
+	if (!viewController || self.editing || self.movingCard || self.presentedViewController ||
+		(self.navigationController && self.navigationController.topViewController != self))
+		return;
+	if (self.navigationController && ![viewController isKindOfClass:UINavigationController.class])
+		[self.navigationController pushViewController:viewController animated:YES];
+	else
+		[self presentViewController:[viewController isKindOfClass:UINavigationController.class] ? viewController : [[UINavigationController alloc] initWithRootViewController:viewController] animated:YES completion:nil];
+}
+
 - (void)openCardState:(BAAnalyticsCardState *)state {
 	if (![state.card respondsToSelector:@selector(analyticsCardViewControllerForSize:)])
 		return;
@@ -624,10 +672,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	if (!viewController)
 		return;
 
-	if (self.navigationController && ![viewController isKindOfClass:[UINavigationController class]])
-		[self.navigationController pushViewController:viewController animated:YES];
-	else
-		[self presentViewController:viewController animated:YES completion:nil];
+	[self openDetailController:viewController];
 }
 
 - (NSUInteger)indexOfCardIdentifier:(NSString *)identifier {

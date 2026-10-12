@@ -68,47 +68,105 @@ EXPECTED_UNSUPPORTED_CLAIMS = {
     "apple-supported-general-purpose-ios-plugin-loading",
 }
 EXPECTED_CARDS = {
-    "com.torrekie.battman.analytics.battery.summary": (
+    "com.torrekie.battman.analytics.live": (
         "embedded",
         [
-            "battery.state-of-charge.percent", "battery.health.percent",
-            "battery.charging.state", "charging-limit.reached",
+            "battery.state-of-charge.percent",
+            "battery.charging.state",
+            "system.low-power-mode",
+            "battery.power.net.watts",
+            "battery.power.average.watts",
+            "battery.current.average.milliamps",
+            "battery.temperature.average.celsius",
         ],
-        "host-provided-battery-and-charging-telemetry",
+        "host-snapshot-and-foreground-short-window-no-persistent-history",
     ),
-    "com.torrekie.battman.analytics.temperature.average": (
-        "embedded", ["battery.temperature.average.celsius"],
-        "host-provided-temperature-telemetry",
-    ),
-    "com.torrekie.battman.analytics.power.average": (
+    "com.torrekie.battman.analytics.capacity": (
         "embedded",
         [
-            "battery.power.average.watts", "battery.current.average.milliamps",
-            "battery.voltage.millivolts",
-        ],
-        "host-provided-power-telemetry",
-    ),
-    "com.torrekie.battman.analytics.cycle.summary": (
-        "embedded",
-        ["battery.cycles.current", "battery.cycles.design", "battery.uptime.seconds"],
-        "host-provided-cycle-and-uptime-telemetry",
-    ),
-    "com.torrekie.battman.analytics.capacity.remaining": (
-        "embedded",
-        [
-            "battery.capacity.remaining.milliamp-hours",
             "battery.capacity.full-charge.milliamp-hours",
-            "battery.capacity.design.milliamp-hours", "battery.health.percent",
+            "battery.capacity.design.milliamp-hours",
+            "full-charge-capacity.milliamp-hours",
+            "design-capacity.milliamp-hours",
+            "cycle-count",
         ],
-        "host-provided-capacity-telemetry",
+        "host-capacity-snapshot-or-host-only-normalized-powerlog-history",
     ),
-    "com.torrekie.battman.analytics.charging-limit": (
+    "com.torrekie.battman.analytics.cells": (
         "embedded",
         [
-            "charging-limit.service-active", "charging-limit.percent",
-            "charging-limit.reached", "battery.state-of-charge.percent",
+            "cell-voltage.0.millivolts",
+            "cell-voltage.1.millivolts",
+            "cell-voltage.2.millivolts",
         ],
-        "host-owned-charging-limit-state-and-battery-telemetry",
+        "host-only-normalized-main-battery-cell-voltage-history",
+    ),
+    "com.torrekie.battman.analytics.session": (
+        "embedded",
+        [
+            "soc.percent",
+            "temperature.celsius",
+            "current.milliamps",
+            "external-connected",
+            "is-charging",
+            "fully-charged",
+        ],
+        "host-only-normalized-connected-powerlog-session",
+    ),
+    "com.torrekie.battman.analytics.discharge": (
+        "embedded",
+        [
+            "soc.percent",
+            "battery-power.watts",
+            "external-connected",
+        ],
+        "host-only-normalized-unplugged-powerlog-session",
+    ),
+    "com.torrekie.battman.analytics.events": (
+        "embedded",
+        [
+            "external-connected",
+            "is-charging",
+            "fully-charged",
+            "not-charging-reason.code",
+        ],
+        "host-only-normalized-powerlog-states-and-sampled-transitions",
+    ),
+    "com.torrekie.battman.analytics.path": (
+        "embedded",
+        [
+            "battery-power.watts",
+            "input-power.watts",
+            "power-budget.watts",
+            "power-target.watts",
+        ],
+        "host-only-normalized-powerlog-measurement-points-not-an-efficiency-model",
+    ),
+    "com.torrekie.battman.analytics.dwell": (
+        "embedded",
+        [
+            "soc.percent",
+            "temperature.celsius",
+            "external-connected",
+        ],
+        "host-only-normalized-powerlog-time-weighted-intervals",
+    ),
+    "com.torrekie.battman.analytics.compare": (
+        "embedded",
+        [
+            "soc.percent",
+            "external-connected",
+            "temperature.celsius",
+        ],
+        "host-only-compatible-complete-connected-powerlog-sessions",
+    ),
+    "com.torrekie.battman.analytics.rhythm": (
+        "embedded",
+        [
+            "soc.percent",
+            "external-connected",
+        ],
+        "host-only-normalized-unplugged-powerlog-calendar-intervals",
     ),
     "com.torrekie.battman.plugin.charge-gauge": (
         "official-plugin",
@@ -130,6 +188,8 @@ CARD_FIELDS = {
     "identifier", "delivery", "requiredMetrics", "availability", "hardwareBoundary",
 }
 METRIC_PATTERN = re.compile(r'^#define\s+BAAnalyticsMetric[A-Za-z0-9_]+\s+@"([^"]+)"$', re.MULTILINE)
+HISTORY_METRIC_PATTERN = re.compile(r'^#define\s+BAAnalyticsHistory[A-Za-z0-9_]+\s+@"([^"]+)"$', re.MULTILINE)
+FAMILY_PATTERN = re.compile(r'^#define\s+BAAnalyticsFamily[A-Za-z0-9_]+\s+@"([^"]+)"$', re.MULTILINE)
 
 
 def _regular_json(path: Path, label: str) -> dict[str, Any]:
@@ -270,13 +330,21 @@ def validate_repository_compatibility_matrix(
     if actual_cards != expected_cards:
         raise ReleaseError("compatibility matrix card delivery differs from the release selection")
 
-    header = (repo / "PluginSDK/include/BAAnalyticsMetricSnapshot.h").read_text(encoding="utf-8")
-    known_metrics = set(METRIC_PATTERN.findall(header))
-    claimed_metrics = {
-        metric for card in value["analyticsCards"] for metric in card["requiredMetrics"]
-    }
-    if not claimed_metrics <= known_metrics:
-        raise ReleaseError("compatibility matrix names a metric outside the frozen public SDK")
+    sdk_header = (repo / "PluginSDK/include/BAAnalyticsMetricSnapshot.h").read_text(encoding="utf-8")
+    public_metrics = set(METRIC_PATTERN.findall(sdk_header))
+    host_header = (repo / "Battman/Features/Analytics/Data/BAAnalyticsMetricSnapshotInternal.h").read_text(encoding="utf-8")
+    history_header = (repo / "Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.h").read_text(encoding="utf-8")
+    report_header = (repo / "Battman/Features/Analytics/Data/BAAnalyticsReport.h").read_text(encoding="utf-8")
+    # Embedded canvases use internal snapshot and normalized history fields.
+    # These host-only identifiers do not extend the public PluginSDK v1 API.
+    host_metrics = public_metrics | set(METRIC_PATTERN.findall(host_header)) | set(HISTORY_METRIC_PATTERN.findall(history_header))
+    families = set(FAMILY_PATTERN.findall(report_header))
+    if {identifier.removeprefix("com.torrekie.battman.analytics.") for identifier in embedded} != families:
+        raise ReleaseError("embedded Analytics selection differs from host report families")
+    for card in value["analyticsCards"]:
+        known_metrics = host_metrics if card["delivery"] == "embedded" else public_metrics
+        if not set(card["requiredMetrics"]) <= known_metrics:
+            raise ReleaseError(f"compatibility matrix names a metric outside its delivery surface: {card['identifier']}")
     for item in value["evidence"]:
         reference = repo / item["reference"]
         if not reference.is_file() or reference.is_symlink():

@@ -79,70 +79,123 @@
   ],
   "analyticsCards": [
     {
-      "availability": "Shows Unavailable when the host does not provide state-of-charge, health, or charging-state metrics.",
+      "availability": "Each live metric is displayed independently; missing values remain unavailable. Net power uses the host-only signed reading when present, otherwise the labeled average. The short curve covers foreground samples only.",
       "delivery": "embedded",
-      "hardwareBoundary": "host-provided-battery-and-charging-telemetry",
-      "identifier": "com.torrekie.battman.analytics.battery.summary",
+      "hardwareBoundary": "host-snapshot-and-foreground-short-window-no-persistent-history",
+      "identifier": "com.torrekie.battman.analytics.live",
       "requiredMetrics": [
         "battery.state-of-charge.percent",
-        "battery.health.percent",
         "battery.charging.state",
-        "charging-limit.reached"
-      ]
-    },
-    {
-      "availability": "Shows Unavailable when the host cannot read a valid average battery temperature.",
-      "delivery": "embedded",
-      "hardwareBoundary": "host-provided-temperature-telemetry",
-      "identifier": "com.torrekie.battman.analytics.temperature.average",
-      "requiredMetrics": [
+        "system.low-power-mode",
+        "battery.power.net.watts",
+        "battery.power.average.watts",
+        "battery.current.average.milliamps",
         "battery.temperature.average.celsius"
       ]
     },
     {
-      "availability": "Shows Unavailable when the host cannot read average power; current and voltage details remain optional.",
+      "availability": "Current FCC and design capacity are paired only from the same snapshot; otherwise validated historical observations are used. Ratios require a compatible design value. Missing history or source/configuration discontinuities remain explicit; FCC changes do not establish battery replacement.",
       "delivery": "embedded",
-      "hardwareBoundary": "host-provided-power-telemetry",
-      "identifier": "com.torrekie.battman.analytics.power.average",
+      "hardwareBoundary": "host-capacity-snapshot-or-host-only-normalized-powerlog-history",
+      "identifier": "com.torrekie.battman.analytics.capacity",
       "requiredMetrics": [
-        "battery.power.average.watts",
-        "battery.current.average.milliamps",
-        "battery.voltage.millivolts"
-      ]
-    },
-    {
-      "availability": "Shows Unavailable when the host cannot read cycle count; design count and battery uptime remain optional.",
-      "delivery": "embedded",
-      "hardwareBoundary": "host-provided-cycle-and-uptime-telemetry",
-      "identifier": "com.torrekie.battman.analytics.cycle.summary",
-      "requiredMetrics": [
-        "battery.cycles.current",
-        "battery.cycles.design",
-        "battery.uptime.seconds"
-      ]
-    },
-    {
-      "availability": "Shows Unavailable for any capacity value the host battery-capacity provider does not expose.",
-      "delivery": "embedded",
-      "hardwareBoundary": "host-provided-capacity-telemetry",
-      "identifier": "com.torrekie.battman.analytics.capacity.remaining",
-      "requiredMetrics": [
-        "battery.capacity.remaining.milliamp-hours",
         "battery.capacity.full-charge.milliamp-hours",
         "battery.capacity.design.milliamp-hours",
-        "battery.health.percent"
+        "full-charge-capacity.milliamp-hours",
+        "design-capacity.milliamp-hours",
+        "cycle-count"
       ]
     },
     {
-      "availability": "Shows Inactive when the charging-limit service is stopped and Unavailable when its state cannot be read.",
+      "availability": "Displays available validated main-battery cell channels independently, including additional discovered indices. Concurrent spread needs at least two valid channels at one observation. Missing channels remain unavailable; attachment-battery fields and live snapshot cell values are not substituted.",
       "delivery": "embedded",
-      "hardwareBoundary": "host-owned-charging-limit-state-and-battery-telemetry",
-      "identifier": "com.torrekie.battman.analytics.charging-limit",
+      "hardwareBoundary": "host-only-normalized-main-battery-cell-voltage-history",
+      "identifier": "com.torrekie.battman.analytics.cells",
       "requiredMetrics": [
-        "charging-limit.service-active",
-        "charging-limit.percent",
-        "charging-limit.reached",
-        "battery.state-of-charge.percent"
+        "cell-voltage.0.millivolts",
+        "cell-voltage.1.millivolts",
+        "cell-voltage.2.millivolts"
+      ]
+    },
+    {
+      "availability": "Requires an observed connected session. SOC, signed current and temperature tracks retain independent coverage; missing or unvalidated tracks remain unavailable. Sampled boundaries, pauses and gaps are shown without treating a connected cable as proof of charging.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-connected-powerlog-session",
+      "identifier": "com.torrekie.battman.analytics.session",
+      "requiredMetrics": [
+        "soc.percent",
+        "temperature.celsius",
+        "current.milliamps",
+        "external-connected",
+        "is-charging",
+        "fully-charged"
+      ]
+    },
+    {
+      "availability": "Requires an observed unplugged session. SOC decline and battery output use independently trusted coverage; unknown reconnection time and missing output remain explicit. Historical output magnitude does not infer an application-level energy cause.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-unplugged-powerlog-session",
+      "identifier": "com.torrekie.battman.analytics.discharge",
+      "requiredMetrics": [
+        "soc.percent",
+        "battery-power.watts",
+        "external-connected"
+      ]
+    },
+    {
+      "availability": "Uses validated observed connection, charging and full states; unknown or conflicting state stays distinct. State duration is limited to trusted intervals, and transitions retain sampled time bounds. An absent reason code is not inferred.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-powerlog-states-and-sampled-transitions",
+      "identifier": "com.torrekie.battman.analytics.events",
+      "requiredMetrics": [
+        "external-connected",
+        "is-charging",
+        "fully-charged",
+        "not-charging-reason.code"
+      ]
+    },
+    {
+      "availability": "Input, battery net power, budget and target are independent measurement points with their own observation times. Unvalidated or absent input/target fields remain unavailable. Budget and target are not measured delivered power; no efficiency or loss is inferred by subtraction.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-powerlog-measurement-points-not-an-efficiency-model",
+      "identifier": "com.torrekie.battman.analytics.path",
+      "requiredMetrics": [
+        "battery-power.watts",
+        "input-power.watts",
+        "power-budget.watts",
+        "power-target.watts"
+      ]
+    },
+    {
+      "availability": "SOC bins require trusted adjacent samples; temperature bins additionally require jointly validated temperature. Missing time is excluded and disclosed. Connection states remain separate, and the distribution is not a battery damage or health score.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-powerlog-time-weighted-intervals",
+      "identifier": "com.torrekie.battman.analytics.dwell",
+      "requiredMetrics": [
+        "soc.percent",
+        "temperature.celsius",
+        "external-connected"
+      ]
+    },
+    {
+      "availability": "Includes only compatible complete connected sessions with trusted upward 20-to-80 percent crossings. Partial, overlapping, duplicate or gapped sessions are excluded with reasons. Temperature peaks require validated samples in that same range and remain unavailable otherwise; small samples use individual points.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-compatible-complete-connected-powerlog-sessions",
+      "identifier": "com.torrekie.battman.analytics.compare",
+      "requiredMetrics": [
+        "soc.percent",
+        "external-connected",
+        "temperature.celsius"
+      ]
+    },
+    {
+      "availability": "Uses signed observed SOC decline divided by valid unplugged duration. Missing or unknown hours, connected periods and measured zero remain distinct. Local calendar boundaries preserve daylight-saving changes; an observed SOC rise does not infer charging.",
+      "delivery": "embedded",
+      "hardwareBoundary": "host-only-normalized-unplugged-powerlog-calendar-intervals",
+      "identifier": "com.torrekie.battman.analytics.rhythm",
+      "requiredMetrics": [
+        "soc.percent",
+        "external-connected"
       ]
     },
     {

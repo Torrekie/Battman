@@ -44,7 +44,8 @@ def main() -> int:
     statuses = {item["identifier"]: item["status"] for item in value["evidence"]}
     assert statuses["a11-ios12-through-ios17"] == "community-reported"
     assert statuses["rooted-ios14-package-integrity"] == "verified-limited"
-    assert len(value["analyticsCards"]) == 7
+    assert len(value["analyticsCards"]) == 11
+    assert sum(card["delivery"] == "embedded" for card in value["analyticsCards"]) == 10
 
     wrong_version = copy.deepcopy(value)
     wrong_version["releaseVersion"] = "1.1.0.1"

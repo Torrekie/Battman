@@ -7,6 +7,8 @@
 #import "BAAnalyticsMetricService.h"
 #import "BAAnalyticsMetricSnapshotInternal.h"
 
+#include <math.h>
+
 static NSTimeInterval const BAAnalyticsDefaultSampleInterval = 5.0;
 static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 
@@ -21,6 +23,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 @property (nonatomic, getter=isPolling) BOOL polling;
 @property (nonatomic) uint64_t pollingGeneration;
 @property (nonatomic) uint64_t nextSequenceNumber;
+@property (nonatomic) BOOL sampleScheduled;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSMutableArray<BAAnalyticsMetricPoint *> *> *historyStorage;
 @property (nonatomic, strong, readwrite, nullable) BAAnalyticsMetricSnapshot *latestSnapshot;
 @end
@@ -42,7 +45,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 		return nil;
 
 	_source = source;
-	_sampleInterval = MAX(0.05, sampleInterval);
+	_sampleInterval = isfinite(sampleInterval) ? MAX(0.05, MIN(sampleInterval, 3600.0)) : BAAnalyticsDefaultSampleInterval;
 	_maxHistoryPoints = MAX(2, MIN(maxHistoryPoints, (NSUInteger)240));
 	_subscribers = [NSHashTable weakObjectsHashTable];
 	_workerQueue = dispatch_queue_create("com.torrekie.battman.analytics.metrics", DISPATCH_QUEUE_SERIAL);
@@ -89,12 +92,10 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 
 - (void)refreshNow {
 	NSParameterAssert([NSThread isMainThread]);
+	[self updatePollingState];
 	if (!self.polling)
 		return;
-	uint64_t generation = self.pollingGeneration;
-	dispatch_async(self.workerQueue, ^{
-		[self sampleOnWorkerForGeneration:generation];
-	});
+	[self enqueueSampleForGeneration:self.pollingGeneration];
 }
 
 - (void)handleMemoryPressure {
@@ -118,8 +119,10 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 	if (self.polling)
 		return;
 
-	self.polling = YES;
-	self.pollingGeneration += 1;
+	@synchronized(self) {
+		self.polling = YES;
+		self.pollingGeneration += 1;
+	}
 	uint64_t generation = self.pollingGeneration;
 	uint64_t intervalNanoseconds = (uint64_t)(self.sampleInterval * (NSTimeInterval)NSEC_PER_SEC);
 	uint64_t leewayNanoseconds = MIN(intervalNanoseconds / 5, (uint64_t)NSEC_PER_SEC);
@@ -132,21 +135,21 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 						  leewayNanoseconds);
 	__weak typeof(self) weakSelf = self;
 	dispatch_source_set_event_handler(timer, ^{
-		[weakSelf sampleOnWorkerForGeneration:generation];
+		[weakSelf enqueueSampleForGeneration:generation];
 	});
 	dispatch_resume(timer);
 
-	dispatch_async(self.workerQueue, ^{
-		[weakSelf sampleOnWorkerForGeneration:generation];
-	});
+	[self enqueueSampleForGeneration:generation];
 }
 
 - (void)stopPolling {
 	NSAssert([NSThread isMainThread], @"Analytics polling is coordinated on the main thread.");
 	if (!self.polling)
 		return;
-	self.polling = NO;
-	self.pollingGeneration += 1;
+	@synchronized(self) {
+		self.polling = NO;
+		self.pollingGeneration += 1;
+	}
 	if (self.timer) {
 		dispatch_source_cancel(self.timer);
 		self.timer = nil;
@@ -157,51 +160,121 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 	static NSArray<NSString *> *identifiers;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		identifiers = @[
+		NSMutableArray<NSString *> *metrics = [NSMutableArray arrayWithArray:@[
 			BAAnalyticsMetricStateOfChargePercent,
 			BAAnalyticsMetricAverageTemperatureCelsius,
+			BAAnalyticsMetricAverageCurrentMilliamps,
+			BAAnalyticsMetricVoltageMillivolts,
 			BAAnalyticsMetricAveragePowerWatts,
+			BAAnalyticsMetricBatteryNetPowerWatts,
 			BAAnalyticsMetricRemainingCapacityMilliampHours,
-		];
+			BAAnalyticsMetricExternalConnected,
+			BAAnalyticsMetricIsCharging,
+			BAAnalyticsMetricFullyCharged,
+			BAAnalyticsMetricInputCurrentMilliamps,
+			BAAnalyticsMetricInputVoltageMillivolts,
+			BAAnalyticsMetricInputPowerWatts,
+		]];
+		// SMC's single-character cell index supports 0...9, not a fixed three
+		// cells. Missing keys never get an artificial zero in these histories.
+		for (NSUInteger index = 0; index < 10; index++)
+			[metrics addObject:BAAnalyticsCellVoltageMetricIdentifier(index)];
+		identifiers = [metrics copy];
 	});
 	return identifiers;
 }
 
+- (void)enqueueSampleForGeneration:(uint64_t)generation {
+	// Recheck weak subscribers on the main thread even when the last one was
+	// released without an explicit unsubscribe. Collapse bursts of refreshes
+	// while an acquisition is already pending.
+	if (![NSThread isMainThread]) {
+		__weak typeof(self) weakSelf = self;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[weakSelf enqueueSampleForGeneration:generation];
+		});
+		return;
+	}
+	[self updatePollingState];
+	if (!self.polling || generation != self.pollingGeneration || self.sampleScheduled)
+		return;
+	self.sampleScheduled = YES;
+	dispatch_async(self.workerQueue, ^{
+		[self sampleOnWorkerForGeneration:generation];
+	});
+}
+
+- (void)finishSample:(BAAnalyticsMetricSnapshot *)snapshot generation:(uint64_t)generation {
+	dispatch_async(dispatch_get_main_queue(), ^{
+		self.sampleScheduled = NO;
+		[self updatePollingState];
+		if (!self.polling)
+			return;
+		if (generation != self.pollingGeneration) {
+			[self enqueueSampleForGeneration:self.pollingGeneration];
+			return;
+		}
+		if (!snapshot)
+			return;
+		self.latestSnapshot = snapshot;
+		for (id<BAAnalyticsMetricServiceSubscriber> subscriber in self.subscribers.allObjects)
+			[subscriber analyticsMetricService:self didPublishSnapshot:snapshot];
+	});
+}
+
 - (void)sampleOnWorkerForGeneration:(uint64_t)generation {
 	@autoreleasepool {
-		NSDictionary<NSString *, NSNumber *> *values = [self.source readAnalyticsMetricValues] ?: @{};
-		NSDate *timestamp = [NSDate date];
-		for (NSString *metricIdentifier in [self historyMetricIdentifiers]) {
-			NSNumber *value = values[metricIdentifier];
-			if (![value isKindOfClass:[NSNumber class]])
-				continue;
-			NSMutableArray<BAAnalyticsMetricPoint *> *history = self.historyStorage[metricIdentifier];
-			if (!history) {
-				history = [NSMutableArray array];
-				self.historyStorage[metricIdentifier] = history;
-			}
-			[history addObject:[[BAAnalyticsMetricPoint alloc] initWithTimestamp:timestamp value:value.doubleValue]];
-			if (history.count > self.maxHistoryPoints)
-				[history removeObjectsInRange:NSMakeRange(0, history.count - self.maxHistoryPoints)];
-		}
-
-		NSMutableDictionary<NSString *, NSArray<BAAnalyticsMetricPoint *> *> *histories = [NSMutableDictionary dictionaryWithCapacity:self.historyStorage.count];
-		[self.historyStorage enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSMutableArray<BAAnalyticsMetricPoint *> *history, BOOL *stop) {
-			(void)stop;
-			histories[key] = [history copy];
-		}];
-
-		BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:self.nextSequenceNumber++
-														 timestamp:timestamp
-															values:values
-														 histories:histories];
-		dispatch_async(dispatch_get_main_queue(), ^{
-			if (!self.polling || generation != self.pollingGeneration)
+		@synchronized(self) {
+			if (!self.polling || generation != self.pollingGeneration) {
+				[self finishSample:nil generation:generation];
 				return;
-			self.latestSnapshot = snapshot;
-			for (id<BAAnalyticsMetricServiceSubscriber> subscriber in self.subscribers.allObjects)
-				[subscriber analyticsMetricService:self didPublishSnapshot:snapshot];
-		});
+			}
+		}
+		NSDate *timestamp = [NSDate date];
+		NSDictionary<NSString *, NSNumber *> *values = [self.source readAnalyticsMetricValues] ?: @{};
+		@synchronized(self) {
+			if (!self.polling || generation != self.pollingGeneration) {
+				[self finishSample:nil generation:generation];
+				return;
+			}
+			NSTimeInterval historyDuration = self.sampleInterval * (NSTimeInterval)self.maxHistoryPoints;
+			NSDate *cutoff = [timestamp dateByAddingTimeInterval:-historyDuration];
+			for (NSString *metricIdentifier in [self historyMetricIdentifiers]) {
+				NSMutableArray<BAAnalyticsMetricPoint *> *history = self.historyStorage[metricIdentifier];
+				// Prune absent metrics as well as present ones. A foreground-only
+				// five-minute window must not retain yesterday's last good reading.
+				while (history.count > 0 && [history.firstObject.timestamp compare:cutoff] == NSOrderedAscending)
+					[history removeObjectAtIndex:0];
+				if (history.count > 0 && [history.lastObject.timestamp compare:timestamp] != NSOrderedAscending)
+					[history removeAllObjects]; // A wall-clock jump splits the live run.
+				NSNumber *value = values[metricIdentifier];
+				if (![value isKindOfClass:[NSNumber class]] || !isfinite(value.doubleValue))
+					continue;
+				// The v1 finite-point history has no missing-value marker. Begin a
+				// new run after a missed sample instead of drawing through that gap.
+				if (history.count > 0 && [timestamp timeIntervalSinceDate:history.lastObject.timestamp] > self.sampleInterval * 1.5)
+					[history removeAllObjects];
+				if (!history) {
+					history = [NSMutableArray array];
+					self.historyStorage[metricIdentifier] = history;
+				}
+				[history addObject:[[BAAnalyticsMetricPoint alloc] initWithTimestamp:timestamp value:value.doubleValue]];
+				if (history.count > self.maxHistoryPoints)
+					[history removeObjectsInRange:NSMakeRange(0, history.count - self.maxHistoryPoints)];
+			}
+
+			NSMutableDictionary<NSString *, NSArray<BAAnalyticsMetricPoint *> *> *histories = [NSMutableDictionary dictionaryWithCapacity:self.historyStorage.count];
+			[self.historyStorage enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSMutableArray<BAAnalyticsMetricPoint *> *history, BOOL *stop) {
+				(void)stop;
+				histories[key] = [history copy];
+			}];
+
+			BAAnalyticsMetricSnapshot *snapshot = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:self.nextSequenceNumber++
+															 timestamp:timestamp
+																values:values
+															 histories:histories];
+			[self finishSample:snapshot generation:generation];
+		}
 	}
 }
 

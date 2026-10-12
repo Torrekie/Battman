@@ -19,8 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (class, nonatomic, readonly) UIColor *compatGreenColor;
 @property (class, nonatomic, readonly) UIColor *compatBlueColor;
 @property (class, nonatomic, readonly) UIColor *compatOrangeColor;
-/*
 @property (class, nonatomic, readonly) UIColor *compatYellowColor;
+/*
 @property (class, nonatomic, readonly) UIColor *compatPinkColor;
 @property (class, nonatomic, readonly) UIColor *compatPurpleColor;
 @property (class, nonatomic, readonly) UIColor *compatTealColor;

@@ -54,6 +54,13 @@ static inline NSInteger _currentUserInterfaceStyle() {
 	return UIColorWithRGBA8(255, 59, 48, 255);
 }
 
++ (instancetype)compatYellowColor {
+    returnIfSystemColor(systemYellowColor);
+    if (currentUserInterfaceStyle == UIUserInterfaceStyleDark)
+        return UIColorWithRGBA8(255, 214, 10, 255);
+    return UIColorWithRGBA8(255, 204, 0, 255);
+}
+
 + (instancetype)compatGreenColor {
 	returnIfSystemColor(systemGreenColor);
 
