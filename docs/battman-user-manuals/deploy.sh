@@ -112,6 +112,6 @@ rm -rf "$TEMP_DIR"
 
 echo ""
 echo "✅ Deployment complete!"
-echo "   Documentation will be available at: https://battman-docs.github.io/"
+echo "   Documentation will be available at: https://battman-docs.torrekie.com/"
 echo "   (It may take a few minutes for GitHub Pages to update)"
 
