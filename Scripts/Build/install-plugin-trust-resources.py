@@ -63,7 +63,7 @@ def validate_source(source: Path) -> list[Path]:
     if not 1 <= len(entries) <= MAX_SIGNATURES:
         raise ResourceError("TrustMetadata.signatures must contain between one and eight signatures")
     for entry in entries:
-        stem = entry.name.removesuffix(".sig")
+        stem = entry.name[:-4] if entry.name.endswith(".sig") else entry.name
         if entry.name != f"{stem}.sig" or len(stem) != 64 or any(character not in "0123456789abcdef" for character in stem):
             raise ResourceError(f"invalid trust-metadata signature filename: {entry.name}")
         _validate_regular_file(entry, "trust-metadata signature", MAX_SIGNATURE_BYTES)
