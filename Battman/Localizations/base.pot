@@ -3497,3 +3497,415 @@ msgstr ""
 
 msgid "Newest connection has one reading; showing previous session"
 msgstr ""
+
+msgid " · striped areas unknown"
+msgstr ""
+
+#, objc-format
+msgid "%+.3g W"
+msgstr ""
+
+#, objc-format
+msgid "%@ average"
+msgstr ""
+
+#, objc-format
+msgid "%@ of %@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "%@ · %lu excluded"
+msgstr ""
+
+#, objc-format
+msgid "%@, hourly battery drop and recorded time"
+msgstr ""
+
+#, objc-format
+msgid "%@. %@. %@. Capacity readings from %@; %lu valid readings. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."
+msgstr ""
+
+#, objc-format
+msgid "%@: %lu readings"
+msgstr ""
+
+#, objc-format
+msgid "%lu capacity readings"
+msgstr ""
+
+#, objc-format
+msgid "%lu changes recorded%@"
+msgstr ""
+
+#, objc-format
+msgid "%lu of %lu cells"
+msgstr ""
+
+#, objc-format
+msgid "%lu readings · mAh"
+msgstr ""
+
+#, objc-format
+msgid "%lu sessions"
+msgstr ""
+
+#, objc-format
+msgid "%lu sessions · 20 → 80%% charge"
+msgstr ""
+
+msgid "+ charges · − uses battery"
+msgstr ""
+
+#, objc-format
+msgid "0–%.1f%%"
+msgstr ""
+
+msgid "1 day"
+msgstr ""
+
+msgid "20 → 80% charge"
+msgstr ""
+
+msgid "20 → 80% charge · minutes"
+msgstr ""
+
+#, objc-format
+msgid "20–80%% charge, %lu sessions, estimated median %.1f min"
+msgstr ""
+
+msgid "7 days"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Average battery power"
+msgstr ""
+
+#, objc-format
+msgid "Average · %@"
+msgstr ""
+
+msgid "Bar length = recorded time"
+msgstr ""
+
+msgid "Battery drop / hour"
+msgstr ""
+
+msgid "Battery drop per hour"
+msgstr ""
+
+msgid "Battery level"
+msgstr ""
+
+#, objc-format
+msgid "Battery level %@ · %@"
+msgstr ""
+
+#, objc-format
+msgid "Battery level %@ · h"
+msgstr ""
+
+#, objc-format
+msgid "Battery level %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "Battery level and temperature · %@"
+msgstr ""
+
+msgid "Battery level missing"
+msgstr ""
+
+msgid "Battery level or connection unavailable"
+msgstr ""
+
+msgid "Battery level recorded"
+msgstr ""
+
+msgid "Battery level unavailable"
+msgstr ""
+
+msgid "Battery level · time"
+msgstr ""
+
+msgid "Battery level × temperature"
+msgstr ""
+
+msgid "Battery power"
+msgstr ""
+
+msgid "Battery use (W)"
+msgstr ""
+
+msgid "Box: middle 50%"
+msgstr ""
+
+msgid "Capacity history"
+msgstr ""
+
+msgid "Capacity trend · mAh"
+msgstr ""
+
+#, objc-format
+msgid "Cell spread %.0f mV"
+msgstr ""
+
+#, objc-format
+msgid "Charge %.0f%% → %.0f%%"
+msgstr ""
+
+msgid "Charge (%)"
+msgstr ""
+
+msgid "Charge and battery use"
+msgstr ""
+
+msgid "Charge change unavailable"
+msgstr ""
+
+msgid "Charge unavailable"
+msgstr ""
+
+msgid "Charger input"
+msgstr ""
+
+#, objc-format
+msgid "Charging %@"
+msgstr ""
+
+msgid "Current (A)"
+msgstr ""
+
+msgid "Current (A)\n+ charges\n− uses battery"
+msgstr ""
+
+msgid "Current (A) · + charges · − uses battery"
+msgstr ""
+
+msgid "Daily battery drop per hour"
+msgstr ""
+
+#, objc-format
+msgid "Darker: more time · up to %@"
+msgstr ""
+
+#, objc-format
+msgid "Dashed: %@"
+msgstr ""
+
+msgid "Discharging"
+msgstr ""
+
+#, objc-format
+msgid "Discharging %@"
+msgstr ""
+
+msgid "Dots: separate charges"
+msgstr ""
+
+msgid "Each dot is a separate charging session"
+msgstr ""
+
+msgid "Earlier readings"
+msgstr ""
+
+#, objc-format
+msgid "Energy used ≈%.2f Wh · %@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "Estimated median: %.1f min"
+msgstr ""
+
+msgid "From battery"
+msgstr ""
+
+#, objc-format
+msgid "From battery %.2f A"
+msgstr ""
+
+#, objc-format
+msgid "Full charge %@ mAh, %@, %@"
+msgstr ""
+
+#, objc-format
+msgid "Gained %.1f%% in %@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "Highest reading %.1f °C"
+msgstr ""
+
+msgid "History range"
+msgstr ""
+
+msgid "Incomplete records"
+msgstr ""
+
+msgid "Into battery"
+msgstr ""
+
+#, objc-format
+msgid "Into battery %.2f A"
+msgstr ""
+
+msgid "Later readings"
+msgstr ""
+
+msgid "Maximum capacity"
+msgstr ""
+
+#, objc-format
+msgid "Middle 50%%: %.1f–%.1f min"
+msgstr ""
+
+msgid "Minutes"
+msgstr ""
+
+msgid "No capacity history"
+msgstr ""
+
+msgid "No capacity readings"
+msgstr ""
+
+#, objc-format
+msgid "No current flow · %@"
+msgstr ""
+
+msgid "No data"
+msgstr ""
+
+msgid "No net flow"
+msgstr ""
+
+msgid "No recorded charge from 20% to 80%"
+msgstr ""
+
+msgid "No recorded unplugged battery level"
+msgstr ""
+
+msgid "No usable history"
+msgstr ""
+
+msgid "No usable readings"
+msgstr ""
+
+#, objc-format
+msgid "Observed states, %@. %@. %@. Lightning means charging, pause means plugged in without charging, check means full, and a crossed plug means unplugged. Stripes mean unknown."
+msgstr ""
+
+msgid "Orange: level rose"
+msgstr ""
+
+msgid "Peak temperature · °C"
+msgstr ""
+
+msgid "Plugged in"
+msgstr ""
+
+msgid "Plugged in, paused"
+msgstr ""
+
+msgid "Power readings"
+msgstr ""
+
+msgid "Power readings · W"
+msgstr ""
+
+msgid "Readings taken separately"
+msgstr ""
+
+#, objc-format
+msgid "Recorded %@ · missing %@"
+msgstr ""
+
+#, objc-format
+msgid "Recorded range: %.1f–%.1f min"
+msgstr ""
+
+#, objc-format
+msgid "Recorded unplugged %@"
+msgstr ""
+
+msgid "Swipe for history · tap a reading"
+msgstr ""
+
+msgid "Swipe for history; tap a reading for its value and time."
+msgstr ""
+
+msgid "Tap a reading for its value"
+msgstr ""
+
+msgid "Temp. (°C)"
+msgstr ""
+
+msgid "Time by battery level"
+msgstr ""
+
+msgid "Time by battery level · h"
+msgstr ""
+
+msgid "Too few readings to compare"
+msgstr ""
+
+#, objc-format
+msgid "Used %.1f%% in %@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "±%.1f%%"
+msgstr ""
+
+#, objc-format
+msgid "≈%@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "≈%@ · Incomplete readings"
+msgstr ""
+
+#, objc-format
+msgid "Current trend · %@"
+msgstr ""
+
+msgid "mAh · swipe to browse; tap to read"
+msgstr ""
+
+msgid "mAh · tap a reading for its value"
+msgstr ""
+
+msgid "Battery level (%) × temperature"
+msgstr ""
+
+#, objc-format
+msgid "Battery drop %.2f%% / h"
+msgstr ""
+
+#, objc-format
+msgid "%lu of %lu cells shown"
+msgstr ""
+
+#, objc-format
+msgid "%lu cells shown · %lu in details"
+msgstr ""
+
+msgid "Charging paused"
+msgstr ""
+
+msgid "Latest maximum capacity"
+msgstr ""
+
+msgid "Latest full charge (mAh)"
+msgstr ""
+
+msgid "Battery level drop"
+msgstr ""
+
+#, objc-format
+msgid "%.1f%% · %@ recorded"
+msgstr ""
+
+#, objc-format
+msgid "Stronger color: more time · up to %@"
+msgstr ""

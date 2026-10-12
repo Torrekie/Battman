@@ -27,10 +27,18 @@ static BAAnalyticsObservation *BACapacityLastValidObservation(NSArray<BAAnalytic
 }
 
 static NSString *BACapacityNumber(double value, NSUInteger decimals) {
-    NSNumberFormatter *formatter = [NSNumberFormatter new];
-    formatter.numberStyle = NSNumberFormatterDecimalStyle;
-    formatter.maximumFractionDigits = decimals;
-    formatter.minimumFractionDigits = decimals;
+    NSMutableDictionary *storage = NSThread.currentThread.threadDictionary;
+    NSString *key = [NSString stringWithFormat:@"Battman.capacity.number.%lu", (unsigned long)decimals];
+    NSNumberFormatter *formatter = storage[key];
+    NSLocale *locale = NSLocale.currentLocale;
+    if (!formatter || ![formatter.locale.localeIdentifier isEqualToString:locale.localeIdentifier]) {
+        formatter = [NSNumberFormatter new];
+        formatter.locale = locale;
+        formatter.numberStyle = NSNumberFormatterDecimalStyle;
+        formatter.maximumFractionDigits = decimals;
+        formatter.minimumFractionDigits = decimals;
+        storage[key] = formatter;
+    }
     return [formatter stringFromNumber:@(value)] ?: @"—";
 }
 
@@ -174,20 +182,31 @@ static BACapacityPreparedHistory *BACapacityPrepare(BAAnalyticsFamilyReport *fam
     return prepared;
 }
 
-static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepared, NSUInteger columns) {
-    NSUInteger count = prepared.points.count;
+static NSUInteger BACapacitySampleBound(BACapacityPreparedHistory *prepared, NSTimeInterval time, BOOL upper) {
+    const BACapacitySample *samples = prepared.samples.bytes;
+    NSUInteger low = 0, high = prepared.points.count;
+    while (low < high) {
+        NSUInteger middle = low + (high - low) / 2;
+        if (samples[middle].time < time || (upper && samples[middle].time == time)) low = middle + 1;
+        else high = middle;
+    }
+    return low;
+}
+
+static NSArray<NSNumber *> *BACapacityEnvelopeInRange(BACapacityPreparedHistory *prepared, NSRange range,
+                                                      NSTimeInterval start, NSTimeInterval span, NSUInteger columns) {
+    NSUInteger count = range.length;
     if (!count) return @[];
     if (count <= 4 * columns) {
         NSMutableArray *all = [NSMutableArray arrayWithCapacity:count];
-        for (NSUInteger i = 0; i < count; i++) [all addObject:@(i)];
+        for (NSUInteger i = range.location; i < NSMaxRange(range); i++) [all addObject:@(i)];
         return all;
     }
     const BACapacitySample *samples = prepared.samples.bytes;
-    NSTimeInterval span = samples[count - 1].time - samples[0].time;
     NSMutableIndexSet *kept = [NSMutableIndexSet indexSet];
-    NSUInteger first = 0, minimum = 0, maximum = 0, last = 0, priorColumn = NSNotFound;
-    for (NSUInteger i = 0; i < count; i++) {
-        NSUInteger column = span > 0 ? MIN(columns - 1, (NSUInteger)floor((samples[i].time - samples[0].time) / span * columns)) : 0;
+    NSUInteger first = range.location, minimum = first, maximum = first, last = first, priorColumn = NSNotFound;
+    for (NSUInteger i = range.location; i < NSMaxRange(range); i++) {
+        NSUInteger column = span > 0 ? MIN(columns - 1, (NSUInteger)MAX(0, floor((samples[i].time - start) / span * columns))) : 0;
         // Bound even a heavily fragmented history to four original points per
         // time bucket. Monotone original run IDs below still prohibit a line
         // across any omitted untrusted edge or configuration change.
@@ -203,6 +222,14 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:kept.count];
     [kept enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) { [result addObject:@(index)]; }];
     return result;
+}
+
+static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepared, NSUInteger columns) {
+    NSUInteger count = prepared.points.count;
+    if (!count) return @[];
+    const BACapacitySample *samples = prepared.samples.bytes;
+    return BACapacityEnvelopeInRange(prepared, NSMakeRange(0, count), samples[0].time,
+                                     samples[count - 1].time - samples[0].time, columns);
 }
 
 static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepared, NSArray<NSNumber *> *indices, NSUInteger budget) {
@@ -241,7 +268,7 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
     return result;
 }
 
-@interface BAAnalyticsCapacityCanvasView : BAAnalyticsCanvasView
+@interface BAAnalyticsCapacityCanvasView : BAAnalyticsCanvasView <UIScrollViewDelegate>
 @property (nonatomic, copy) NSArray<BAAnalyticsObservation *> *capacityObservations;
 @property (nonatomic, strong) NSNumber *fullCharge;
 @property (nonatomic, strong) NSNumber *designCapacity;
@@ -269,6 +296,17 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
 // Set before a detail canvas receives its report. Historical selections scope
 // both the graphic and its capacity pair; overview keeps the complete trend.
 @property (nonatomic, strong) BAAnalyticsDetailSelection *capacitySelection;
+@property (nonatomic) BOOL detailBrowsingEnabled;
+@property (nonatomic, strong) UISegmentedControl *historyRangeControl;
+@property (nonatomic, strong) UIScrollView *historyScrollView;
+@property (nonatomic, weak) BACapacityPreparedHistory *browsingPreparedHistory;
+@property (nonatomic) NSTimeInterval historyWindowStart;
+@property (nonatomic) NSTimeInterval historyWindowDuration;
+@property (nonatomic) BOOL updatingHistoryScroller;
+@property (nonatomic) BOOL historyViewportInitialized;
+@property (nonatomic) NSUInteger selectedHistoryIndex;
+@property (nonatomic) CGRect historyPlotRect;
+@property (nonatomic, strong) UIAccessibilityElement *historyOverviewElement;
 - (void)refreshCapacity;
 - (void)startHistoryPreparation;
 - (void)renderCapacityWithRegions:(NSMutableArray *)regions;
@@ -289,12 +327,14 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
         _currentSource = @"unavailable";
         _displayIndices = @[]; _displayMarkerIndices = @[]; _boundaryIndices = @[]; _displayGaps = @[]; _displayGapRects = @[];
         _displayGapGeometry = CGRectNull;
+        _selectedHistoryIndex = NSNotFound;
         _pointFormatter = [NSDateFormatter new];
         [_pointFormatter setLocalizedDateFormatFromTemplate:@"MMddHHmmss"];
         // At accessibility sizes a compact card cannot hold the complete
         // enlarged summary. Reflow it into a scrollable text canvas rather
         // than shrinking every label or clipping essential units/window/n.
         _largeTypeScrollView = [UIScrollView new];
+        _largeTypeScrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
         _largeTypeScrollView.alwaysBounceVertical = NO;
         _largeTypeScrollView.showsVerticalScrollIndicator = YES;
         _largeTypeScrollView.backgroundColor = UIColor.clearColor;
@@ -309,6 +349,163 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
         [self addSubview:_largeTypeScrollView];
     }
     return self;
+}
+
+- (void)setDetailBrowsingEnabled:(BOOL)enabled {
+    if (_detailBrowsingEnabled == enabled) return;
+    _detailBrowsingEnabled = enabled;
+    if (enabled && !self.historyRangeControl) {
+        self.historyRangeControl = [[UISegmentedControl alloc] initWithItems:@[_("1 day"), _("7 days"), _("All")]];
+        self.historyRangeControl.selectedSegmentIndex = 1;
+        [self.historyRangeControl addTarget:self action:@selector(historyRangeChanged:) forControlEvents:UIControlEventValueChanged];
+        self.historyRangeControl.accessibilityLabel = _("History range");
+        [self addSubview:self.historyRangeControl];
+        self.historyScrollView = [UIScrollView new];
+        self.historyScrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        self.historyScrollView.delegate = self;
+        self.historyScrollView.directionalLockEnabled = YES;
+        self.historyScrollView.showsVerticalScrollIndicator = NO;
+        self.historyScrollView.showsHorizontalScrollIndicator = YES;
+        self.historyScrollView.backgroundColor = UIColor.clearColor;
+        self.historyScrollView.isAccessibilityElement = YES;
+        self.historyScrollView.accessibilityLabel = _("Capacity history");
+        self.historyScrollView.accessibilityHint = _("Swipe for history; tap a reading for its value and time.");
+        self.historyScrollView.accessibilityCustomActions = @[
+            [[UIAccessibilityCustomAction alloc] initWithName:_("Earlier readings") target:self selector:@selector(showEarlierHistory:)],
+            [[UIAccessibilityCustomAction alloc] initWithName:_("Later readings") target:self selector:@selector(showLaterHistory:)]];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(selectHistoryReading:)];
+        [self.historyScrollView addGestureRecognizer:tap];
+        [self addSubview:self.historyScrollView];
+        self.historyOverviewElement = [[UIAccessibilityElement alloc] initWithAccessibilityContainer:self];
+    }
+    self.historyRangeControl.hidden = !enabled;
+    self.historyScrollView.hidden = !enabled;
+    [self setNeedsLayout];
+}
+
+- (void)historyRangeChanged:(UISegmentedControl *)sender {
+    self.historyViewportInitialized = NO;
+    self.selectedHistoryIndex = NSNotFound;
+    self.displayWidth = -1;
+    [self setNeedsLayout];
+    [self setNeedsDisplay];
+}
+
+- (void)prepareHistoryViewport {
+    BACapacityPreparedHistory *prepared = self.preparedHistory;
+    const BACapacitySample *samples = prepared.samples.bytes;
+    NSUInteger count = prepared.points.count;
+    if (!count) return;
+    NSTimeInterval first = samples[0].time, last = samples[count - 1].time;
+    NSTimeInterval wholeSpan = MAX(1, last - first);
+    [self.historyRangeControl setEnabled:wholeSpan > 86400 forSegmentAtIndex:0];
+    [self.historyRangeControl setEnabled:wholeSpan > 604800 forSegmentAtIndex:1];
+    NSInteger choice = self.historyRangeControl.selectedSegmentIndex;
+    if ((choice == 0 && wholeSpan <= 86400) || (choice == 1 && wholeSpan <= 604800)) {
+        choice = 2;
+        self.historyRangeControl.selectedSegmentIndex = choice;
+    }
+    NSTimeInterval duration = MIN(wholeSpan, choice == 0 ? 86400 : choice == 1 ? 604800 : wholeSpan);
+    if (!self.historyViewportInitialized || self.browsingPreparedHistory != prepared) {
+        self.historyWindowStart = MAX(first, last - duration);
+        self.historyViewportInitialized = YES;
+        self.browsingPreparedHistory = prepared;
+        self.selectedHistoryIndex = NSNotFound;
+        self.displayWidth = -1;
+    }
+    self.historyWindowDuration = duration;
+    self.historyWindowStart = MAX(first, MIN(self.historyWindowStart, MAX(first, last - duration)));
+}
+
+- (void)layoutHistoryScrollerInRect:(CGRect)graph {
+    self.historyPlotRect = graph;
+    BACapacityPreparedHistory *prepared = self.preparedHistory;
+    const BACapacitySample *samples = prepared.samples.bytes;
+    NSUInteger count = prepared.points.count;
+    if (!count || CGRectIsEmpty(graph)) {
+        self.historyScrollView.hidden = YES;
+        return;
+    }
+    NSTimeInterval first = samples[0].time, wholeSpan = MAX(1, samples[count - 1].time - first);
+    NSTimeInterval duration = self.historyWindowDuration;
+    BOOL widthChanged = graph.size.width != self.historyScrollView.bounds.size.width;
+    self.updatingHistoryScroller = YES;
+    self.historyScrollView.hidden = NO;
+    if (!CGRectEqualToRect(self.historyScrollView.frame, graph)) self.historyScrollView.frame = graph;
+    // Only the content extent grows. The drawing remains in this fixed-size
+    // canvas, with no wide image or view backing store to allocate.
+    CGSize extent = CGSizeMake(graph.size.width * wholeSpan / duration, graph.size.height);
+    if (!CGSizeEqualToSize(self.historyScrollView.contentSize, extent)) self.historyScrollView.contentSize = extent;
+    // Footer reflow can change the height while a horizontal pan is active.
+    // Keep UIKit's in-flight offset unless the horizontal geometry changed.
+    if (widthChanged || (!self.historyScrollView.tracking && !self.historyScrollView.dragging && !self.historyScrollView.decelerating)) {
+        CGPoint offset = CGPointMake((self.historyWindowStart - first) / duration * graph.size.width, 0);
+        CGPoint currentOffset = self.historyScrollView.contentOffset;
+        // Absolute timestamps lose tiny fractions on conversion back to an
+        // offset. Do not interrupt a programmatic scroll animation for them.
+        if (fabs(currentOffset.x - offset.x) > .25 || fabs(currentOffset.y - offset.y) > .25)
+            self.historyScrollView.contentOffset = offset;
+    }
+    self.updatingHistoryScroller = NO;
+    [self updateHistoryAccessibility];
+}
+
+- (void)updateHistoryAccessibility {
+    if (!self.historyViewportInitialized) return;
+    NSString *window = BALiveWindow([NSDate dateWithTimeIntervalSince1970:self.historyWindowStart],
+        [NSDate dateWithTimeIntervalSince1970:self.historyWindowStart + self.historyWindowDuration]);
+    NSString *reading = [self selectedHistoryReadingText];
+    self.historyScrollView.accessibilityValue = reading ? [NSString stringWithFormat:@"%@. %@", reading, window] : window;
+}
+
+- (NSString *)selectedHistoryReadingText {
+    if (self.selectedHistoryIndex >= self.preparedHistory.points.count) return nil;
+    BAAnalyticsObservation *reading = self.preparedHistory.points[self.selectedHistoryIndex];
+    const BACapacitySample *samples = self.preparedHistory.samples.bytes;
+    return [NSString stringWithFormat:@"%@ mAh · %@", BACapacityNumber(samples[self.selectedHistoryIndex].value, 0), [self.pointFormatter stringFromDate:reading.timestamp]];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView != self.historyScrollView || self.updatingHistoryScroller || !self.preparedHistory.points.count || scrollView.bounds.size.width <= 0) return;
+    const BACapacitySample *samples = self.preparedHistory.samples.bytes;
+    NSUInteger count = self.preparedHistory.points.count;
+    NSTimeInterval first = samples[0].time, latestStart = MAX(first, samples[count - 1].time - self.historyWindowDuration);
+    NSTimeInterval start = MAX(first, MIN(latestStart, first + scrollView.contentOffset.x / scrollView.bounds.size.width * self.historyWindowDuration));
+    if (start == self.historyWindowStart) return;
+    self.historyWindowStart = start;
+    self.selectedHistoryIndex = NSNotFound;
+    self.displayWidth = -1;
+    [self updateHistoryAccessibility];
+    [self setNeedsLayout];
+    [self setNeedsDisplay];
+}
+
+- (BOOL)moveHistoryByDirection:(NSInteger)direction {
+    CGFloat target = self.historyScrollView.contentOffset.x + direction * self.historyScrollView.bounds.size.width;
+    target = MAX(0, MIN(target, MAX(0, self.historyScrollView.contentSize.width - self.historyScrollView.bounds.size.width)));
+    if (target == self.historyScrollView.contentOffset.x) return NO;
+    [self.historyScrollView setContentOffset:CGPointMake(target, 0) animated:YES];
+    return YES;
+}
+- (BOOL)showEarlierHistory:(UIAccessibilityCustomAction *)action { return [self moveHistoryByDirection:-1]; }
+- (BOOL)showLaterHistory:(UIAccessibilityCustomAction *)action { return [self moveHistoryByDirection:1]; }
+
+- (void)selectHistoryReading:(UITapGestureRecognizer *)recognizer {
+    if (recognizer.state != UIGestureRecognizerStateEnded || !self.historyViewportInitialized || !self.preparedHistory.points.count) return;
+    CGPoint point = [recognizer locationInView:self];
+    CGFloat fraction = (point.x - self.historyPlotRect.origin.x) / MAX(1, self.historyPlotRect.size.width);
+    NSTimeInterval target = self.historyWindowStart + MAX(0, MIN(1, fraction)) * self.historyWindowDuration;
+    NSUInteger first = BACapacitySampleBound(self.preparedHistory, self.historyWindowStart, NO);
+    NSUInteger end = BACapacitySampleBound(self.preparedHistory, self.historyWindowStart + self.historyWindowDuration, YES);
+    if (first >= end) return;
+    NSUInteger index = MIN(end - 1, MAX(first, BACapacitySampleBound(self.preparedHistory, target, NO)));
+    const BACapacitySample *samples = self.preparedHistory.samples.bytes;
+    if (index > first && fabs(samples[index - 1].time - target) < fabs(samples[index].time - target)) index--;
+    self.selectedHistoryIndex = index;
+    [self updateHistoryAccessibility];
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, [self selectedHistoryReadingText]);
+    [self setNeedsLayout];
+    [self setNeedsDisplay];
 }
 
 - (void)openLargeTypeOverview:(UITapGestureRecognizer *)recognizer {
@@ -417,7 +614,9 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
 }
 
 - (NSString *)capacityHeading {
-    return self.designCapacity || !self.fullCharge ? _("Full / design") : _("Full charge (mAh)");
+    if (self.detailBrowsingEnabled)
+        return self.designCapacity ? _("Latest maximum capacity") : _("Latest full charge (mAh)");
+    return self.designCapacity ? _("Maximum capacity") : _("Full charge (mAh)");
 }
 
 - (NSString *)observationWindow {
@@ -429,7 +628,7 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
 - (NSString *)capacitySummary {
     NSString *quantity = self.fullCharge ? [NSString stringWithFormat:_("Full charge %@ mAh"), BACapacityNumber(self.fullCharge.doubleValue, 0)] : _("Full charge unavailable");
     NSString *design = self.designCapacity ? [NSString stringWithFormat:_("Design %@ mAh. Full / design %@"), BACapacityNumber(self.designCapacity.doubleValue, 0), [self capacityPrimary]] : _("Design capacity unknown");
-    return [NSString stringWithFormat:_("%@. %@. %@. FCC observation window %@; %lu valid points. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."), quantity, design, BALiveAge(self.capacityTimestamp), [self observationWindow], (unsigned long)self.capacityObservations.count];
+    return [NSString stringWithFormat:_("%@. %@. %@. Capacity readings from %@; %lu valid readings. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."), quantity, design, BALiveAge(self.capacityTimestamp), [self observationWindow], (unsigned long)self.capacityObservations.count];
 }
 
 - (BAAnalyticsDetailSelection *)currentSelection {
@@ -476,15 +675,17 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
 - (void)layoutSubviews {
     [super layoutSubviews];
     BOOL large = BALiveLargeType(self);
+    self.historyRangeControl.hidden = !self.detailBrowsingEnabled || large;
+    self.historyScrollView.hidden = !self.detailBrowsingEnabled || large;
     self.largeTypeScrollView.hidden = !large;
     self.largeTypeScrollView.frame = self.bounds;
     if (large) {
         CGFloat width = MAX(1, CGRectGetWidth(self.bounds) - 24);
-        NSString *text = [NSString stringWithFormat:@"%@\n%@%@\n%@\n%lu FCC %@\n%@",
+        NSString *text = [NSString stringWithFormat:@"%@\n%@%@\n%@\n%@\n%@",
                           [self capacityHeading], [self capacityPrimary],
                           self.fullCharge && !self.designCapacity ? @" mAh" : @"",
-                          [self observationWindow], (unsigned long)self.capacityObservations.count,
-                          _("points"),
+                          [self observationWindow],
+                          [NSString stringWithFormat:_("%lu capacity readings"), (unsigned long)self.capacityObservations.count],
                           self.designCapacity ? BALiveAge(self.capacityTimestamp) : _("Design unknown")];
         self.largeTypeLabel.text = text;
         self.largeTypeLabel.font = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody]
@@ -500,6 +701,15 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
         NSMutableArray *regions = [NSMutableArray array];
         [self renderCapacityWithRegions:regions];
         self.hitRegions = regions;
+        if (self.detailBrowsingEnabled) {
+            self.historyOverviewElement.accessibilityLabel = [self capacitySummary];
+            self.historyOverviewElement.accessibilityFrameInContainerSpace = CGRectMake(0, 0, self.bounds.size.width, MAX(0, self.historyPlotRect.origin.y));
+            NSMutableArray *elements = [NSMutableArray arrayWithObject:self.historyOverviewElement];
+            if (!self.historyRangeControl.hidden) [elements addObject:self.historyRangeControl];
+            if (!self.historyScrollView.hidden) [elements addObject:self.historyScrollView];
+            self.isAccessibilityElement = NO;
+            self.accessibilityElements = elements;
+        }
     }
 }
 
@@ -519,6 +729,7 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
     CGFloat width = CGRectGetWidth(self.bounds), height = CGRectGetHeight(self.bounds);
     if (width < 40 || height < 40) return;
     BOOL drawing = UIGraphicsGetCurrentContext() != NULL;
+    if (!drawing && self.detailBrowsingEnabled) [self prepareHistoryViewport];
     BOOL wide = self.cardSize == BAAnalyticsCardSize2x1 || self.cardSize == BAAnalyticsCardSize2x2;
     BOOL tall = self.cardSize == BAAnalyticsCardSize1x2 || self.cardSize == BAAnalyticsCardSize2x2;
     CGFloat padding = 10, contentWidth = width - 2 * padding;
@@ -546,7 +757,7 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
             BALiveLine(CGPointMake(padding + designWidth, gaugeY - 3), CGPointMake(padding + designWidth, gaugeY + gaugeHeight + 3), ink, 1.3, YES);
         }
     } else {
-        NSString *unknown = self.fullCharge ? _("Design unknown") : _("No validated FCC");
+        NSString *unknown = self.fullCharge ? _("Design unknown") : _("No capacity readings");
         gaugeHeight = BALiveTextHeight(unknown, contentWidth, caption);
         if (drawing) BALiveDrawText(unknown, CGRectMake(padding, gaugeY, contentWidth, gaugeHeight), caption, secondary, NSTextAlignmentNatural);
     }
@@ -554,15 +765,39 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
                                                                selection:[self currentSelection]
                                                       accessibilityLabel:[self capacitySummary]]];
 
-    NSString *countLabel = [NSString stringWithFormat:_("%lu FCC points · mAh"), (unsigned long)self.capacityObservations.count];
+    NSString *countLabel = self.capacityObservations.count ?
+        ((wide || tall) ? [NSString stringWithFormat:_("%lu readings · mAh"), (unsigned long)self.capacityObservations.count] : _("Capacity trend · mAh")) :
+        _("No capacity history");
     NSString *windowLabel = [self observationWindow];
+    if (self.detailBrowsingEnabled && self.capacityObservations.count) {
+        NSTimeInterval wholeSpan = [self.capacityObservations.lastObject.timestamp timeIntervalSinceDate:self.capacityObservations.firstObject.timestamp];
+        countLabel = self.historyWindowDuration > 0 && wholeSpan > self.historyWindowDuration ?
+            _("mAh · swipe to browse; tap to read") : _("mAh · tap a reading for its value");
+        if (self.historyViewportInitialized && self.capacityObservations.count > 1)
+            windowLabel = BALiveWindow([NSDate dateWithTimeIntervalSince1970:self.historyWindowStart],
+                [NSDate dateWithTimeIntervalSince1970:self.historyWindowStart + self.historyWindowDuration]);
+        countLabel = [self selectedHistoryReadingText] ?: countLabel;
+    }
     CGFloat countHeight = BALiveTextHeight(countLabel, contentWidth, caption);
     CGFloat windowHeight = BALiveTextHeight(windowLabel, contentWidth, caption);
     CGFloat footerHeight = countHeight + windowHeight + 2;
     CGFloat graphY = gaugeY + gaugeHeight + (tall ? 16 : 7);
+    if (self.detailBrowsingEnabled) {
+        BOOL showRange = self.capacityObservations.count > 1 &&
+            [self.capacityObservations.lastObject.timestamp timeIntervalSinceDate:self.capacityObservations.firstObject.timestamp] > 86400;
+        if (!drawing) {
+            self.historyRangeControl.hidden = !showRange;
+            self.historyRangeControl.frame = CGRectMake(padding, graphY, contentWidth, 30);
+        }
+        if (showRange) graphY += 38;
+    }
     CGFloat graphBottom = height - padding - footerHeight - 4;
-    CGFloat leftInset = wide && tall ? 38 : 0;
+    double margin = MAX(1, (self.preparedHistory.maximum - self.preparedHistory.minimum) * .15);
+    CGFloat axisWidth = MAX([BACapacityNumber(self.preparedHistory.maximum + margin, 0) sizeWithAttributes:@{NSFontAttributeName:caption}].width,
+                            [BACapacityNumber(MAX(0, self.preparedHistory.minimum - margin), 0) sizeWithAttributes:@{NSFontAttributeName:caption}].width) + 7;
+    CGFloat leftInset = wide && tall ? axisWidth : 0;
     CGRect graph = CGRectMake(padding + leftInset, graphY, contentWidth - leftInset, MAX(0, graphBottom - graphY));
+    if (!drawing && self.detailBrowsingEnabled) [self layoutHistoryScrollerInRect:graph];
     if (CGRectGetHeight(graph) >= 8) [self drawObservationGraph:graph showAxis:wide && tall regions:regions];
     if (drawing) BALiveDrawText(countLabel, CGRectMake(padding, height - padding - footerHeight, contentWidth, countHeight), caption, secondary, NSTextAlignmentNatural);
     if (drawing) BALiveDrawText(windowLabel, CGRectMake(padding, height - padding - windowHeight, contentWidth, windowHeight), caption, secondary, NSTextAlignmentNatural);
@@ -579,6 +814,18 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
     if (!points.count) { if (c) BALiveHatch(graph); return; }
     const BACapacitySample *samples = prepared.samples.bytes;
     NSTimeInterval first = samples[0].time, span = samples[points.count - 1].time - first;
+    NSRange visibleRange = NSMakeRange(0, points.count);
+    if (self.detailBrowsingEnabled && self.historyViewportInitialized && points.count > 1) {
+        first = self.historyWindowStart;
+        span = self.historyWindowDuration;
+        NSUInteger lower = BACapacitySampleBound(prepared, first, NO);
+        NSUInteger upper = BACapacitySampleBound(prepared, first + span, YES);
+        // Include a neighboring endpoint only so an existing trusted segment
+        // can be clipped at the viewport edge. Its original run ID is retained.
+        if (lower) lower--;
+        if (upper < points.count) upper++;
+        visibleRange = NSMakeRange(lower, upper - lower);
+    }
     double margin = MAX(1, (prepared.maximum - prepared.minimum) * .15);
     double low = MAX(0, prepared.minimum - margin), high = prepared.maximum + margin;
     CGFloat (^x)(NSTimeInterval) = ^CGFloat(NSTimeInterval time) {
@@ -591,19 +838,27 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
     NSUInteger columns = MAX(1, MIN(32, (NSUInteger)ceil(graph.size.width / 10)));
     if (self.displayWidth != columns) {
         self.displayWidth = columns;
-        self.displayIndices = BACapacityEnvelope(prepared, columns);
+        self.displayIndices = self.detailBrowsingEnabled ? BACapacityEnvelopeInRange(prepared, visibleRange, first, span, columns) :
+            BACapacityEnvelope(prepared, columns);
         NSUInteger markerBudget = MAX(4, MIN(12, (NSUInteger)floor(graph.size.width / 24)));
         self.displayMarkerIndices = BACapacityMarkers(prepared, self.displayIndices, markerBudget);
         NSMutableArray *boundaries = [NSMutableArray array]; NSUInteger lastColumn = NSNotFound;
-        for (NSUInteger i = 1; i < points.count; i++) if (samples[i].boundary) {
+        for (NSUInteger i = MAX((NSUInteger)1, visibleRange.location); i < NSMaxRange(visibleRange); i++) if (samples[i].boundary) {
             double fraction = span > 0 ? ((samples[i - 1].time + samples[i].time) * .5 - first) / span : .5;
+            if (fraction < 0 || fraction > 1) continue;
             NSUInteger column = MIN(columns - 1, (NSUInteger)MAX(0, floor(fraction * columns)));
             if (column != lastColumn) { [boundaries addObject:@(i)]; lastColumn = column; }
         }
         self.boundaryIndices = boundaries;
         const double *gaps = prepared.gaps.bytes;
         NSMutableArray *displayGaps = [NSMutableArray array];
-        for (NSUInteger i = 0; span > 0 && i < prepared.gaps.length / (2 * sizeof(double)); i++) {
+        NSUInteger gapCount = prepared.gaps.length / (2 * sizeof(double)), gapFirst = 0, gapEnd = gapCount;
+        while (gapFirst < gapEnd) {
+            NSUInteger middle = gapFirst + (gapEnd - gapFirst) / 2;
+            if (gaps[2 * middle + 1] <= first) gapFirst = middle + 1;
+            else gapEnd = middle;
+        }
+        for (NSUInteger i = gapFirst; span > 0 && i < gapCount && gaps[2 * i] < first + span; i++) {
             double a = MAX(0, MIN(1, (gaps[2 * i] - first) / span));
             double b = MAX(0, MIN(1, (gaps[2 * i + 1] - first) / span));
             if (b > a) [displayGaps addObject:[NSValue valueWithCGRect:CGRectMake(a, 0, b - a, 1)]];
@@ -648,11 +903,23 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
             NSUInteger index = number.unsignedIntegerValue; CGFloat bx = x((samples[index - 1].time + samples[index].time) * .5);
             CGContextMoveToPoint(c, bx, graph.origin.y); CGContextAddLineToPoint(c, bx, CGRectGetMaxY(graph));
         }
-        CGContextStrokePath(c); CGContextRestoreGState(c);
+        CGContextStrokePath(c);
+        if (self.detailBrowsingEnabled && self.selectedHistoryIndex < points.count) {
+            NSUInteger selected = self.selectedHistoryIndex;
+            CGFloat selectedX = x(samples[selected].time), selectedY = y(samples[selected].value);
+            CGContextSetLineDash(c, 0, NULL, 0);
+            CGContextSetStrokeColorWithColor(c, UIColor.compatLabelColor.CGColor);
+            CGContextMoveToPoint(c, selectedX, graph.origin.y); CGContextAddLineToPoint(c, selectedX, CGRectGetMaxY(graph));
+            CGContextStrokePath(c);
+            CGContextSetFillColorWithColor(c, UIColor.compatLabelColor.CGColor);
+            CGContextFillEllipseInRect(c, CGRectMake(selectedX - 3, selectedY - 3, 6, 6));
+        }
+        CGContextRestoreGState(c);
         if (showAxis) {
             UIFont *font = BALiveFont(11, UIFontWeightRegular);
-            BALiveDrawText(BACapacityNumber(high, 0), CGRectMake(10, graph.origin.y, 34, 16), font, UIColor.compatSecondaryLabelColor, NSTextAlignmentRight);
-            BALiveDrawText(BACapacityNumber(low, 0), CGRectMake(10, CGRectGetMaxY(graph) - 16, 34, 16), font, UIColor.compatSecondaryLabelColor, NSTextAlignmentRight);
+            CGFloat lineHeight = ceil(font.lineHeight), axisWidth = MAX(0, graph.origin.x - 17);
+            BALiveDrawText(BACapacityNumber(high, 0), CGRectMake(10, graph.origin.y, axisWidth, lineHeight), font, UIColor.compatSecondaryLabelColor, NSTextAlignmentRight);
+            BALiveDrawText(BACapacityNumber(low, 0), CGRectMake(10, CGRectGetMaxY(graph) - lineHeight, axisWidth, lineHeight), font, UIColor.compatSecondaryLabelColor, NSTextAlignmentRight);
         }
     }
     if (!regions || !self.detailEnabled) return;
@@ -690,7 +957,7 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
         if (design) context[@"designCapacityMilliampHours"] = design;
         if (cycles) context[@"cycleCount"] = cycles;
         BAAnalyticsDetailSelection *selection = BALiveSelection(self, @"capacity-point", @[point.identifier], metrics, point.timestamp, point.timestamp, context);
-        NSString *label = [NSString stringWithFormat:_("FCC %@ mAh, %@, %@"), BACapacityNumber(samples[index].value, 0),
+        NSString *label = [NSString stringWithFormat:_("Full charge %@ mAh, %@, %@"), BACapacityNumber(samples[index].value, 0),
             [self.pointFormatter stringFromDate:point.timestamp], design ? [NSString stringWithFormat:_("design %@ mAh"), BACapacityNumber(design.doubleValue, 0)] : _("design unknown")];
         [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(x(samples[index].time) - 4, y(samples[index].value) - 4, 8, 8) selection:selection accessibilityLabel:label]];
         if (index && samples[index].boundary) {
@@ -717,9 +984,11 @@ static NSArray<NSNumber *> *BACapacityMarkers(BACapacityPreparedHistory *prepare
 @interface BACapacityDetailViewController : BAAnalyticsDetailViewController
 @end
 @implementation BACapacityDetailViewController
+- (BOOL)allowsVisualizationInteraction { return YES; }
 - (UIView *)makeVisualizationView {
     BAAnalyticsCapacityCanvasView *view = [BAAnalyticsCapacityCanvasView new];
     view.cardSize = BAAnalyticsCardSize2x2; view.familyIdentifier = self.familyReport.family;
+    view.detailBrowsingEnabled = YES;
     view.capacitySelection = self.selection;
     view.latestReport = self.report;
     view.latestSnapshot = BACapacitySelectionUsesCurrentSnapshot(self.selection) ? self.snapshot : nil;

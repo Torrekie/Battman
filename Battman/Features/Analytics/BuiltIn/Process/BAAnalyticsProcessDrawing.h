@@ -46,6 +46,8 @@ FOUNDATION_EXPORT NSArray<BAAnalyticsCanvasHitRegion *> *BAProcessTimeSliceRegio
 
 // Draws only trusted per-metric pairs, plus observed points. Missing spans are
 // hatched and never joined. Point selections retain the exact source row/time.
+// Dense layout shares the prepared drawing evidence and caches bounded touch
+// regions; repeated layout does not scan all observations or intervals again.
 FOUNDATION_EXPORT NSArray<BAAnalyticsCanvasHitRegion *> *BAProcessTrace(BAAnalyticsCanvasView *view,
     NSArray<BAAnalyticsObservation *> *observations, NSArray<BAAnalyticsHistoryInterval *> *intervals,
     NSArray<BAAnalyticsHistoryGap *> *gaps, NSString *metric, NSString *unit,

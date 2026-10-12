@@ -127,7 +127,7 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     self.power = BALiveFiniteNumber([snapshot valueForMetricIdentifier:self.powerMetric]);
     self.temperature = BALiveFiniteNumber([snapshot valueForMetricIdentifier:BAAnalyticsMetricAverageTemperatureCelsius]);
     NSArray *definitions = @[
-        @[self.powerMetric, self.instantaneousPower ? _("Battery net") : _("Battery net · avg"), @"W", UIColor.compatBlueColor, @NO],
+        @[self.powerMetric, self.instantaneousPower ? _("Battery power") : _("Average battery power"), @"W", UIColor.compatBlueColor, @NO],
         @[self.currentMetric, self.instantaneousCurrent ? _("Current") : _("Average current"), @"mA", UIColor.compatBlueColor, @YES],
         @[BAAnalyticsMetricAverageTemperatureCelsius, _("Temperature"), @"°C", UIColor.compatOrangeColor, @NO]
     ];
@@ -191,7 +191,7 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         BALiveWindow(first, last), self.windowText, _("Positive is charge; negative is discharge.")];
     NSMutableArray *sampleCounts = [NSMutableArray array];
     for (BALiveTrack *track in self.tracks)
-        [sampleCounts addObject:[NSString stringWithFormat:@"%@ n=%lu", track.label, (unsigned long)track.points.count]];
+        [sampleCounts addObject:[NSString stringWithFormat:_("%@: %lu readings"), track.label, (unsigned long)track.points.count]];
     self.accessibilityLabel = [self.accessibilityLabel stringByAppendingFormat:@" %@", [sampleCounts componentsJoinedByString:@"; "]];
     if (snapshot.isCached) self.accessibilityLabel = [NSString stringWithFormat:_("Cached · %@"), self.accessibilityLabel];
     [self setNeedsLayout]; [self setNeedsDisplay];
@@ -208,6 +208,32 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
 - (NSString *)currentText { return self.current ? [NSString stringWithFormat:@"%+.2f A", self.current.doubleValue / 1000] : @"— A"; }
 - (NSString *)powerText { return self.power ? [NSString stringWithFormat:@"%+.1f W", self.power.doubleValue] : @"— W"; }
 - (NSString *)temperatureText { return self.temperature ? [NSString stringWithFormat:@"%.1f °C", self.temperature.doubleValue] : @"— °C"; }
+
+- (NSString *)currentDisplayText {
+    if (!self.compact) return self.instantaneousCurrent ? [self currentText] : [NSString stringWithFormat:_("%@ average"), [self currentText]];
+    if (!self.current) return _("Current unavailable");
+    NSString *value = [NSString stringWithFormat:@"%.2f A", fabs(self.current.doubleValue) / 1000];
+    if (self.current.doubleValue > 0) return [NSString stringWithFormat:_("Charging %@"), value];
+    if (self.current.doubleValue < 0) return [NSString stringWithFormat:_("Discharging %@"), value];
+    return [NSString stringWithFormat:_("No current flow · %@"), value];
+}
+
+- (NSString *)powerDirectionText {
+    if (!self.power) return _("Power");
+    return self.power.doubleValue > 0 ? _("Charging") :
+        self.power.doubleValue < 0 ? _("Discharging") : _("No net flow");
+}
+
+- (NSString *)displayWindowText {
+    if (!self.windowStart) return _("No short window");
+    NSString *duration = BALiveDuration([self.windowEnd timeIntervalSinceDate:self.windowStart]);
+    NSString *window = self.compact ? duration :
+        [NSString stringWithFormat:@"%@ · %@", BALiveWindow(self.windowStart, self.windowEnd), duration];
+    if (self.hasGaps) window = [window stringByAppendingString:_(" · gaps")];
+    if (self.cardSize == BAAnalyticsCardSize2x2)
+        window = [window stringByAppendingFormat:@"\n%@", _("Foreground · +charge / −discharge")];
+    return window;
+}
 
 - (BAAnalyticsDetailSelection *)currentSelectionForMetrics:(NSArray *)metrics {
     NSMutableDictionary *values = [NSMutableDictionary dictionary];
@@ -231,7 +257,7 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     [super layoutSubviews];
     if (self.tracks.count < 3) { self.socLabel.hidden = YES; self.hitRegions = @[]; return; }
     CGFloat width = CGRectGetWidth(self.bounds), height = CGRectGetHeight(self.bounds);
-    CGFloat padding = 12, contentWidth = MAX(0, width - padding * 2);
+    CGFloat padding = MIN(14, MAX(10, MIN(width, height) * .07)), contentWidth = MAX(0, width - padding * 2);
     self.compact = self.cardSize == BAAnalyticsCardSize1x1;
     BOOL large = BALiveLargeType(self);
     self.largeTypeSummary.hidden = !large;
@@ -249,9 +275,9 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
     BOOL tall = self.cardSize == BAAnalyticsCardSize2x2;
     UIFont *annotation = BALiveGraphicFont(11, 14, UIFontWeightRegular);
     CGFloat annotationHeight = ceil(annotation.lineHeight);
-    self.windowRect = CGRectMake(padding, height - padding - annotationHeight * (tall ? 2 : 1), contentWidth,
-                                  annotationHeight * (tall ? 2 : 1));
-    CGFloat footerTop = CGRectGetMinY(self.windowRect) - 6;
+    CGFloat footerHeight = BALiveTextHeight([self displayWindowText], contentWidth, annotation);
+    self.windowRect = CGRectMake(padding, height - padding - footerHeight, contentWidth, footerHeight);
+    CGFloat footerTop = CGRectGetMinY(self.windowRect) - (height < 160 ? 3 : 6);
     if (self.compact) {
         CGFloat batteryHeight = MIN(58, MAX(36, height * .37));
         // The localized average and its value need a full row. Keep age above
@@ -260,12 +286,15 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         if (ageHeight > 0) batteryHeight = MAX(32, batteryHeight - ageHeight);
         self.batteryRect = CGRectMake(padding, padding + ageHeight, contentWidth - 4, batteryHeight);
         self.ageRect = CGRectMake(padding, padding, contentWidth, annotationHeight);
-        CGFloat lineHeight = ceil(BALiveGraphicFont(13, 17, UIFontWeightMedium).lineHeight);
-        self.currentRect = CGRectMake(padding, CGRectGetMaxY(self.batteryRect) + 4, contentWidth, lineHeight);
-        self.temperatureRect = CGRectMake(padding, CGRectGetMaxY(self.currentRect) + 1, contentWidth, lineHeight);
+        UIFont *metricFont = BALiveGraphicFont(13, 17, UIFontWeightMedium);
+        CGFloat currentHeight = BALiveTextHeight([self currentDisplayText], contentWidth, metricFont);
+        CGFloat temperatureHeight = MAX(15, BALiveTextHeight([self temperatureText], contentWidth - 17, metricFont));
+        CGFloat metricGap = MIN(4, MAX(2, height * .02));
+        self.currentRect = CGRectMake(padding, CGRectGetMaxY(self.batteryRect) + metricGap, contentWidth, currentHeight);
+        self.temperatureRect = CGRectMake(padding, CGRectGetMaxY(self.currentRect) + 1, contentWidth, temperatureHeight);
         self.powerRect = CGRectZero;
         self.powerIdentityRect = CGRectZero;
-        CGFloat graphTop = CGRectGetMaxY(self.temperatureRect) + 4;
+        CGFloat graphTop = CGRectGetMaxY(self.temperatureRect) + metricGap;
         BALiveTrack *track = self.tracks[1];
         track.rect = !large && footerTop - graphTop >= 9 ? CGRectMake(padding, graphTop, contentWidth, footerTop - graphTop) : CGRectZero;
         self.tracks[0].rect = CGRectZero; self.tracks[2].rect = CGRectZero;
@@ -275,20 +304,28 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         self.batteryRect = CGRectMake(padding, padding + annotationHeight, batteryWidth - 4, headerHeight - annotationHeight - 8);
         self.ageRect = CGRectMake(padding, padding, batteryWidth, annotationHeight);
         CGFloat rightX = padding + batteryWidth + 12;
-        self.powerIdentityRect = CGRectMake(rightX, padding, width - padding - rightX, annotationHeight);
-        self.powerRect = CGRectMake(rightX, padding + annotationHeight + 1, width - padding - rightX, 36);
-        self.currentRect = CGRectMake(rightX, CGRectGetMaxY(self.powerRect) + 1, width - padding - rightX, 22);
-        self.temperatureRect = tall ? CGRectMake(padding, headerHeight + 8, contentWidth, 25) : CGRectZero;
+        CGFloat rightWidth = width - padding - rightX;
+        CGFloat identityHeight = MAX(annotationHeight, BALiveTextHeight([self powerDirectionText], rightWidth - 18, annotation));
+        self.powerIdentityRect = CGRectMake(rightX, padding, rightWidth, identityHeight);
+        CGFloat powerHeight = BALiveTextHeight([self powerText], rightWidth, BALiveGraphicFont(25, 30, UIFontWeightMedium));
+        self.powerRect = CGRectMake(rightX, CGRectGetMaxY(self.powerIdentityRect) + 1, rightWidth, powerHeight);
+        CGFloat currentHeight = BALiveTextHeight([self currentDisplayText], rightWidth, BALiveGraphicFont(13, 17, UIFontWeightMedium));
+        self.currentRect = CGRectMake(rightX, CGRectGetMaxY(self.powerRect) + 2, rightWidth, currentHeight);
+        self.temperatureRect = tall ? CGRectMake(padding, MAX(headerHeight + 8, CGRectGetMaxY(self.currentRect) + 5), contentWidth, 25) : CGRectZero;
         if (!tall) self.temperatureRect = CGRectMake(padding, CGRectGetMaxY(self.batteryRect) + 3, batteryWidth, annotationHeight + 2);
-        CGFloat graphTop = tall ? CGRectGetMaxY(self.temperatureRect) + 22 : MAX(CGRectGetMaxY(self.temperatureRect), CGRectGetMaxY(self.currentRect)) + 8;
+        CGFloat labelGap = annotationHeight + 7;
+        CGFloat graphTop = tall ? CGRectGetMaxY(self.temperatureRect) + labelGap : MAX(CGRectGetMaxY(self.temperatureRect), CGRectGetMaxY(self.currentRect)) + (height < 160 ? 4 : 8);
         CGFloat available = footerTop - graphTop;
+        CGFloat unitWidth = 0;
+        for (BALiveTrack *track in self.tracks)
+            unitWidth = MAX(unitWidth, ceil([track.unit sizeWithAttributes:@{NSFontAttributeName:annotation}].width) + 6);
         for (NSUInteger index = 0; index < self.tracks.count; index++) {
             BALiveTrack *track = self.tracks[index];
-            if ((!tall && index != 0) || (large && index != 0) || available < 15) track.rect = CGRectZero;
+            if ((!tall && index != 0) || (large && index != 0) || available < MAX(12, annotationHeight)) track.rect = CGRectZero;
             else {
                 NSUInteger rows = large || !tall ? 1 : 3;
-                CGFloat rowHeight = (available - (rows - 1) * 24) / rows;
-                track.rect = rowHeight >= 12 ? CGRectMake(padding + 26, graphTop + index * (rowHeight + 24), contentWidth - 26, rowHeight) : CGRectZero;
+                CGFloat rowHeight = (available - (rows - 1) * labelGap) / rows;
+                track.rect = rowHeight >= 12 ? CGRectMake(padding + unitWidth, graphTop + index * (rowHeight + labelGap), contentWidth - unitWidth, rowHeight) : CGRectZero;
             }
         }
         // A short wide card keeps the latest temperature even when its track
@@ -399,32 +436,26 @@ static NSString *BALiveDuration(NSTimeInterval seconds) {
         ageFont = [UIFont systemFontOfSize:MAX(9, small.pointSize * self.ageRect.size.width / ageWidth)];
     BALiveDrawText(age, self.ageRect, ageFont, muted, NSTextAlignmentRight);
     UIFont *metricFont = BALiveGraphicFont(13, 17, UIFontWeightMedium);
-    BALiveDrawText([NSString stringWithFormat:@"%@%@", self.instantaneousCurrent ? @"" : _("avg "), [self currentText]], self.currentRect, metricFont, UIColor.compatBlueColor, NSTextAlignmentRight);
+    BALiveDrawText([self currentDisplayText], self.currentRect, metricFont, UIColor.compatBlueColor, NSTextAlignmentRight);
     BAAnalyticsDrawGlyph(BAAnalyticsGlyphThermometer, CGRectMake(self.temperatureRect.origin.x, self.temperatureRect.origin.y + 2, 13, 15), UIColor.compatOrangeColor);
     CGRect temperatureTextRect = self.temperatureRect; temperatureTextRect.origin.x += 17; temperatureTextRect.size.width -= 17;
     BALiveDrawText([self temperatureText], temperatureTextRect, metricFont, UIColor.compatOrangeColor, NSTextAlignmentLeft);
     BALiveDrawText([self powerText], self.powerRect, BALiveGraphicFont(25, 30, UIFontWeightMedium), UIColor.compatBlueColor, NSTextAlignmentRight);
-    BAAnalyticsDrawGlyph(BAAnalyticsGlyphBolt, CGRectMake(CGRectGetMaxX(self.powerIdentityRect) - 14, self.powerIdentityRect.origin.y, 13, 14), muted);
+    if (!CGRectIsEmpty(self.powerIdentityRect)) {
+        CGRect directionRect = self.powerIdentityRect; directionRect.size.width -= 18;
+        BALiveDrawText([self powerDirectionText], directionRect, small, muted, NSTextAlignmentRight);
+        BAAnalyticsDrawGlyph(BAAnalyticsGlyphBolt, CGRectMake(CGRectGetMaxX(self.powerIdentityRect) - 13, self.powerIdentityRect.origin.y, 13, 14), muted);
+    }
     for (BALiveTrack *track in self.tracks) {
         [self drawTrack:track];
         if (!self.compact && !CGRectIsEmpty(track.rect)) {
-            BALiveDrawText(track.unit, CGRectMake(12, track.rect.origin.y, 26, 22), small, muted, NSTextAlignmentLeft);
+            CGFloat padding = CGRectGetMinX(self.windowRect);
+            BALiveDrawText(track.unit, CGRectMake(padding, track.rect.origin.y, track.rect.origin.x - padding - 4, ceil(small.lineHeight)), small, muted, NSTextAlignmentLeft);
             if (self.cardSize == BAAnalyticsCardSize2x2 && !BALiveLargeType(self))
-                BALiveDrawText([NSString stringWithFormat:@"%@ · n=%lu", track.label, (unsigned long)track.points.count], CGRectMake(track.rect.origin.x, track.rect.origin.y - 17, track.rect.size.width, 17), small, muted, NSTextAlignmentLeft);
+                BALiveDrawText(track.label, CGRectMake(track.rect.origin.x, track.rect.origin.y - ceil(small.lineHeight) - 4, track.rect.size.width, ceil(small.lineHeight)), small, muted, NSTextAlignmentLeft);
         }
     }
-    NSString *window = self.windowStart ? [NSString stringWithFormat:@"%@%@", BALiveDuration([self.windowEnd timeIntervalSinceDate:self.windowStart]),
-                  self.hasGaps ? _(" · gaps") : @""] : _("No short window");
-    if (self.compact && !CGRectIsEmpty(self.tracks[1].rect))
-        window = [window stringByAppendingFormat:@" · n=%lu", (unsigned long)self.tracks[1].points.count];
-    if (!self.compact) {
-        if (self.cardSize == BAAnalyticsCardSize2x1)
-            window = [window stringByAppendingFormat:@" · n=%lu", (unsigned long)self.tracks[0].points.count];
-        window = [NSString stringWithFormat:@"%@ · %@", BALiveWindow(self.windowStart, self.windowEnd), window];
-        if (self.cardSize == BAAnalyticsCardSize2x2)
-            window = [window stringByAppendingFormat:@"\n%@", _("Foreground · +charge / −discharge")];
-    }
-    BALiveDrawText(window, self.windowRect, small, muted, NSTextAlignmentLeft);
+    BALiveDrawText([self displayWindowText], self.windowRect, small, muted, NSTextAlignmentLeft);
 }
 @end
 

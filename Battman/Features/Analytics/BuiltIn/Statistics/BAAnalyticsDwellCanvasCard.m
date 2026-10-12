@@ -18,7 +18,7 @@
     UIColor *label=[UIColor compatLabelColor], *muted=[UIColor compatSecondaryLabelColor];
     UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleCaption1] scaledFontForFont:[UIFont systemFontOfSize:12] maximumPointSize:16];
     CGFloat w=self.bounds.size.width, line=ceil(font.lineHeight), top=line+24;
-    BASText(self.caption ?: _("Observed dwell · h"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
+    BASText(self.caption ?: _("Time by battery level · h"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
     double scale=0; for (NSDictionary *bin in self.bins) scale=MAX(scale,[bin[@"seconds"] doubleValue]);
     CGFloat row=MAX(40,MIN(48,(self.bounds.size.height-top-96)/MAX(1,self.bins.count)));
     CGFloat labelWidth=MIN(102,w*.31), valueWidth=MIN(78,w*.24), left=16+labelWidth+8;
@@ -62,7 +62,7 @@
     if (joint) {
         NSNumber *socIndex=nil;
         for (NSDictionary *bin in analysis[@"jointBins"]) if ([bin[@"label"] isEqualToString:chart.selectedBin]) { socIndex=bin[@"socIndex"]; break; }
-        if (socIndex) chart.caption=[NSString stringWithFormat:_("SOC %@ · h"),[NSString stringWithFormat:@"%ld–%ld%%",(long)socIndex.integerValue*20,(long)(socIndex.integerValue+1)*20]];
+        if (socIndex) chart.caption=[NSString stringWithFormat:_("Battery level %@ · h"),[NSString stringWithFormat:@"%ld–%ld%%",(long)socIndex.integerValue*20,(long)(socIndex.integerValue+1)*20]];
         NSArray *temperatures=@[@"<25 °C",@"25–30 °C",@"30–35 °C",@"≥35 °C"];
         for (NSDictionary *bin in analysis[@"jointBins"]) if ([bin[@"socIndex"] isEqual:socIndex]) {
             NSMutableDictionary *display=[bin mutableCopy]; display[@"displayLabel"]=temperatures[[bin[@"tempIndex"] unsignedIntegerValue]]; [bins addObject:display];
@@ -80,14 +80,14 @@
 - (NSArray<NSDictionary *> *)summaryRows {
     NSDictionary *analysis=[self dwellAnalysis], *context=self.selection.context;
     NSMutableArray *rows=[NSMutableArray array];
-    if (context[@"bin"]) [rows addObject:@{@"title":_("Selected range"),@"value":[context[@"bin"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("SOC")]}];
+    if (context[@"bin"]) [rows addObject:@{@"title":_("Selected range"),@"value":[context[@"bin"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("Battery level")]}];
     if (context[@"validMinutes"]) [rows addObject:@{@"title":_("Dwell time"),@"value":BASTime([context[@"validMinutes"] doubleValue]*60)}];
     if (context[@"shareOfValidCoverage"]) [rows addObject:@{@"title":_("Share of observed time"),@"value":[NSString stringWithFormat:@"%.1f%%",[context[@"shareOfValidCoverage"] doubleValue]*100]}];
     if (context[@"connectedMinutes"]) [rows addObject:@{@"title":_("Connected time"),@"value":BASTime([context[@"connectedMinutes"] doubleValue]*60)}];
     if (context[@"unpluggedMinutes"]) [rows addObject:@{@"title":_("Unplugged time"),@"value":BASTime([context[@"unpluggedMinutes"] doubleValue]*60)}];
     if (context[@"unknownStateMinutes"]) [rows addObject:@{@"title":_("Unknown connection time"),@"value":BASTime([context[@"unknownStateMinutes"] doubleValue]*60)}];
-    [rows addObject:@{@"title":_("Observed SOC"),@"value":BASTime([analysis[@"socSeconds"] doubleValue])}];
-    [rows addObject:@{@"title":_("Missing SOC"),@"value":BASTime([analysis[@"missingSOCSeconds"] doubleValue])}];
+    [rows addObject:@{@"title":_("Battery level recorded"),@"value":BASTime([analysis[@"socSeconds"] doubleValue])}];
+    [rows addObject:@{@"title":_("Battery level missing"),@"value":BASTime([analysis[@"missingSOCSeconds"] doubleValue])}];
     [rows addObject:@{@"title":_("Method"),@"value":_("Time weighted across trusted sample pairs. Missing time is excluded from bins; the distribution is not a battery damage score.")}];
     return rows;
 }
@@ -111,29 +111,34 @@
 @end
 
 id<BAAnalyticsCard> BAAnalyticsCreateDwellCanvasCard(void) {
-    return [[BASDwellCard alloc] initWithIdentifier:@"com.torrekie.battman.analytics.dwell" displayName:_("SOC dwell") familyIdentifier:BAAnalyticsFamilyDwell supportedSizes:BAAnalyticsCardSizeMask1x2|BAAnalyticsCardSizeMask2x2 defaultSize:BAAnalyticsCardSize1x2];
+    return [[BASDwellCard alloc] initWithIdentifier:@"com.torrekie.battman.analytics.dwell" displayName:_("Time by battery level") familyIdentifier:BAAnalyticsFamilyDwell supportedSizes:BAAnalyticsCardSizeMask1x2|BAAnalyticsCardSizeMask2x2 defaultSize:BAAnalyticsCardSize1x2];
 }
 @implementation BASDwellView
 - (NSArray *)summaryRows {
     if (!self.analysis) return @[];
     NSMutableArray *rows = [NSMutableArray array];
     [rows addObject:@{@"text":BASCoverage(self.analysis, @"socSeconds", @"missingSOCSeconds"), @"kind":@"coverage", @"item":@{}}];
-    for (NSDictionary *bin in [self.analysis[@"socBins"] reverseObjectEnumerator]) [rows addObject:@{@"text":[NSString stringWithFormat:_("SOC %@ · %@"),bin[@"label"],BASTime([bin[@"seconds"] doubleValue])],@"kind":@"soc-bin",@"item":bin,@"metrics":@[BAAnalyticsHistorySOCPercent]}];
-    [rows addObject:@{@"text":[NSString stringWithFormat:_("SOC × °C · %@"), BASCoverage(self.analysis,@"jointSeconds",@"missingJointSeconds")],@"kind":@"joint-coverage",@"item":@{}}];
-    for (NSDictionary *bin in self.analysis[@"jointBins"]) [rows addObject:@{@"text":[NSString stringWithFormat:@"%@ · %@",[bin[@"label"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("SOC")],BASTime([bin[@"seconds"] doubleValue])],@"kind":@"soc-temperature-bin",@"item":bin,@"metrics":@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]}];
+    for (NSDictionary *bin in [self.analysis[@"socBins"] reverseObjectEnumerator]) [rows addObject:@{@"text":[NSString stringWithFormat:_("Battery level %@ · %@"),bin[@"label"],BASTime([bin[@"seconds"] doubleValue])],@"kind":@"soc-bin",@"item":bin,@"metrics":@[BAAnalyticsHistorySOCPercent]}];
+    [rows addObject:@{@"text":[NSString stringWithFormat:_("Battery level and temperature · %@"), BASCoverage(self.analysis,@"jointSeconds",@"missingJointSeconds")],@"kind":@"joint-coverage",@"item":@{}}];
+    for (NSDictionary *bin in self.analysis[@"jointBins"]) [rows addObject:@{@"text":[NSString stringWithFormat:@"%@ · %@",[bin[@"label"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("Battery level")],BASTime([bin[@"seconds"] doubleValue])],@"kind":@"soc-temperature-bin",@"item":bin,@"metrics":@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]}];
     return rows;
 }
 - (void)drawStatistics:(NSMutableArray *)hits {
     CGFloat w = self.bounds.size.width, h = self.bounds.size.height;
     UIFont *font = BASFont(11); CGFloat line = ceil(font.lineHeight);
     BOOL matrix = self.cardSize == BAAnalyticsCardSize2x2 && [self.analysis[@"jointSeconds"] doubleValue] > 0;
-    NSString *identity = matrix ? _("SOC % × °C · h") : _("SOC % · h");
-    BASText(identity, CGRectMake(12,10,w-24,line+2), BASFont(13),[UIColor compatLabelColor],NSTextAlignmentLeft);
-    BASText(BASWindow(self.familyReport.window),CGRectMake(12,14+line,w-24,line*2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
-    CGFloat top = 20+line*3, footer = line*4+26;
+    NSString *identity = matrix ? _("Battery level (%) × temperature") : _("Battery level · time");
+    UIFont *titleFont = BASFont(13);
+    CGFloat titleHeight = BASTextHeight(identity,w-24,titleFont);
+    BASText(identity, CGRectMake(12,10,w-24,titleHeight), titleFont,[UIColor compatLabelColor],NSTextAlignmentLeft);
+    NSString *window = BASWindow(self.familyReport.window);
+    CGFloat windowHeight = BASTextHeight(window,w-24,font), windowY = 14+titleHeight;
+    BASText(window,CGRectMake(12,windowY,w-24,windowHeight),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+    CGFloat top = windowY+windowHeight+10, footer = line*5+26;
     if (matrix) {
         CGFloat left = 56, cw = (w-left-12)/5, ch = MAX(8,(h-top-footer-line-8)/4);
         NSArray *temps = @[@"<25",@"25–30",@"30–35",@"≥35"];
+        BASText(@"°C",CGRectMake(10,top,44,line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
         // Full ranges remain visible; half-open boundary semantics are in detail/VO.
         for (NSInteger j=0;j<5;j++) BASText([NSString stringWithFormat:@"%ld–%ld",(long)j*20,(long)(j+1)*20],CGRectMake(left+j*cw,top,cw,line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentCenter);
         top += line+6;
@@ -144,34 +149,39 @@ id<BAAnalyticsCard> BAAnalyticsCreateDwellCanvasCard(void) {
                 NSDictionary *bin = self.analysis[@"jointBins"][(NSUInteger)(i*5+j)]; double seconds = [bin[@"seconds"] doubleValue];
                 CGRect cell = CGRectMake(left+j*cw,top+i*ch,cw-3,ch-3);
                 BASFill(cell, [[UIColor compatOrangeColor] colorWithAlphaComponent:max > 0 ? .08+.7*seconds/max : .08]);
-                if (seconds == 0) BASLine(CGPointMake(CGRectGetMidX(cell)-2,CGRectGetMidY(cell)),CGPointMake(CGRectGetMidX(cell)+2,CGRectGetMidY(cell)),[UIColor compatSecondaryLabelColor],1);
-                [self addHit:hits rect:cell kind:@"soc-temperature-bin" item:bin metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius] label:[NSString stringWithFormat:@"%@, %@",[bin[@"label"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("SOC")],BASTime(seconds)]];
+                if (seconds == 0) BASText(@"0",CGRectMake(cell.origin.x,CGRectGetMidY(cell)-line/2,cell.size.width,line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentCenter);
+                [self addHit:hits rect:cell kind:@"soc-temperature-bin" item:bin metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius] label:[NSString stringWithFormat:@"%@, %@",[bin[@"label"] stringByReplacingOccurrencesOfString:@"SOC" withString:_("Battery level")],BASTime(seconds)]];
             }
         }
         CGFloat y = h-footer;
-        BASText([NSString stringWithFormat:_("0–%.2f h"), max/3600],CGRectMake(12,y,w-24,line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+        NSString *legend = [NSString stringWithFormat:_("Stronger color: more time · up to %@"),BASTime(max)];
+        BASText(legend,CGRectMake(12,y,w-24,line*2+4),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
     } else {
         CGFloat row = MAX(20,(h-top-footer)/5); double max = 0;
         for (NSDictionary *bin in self.analysis[@"socBins"]) max = MAX(max,[bin[@"seconds"] doubleValue]);
         for (NSInteger k=0;k<5;k++) {
             NSDictionary *bin = self.analysis[@"socBins"][(NSUInteger)(4-k)]; double seconds = [bin[@"seconds"] doubleValue]; CGFloat y = top+k*row;
-            BASText(bin[@"label"],CGRectMake(12,y,w-24,line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+            NSString *duration = BASTime(seconds);
+            CGFloat durationWidth = ceil([duration sizeWithAttributes:@{NSFontAttributeName:font}].width)+2;
+            BASText(bin[@"label"],CGRectMake(12,y,MAX(1,w-32-durationWidth),line+2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+            BASText(duration,CGRectMake(w-12-durationWidth,y,durationWidth,line+2),font,[UIColor compatLabelColor],NSTextAlignmentRight);
             CGRect track = CGRectMake(12,y+line+3,w-24,MAX(5,row-line-8)); if ([self.analysis[@"socSeconds"] doubleValue] > 0) BASFill(track,[UIColor tertiaryCompatFillColor]); else BASHatch(track);
             if (max > 0 && seconds > 0) BASFill(CGRectMake(track.origin.x,track.origin.y,track.size.width*seconds/max,track.size.height),[UIColor compatGreenColor]);
-            [self addHit:hits rect:CGRectMake(8,y-3,w-16,row) kind:@"soc-bin" item:bin metrics:@[BAAnalyticsHistorySOCPercent] label:[NSString stringWithFormat:_("SOC %@, %@"),bin[@"label"],BASTime(seconds)]];
+            [self addHit:hits rect:CGRectMake(8,y-3,w-16,row) kind:@"soc-bin" item:bin metrics:@[BAAnalyticsHistorySOCPercent] label:[NSString stringWithFormat:_("Battery level %@, %@"),bin[@"label"],BASTime(seconds)]];
         }
     }
     if (!matrix) {
-        double maxSOCSeconds=0; for (NSDictionary *bin in self.analysis[@"socBins"]) maxSOCSeconds=MAX(maxSOCSeconds,[bin[@"seconds"] doubleValue]);
-        NSString *scale = [self.analysis[@"socSeconds"] doubleValue] > 0 ? [NSString stringWithFormat:_("0–%.2f h"),maxSOCSeconds/3600] : _("SOC unavailable");
+        NSString *scale = [self.analysis[@"socSeconds"] doubleValue] > 0 ? _("Bar length = recorded time") : _("Battery level unavailable");
         if (self.cardSize == BAAnalyticsCardSize2x2 && [self.analysis[@"jointSeconds"] doubleValue] <= 0) scale = [NSString stringWithFormat:@"%@ · %@",scale,_("Temperature unavailable")];
-        BASText(scale,CGRectMake(12,h-footer,w-24,line+3),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+        BASText(scale,CGRectMake(12,h-footer,w-24,line*2+4),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
     }
     CGFloat y = h-line*2-14; double total = [self.analysis[@"windowSeconds"] doubleValue];
     NSString *key = matrix ? @"jointSeconds" : @"socSeconds", *missing = matrix ? @"missingJointSeconds" : @"missingSOCSeconds";
     double valid = [self.analysis[key] doubleValue]; CGRect rail = CGRectMake(12,y-10,w-24,6); BASHatch(rail);
     if (total > 0 && valid > 0) BASFill(CGRectMake(12,y-10,(w-24)*MIN(1,valid/total),6),[UIColor compatGreenColor]);
-    BASText(BASCoverage(self.analysis,key,missing),CGRectMake(12,y,w-24,line*2+4),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+    NSString *coverage = BASCoverage(self.analysis,key,missing);
+    if (self.cardSize == BAAnalyticsCardSize1x2) coverage = [coverage stringByReplacingOccurrencesOfString:@" · " withString:@"\n"];
+    BASText(coverage,CGRectMake(12,y,w-24,line*2+4),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
     [self addHit:hits rect:CGRectMake(8,y-14,w-16,h-y+10) kind:matrix?@"joint-coverage":@"coverage" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:BASCoverage(self.analysis,key,missing)];
 }
 @end

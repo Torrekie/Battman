@@ -12,11 +12,21 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
     return queue;
 }
 
+@interface BAAnalyticsCanvasInputs : NSObject
+@property (nonatomic, strong) BAAnalyticsReport *report;
+@property (nonatomic, strong) BAAnalyticsMetricSnapshot *snapshot;
+@property (nonatomic, copy) NSString *contextIdentifier;
+@end
+@implementation BAAnalyticsCanvasInputs
+@end
+
 @interface BAAnalyticsCanvasCard () <BAAnalyticsHistoryServiceSubscriber>
 @property (nonatomic, strong, readwrite, nullable) BAAnalyticsMetricSnapshot *latestSnapshot;
 @property (nonatomic, strong, readwrite, nullable) BAAnalyticsReport *latestReport;
 @property (nonatomic, strong) NSHashTable<BAAnalyticsCanvasView *> *mountedViews;
 @property (nonatomic, strong) NSHashTable<BAAnalyticsCanvasView *> *visibleViews;
+@property (nonatomic, strong) NSMapTable<BAAnalyticsCanvasView *, BAAnalyticsCanvasInputs *> *appliedInputs;
+@property (nonatomic, strong) NSHashTable<BAAnalyticsCanvasView *> *pendingViews;
 @property (nonatomic) BOOL historySubscribed;
 - (void)updateView:(BAAnalyticsCanvasView *)view;
 @end
@@ -38,6 +48,8 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
         defaultSize : BAAnalyticsCardDefaultSizeForMask(_supportedAnalyticsCardSizes);
     _mountedViews = [NSHashTable weakObjectsHashTable];
     _visibleViews = [NSHashTable weakObjectsHashTable];
+    _appliedInputs = [NSMapTable weakToStrongObjectsMapTable];
+    _pendingViews = [NSHashTable weakObjectsHashTable];
     _historyService = [BAAnalyticsHistoryService sharedService];
     return self;
 }
@@ -68,6 +80,7 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
     NSAssert([NSThread isMainThread], @"Canvas creation is main-thread only.");
     BAAnalyticsCanvasView *view = [self makeCanvasView];
     view.familyIdentifier = self.familyIdentifier;
+    view.cardDisplayName = self.analyticsCardDisplayName;
     view.detailEnabled = self.supportsDetails;
     view.latestSnapshot = self.latestSnapshot;
     view.latestReport = self.latestReport;
@@ -86,14 +99,61 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
 }
 
 - (void)updateView:(BAAnalyticsCanvasView *)view {
+    if (self.presentationUpdatesDeferred) {
+        [self.pendingViews addObject:view];
+        return;
+    }
+    BOOL historical = [self.familyIdentifier isEqual:BAAnalyticsFamilySession] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyDischarge] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyEvents] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyPath] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyDwell] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyCompare] ||
+        [self.familyIdentifier isEqual:BAAnalyticsFamilyRhythm];
+    // Some views keep displaying the previous report while a worker prepares
+    // the next one. Compare delivered inputs, not that intentionally older view.
+    BAAnalyticsCanvasInputs *inputs = [self.appliedInputs objectForKey:view];
+    NSString *context = [self presentationContextIdentifier];
+    BOOL sameContext = inputs.contextIdentifier == context || [inputs.contextIdentifier isEqual:context];
+    BOOL changed = !inputs || inputs.report != self.latestReport ||
+        (!historical && inputs.snapshot != self.latestSnapshot) || !sameContext;
     view.familyIdentifier = self.familyIdentifier;
-    view.detailEnabled = self.supportsDetails;
+    view.cardDisplayName = self.analyticsCardDisplayName;
     view.latestSnapshot = self.latestSnapshot;
-    view.latestReport = self.latestReport;
-    [self updateCanvasView:view];
+    if (changed) {
+        if (!inputs) {
+            inputs = [BAAnalyticsCanvasInputs new];
+            [self.appliedInputs setObject:inputs forKey:view];
+        }
+        inputs.report = self.latestReport;
+        inputs.snapshot = self.latestSnapshot;
+        inputs.contextIdentifier = context;
+        view.detailEnabled = self.supportsDetails;
+        view.latestReport = self.latestReport;
+        [self updateCanvasView:view];
+    }
     // Each built-in invalidates its own changed presentation. In particular,
     // a completed statistical canvas must not repaint merely because the host
     // repeats configuration or visibility delivery with the same evidence.
+}
+
+- (NSString *)presentationContextIdentifier { return nil; }
+
+- (void)invalidateCanvasPresentation:(BAAnalyticsCanvasView *)view {
+    [self.appliedInputs removeObjectForKey:view];
+    [self updateView:view];
+}
+
+- (void)setPresentationUpdatesDeferred:(BOOL)deferred {
+    NSAssert([NSThread isMainThread], @"Canvas refresh scheduling is main-thread only.");
+    if (_presentationUpdatesDeferred == deferred) return;
+    _presentationUpdatesDeferred = deferred;
+    if (!deferred) {
+        NSArray *pending = self.pendingViews.allObjects;
+        [self.pendingViews removeAllObjects];
+        for (BAAnalyticsCanvasView *view in pending)
+            if ([self.visibleViews containsObject:view]) [self updateView:view];
+    }
 }
 
 - (void)updateCanvasView:(BAAnalyticsCanvasView *)view {
@@ -109,16 +169,7 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
         BAAnalyticsCanvasView *view = (id)contentView;
         // Retain the current snapshot for a later frozen detail without rebuilding
         // static historical graphs on every five-second live acquisition.
-        view.latestSnapshot = snapshot;
-        BOOL historical = [self.familyIdentifier isEqual:BAAnalyticsFamilySession] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyDischarge] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyEvents] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyPath] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyDwell] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyCompare] ||
-            [self.familyIdentifier isEqual:BAAnalyticsFamilyRhythm];
-        if (!historical)
-            [self updateView:view];
+        [self updateView:view];
     }
 }
 
@@ -166,8 +217,13 @@ dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void) {
     NSAssert([NSThread isMainThread], @"Canvas memory-pressure handling is main-thread only.");
     self.latestReport = nil;
     self.latestSnapshot = nil;
+    [self.appliedInputs removeAllObjects];
+    [self.pendingViews removeAllObjects];
+    BOOL deferred = _presentationUpdatesDeferred;
+    _presentationUpdatesDeferred = NO;
     for (BAAnalyticsCanvasView *view in self.mountedViews.allObjects)
         [self updateView:view];
+    _presentationUpdatesDeferred = deferred;
 }
 
 - (UIColor *)analyticsCardBackgroundColor { return [UIColor compatBackgroundColor]; }

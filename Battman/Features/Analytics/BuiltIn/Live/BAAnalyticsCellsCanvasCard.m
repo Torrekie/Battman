@@ -327,6 +327,10 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
 @property (nonatomic, copy) NSString *timestampText;
 @property (nonatomic, copy) NSString *ageText;
 @property (nonatomic, copy) NSString *windowText;
+@property (nonatomic, copy) NSString *displayCountText;
+@property (nonatomic, copy) NSString *displayTimestampText;
+@property (nonatomic) CGFloat legendLineHeight;
+@property (nonatomic) CGFloat legendWidth;
 @property (nonatomic, strong) BALiveSummaryScrollView *largeTypeSummary;
 @property (nonatomic, strong) BAAnalyticsFamilyReport *requestedFamily;
 @property (nonatomic, strong) BAAnalyticsReport *incomingReport;
@@ -474,11 +478,11 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
     for (NSNumber *value in values.allValues) { low = MIN(low, value.doubleValue); high = MAX(high, value.doubleValue); }
     self.observedDelta = values.count >= 2 ? @(high - low) : nil;
     self.countText = self.cellMetrics.count ?
-        [NSString stringWithFormat:_("%lu valid cells"), (unsigned long)values.count] :
+        [NSString stringWithFormat:_("%lu of %lu cells"), (unsigned long)values.count, (unsigned long)self.cellMetrics.count] :
         _("Cell count unavailable");
-    self.summaryText = self.observedDelta ? [NSString stringWithFormat:_("Δobs %.0f"), self.observedDelta.doubleValue] :
+    self.summaryText = self.observedDelta ? [NSString stringWithFormat:_("Cell spread %.0f mV"), self.observedDelta.doubleValue] :
         (values.count == 1 && self.cellMetrics.count == 1 ? _("Single cell") :
-         values.count ? _("Group delta unavailable") : _("No readings"));
+         values.count ? _("Too few readings to compare") : _("No readings"));
     NSDate *readingDate = self.displayingCurrentCells ? self.currentCellSnapshot.timestamp : latest.timestamp;
     self.timestampText = readingDate ? [self.pointFormatter stringFromDate:readingDate] : _("Time/age unavailable");
     self.ageText = BALiveAge(readingDate);
@@ -540,11 +544,37 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
         value ? [NSString stringWithFormat:@"%.0f mV", value.doubleValue] : _("unavailable"), observation.timestamp ? [self.pointFormatter stringFromDate:observation.timestamp] : _("Historical time unavailable")];
 }
 
+- (void)layoutFooterWithFont:(UIFont *)font inset:(CGFloat)inset {
+    CGFloat width = MAX(0, self.bounds.size.width - 2 * inset);
+    CGFloat bottom = self.bounds.size.height - inset;
+    CGFloat windowHeight = BALiveTextHeight(self.windowText, width, font);
+    self.windowRect = CGRectMake(inset, bottom - windowHeight, width, windowHeight);
+    bottom = CGRectGetMinY(self.windowRect) - 2;
+    if (!self.displayingCurrentCells && !self.compact && self.cardSize != BAAnalyticsCardSize2x1) {
+        CGFloat ageHeight = BALiveTextHeight(self.ageText, width, font);
+        self.ageRect = CGRectMake(inset, bottom - ageHeight, width, ageHeight);
+        bottom = CGRectGetMinY(self.ageRect) - 2;
+    } else self.ageRect = CGRectZero;
+    CGFloat timeHeight = BALiveTextHeight(self.displayTimestampText, width, font);
+    self.timestampRect = timeHeight ? CGRectMake(inset, bottom - timeHeight, width, timeHeight) : CGRectZero;
+    if (timeHeight) bottom = CGRectGetMinY(self.timestampRect) - 2;
+    CGFloat countHeight = BALiveTextHeight(self.displayCountText, width, font);
+    self.countRect = CGRectMake(inset, bottom - countHeight, width, countHeight);
+}
+
+- (NSString *)displayCountForVisibleCount:(NSUInteger)count {
+    if (count >= self.cellMetrics.count) return self.countText;
+    return self.displayingCurrentCells ?
+        [NSString stringWithFormat:_("%lu of %lu cells shown"), (unsigned long)count, (unsigned long)self.cellMetrics.count] :
+        [NSString stringWithFormat:_("%lu cells shown · %lu in details"), (unsigned long)count, (unsigned long)(self.cellMetrics.count - count)];
+}
+
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.compact = self.cardSize == BAAnalyticsCardSize1x1;
     self.largeType = BALiveLargeType(self);
-    CGFloat width = CGRectGetWidth(self.bounds), height = CGRectGetHeight(self.bounds), inset = 10;
+    CGFloat width = CGRectGetWidth(self.bounds), height = CGRectGetHeight(self.bounds);
+    CGFloat inset = MIN(14, MAX(10, MIN(width, height) * .06));
     CGFloat contentWidth = MAX(0, width - 2 * inset);
     self.largeTypeSummary.hidden = !self.largeType;
     self.largeTypeSummary.frame = self.bounds;
@@ -559,76 +589,68 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
     }
     UIFont *small = BACellsAnnotationFont(11, UIFontWeightRegular);
     CGFloat row = ceil(small.lineHeight) + 2;
-    CGFloat top = 8;
-    if (self.largeType) {
-        // Keep the Dynamic Type count large; remove secondary tracks first.
-        self.summaryText = [NSString stringWithFormat:@"%lu", (unsigned long)self.latestValues.count];
-        CGFloat mainHeight = BALiveTextHeight(self.summaryText, contentWidth * .6, BALiveFont(20, UIFontWeightSemibold));
-        self.summaryRect = CGRectMake(inset, top, contentWidth * .6, MIN(mainHeight, height - 4 * row - 16));
-        self.unitRect = CGRectMake(inset + contentWidth * .6, top, contentWidth * .4, MAX(row, self.summaryRect.size.height));
-        top = CGRectGetMaxY(self.summaryRect) + 4;
-    } else {
-        self.summaryText = self.observedDelta ? [NSString stringWithFormat:_("Δobs %.0f"), self.observedDelta.doubleValue] :
-            (self.latestValues.count == 1 && self.cellMetrics.count == 1 ? _("Single cell") :
-             self.latestValues.count ? _("Group delta unavailable") : _("No readings"));
-        UIFont *summary = BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold);
-        CGFloat headerHeight = MAX(row, BALiveTextHeight(self.summaryText, contentWidth - 26, summary));
-        self.unitRect = CGRectMake(inset, top, 25, headerHeight);
-        self.summaryRect = CGRectMake(inset + 26, top, contentWidth - 26, headerHeight);
-        top += headerHeight + 6;
-    }
+    CGFloat top = inset;
+    UIFont *summary = BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold);
+    CGFloat unitWidth = self.observedDelta ? 0 : ceil([@"mV" sizeWithAttributes:@{NSFontAttributeName:small}].width) + 6;
+    CGFloat headerHeight = MAX(row, BALiveTextHeight(self.summaryText, contentWidth - unitWidth, summary));
+    self.summaryRect = CGRectMake(inset, top, contentWidth - unitWidth, headerHeight);
+    self.unitRect = unitWidth ? CGRectMake(width - inset - unitWidth, top, unitWidth, headerHeight) : CGRectZero;
+    top += headerHeight + 6;
+    self.displayCountText = self.countText;
     if (self.displayingCurrentCells) {
         // Current values use a separate canvas: they are a same-acquisition
         // comparison, never points inserted into the six-hour history window.
         NSString *timeAndAge = self.currentCellSnapshot ? [NSString stringWithFormat:@"%@ · %@", BALiveTime(self.currentCellSnapshot.timestamp), self.ageText] : _("Time/age unavailable");
-        CGFloat provenanceHeight = MAX(row, BALiveTextHeight(self.windowText, contentWidth, small));
-        CGFloat timeHeight = MAX(row, BALiveTextHeight(timeAndAge, contentWidth, small));
-        CGFloat countHeight = MAX(row, BALiveTextHeight(self.countText, contentWidth, small));
-        self.windowRect = CGRectMake(inset, height - provenanceHeight - 4, contentWidth, provenanceHeight);
-        self.timestampRect = CGRectMake(inset, CGRectGetMinY(self.windowRect) - timeHeight, contentWidth, timeHeight);
-        self.countRect = CGRectMake(inset, CGRectGetMinY(self.timestampRect) - countHeight, contentWidth, countHeight);
-        self.ageRect = CGRectZero;
-        self.plotRect = CGRectMake(inset, top, contentWidth, MAX(0, CGRectGetMinY(self.countRect) - top - 5));
-        if (self.plotRect.size.height < 26 && self.latestValues.count) {
+        self.displayTimestampText = self.compact ? self.ageText : timeAndAge;
+        NSArray *currentMetrics = [self.cellMetrics sortedArrayUsingComparator:^NSComparisonResult(NSString *a, NSString *b) {
+            BOOL aAvailable = self.latestValues[a] != nil, bAvailable = self.latestValues[b] != nil;
+            if (aAvailable != bAvailable) return aAvailable ? NSOrderedAscending : NSOrderedDescending;
+            return [BACellIndex(a) compare:BACellIndex(b)];
+        }];
+        CGFloat minimumRowHeight = MAX(26, ceil(BACellsAnnotationFont(15, UIFontWeightSemibold).lineHeight) + 7);
+        for (NSUInteger pass = 0; pass < 3; pass++) {
+            [self layoutFooterWithFont:small inset:inset];
+            self.plotRect = CGRectMake(inset, top, contentWidth, MAX(0, CGRectGetMinY(self.countRect) - top - 5));
+            NSUInteger capacity = MAX(1, (NSUInteger)floor(self.plotRect.size.height / minimumRowHeight));
+            self.visibleMetrics = [currentMetrics subarrayWithRange:NSMakeRange(0, MIN(capacity, currentMetrics.count))];
+            NSString *count = [self displayCountForVisibleCount:self.visibleMetrics.count];
+            if ([count isEqualToString:self.displayCountText]) break;
+            self.displayCountText = count;
+        }
+        if (self.plotRect.size.height < minimumRowHeight && self.latestValues.count) {
             self.largeType = YES; self.largeTypeSummary.hidden = NO;
             self.largeTypeSummary.summaryText = self.accessibilityLabel;
             self.hitRegions = @[]; self.marks = @[];
             [self setNeedsDisplay];
             return;
         }
-        NSUInteger capacity = MAX(1, (NSUInteger)floor(self.plotRect.size.height / 26));
-        NSArray *currentMetrics = [self.cellMetrics sortedArrayUsingComparator:^NSComparisonResult(NSString *a, NSString *b) {
-            BOOL aAvailable = self.latestValues[a] != nil, bAvailable = self.latestValues[b] != nil;
-            if (aAvailable != bAvailable) return aAvailable ? NSOrderedAscending : NSOrderedDescending;
-            return [BACellIndex(a) compare:BACellIndex(b)];
-        }];
-        self.visibleMetrics = [currentMetrics subarrayWithRange:NSMakeRange(0, MIN(capacity, currentMetrics.count))];
         self.hitRegions = @[]; self.marks = @[]; self.displayIndices = @{}; self.untrustedRects = @[];
         [self setNeedsDisplay];
         return;
     }
     // Reflow annotations rather than spending four rows of a short card on
     // metadata. Exact dates and the full age remain in accessible details.
-    if (self.compact) {
-        self.countRect = CGRectMake(inset, height - 3 * row - 4, contentWidth, row);
-        self.timestampRect = CGRectMake(inset, height - 2 * row - 4, contentWidth, row);
-        self.ageRect = CGRectZero;
-    } else if (self.cardSize == BAAnalyticsCardSize2x1) {
-        self.countRect = CGRectMake(inset, height - 2 * row - 4, contentWidth, row);
-        self.timestampRect = CGRectZero;
-        self.ageRect = CGRectZero;
-    } else {
-        self.countRect = CGRectMake(inset, height - 4 * row - 4, contentWidth, row);
-        self.timestampRect = CGRectMake(inset, height - 3 * row - 4, contentWidth, row);
-        self.ageRect = CGRectMake(inset, height - 2 * row - 4, contentWidth, row);
-    }
-    self.windowRect = CGRectMake(inset, height - row - 4, contentWidth, row);
+    self.displayTimestampText = self.compact ? self.ageText : self.cardSize == BAAnalyticsCardSize2x1 ? nil : self.timestampText;
+    if (self.cardSize == BAAnalyticsCardSize2x1)
+        self.displayCountText = [NSString stringWithFormat:@"%@ · %@", self.countText, self.ageText];
     // The line-style swatches and cell numbers belong to a gutter outside
     // the data plot, including when a trace reaches its highest endpoint.
-    self.plotRect = CGRectMake(36, top, MAX(0, width - (self.compact ? 58 : 72)), MAX(0, CGRectGetMinY(self.countRect) - top - row));
-    NSUInteger capacity = self.compact ? MAX(1, (NSUInteger)floor(self.plotRect.size.width / 20)) : MAX(1, (NSUInteger)floor(self.plotRect.size.height / 13));
-    // A dense pack still retains its actual count; overflow opens the full group.
-    self.visibleMetrics = [self.cellMetrics subarrayWithRange:NSMakeRange(0, MIN(MIN(capacity, (NSUInteger)12), self.cellMetrics.count))];
+    NSString *upperAxis = [NSString stringWithFormat:@"%.0f", self.maximum];
+    NSString *lowerAxis = [NSString stringWithFormat:@"%.0f", self.minimum];
+    CGFloat axisWidth = MAX([upperAxis sizeWithAttributes:@{NSFontAttributeName:small}].width,
+                            [lowerAxis sizeWithAttributes:@{NSFontAttributeName:small}].width) + 7;
+    self.legendLineHeight = ceil(small.lineHeight) + 3;
+    self.legendWidth = self.compact ? 0 : ceil([@"12—" sizeWithAttributes:@{NSFontAttributeName:small}].width) + 14;
+    for (NSUInteger pass = 0; pass < 3; pass++) {
+        [self layoutFooterWithFont:small inset:inset];
+        self.plotRect = CGRectMake(inset + axisWidth, top, MAX(0, contentWidth - axisWidth - self.legendWidth), MAX(0, CGRectGetMinY(self.countRect) - top - row));
+        NSUInteger capacity = self.compact ? MAX(1, (NSUInteger)floor(self.plotRect.size.width / 20)) : MAX(1, (NSUInteger)floor(self.plotRect.size.height / self.legendLineHeight));
+        self.visibleMetrics = [self.cellMetrics subarrayWithRange:NSMakeRange(0, MIN(MIN(capacity, (NSUInteger)12), self.cellMetrics.count))];
+        NSString *count = [self displayCountForVisibleCount:self.visibleMetrics.count];
+        if (self.cardSize == BAAnalyticsCardSize2x1) count = [NSString stringWithFormat:@"%@ · %@", count, self.ageText];
+        if ([count isEqualToString:self.displayCountText]) break;
+        self.displayCountText = count;
+    }
     if (CGRectEqualToRect(self.geometryRect, self.plotRect) && [self.geometryMetrics isEqualToArray:self.visibleMetrics]) return;
     self.geometryRect = self.plotRect; self.geometryMetrics = self.visibleMetrics;
     NSMutableArray<BAAnalyticsCanvasHitRegion *> *regions = [NSMutableArray array];
@@ -668,7 +690,8 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
                 if (self.detailEnabled && !dense) [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:CGRectMake(mark.point.x - 3, mark.point.y - 3, 6, 6)
                     selection:[self selectionForObservation:mark.observation metric:metric] accessibilityLabel:[self labelForObservation:mark.observation metric:metric]]];
             }];
-            CGRect identity = CGRectMake(CGRectGetMaxX(self.plotRect) + 13, self.plotRect.origin.y + ordinal * 13, 18, 13);
+            CGRect identity = CGRectMake(CGRectGetMaxX(self.plotRect) + 13, self.plotRect.origin.y + ordinal * self.legendLineHeight,
+                                         MAX(0, self.legendWidth - 13), self.legendLineHeight);
             if (self.detailEnabled) [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:identity selection:[self selectionForObservation:self.latestCellObservation metric:metric]
                 accessibilityLabel:[self labelForObservation:self.latestCellObservation metric:metric]]];
         }
@@ -712,20 +735,11 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
     if (self.largeType) return;
     UIFont *small = BACellsAnnotationFont(11, UIFontWeightRegular);
     UIColor *label = UIColor.compatLabelColor, *secondary = UIColor.compatSecondaryLabelColor;
-    BALiveDrawText(self.largeType ? _("cells\nmV") : @"mV", self.unitRect, small, secondary, NSTextAlignmentLeft);
-    BALiveDrawText(self.summaryText ?: @"", self.summaryRect, self.largeType ? BALiveFont(20, UIFontWeightSemibold) :
-        BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold), label, self.largeType ? NSTextAlignmentLeft : NSTextAlignmentRight);
-    NSString *count = self.countText;
-    if (self.visibleMetrics.count < self.cellMetrics.count) count = self.displayingCurrentCells ?
-        [NSString stringWithFormat:_("%lu valid · %lu shown"), (unsigned long)self.latestValues.count, (unsigned long)self.visibleMetrics.count] :
-        [NSString stringWithFormat:_("%lu valid · +%lu in detail"), (unsigned long)self.latestValues.count, (unsigned long)(self.cellMetrics.count - self.visibleMetrics.count)];
-    NSDate *readingDate = self.displayingCurrentCells ? self.currentCellSnapshot.timestamp : self.latestCellObservation.timestamp;
-    NSString *timeAndAge = readingDate ?
-        [NSString stringWithFormat:@"%@ · %@", BALiveTime(readingDate), self.ageText] :
-        _("Time/age unavailable");
-    if (self.cardSize == BAAnalyticsCardSize2x1 && !self.displayingCurrentCells) count = [NSString stringWithFormat:@"%@ · %@", count, timeAndAge];
-    BALiveDrawText(count ?: @"", self.countRect, small, secondary, NSTextAlignmentLeft);
-    BALiveDrawText(self.compact || self.displayingCurrentCells ? timeAndAge : self.timestampText ?: @"", self.timestampRect, small, secondary, NSTextAlignmentLeft);
+    BALiveDrawText(@"mV", self.unitRect, small, secondary, NSTextAlignmentRight);
+    BALiveDrawText(self.summaryText ?: @"", self.summaryRect,
+        BACellsAnnotationFont(self.compact ? 13 : 15, UIFontWeightSemibold), label, NSTextAlignmentNatural);
+    BALiveDrawText(self.displayCountText ?: @"", self.countRect, small, secondary, NSTextAlignmentLeft);
+    BALiveDrawText(self.displayTimestampText ?: @"", self.timestampRect, small, secondary, NSTextAlignmentLeft);
     BALiveDrawText(self.ageText ?: @"", self.ageRect, small, secondary, NSTextAlignmentLeft);
     BALiveDrawText(self.windowText ?: @"", self.windowRect, small, secondary, NSTextAlignmentLeft);
     if (CGRectIsEmpty(self.plotRect)) return;
@@ -808,7 +822,8 @@ static NSIndexSet *BACellsMarkerIndices(NSData *data, NSArray<NSNumber *> *indic
         CGContextRestoreGState(context);
         for (NSUInteger ordinal = 0; ordinal < self.visibleMetrics.count; ordinal++) {
             NSString *metric = self.visibleMetrics[ordinal]; NSNumber *value = self.latestValues[metric];
-            CGRect identity = CGRectMake(CGRectGetMaxX(self.plotRect) + 13, self.plotRect.origin.y + ordinal * 13, 18, 13);
+            CGRect identity = CGRectMake(CGRectGetMaxX(self.plotRect) + 13, self.plotRect.origin.y + ordinal * self.legendLineHeight,
+                                         MAX(0, self.legendWidth - 13), self.legendLineHeight);
             if (!value) BALiveHatch(identity);
             else BACellsStroke(CGPointMake(CGRectGetMaxX(self.plotRect) + 2, CGRectGetMidY(identity)), CGPointMake(CGRectGetMaxX(self.plotRect) + 11, CGRectGetMidY(identity)), ordinal);
             BALiveDrawText([NSString stringWithFormat:@"%lld%@", BACellIndex(metric).longLongValue + 1, value ? @"" : @"—"], identity, small, label, NSTextAlignmentLeft);

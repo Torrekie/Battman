@@ -27,6 +27,9 @@ FOUNDATION_EXPORT dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void);
 @property (nonatomic, getter=isEditing) BOOL editing;
 @property (nonatomic) BOOL detailEnabled;
 @property (nonatomic, copy) NSString *familyIdentifier;
+// Stable localized identity for loading/empty states, independent of a
+// previously rendered accessibility summary.
+@property (nonatomic, copy) NSString *cardDisplayName;
 @property (nonatomic, strong, nullable) BAAnalyticsMetricSnapshot *latestSnapshot;
 @property (nonatomic, strong, nullable) BAAnalyticsReport *latestReport;
 @property (nonatomic, copy) NSArray<BAAnalyticsCanvasHitRegion *> *hitRegions;
@@ -54,6 +57,9 @@ FOUNDATION_EXPORT dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void);
 @property (nonatomic, strong, readonly, nullable) BAAnalyticsReport *latestReport;
 // Defaults to the real shared service. The host can supply an isolated service.
 @property (nonatomic, strong) BAAnalyticsHistoryService *historyService;
+// Keep the last rendered evidence during a drag/deceleration. Pending input is
+// coalesced and applied to visible canvases when the host finishes scrolling.
+@property (nonatomic) BOOL presentationUpdatesDeferred;
 
 - (instancetype)initWithIdentifier:(NSString *)identifier
                       displayName:(NSString *)displayName
@@ -67,6 +73,10 @@ FOUNDATION_EXPORT dispatch_queue_t BAAnalyticsCanvasPreparationQueue(void);
 // An absent report/snapshot means unavailable or loading, never demo values.
 - (BAAnalyticsCanvasView *)makeCanvasView;
 - (void)updateCanvasView:(BAAnalyticsCanvasView *)view;
+// Subclasses can invalidate immutable presentation inputs after worker
+// completion or when an external context (for example, calendar) changes.
+- (nullable NSString *)presentationContextIdentifier;
+- (void)invalidateCanvasPresentation:(BAAnalyticsCanvasView *)view;
 
 // Default implementation returns nil. A participating card opts in and owns
 // its visual detail controller alongside the card implementation.

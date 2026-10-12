@@ -3,6 +3,11 @@
 #import "BAAnalyticsProcessDrawing.h"
 #include <math.h>
 
+static CGFloat BAPathTextHeight(NSString *text, CGFloat width, UIFont *font) {
+    CGRect bounds = [text boundingRectWithSize:CGSizeMake(MAX(1,width),CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:font} context:nil];
+    return ceil(MAX(font.lineHeight,bounds.size.height))+1;
+}
+
 @interface BAAnalyticsPathCanvasView : BAAnalyticsCanvasView
 @property (nonatomic, weak) BAAnalyticsFamilyReport *preparedFamily;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, id> *preparedLatest;
@@ -106,9 +111,14 @@
         CGContextAddLineToPoint(context, CGRectGetMaxX(column), zeroY);
         CGContextStrokePath(context);
     }
-    CGRect nameRect = CGRectMake(CGRectGetMinX(column) - 6, CGRectGetMaxY(column) + 5, CGRectGetWidth(column) + 12, compact ? 45 : 32);
-    BAProcessText(label, nameRect, BAProcessFont(UIFontTextStyleCaption1, 11, UIFontWeightMedium), color, NSTextAlignmentCenter);
-    CGRect hit = CGRectUnion(bar, nameRect);
+    UIFont *nameFont = BAProcessFont(UIFontTextStyleCaption1, 11, UIFontWeightMedium);
+    CGFloat nameHeight = BAPathTextHeight(label,CGRectGetWidth(column)+12,nameFont);
+    CGRect nameRect = CGRectMake(CGRectGetMinX(column)-6,CGRectGetMaxY(column)+5,CGRectGetWidth(column)+12,nameHeight);
+    BAProcessText(label,nameRect,nameFont,color,NSTextAlignmentCenter);
+    // The number, bar and caption form one measurement target.
+    UIFont *readingFont = BAProcessFont(UIFontTextStyleHeadline,compact ? 15 : 18,UIFontWeightSemibold);
+    CGRect hit = CGRectMake(CGRectGetMinX(nameRect),CGRectGetMinY(column)-readingFont.lineHeight-2,
+        CGRectGetWidth(nameRect),CGRectGetMaxY(nameRect)-(CGRectGetMinY(column)-readingFont.lineHeight-2));
     NSString *accessibility = [NSString stringWithFormat:_("%@, %@%@"), label,
         value ? [NSString stringWithFormat:_("%+.3f watts"), value.doubleValue] : _("unavailable"),
         observation ? [NSString stringWithFormat:_(", observed %@"), BAProcessWindow(observation.timestamp, observation.timestamp)] : @""];
@@ -126,7 +136,7 @@
         scaledFontForFont:[UIFont systemFontOfSize:11] maximumPointSize:large ? 16 : 19];
     UIColor *muted = UIColor.compatSecondaryLabelColor;
     if (!family || family.availability == BAAnalyticsReportAvailabilityLoading || family.availability == BAAnalyticsReportAvailabilityUnavailable) {
-        BAProcessText(_("Measurement points · W"), CGRectMake(14, 12, width - 28, 50), BAProcessFont(UIFontTextStyleHeadline, 16, UIFontWeightMedium), UIColor.compatLabelColor, NSTextAlignmentLeft);
+        BAProcessText(_("Power readings · W"), CGRectMake(14, 12, width - 28, 50), BAProcessFont(UIFontTextStyleHeadline, 16, UIFontWeightMedium), UIColor.compatLabelColor, NSTextAlignmentLeft);
         BAProcessHatch(CGRectMake(20, 66, width - 40, MAX(10, height - 110)), muted);
         BAProcessText(BAProcessAvailability(family), CGRectMake(14, height - 42, width - 28, 40), caption, muted, NSTextAlignmentLeft);
         self.accessibilityLabel = [NSString stringWithFormat:_("Measurement points in watts, %@"), BAProcessAvailability(family)];
@@ -138,29 +148,46 @@
     BAAnalyticsObservation *target = [self latestObservationForMetric:BAAnalyticsHistoryPowerTargetWatts report:family];
     BOOL partial = !input || !battery || family.availability == BAAnalyticsReportAvailabilityPartial;
     NSString *status = [NSString stringWithFormat:@"%@%@", BAProcessWindow(family.window.startDate, family.window.endDate), partial ? _(" · partial") : @""];
-    CGFloat headerHeight = large ? 34 : 18;
-    BAProcessText(status, CGRectMake(12, 8, width - 24, headerHeight), caption, muted, NSTextAlignmentLeft);
+    CGFloat headerHeight = BAPathTextHeight(status,width-24,caption);
+    BAProcessText(status,CGRectMake(12,8,width-24,headerHeight),caption,muted,NSTextAlignmentLeft);
+    NSNumber *batteryValue = BAProcessValue(battery,BAAnalyticsHistoryBatteryPowerWatts);
+    NSString *batteryLabel = !batteryValue || batteryValue.doubleValue == 0 ? _("Battery") : batteryValue.doubleValue < 0 ? _("From battery") : _("Into battery");
     // Large text gets two reading panels with less chart decoration. Values
     // retain their units; exact times and every target remain accessible.
     if (large) {
-        CGFloat rowHeight = MAX(26, (height - headerHeight - 32) / 2.0);
-        NSArray *records = @[input ?: (id)NSNull.null, battery ?: (id)NSNull.null];
-        NSArray *metrics = @[BAAnalyticsHistoryInputPowerWatts, BAAnalyticsHistoryBatteryPowerWatts];
-        NSArray *labels = @[_("Input"), _("Net")];
         UIFont *readingFont = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody]
             scaledFontForFont:[UIFont systemFontOfSize:14 weight:UIFontWeightMedium] maximumPointSize:24];
+        CGFloat rowsTop = 8+headerHeight+4;
+        CGFloat targetsHeight = (budget || target) ? ceil(caption.lineHeight)+8 : 0;
+        if ((height-8-targetsHeight-rowsTop)/2 < ceil(readingFont.lineHeight)+2) targetsHeight = 0;
+        CGFloat rowHeight = MAX(1,(height-8-targetsHeight-rowsTop)/2);
+        NSArray *records = @[input ?: (id)NSNull.null, battery ?: (id)NSNull.null];
+        NSArray *metrics = @[BAAnalyticsHistoryInputPowerWatts, BAAnalyticsHistoryBatteryPowerWatts];
+        NSArray *labels = @[_("Charger input"), batteryLabel];
         for (NSUInteger i = 0; i < 2; i++) {
             id record = records[i];
             BAAnalyticsObservation *observation = record == NSNull.null ? nil : record;
             NSNumber *value = BAProcessValue(observation, metrics[i]);
-            CGRect row = CGRectMake(14, headerHeight + 10 + i * rowHeight, width - 28, rowHeight);
-            NSString *reading = value ? [NSString stringWithFormat:_("%@  %+.3g W"), labels[i], value.doubleValue] : [NSString stringWithFormat:_("%@  — W"), labels[i]];
-            if (!value) BAProcessHatch(row, muted);
-            BAProcessText(reading, row, readingFont, i == 0 ? UIColor.compatBlueColor : UIColor.compatGreenColor, NSTextAlignmentLeft);
+            CGRect row = CGRectMake(14,rowsTop+i*rowHeight,width-28,rowHeight);
+            NSString *number = value ? [NSString stringWithFormat:_("%+.3g W"),value.doubleValue] : @"— W";
+            NSString *reading = [NSString stringWithFormat:@"%@, %@",labels[i],number];
+            CGFloat labelHeight = ceil(caption.lineHeight);
+            CGRect labelRect, numberRect;
+            if (rowHeight >= labelHeight+ceil(readingFont.lineHeight)+2) {
+                labelRect = CGRectMake(row.origin.x,row.origin.y,row.size.width,labelHeight+1);
+                numberRect = CGRectMake(row.origin.x,row.origin.y+labelHeight+1,row.size.width,row.size.height-labelHeight-1);
+            } else {
+                CGFloat numberWidth = ceil([number sizeWithAttributes:@{NSFontAttributeName:readingFont}].width)+2;
+                labelRect = CGRectMake(row.origin.x,row.origin.y+(rowHeight-labelHeight)/2,MAX(1,row.size.width-numberWidth-10),labelHeight+1);
+                numberRect = CGRectMake(CGRectGetMaxX(row)-numberWidth,row.origin.y+(rowHeight-readingFont.lineHeight)/2,numberWidth,ceil(readingFont.lineHeight)+1);
+            }
+            BAProcessText(labels[i],labelRect,caption,muted,NSTextAlignmentLeft);
+            if (!value) BAProcessHatch(numberRect,muted);
+            BAProcessText(number,numberRect,readingFont,i == 0 ? UIColor.compatBlueColor : UIColor.compatGreenColor,NSTextAlignmentLeft);
             [regions addObject:BAProcessRegion(row, [self selectionForMetric:metrics[i] observation:observation family:family],
-                [NSString stringWithFormat:_("%@, %@"), i == 0 ? _("Input") : _("Battery net"), value ? reading : _("unavailable")] )];
+                [NSString stringWithFormat:_("%@, %@"), i == 0 ? _("Charger input") : batteryLabel, value ? reading : _("unavailable")] )];
         }
-        if (budget || target) {
+        if (targetsHeight > 0) {
             CGRect targets = CGRectMake(14, height - 22, width - 28, 20);
             CGContextRef context = UIGraphicsGetCurrentContext();
             if (context) {
@@ -194,13 +221,21 @@
     double range = maximum - minimum;
     if (!(range > 0)) { minimum = -1; maximum = 1; }
     else { if (minimum < 0) minimum -= range * 0.1; maximum += range * 0.25; }
-    CGFloat top = headerHeight + 39;
-    CGFloat chartBottom = tall ? MIN(height * 0.52, height - 140) : height - 47;
-    chartBottom = MAX(top + 24, chartBottom);
-    CGRect inputColumn = CGRectMake(26, top, width * 0.43 - 26, chartBottom - top);
-    CGRect batteryColumn = CGRectMake(width * 0.57, top, width * 0.43 - 26, chartBottom - top);
-    [self drawColumn:inputColumn metric:BAAnalyticsHistoryInputPowerWatts label:_("Input") observation:input family:family minimum:minimum maximum:maximum color:UIColor.compatBlueColor regions:regions compact:NO];
-    [self drawColumn:batteryColumn metric:BAAnalyticsHistoryBatteryPowerWatts label:_("Battery net") observation:battery family:family minimum:minimum maximum:maximum color:UIColor.compatGreenColor regions:regions compact:NO];
+    NSMutableArray *targets = [NSMutableArray array];
+    if (budget) [targets addObject:[NSString stringWithFormat:_("Budget %.3g W"),BAProcessValue(budget,BAAnalyticsHistoryPowerBudgetWatts).doubleValue]];
+    if (target) [targets addObject:[NSString stringWithFormat:_("Target %.3g W"),BAProcessValue(target,BAAnalyticsHistoryPowerTargetWatts).doubleValue]];
+    NSString *targetCaption = targets.count ? [NSString stringWithFormat:_("Dashed: %@"),[targets componentsJoinedByString:_(" · ")]] : _("Readings taken separately");
+    CGFloat targetHeight = BAPathTextHeight(targetCaption,width-24,caption);
+    UIFont *nameFont = BAProcessFont(UIFontTextStyleCaption1,11,UIFontWeightMedium);
+    CGFloat columnWidth = width*.43-26;
+    CGFloat nameHeight = MAX(BAPathTextHeight(_("Charger input"),columnWidth+12,nameFont),BAPathTextHeight(batteryLabel,columnWidth+12,nameFont));
+    CGFloat top = 8+headerHeight+ceil(BAProcessFont(UIFontTextStyleHeadline,18,UIFontWeightSemibold).lineHeight)+10;
+    CGFloat chartBottom = tall ? MIN(height*.48,height-targetHeight-nameHeight-105) : height-12-targetHeight-8-nameHeight-5;
+    chartBottom = MAX(top+16,chartBottom);
+    CGRect inputColumn = CGRectMake(26,top,columnWidth,chartBottom-top);
+    CGRect batteryColumn = CGRectMake(width*.57,top,columnWidth,chartBottom-top);
+    [self drawColumn:inputColumn metric:BAAnalyticsHistoryInputPowerWatts label:_("Charger input") observation:input family:family minimum:minimum maximum:maximum color:UIColor.compatBlueColor regions:regions compact:NO];
+    [self drawColumn:batteryColumn metric:BAAnalyticsHistoryBatteryPowerWatts label:batteryLabel observation:battery family:family minimum:minimum maximum:maximum color:UIColor.compatGreenColor regions:regions compact:NO];
     CGContextRef context = UIGraphicsGetCurrentContext();
     // Budget and target each retain their own source row/time and are dashed.
     for (NSUInteger i = 0; i < 2; i++) {
@@ -224,18 +259,10 @@
         [regions addObject:BAProcessRegion(mark, [self selectionForMetric:metric observation:observation family:family],
             [NSString stringWithFormat:_("%@ target, %.3f W, observed %@"), i == 0 ? _("Budget") : _("Power"), value.doubleValue, BAProcessClock(observation.timestamp)])];
     }
-    if (!tall) {
-        // Independent exact acquisition times are retained in each selectable mark.
-        NSMutableArray *targets = [NSMutableArray array];
-        if (budget) [targets addObject:[NSString stringWithFormat:_("Budget %.3g W"), BAProcessValue(budget, BAAnalyticsHistoryPowerBudgetWatts).doubleValue]];
-        if (target) [targets addObject:[NSString stringWithFormat:_("Target %.3g W"), BAProcessValue(target, BAAnalyticsHistoryPowerTargetWatts).doubleValue]];
-        BAProcessText([targets componentsJoinedByString:_(" · ")], CGRectMake(12, height - 24, width - 24, 20), caption, muted, NSTextAlignmentLeft);
-    } else {
-        NSMutableArray *targets = [NSMutableArray array];
-        if (budget) [targets addObject:[NSString stringWithFormat:_("Budget %.3g W"), BAProcessValue(budget, BAAnalyticsHistoryPowerBudgetWatts).doubleValue]];
-        if (target) [targets addObject:[NSString stringWithFormat:_("Target %.3g W"), BAProcessValue(target, BAAnalyticsHistoryPowerTargetWatts).doubleValue]];
-        BAProcessText([targets componentsJoinedByString:_(" · ")], CGRectMake(12, chartBottom + 25, width - 24, 20), caption, muted, NSTextAlignmentLeft);
-        CGFloat traceTop = chartBottom + 53;
+    CGFloat targetY = tall ? chartBottom+5+nameHeight+8 : height-12-targetHeight;
+    BAProcessText(targetCaption,CGRectMake(12,targetY,width-24,targetHeight),caption,muted,NSTextAlignmentLeft);
+    if (tall) {
+        CGFloat traceTop = targetY+targetHeight+12;
         CGRect plot = CGRectMake(30, traceTop, width - 44, MAX(16, height - traceTop - 30));
         BAProcessText(@"W", CGRectMake(12, traceTop, 24, 20), caption, muted, NSTextAlignmentLeft);
         if (!self.preparedTraceRange) {
@@ -275,7 +302,7 @@
 
 @implementation BAAnalyticsPathCanvasCard
 - (instancetype)init {
-    return [super initWithIdentifier:@"com.torrekie.battman.analytics.path" displayName:_("Measurement points")
+    return [super initWithIdentifier:@"com.torrekie.battman.analytics.path" displayName:_("Power readings")
         familyIdentifier:BAAnalyticsFamilyPath supportedSizes:BAAnalyticsCardSizeMask2x1 | BAAnalyticsCardSizeMask2x2 defaultSize:BAAnalyticsCardSize2x1];
 }
 - (BAAnalyticsCanvasView *)makeCanvasView { return [BAAnalyticsPathCanvasView new]; }

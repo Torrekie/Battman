@@ -34,6 +34,14 @@ static void CollectCanvases(UIView *view, NSMutableArray<BAAnalyticsCanvasView *
     if ([view isKindOfClass:BAAnalyticsCanvasView.class]) [canvases addObject:(id)view];
     for (UIView *child in view.subviews) CollectCanvases(child, canvases);
 }
+static void CheckEmbeddedScrollInsets(UIView *view) {
+    if ([view isKindOfClass:UIScrollView.class]) {
+        UIScrollView *scroll = (id)view;
+        Require(UIEdgeInsetsEqualToEdgeInsets(scroll.adjustedContentInset, UIEdgeInsetsZero),
+            @"Embedded card scrolling inherited navigation/safe-area insets");
+    }
+    for (UIView *child in view.subviews) CheckEmbeddedScrollInsets(child);
+}
 static void AwaitPreparedCanvases(UIView *view) {
     [view layoutIfNeeded];
     NSMutableArray<BAAnalyticsCanvasView *> *canvases = [NSMutableArray array];
@@ -86,6 +94,7 @@ UIImage *imageForSFProGlyph(NSString *g,NSString *f,CGFloat s,UIColor *c) { (voi
 + (instancetype)sharedPlatform { Require(NO,@"Production composition reached by fixture");return nil; }
 @end
 static UIUserInterfaceStyle ForcedStyle=UIUserInterfaceStyleLight;
+static BOOL FixtureNativeDarkMode=NO;
 static UIContentSizeCategory ForcedCategory=nil;
 static IMP OriginalTraitCategory=NULL,OriginalApplicationCategory=NULL;
 static NSInteger TestStyle(id object,SEL command) { (void)object;(void)command;return ForcedStyle; }
@@ -103,9 +112,14 @@ static UIFont *TestCappedFont(UIFontMetrics *metrics,SEL command,UIFont *font,CG
 static void InstallPresentationOverrides(void) {
     OriginalScaledFont=method_setImplementation(class_getInstanceMethod(UIFontMetrics.class,@selector(scaledFontForFont:)),(IMP)TestScaledFont);
     OriginalCappedFont=method_setImplementation(class_getInstanceMethod(UIFontMetrics.class,@selector(scaledFontForFont:maximumPointSize:)),(IMP)TestCappedFont);
-    // iOS 12 has no native Dark Mode. This only exercises the fallback palette.
-    Method style=class_getInstanceMethod(UITraitCollection.class,@selector(userInterfaceStyle));
-    if(style)method_setImplementation(style,(IMP)TestStyle);else class_addMethod(UITraitCollection.class,@selector(userInterfaceStyle),(IMP)TestStyle,"q@:");
+    if (@available(iOS 13.0, *)) {
+        FixtureNativeDarkMode=YES;
+    } else {
+        // Legacy systems exercise Battman's fallback palette. Modern UIKit
+        // must use actual window traits to resolve dynamic system colors.
+        Method style=class_getInstanceMethod(UITraitCollection.class,@selector(userInterfaceStyle));
+        if(style)method_setImplementation(style,(IMP)TestStyle);else class_addMethod(UITraitCollection.class,@selector(userInterfaceStyle),(IMP)TestStyle,"q@:");
+    }
     Method trait=class_getInstanceMethod(UITraitCollection.class,@selector(preferredContentSizeCategory));OriginalTraitCategory=method_setImplementation(trait,(IMP)TestTraitCategory);
     Method app=class_getInstanceMethod(UIApplication.class,@selector(preferredContentSizeCategory));OriginalApplicationCategory=method_setImplementation(app,(IMP)TestApplicationCategory);
 }
@@ -406,6 +420,16 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
 @implementation BAFixtureTouch
 - (CGPoint)locationInView:(UIView *)view { (void)view;return self.point; }
 @end
+@interface BAFixtureReadingTap : UITapGestureRecognizer
+@property (nonatomic) CGPoint fixturePoint;
+@end
+@implementation BAFixtureReadingTap
+- (UIGestureRecognizerState)state { return UIGestureRecognizerStateEnded; }
+- (CGPoint)locationInView:(UIView *)view { return self.fixturePoint; }
+@end
+@interface BAAnalyticsCanvasView (FixtureCapacityBrowsing)
+- (void)selectHistoryReading:(UITapGestureRecognizer *)recognizer;
+@end
 @interface AnalyticsViewController (FixtureActions)
 - (void)addCard:(id<BAAnalyticsCard>)card;
 @end
@@ -444,6 +468,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     [self performSelector:@selector(runChecks) withObject:nil afterDelay:1]; return YES;
 }
 - (void)saveView:(UIView *)view name:(NSString *)name {
+    if (@available(iOS 13.0, *)) self.window.overrideUserInterfaceStyle=ForcedStyle;
     [view setNeedsLayout]; AwaitPreparedCanvases(view);
     if ([NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_PERFORMANCE_ONLY"] isEqual:@"1"] && ![name hasPrefix:@"performance-"]) return;
     UIGraphicsBeginImageContextWithOptions(view.bounds.size,NO,1);[view.layer renderInContext:UIGraphicsGetCurrentContext()];UIImage *image=UIGraphicsGetImageFromCurrentImageContext();UIGraphicsEndImageContext();
@@ -451,6 +476,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     Require([UIImagePNGRepresentation(image) writeToFile:[self.output stringByAppendingPathComponent:name] atomically:YES],@"Screenshot write failed");
 }
 - (void)renderCardsAtWidth:(CGFloat)width scenario:(NSString *)scenario allSizes:(BOOL)allSizes {
+    if (@available(iOS 13.0, *)) self.window.overrideUserInterfaceStyle=ForcedStyle;
     self.history.fixtureReport=BAFixtureReport(scenario);[self.history publishFixture];
     BAAnalyticsMetricSnapshot *snapshot=BAFixtureSnapshot([scenario isEqualToString:@"unavailable"]);
     for(BAAnalyticsCanvasCard *card in self.cards) {
@@ -463,9 +489,11 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             [cell configureWithCard:card size:size editing:NO];[cell setAnalyticsCardDisplayed:YES];[cell applyMetricSnapshot:snapshot];
             [self.window addSubview:cell];[cell layoutIfNeeded];
             BAAnalyticsCanvasView *canvas=(id)cell.analyticsCardContentView;[canvas layoutIfNeeded];
-            NSString *name=[NSString stringWithFormat:@"%@-%ld-%.0f-%@-%@%@.png",card.familyIdentifier,(long)size,width,[scenario stringByAppendingFormat:@"-%@",FixtureLanguage],ForcedStyle==UIUserInterfaceStyleDark?@"dark-fallback":@"light",ForcedCategory?@"-large":@""];
+            NSString *name=[NSString stringWithFormat:@"%@-%ld-%.0f-%@-%@%@.png",card.familyIdentifier,(long)size,width,[scenario stringByAppendingFormat:@"-%@",FixtureLanguage],ForcedStyle==UIUserInterfaceStyleDark?(FixtureNativeDarkMode?@"dark":@"dark-fallback"):@"light",ForcedCategory?@"-large":@""];
             [self saveView:cell name:name];
             Require(!CGRectIsEmpty(canvas.bounds),@"Zero-sized canvas");
+            if (ForcedCategory) CheckEmbeddedScrollInsets(canvas);
+            if (@available(iOS 13.0, *)) Require(canvas.traitCollection.userInterfaceStyle==ForcedStyle,@"Canvas did not receive native appearance traits");
             for(BAAnalyticsCanvasHitRegion *hit in canvas.hitRegions) {
                 Require(isfinite(hit.rect.origin.x)&&isfinite(hit.rect.origin.y),@"Non-finite hit region");
                 Require(hit.selection.familyIdentifier.length>0&&hit.accessibilityLabel.length>0,@"Unlabelled selection");
@@ -571,6 +599,84 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     [self.host viewDidAppear:NO];[collection layoutIfNeeded];
     Require([BAAnalyticsCardLayoutStore loadRecordsFromUserDefaults:self.defaults].count==10,@"Edited layout not persisted");
     [collection setContentOffset:CGPointZero animated:NO];
+}
+- (void)testScrollRecyclingWithReport:(BAAnalyticsReport *)report {
+    BAAnalyticsReport *original = self.history.fixtureReport;
+    self.history.fixtureReport = report; [self.history publishFixture];
+    UICollectionView *collection = [self.host valueForKey:@"collectionView"];
+    NSArray *states = [self.host valueForKey:@"cardStates"];
+    NSMutableDictionary *canvases = [NSMutableDictionary dictionary];
+    NSMutableArray *durations = [NSMutableArray array];
+    for (NSUInteger pass = 0; pass < 2; pass++) {
+        for (NSUInteger index = 0; index < states.count; index++) {
+            NSIndexPath *path = [NSIndexPath indexPathForItem:index inSection:0];
+            NSTimeInterval start = NSProcessInfo.processInfo.systemUptime;
+            [collection scrollToItemAtIndexPath:path atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:NO];
+            [collection layoutIfNeeded];
+            BAAnalyticsCardCell *cell = (id)[collection cellForItemAtIndexPath:path];
+            BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+            Require(canvas != nil, @"Scroll did not display the requested card");
+            if (pass == 0) {
+                AwaitPreparedCanvases(cell);
+                canvases[cell.mountedCardIdentifier] = canvas;
+            } else {
+                Require(canvases[cell.mountedCardIdentifier] == canvas, @"Scroll round trip recreated a prepared canvas");
+                [canvas.layer displayIfNeeded];
+                [durations addObject:@(NSProcessInfo.processInfo.systemUptime - start)];
+            }
+        }
+    }
+    self.performanceResults[@"scrollRetainedCanvasCount"] = @(canvases.count);
+    self.performanceResults[@"scrollWarmVisitSeconds"] = durations;
+    NSUInteger capacityIndex = [states indexOfObjectPassingTest:^BOOL(id state, NSUInteger index, BOOL *stop) {
+        return [[(BAAnalyticsCanvasCard *)[state valueForKey:@"card"] familyIdentifier] isEqual:BAAnalyticsFamilyCapacity];
+    }];
+    NSIndexPath *path = [NSIndexPath indexPathForItem:capacityIndex inSection:0];
+    [collection scrollToItemAtIndexPath:path atScrollPosition:UICollectionViewScrollPositionCenteredVertically animated:NO];
+    [collection layoutIfNeeded];
+    BAAnalyticsCardCell *cell = (id)[collection cellForItemAtIndexPath:path];
+    BAAnalyticsCanvasView *canvas = (id)cell.analyticsCardContentView;
+    AwaitPreparedCanvases(cell);
+    Require([collection touchesShouldCancelInContentView:canvas], @"Card control captured a scrolling touch");
+    Require(![collection touchesShouldCancelInContentView:cell.resizeButton], @"Scroll policy unexpectedly changed resize button tracking");
+    BAAnalyticsReport *displayed = canvas.latestReport;
+    BAAnalyticsMetricSnapshot *snapshot = canvas.latestSnapshot;
+    [collection.delegate scrollViewWillBeginDragging:collection];
+    BAAnalyticsReport *last = nil;
+    for (NSUInteger sequence = 0; sequence < 2; sequence++) {
+        last = [[BAAnalyticsReport alloc] initWithSequenceNumber:9000 + sequence generatedAt:report.generatedAt
+            sourceProfileIdentifier:report.sourceProfileIdentifier fieldMetadata:report.fieldMetadata
+            familyReports:report.familyReports error:nil];
+        self.history.fixtureReport = last; [self.history publishFixture];
+        self.metrics.fixtureSnapshot = BAFixtureSnapshot(NO); [self.metrics refreshNow];
+    }
+    Require(canvas.latestReport == displayed && canvas.latestSnapshot == snapshot,
+        @"History/live refresh replaced the canvas during finger tracking");
+    [collection.delegate scrollViewDidEndDragging:collection willDecelerate:YES];
+    Require(canvas.latestReport == displayed, @"Refresh interrupted inertial scrolling");
+    [collection.delegate scrollViewDidEndDecelerating:collection];
+    AwaitPreparedCanvases(cell);
+    Require(canvas.latestReport == last && canvas.latestSnapshot == self.metrics.fixtureSnapshot,
+        @"Scroll completion failed to adopt the newest coalesced evidence");
+    // Release cached offscreen views while preserving the mounted visible view.
+    [cell releaseOffscreenCardContent];
+    Require(cell.analyticsCardContentView == canvas, @"Memory reclamation detached a visible canvas");
+    BAAnalyticsCardCell *cached = [[BAAnalyticsCardCell alloc] initWithFrame:cell.frame];
+    cached.preservesBuiltInCanvasForReuse = YES;
+    BAAnalyticsCanvasCard *card = [states[capacityIndex] valueForKey:@"card"];
+    [cached configureWithCard:card size:card.defaultAnalyticsCardSize editing:NO];
+    UIView *retained = cached.analyticsCardContentView;
+    [cached prepareForReuse];
+    Require(cached.analyticsCardContentView == retained, @"Built-in prepareForReuse discarded its canvas");
+    [cached releaseOffscreenCardContent];
+    Require(cached.analyticsCardContentView == nil, @"Memory reclamation retained an offscreen canvas");
+    [cached configureWithCard:card size:card.defaultAnalyticsCardSize editing:NO];
+    BAAnalyticsCanvasCard *replacement = (id)BAAnalyticsCreateCapacityCanvasCard();
+    retained = cached.analyticsCardContentView;
+    [cached configureWithCard:replacement size:replacement.defaultAnalyticsCardSize editing:NO];
+    Require(cached.analyticsCardContentView != retained, @"Replacing a card object reused the old object's canvas");
+    self.history.fixtureReport = original; [self.history publishFixture];
+    [collection setContentOffset:CGPointZero animated:NO]; [collection layoutIfNeeded];
 }
 - (void)testFamilyDetails {
     NSUInteger detailCount = 0;
@@ -918,6 +1024,83 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     Require(CapacitySummaryNumber(rows,0).doubleValue == 3359 && [rows[1][@"value"] isEqual:cond_localize("Unavailable")],
         @"Capacity overview used the family's unrelated final row or a live design-only denominator");
 }
+- (void)testCapacityHistoryBrowsing {
+    NSString *metric = BAAnalyticsHistoryFullChargeCapacityMilliampHours;
+    BAAnalyticsFieldMetadata *field = [[BAAnalyticsFieldMetadata alloc] initWithSourceTable:@"synthetic.capacity"
+        sourceColumn:@"FCC" unit:@"mAh" decoderIdentifier:@"fixture.capacity.browsing" unitValidated:YES];
+    NSDate *origin = [NSDate dateWithTimeIntervalSince1970:1700000000];
+    NSMutableArray<BAAnalyticsObservation *> *points = [NSMutableArray array];
+    NSMutableArray *intervals = [NSMutableArray array], *gaps = [NSMutableArray array];
+    for (NSUInteger index = 0; index <= 1000; index++) {
+        NSDate *time = [origin dateByAddingTimeInterval:index * 3600.0];
+        BAAnalyticsObservation *point = [[BAAnalyticsObservation alloc] initWithIdentifier:[NSString stringWithFormat:@"capacity.browse.%lu", (unsigned long)index]
+            timestamp:time sourceTimestamp:time.timeIntervalSince1970 timestampValidated:YES
+            values:@{metric:@(3500 - index * .15 + 12 * sin(index * .09) + (index == 910 ? 80 : 0))} fieldMetadata:@{metric:field}];
+        if (points.count) {
+            BAAnalyticsObservation *previous = points.lastObject;
+            if (index >= 900 && index <= 903)
+                [gaps addObject:[[BAAnalyticsHistoryGap alloc] initWithStartDate:previous.timestamp endDate:time reason:@"Synthetic missing interval"]];
+            else [intervals addObject:[[BAAnalyticsHistoryInterval alloc] initWithStartDate:previous.timestamp endDate:time
+                startObservation:previous endObservation:point coveredMetricIdentifiers:[NSSet setWithObject:metric] state:BAAnalyticsObservedStateUnplugged]];
+        }
+        [points addObject:point];
+    }
+    BAAnalyticsHistoryWindow *window = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:origin endDate:points.lastObject.timestamp
+        observations:points intervals:intervals gaps:gaps coverageMetricIdentifiers:[NSSet setWithObject:metric]
+        coveredDuration:996 * 3600 missingDuration:4 * 3600 coverageSecondsByMetric:@{metric:@(996 * 3600)}];
+    BAAnalyticsFamilyReport *family = [[BAAnalyticsFamilyReport alloc] initWithFamily:BAAnalyticsFamilyCapacity
+        availability:BAAnalyticsReportAvailabilityPartial window:window payload:@{} limitations:@[]];
+    BAAnalyticsReport *report = [[BAAnalyticsReport alloc] initWithSequenceNumber:51 generatedAt:points.lastObject.timestamp
+        sourceProfileIdentifier:@"fixture.capacity.browsing" fieldMetadata:@{metric:field}
+        familyReports:@{BAAnalyticsFamilyCapacity:family} error:nil];
+    BAAnalyticsCanvasCard *card = (id)BAAnalyticsCreateCapacityCanvasCard(); [card setValue:report forKey:@"latestReport"];
+    BAAnalyticsDetailViewController *detail = (id)[card detailViewControllerForSelection:nil size:BAAnalyticsCardSize2x2];
+    [self.navigation pushViewController:detail animated:NO]; [detail.view layoutIfNeeded]; AwaitPreparedCanvases(detail.view);
+    BAAnalyticsCanvasView *canvas = [detail valueForKey:@"visualization"];
+    UIScrollView *scroll = [canvas valueForKey:@"historyScrollView"];
+    UISegmentedControl *range = [canvas valueForKey:@"historyRangeControl"];
+    id prepared = [canvas valueForKey:@"preparedHistory"];
+    Require(canvas.userInteractionEnabled && [[canvas valueForKey:@"detailBrowsingEnabled"] boolValue], @"Capacity detail did not enable its optional interaction");
+    Require([[canvas valueForKey:@"capacityObservations"] count] == points.count &&
+        [[canvas valueForKey:@"historyWindowDuration"] doubleValue] == 7 * 86400 &&
+        fabs([[canvas valueForKey:@"historyWindowStart"] doubleValue] - (points.lastObject.timestamp.timeIntervalSince1970 - 7 * 86400)) < .01,
+        @"Capacity history did not retain the full population and initially show its latest week");
+    Require(scroll.contentSize.width > scroll.bounds.size.width && canvas.bounds.size.width <= detail.tableView.bounds.size.width &&
+        CGRectContainsRect(canvas.bounds, scroll.frame) && CGRectIsEmpty(CGRectIntersection(scroll.frame, range.frame)),
+        @"Capacity viewport allocated a wide drawing surface or overlapped its range control");
+    Require([[canvas valueForKey:@"displayIndices"] count] <= 128 && [[canvas valueForKey:@"displayMarkerIndices"] count] <= 12 &&
+        [[canvas valueForKey:@"displayGaps"] count] > 0, @"Capacity viewport exceeded drawing budgets or lost its visible gap");
+    [self saveView:self.window name:@"detail-capacity-history-latest-en.png"];
+    [scroll setContentOffset:CGPointZero animated:NO]; [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+    Require(fabs([[canvas valueForKey:@"historyWindowStart"] doubleValue] - origin.timeIntervalSince1970) < .01 &&
+        [canvas valueForKey:@"preparedHistory"] == prepared && [[[canvas valueForKey:@"displayIndices"] firstObject] unsignedIntegerValue] == 0,
+        @"Horizontal browsing changed source preparation or failed to show the earliest records");
+    CGRect plot = [[canvas valueForKey:@"historyPlotRect"] CGRectValue];
+    BAFixtureReadingTap *tap = [BAFixtureReadingTap new];
+    tap.fixturePoint = CGPointMake(plot.origin.x + plot.size.width * .4, CGRectGetMidY(plot));
+    [canvas selectHistoryReading:tap]; [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+    Require([[canvas valueForKey:@"selectedHistoryIndex"] unsignedIntegerValue] == 67,
+        @"Tapping the capacity trend did not select the nearest original reading");
+    Require([scroll.accessibilityValue containsString:@"mAh"], @"Selected capacity reading is not available to VoiceOver");
+    [self saveView:self.window name:@"detail-capacity-history-selected-en.png"];
+    CGRect originalFrame = canvas.frame;
+    canvas.frame = CGRectMake(originalFrame.origin.x, originalFrame.origin.y, 288, originalFrame.size.height);
+    [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+    Require(fabs([[canvas valueForKey:@"historyWindowStart"] doubleValue] - origin.timeIntervalSince1970) < .01 &&
+        [[canvas valueForKey:@"selectedHistoryIndex"] unsignedIntegerValue] == 67 && CGRectContainsRect(canvas.bounds, scroll.frame),
+        @"Resizing the capacity viewport moved its time window, selection or gesture region");
+    canvas.frame = originalFrame;
+    range.selectedSegmentIndex = 0; [range sendActionsForControlEvents:UIControlEventValueChanged];
+    [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+    Require([[canvas valueForKey:@"historyWindowDuration"] doubleValue] == 86400 &&
+        [[canvas valueForKey:@"displayIndices"] count] <= 128, @"Day range failed to update the bounded viewport");
+    range.selectedSegmentIndex = 2; [range sendActionsForControlEvents:UIControlEventValueChanged];
+    [canvas layoutIfNeeded]; [canvas.layer displayIfNeeded];
+    Require(fabs(scroll.contentSize.width - scroll.bounds.size.width) < .01 &&
+        [[canvas valueForKey:@"capacityObservations"] count] == points.count && [[canvas valueForKey:@"displayIndices"] count] <= 128,
+        @"All-history view truncated evidence or kept a scrollable oversized drawing");
+    [self.navigation popViewControllerAnimated:NO]; DrainUI();
+}
 - (void)testRealHistoryPublication {
     // Exercise the actual asynchronous service through the production cell
     // lifecycle. The other rendering fixtures publish synchronously.
@@ -1033,6 +1216,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     }
 }
 - (void)testBatteryStates {
+    if (@available(iOS 13.0, *)) self.window.overrideUserInterfaceStyle=ForcedStyle;
     BAAnalyticsCanvasCard *card=self.cards.firstObject;
     NSArray *cases=@[@[@73,@NO,@NO],@[@20,@NO,@NO],@[@19,@NO,@NO],@[@73,@YES,@NO],@[@19,@YES,@YES],@[@73,@NO,@YES]];
     for (NSArray *state in cases) {
@@ -1216,6 +1400,21 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
                     [canvas valueForKey:@"preparedCurrent"]==current && [[canvas valueForKey:@"preparedSOCCoverage"] isEqual:coverage] &&
                     BAProcessStateRuns(canvas,session.intervals,session.gaps,session.startDate,session.endDate)==stateRuns,
                     @"Unchanged Session drawing rebuilt immutable arrays, coverage or state bands");
+                CGRect tracePlot = CGRectMake(24, 30, 300, 80);
+                NSArray *(^collect)(void) = ^NSArray * {
+                    return BAProcessTrace(canvas, soc, session.intervals, session.gaps,
+                        BAAnalyticsHistorySOCPercent, @"%", session.startDate, session.endDate,
+                        tracePlot, 0, 100, 1, UIColor.greenColor, NO, session.identifier);
+                };
+                NSArray *firstRegions = collect();
+                Require(firstRegions.count > 0 && firstRegions.count <= 12 && collect() == firstRegions,
+                    @"Dense layout recreated time-slice selections or exceeded screen-sized targets");
+                for (BAAnalyticsCanvasHitRegion *hit in firstRegions)
+                    Require([hit.selection.context[@"validatedMetricIdentifiers"] containsObject:BAAnalyticsHistorySOCPercent],
+                        @"Dense metric detail lost its verified-unit restriction");
+                NSTimeInterval selectionStart = NSProcessInfo.processInfo.systemUptime;
+                for (NSUInteger repeat = 0; repeat < 100; repeat++) Require(collect() == firstRegions, @"Dense hit cache was unstable");
+                self.performanceResults[@"sessionCached100CollectionsSeconds"] = @(NSProcessInfo.processInfo.systemUptime - selectionStart);
                 self.performanceResults[@"sessionRawObservations"]=@(count);
                 self.performanceResults[@"sessionDisplayStateRuns"]=@(stateRuns.count);
             } else {
@@ -1619,6 +1818,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     WaitForFixture(^BOOL { return report != nil || generationError != nil; }, 20, @"Synthetic report generation and cache preparation exceeded the bounded worker budget");
     Require(report != nil, generationError ?: @"Synthetic report generation failed");
     self.performanceResults[@"workerGenerationSeconds"] = @(NSProcessInfo.processInfo.systemUptime - began);
+    [self testScrollRecyclingWithReport:report];
     BAAnalyticsFamilyReport *capacityFamily = [report reportForFamily:BAAnalyticsFamilyCapacity];
     BAAnalyticsFamilyReport *cellsFamily = [report reportForFamily:BAAnalyticsFamilyCells];
     Require(capacityFamily.window.observations.count == count && cellsFamily.window.observations.count == count,
@@ -1840,7 +2040,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     Require(BAAnalyticsHistoryHasGap(mutable,start,end,NO), @"Mutable gap input reused a stale immutable index");
 }
 - (void)writeValidationWithChecks:(NSArray<NSString *> *)checks passed:(BOOL)passed {
-    NSMutableDictionary *result=[@{@"synthetic":@YES,@"nativeDarkMode":@NO,@"renderings":self.manifest,
+    NSMutableDictionary *result=[@{@"synthetic":@YES,@"nativeDarkMode":@(FixtureNativeDarkMode),@"renderings":self.manifest,
         @"checks":checks,@"passed":@(passed)} mutableCopy];
     if (self.performanceResults) result[@"performance"]=self.performanceResults;
     NSData *json=[NSJSONSerialization dataWithJSONObject:result options:NSJSONWritingPrettyPrinted error:nil];
@@ -1852,15 +2052,39 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     BOOL historyOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_HISTORY_ONLY"] isEqual:@"1"];
     BOOL performanceOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_PERFORMANCE_ONLY"] isEqual:@"1"];
     NSArray<NSString *> *checks = performanceOnly ? @[@"actual host lifecycle, editing, navigation and frozen optional details",
+        @"scroll round-trip canvas retention, touch cancellation and deferred latest-only refresh",
         @"8000-record Foundation-only history generated off main",@"bounded Capacity/Cells display and VoiceOver marks with raw extrema and gaps retained",
         @"asynchronous statistics, responsive main queue, generation coalescing and memory cleanup",@"pure history snapshots preserve derived results",
         @"cached startup preserves acquisition timestamps and refreshes paired geometry/report/details",@"dense independent comparison keeps full statistics with bounded drawing/actions",@"dense event sweep agrees with full overlap and gap-boundary predicates",@"asynchronous full exact evidence selection",@"strict gap indexing, mutable inputs and fresh service cache reentry",@"real history publication and lazy host activation"] : historyOnly ? @[@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"] :
-        @[@"actual plugin registration",@"legacy layout migration",@"all supported sizes",@"320/390/430 container widths",@"fallback dark palette",@"accessibility text size",@"partial/unavailable data",
+        @[@"actual plugin registration",@"legacy layout migration",@"all supported sizes",@"320/390/430 container widths",@"native or fallback dark palette",@"accessibility text size",@"partial/unavailable data",
           @"selected evidence navigation",@"seven optional visual details and frozen evidence",@"gettext catalog translations in Chinese and German",@"system battery colors and 20-percent threshold",
           @"full canvas editing with sibling accessory stacking and hit routing",@"readings / plot annotation separation",@"44-point accessibility targets and equivalent activation",
           @"editing suppresses card touch, embedded gestures and accessibility actions",@"resize/remove/add/reorder/persistence",@"visible-only subscriptions",
-          @"current capacity detail without history and no mixed-source capacity ratios",@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"];
+          @"current capacity detail without history and no mixed-source capacity ratios",@"bounded capacity history browsing, exact reading selection and resize consistency",@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"];
     @try {
+        NSString *focusedFamilies = NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_VISUAL_FAMILIES"];
+        if (focusedFamilies.length) {
+            NSSet *families = [NSSet setWithArray:[focusedFamilies componentsSeparatedByString:@","]];
+            self.cards = [self.cards filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(BAAnalyticsCanvasCard *card, NSDictionary *bindings) {
+                return [families containsObject:card.familyIdentifier];
+            }]];
+            Require(self.cards.count == families.count, @"Unknown family requested for focused presentation check");
+            for (NSString *language in @[@"en", @"zh_CN", @"de"]) {
+                FixtureLanguage = language;
+                [self renderCardsAtWidth:320 scenario:@"ready" allSizes:YES];
+            }
+            FixtureLanguage = @"en";
+            [self renderCardsAtWidth:430 scenario:@"ready" allSizes:YES];
+            ForcedStyle = UIUserInterfaceStyleDark;
+            [self renderCardsAtWidth:390 scenario:@"ready" allSizes:YES];
+            ForcedStyle = UIUserInterfaceStyleLight;
+            ForcedCategory = UIContentSizeCategoryAccessibilityExtraExtraExtraLarge;
+            [self renderCardsAtWidth:320 scenario:@"ready" allSizes:YES];
+            ForcedCategory = nil;
+            [self writeValidationWithChecks:@[@"focused family supported sizes and localized presentation", @"native appearance traits and embedded large-text scroll insets"] passed:YES];
+            [@"PASS" writeToFile:[self.output stringByAppendingPathComponent:@"analytics-v3.status"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
+            return;
+        }
         if (cellsOnly) {
             [self testCellsCurrentFallback];
             [self testSessionSingletonFallback];
@@ -1869,13 +2093,13 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
             return;
         }
         if (capacityOnly) {
-            [self testCapacityCurrentDetail];
+            [self testCapacityCurrentDetail]; [self testCapacityHistoryBrowsing];
             [self writeValidationWithChecks:@[@"capacity overview and historical selection keep chart, readings and exact evidence consistent"] passed:YES];
             [@"PASS" writeToFile:[self.output stringByAppendingPathComponent:@"analytics-v3.status"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
             return;
         }
         if (performanceOnly) {
-            [self testRegistrationAndMigration]; [self testHost]; [self testFamilyDetails]; [self testCapacityCurrentDetail];
+            [self testRegistrationAndMigration]; [self testHost]; [self testFamilyDetails]; [self testCapacityCurrentDetail]; [self testCapacityHistoryBrowsing];
             [self testPerformanceHistory]; [self testGapIndexSemantics];
         } else if (!historyOnly) {
         [self testRegistrationAndMigration];
@@ -1895,7 +2119,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
         FixtureLanguage=@"en";self.cards=BAAnalyticsCreateBuiltInCards();
         [self testHost];
         [self testFamilyDetails];
-        [self testCapacityCurrentDetail];
+        [self testCapacityCurrentDetail]; [self testCapacityHistoryBrowsing];
         }
         [self testRealHistoryPublication];
         [self testRealHostHistoryActivation];

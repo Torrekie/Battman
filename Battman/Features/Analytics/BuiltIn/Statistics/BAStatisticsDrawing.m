@@ -16,7 +16,8 @@ NSDateFormatter *BASDateFormatter(NSString *format) {
     return entry[@"formatter"];
 }
 NSString *BASTime(NSTimeInterval seconds) {
-    return seconds >= 3600 ? [NSString stringWithFormat:_("%.1f h"), seconds / 3600] : [NSString stringWithFormat:_("%.1f min"), seconds / 60];
+    NSString *duration = seconds >= 3600 ? [NSString stringWithFormat:_("%.1f h"), seconds / 3600] : [NSString stringWithFormat:_("%.1f min"), seconds / 60];
+    return [duration stringByReplacingOccurrencesOfString:@" " withString:@"\u00a0"];
 }
 NSString *BASWindow(BAAnalyticsHistoryWindow *window) {
     if (!window) return _("History unavailable");
@@ -25,6 +26,12 @@ NSString *BASWindow(BAAnalyticsHistoryWindow *window) {
 }
 UIFont *BASFont(CGFloat size) {
     return [[UIFontMetrics metricsForTextStyle:UIFontTextStyleCaption1] scaledFontForFont:[UIFont systemFontOfSize:size]];
+}
+CGFloat BASTextHeight(NSString *text, CGFloat width, UIFont *font) {
+    if (!text.length || width <= 0) return 0;
+    return ceil([text boundingRectWithSize:CGSizeMake(width, CGFLOAT_MAX)
+        options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+        attributes:@{NSFontAttributeName:font} context:nil].size.height);
 }
 void BASText(NSString *text, CGRect rect, UIFont *font, UIColor *color, NSTextAlignment alignment) {
     NSMutableParagraphStyle *style = [NSMutableParagraphStyle new]; style.alignment = alignment;
@@ -142,15 +149,16 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
     if (large) {
         if (!self.largeTextScroll) {
             self.largeTextScroll = [UIScrollView new]; self.largeTextScroll.backgroundColor = UIColor.clearColor;
+            self.largeTextScroll.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
             [self addSubview:self.largeTextScroll];
         }
         self.largeTextScroll.hidden = NO; self.largeTextScroll.frame = self.bounds;
         if (!self.largeTextRows) {
             for (UIView *child in self.largeTextScroll.subviews.copy) if ([child isKindOfClass:BASSelectionButton.class]) [child removeFromSuperview];
             NSMutableArray *rows = [NSMutableArray array];
-            [rows addObject:@{@"text":self.accessibilityLabel ?: self.familyIdentifier, @"kind":@"overview", @"item":@{}}];
+            [rows addObject:@{@"text":self.cardDisplayName ?: @"", @"kind":@"overview", @"item":@{}}];
             [rows addObjectsFromArray:[self summaryRows]];
-            if (rows.count == 1) [rows addObject:@{@"text":self.isPreparingHistory ? _("Loading history…") : _("No validated history"), @"kind":@"coverage", @"item":@{}}];
+            if (rows.count == 1) [rows addObject:@{@"text":self.isPreparingHistory ? _("Loading history…") : _("No usable history"), @"kind":@"coverage", @"item":@{}}];
             self.largeTextRows = rows;
             for (NSDictionary *row in rows) {
                 BASSelectionButton *button = [BASSelectionButton buttonWithType:UIButtonTypeSystem];
@@ -184,9 +192,21 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
     NSMutableArray *hits = [NSMutableArray array];
     if (!self.analysis || self.familyReport.availability == BAAnalyticsReportAvailabilityLoading || self.familyReport.availability == BAAnalyticsReportAvailabilityUnavailable) {
         BOOL loading = self.isPreparingHistory || !self.familyReport || self.familyReport.availability == BAAnalyticsReportAvailabilityLoading;
-        BASHatch(CGRectInset(self.bounds, 12, 40));
-        BASText(self.accessibilityLabel ?: self.familyIdentifier, CGRectMake(12,10,self.bounds.size.width-24,30), BASFont(13), [UIColor compatLabelColor], NSTextAlignmentLeft);
-        BASText(loading ? _("Loading history…") : _("No validated history"), CGRectMake(12,self.bounds.size.height-38,self.bounds.size.width-24,32), BASFont(12), [UIColor compatSecondaryLabelColor], NSTextAlignmentLeft);
+        CGFloat width = MAX(1, self.bounds.size.width - 24);
+        UIFont *titleFont = BASFont(13), *messageFont = BASFont(12);
+        NSString *title = self.cardDisplayName ?: @"";
+        NSString *message = loading ? _("Loading history…") : _("No usable history");
+        CGFloat titleHeight = ceil([title boundingRectWithSize:CGSizeMake(width, CGFLOAT_MAX)
+            options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:titleFont} context:nil].size.height);
+        CGFloat messageHeight = ceil([message boundingRectWithSize:CGSizeMake(width, CGFLOAT_MAX)
+            options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:messageFont} context:nil].size.height);
+        CGRect messageRect = CGRectMake(12, MAX(12 + titleHeight + 8, self.bounds.size.height - 12 - messageHeight), width, messageHeight);
+        CGFloat plotTop = 12 + titleHeight + 10;
+        CGRect placeholder = CGRectMake(12, plotTop, width, MAX(0, messageRect.origin.y - 10 - plotTop));
+        BASHatch(placeholder);
+        BASText(title, CGRectMake(12,10,width,titleHeight+2), titleFont, [UIColor compatLabelColor], NSTextAlignmentLeft);
+        BASText(message, messageRect, messageFont, [UIColor compatSecondaryLabelColor], NSTextAlignmentLeft);
+        self.accessibilityLabel = [NSString stringWithFormat:@"%@. %@", title, message];
     } else [self drawStatistics:hits];
     self.hitRegions = hits;
 }
@@ -194,7 +214,7 @@ void BASDot(CGPoint p, UIColor *color, CGFloat radius) {
 @end
 
 NSString *BASCoverage(NSDictionary *analysis, NSString *validKey, NSString *missingKey) {
-    return [NSString stringWithFormat:_("%@ / %@ · %@ missing"), BASTime([analysis[validKey] doubleValue]), BASTime([analysis[@"windowSeconds"] doubleValue]), BASTime([analysis[missingKey] doubleValue])];
+    return [NSString stringWithFormat:_("Recorded %@ · missing %@"), BASTime([analysis[validKey] doubleValue]), BASTime([analysis[missingKey] doubleValue])];
 }
 
 
@@ -218,6 +238,7 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
 @end
 
 @implementation BASStatisticalCard
+- (NSString *)presentationContextIdentifier { return BASCalendarSignature(NSCalendar.currentCalendar); }
 - (BAAnalyticsReport *)displayedReport { return self.analysis && self.derivedReport ? self.derivedReport : self.latestReport; }
 - (void)dealloc { _analysisCancellation.cancelled = YES; }
 - (NSDictionary *)deriveAnalysisForFamilyReport:(BAAnalyticsFamilyReport *)family { return nil; }
@@ -269,7 +290,7 @@ static NSString *BASCalendarSignature(NSCalendar *calendar) {
                 current.calendarSignature = signature;
                 current.analysis = analysis;
                 for (BASStatisticalView *view in current.statisticalViews.allObjects)
-                    [current updateCanvasView:view];
+                    [current invalidateCanvasPresentation:view];
             });
         }
     });

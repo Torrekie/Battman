@@ -54,39 +54,29 @@ static NSArray<NSString *> *BAEventStateMetrics(void) {
     return @[BAAnalyticsHistoryExternalConnected, BAAnalyticsHistoryIsCharging, BAAnalyticsHistoryFullyCharged];
 }
 
-static NSString *BAEventSymbol(BAAnalyticsObservedState state) {
-    switch (state) {
-        case BAAnalyticsObservedStateCharging: return @"C";
-        case BAAnalyticsObservedStateConnectedNotCharging: return @"Ⅱ";
-        case BAAnalyticsObservedStateFull: return @"F";
-        case BAAnalyticsObservedStateUnplugged: return @"U";
-        case BAAnalyticsObservedStateUnknown: return @"?";
-    }
-    return @"?";
-}
-
 static NSString *BAEventShortName(BAAnalyticsObservedState state) {
-    return state == BAAnalyticsObservedStateConnectedNotCharging ? _("Connected idle") : BAProcessStateName(state);
+    return state == BAAnalyticsObservedStateConnectedNotCharging ? _("Charging paused") : BAProcessStateName(state);
 }
 
-static CGFloat BAEventLegendLabelHeight(BAAnalyticsObservedState state, CGFloat width, UIFont *font) {
-    return ceil(MAX(font.lineHeight, [BAEventShortName(state) boundingRectWithSize:CGSizeMake(MAX(1, width), CGFLOAT_MAX)
+static CGFloat BAEventTextHeight(NSString *text, CGFloat width, UIFont *font) {
+    return ceil(MAX(font.lineHeight, [text boundingRectWithSize:CGSizeMake(MAX(1, width), CGFLOAT_MAX)
         options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
         attributes:@{NSFontAttributeName:font} context:nil].size.height));
 }
 
-static NSUInteger BAEventLegendColumns(CGFloat width, UIFont *font, BOOL compact, BOOL vertical) {
-    if (compact) return 5;
-    if (vertical) return 1;
-    CGFloat longestWord = 0;
-    for (NSNumber *state in @[@(BAAnalyticsObservedStateCharging), @(BAAnalyticsObservedStateConnectedNotCharging),
-            @(BAAnalyticsObservedStateFull), @(BAAnalyticsObservedStateUnplugged), @(BAAnalyticsObservedStateUnknown)]) {
-        for (NSString *word in [BAEventShortName(state.integerValue) componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet])
-            longestWord = MAX(longestWord, ceil([word sizeWithAttributes:@{NSFontAttributeName:font}].width));
+static NSArray<NSValue *> *BAEventLegendFrames(NSArray<NSNumber *> *states, CGFloat width, UIFont *font, BOOL vertical) {
+    NSMutableArray *frames = [NSMutableArray arrayWithCapacity:states.count];
+    CGFloat x = 0, y = 0, rowHeight = 0;
+    for (NSNumber *number in states) {
+        NSString *name = BAEventShortName(number.integerValue);
+        CGFloat cellWidth = vertical ? width : MIN(width, ceil([name sizeWithAttributes:@{NSFontAttributeName:font}].width) + 19);
+        if (x > 0 && (vertical || x + cellWidth > width)) { y += rowHeight + 2; x = 0; rowHeight = 0; }
+        CGFloat cellHeight = BAEventTextHeight(name, cellWidth - 19, font) + 2;
+        [frames addObject:[NSValue valueWithCGRect:CGRectMake(x, y, cellWidth, cellHeight)]];
+        x += cellWidth + 6;
+        rowHeight = MAX(rowHeight, cellHeight);
     }
-    NSUInteger columns = 3;
-    while (columns > 1 && width / columns - 19 < longestWord) columns--;
-    return columns;
+    return frames;
 }
 
 static NSDate *BAEventLater(NSDate *a, NSDate *b) {
@@ -127,6 +117,7 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 @property (nonatomic, copy) NSData *transitionRanges;
 @property (nonatomic, copy) NSData *closedGapRanges;
 @property (nonatomic, copy) NSNumber *preparedKnownDuration;
+@property (nonatomic, copy) NSArray<NSNumber *> *preparedLegendStates;
 @property (nonatomic, copy) NSData *preparedStateRuns;
 @property (nonatomic) BOOL preparedCurrentRange;
 @property (nonatomic) BOOL preparedHasCurrent;
@@ -144,6 +135,7 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     self.transitionRanges = nil;
     self.closedGapRanges = nil;
     self.preparedKnownDuration = nil;
+    self.preparedLegendStates = nil;
     self.preparedStateRuns = nil;
     self.preparedCurrentRange = NO;
     self.preparedHasCurrent = NO; self.preparedCurrentMinimum = 0; self.preparedCurrentMaximum = 0;
@@ -256,9 +248,13 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     CGContextRestoreGState(context);
     CGFloat span = vertical ? CGRectGetHeight(rect) : CGRectGetWidth(rect);
     if (span >= 16) {
-        UIFont *font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
-        CGRect label = CGRectMake(CGRectGetMidX(rect) - 8, CGRectGetMidY(rect) - 7, 16, 15);
-        BAProcessText(BAEventSymbol(state), label, font, UIColor.compatLabelColor, NSTextAlignmentCenter);
+        CGRect symbol = CGRectMake(CGRectGetMidX(rect) - 6, CGRectGetMidY(rect) - 6, 12, 12);
+        if (state != BAAnalyticsObservedStateUnknown) {
+            BAAnalyticsGlyph glyph = state == BAAnalyticsObservedStateCharging ? BAAnalyticsGlyphBolt :
+                state == BAAnalyticsObservedStateConnectedNotCharging ? BAAnalyticsGlyphPause :
+                state == BAAnalyticsObservedStateFull ? BAAnalyticsGlyphCheck : BAAnalyticsGlyphUnplugged;
+            BAAnalyticsDrawGlyph(glyph, symbol, UIColor.compatLabelColor);
+        }
     }
 }
 
@@ -570,47 +566,50 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
 }
 
 - (NSTimeInterval)knownStateDuration:(BAAnalyticsFamilyReport *)family transitions:(NSArray *)transitions {
-    (void)transitions;
     [self transitionsForFamily:family];
     if (self.preparedKnownDuration) return self.preparedKnownDuration.doubleValue;
     NSTimeInterval duration = 0;
     NSDate *cursor = family.window.startDate;
     NSUInteger transitionCursor = 0;
+    NSMutableSet<NSNumber *> *shownStates = [NSMutableSet set];
     for (BAAnalyticsHistoryInterval *interval in self.preparedIntervals) {
-        if (!BAProcessIntervalUsable(interval, @[], family.window.gaps) ||
-            [self stateForInterval:interval transitionCursor:&transitionCursor] == BAAnalyticsObservedStateUnknown) continue;
+        if (!BAProcessIntervalUsable(interval, @[], family.window.gaps)) continue;
+        BAAnalyticsObservedState state = [self stateForInterval:interval transitionCursor:&transitionCursor];
+        NSDate *visibleFirst = BAEventLater(interval.startDate, family.window.startDate);
+        NSDate *visibleLast = BAEventEarlier(interval.endDate, family.window.endDate);
+        if ([visibleLast compare:visibleFirst] == NSOrderedDescending) [shownStates addObject:@(state)];
+        if (state == BAAnalyticsObservedStateUnknown) continue;
         NSDate *first = BAEventLater(BAEventLater(interval.startDate, family.window.startDate), cursor);
         NSDate *last = BAEventEarlier(interval.endDate, family.window.endDate);
         if ([last compare:first] == NSOrderedDescending) duration += [last timeIntervalSinceDate:first];
         if ([last compare:cursor] == NSOrderedDescending) cursor = last;
     }
+    for (BAAnalyticsStateTransition *transition in transitions) [shownStates addObject:@(transition.nextState)];
+    if (duration < [family.window.endDate timeIntervalSinceDate:family.window.startDate] - 0.5)
+        [shownStates addObject:@(BAAnalyticsObservedStateUnknown)];
+    NSMutableArray *legend = [NSMutableArray array];
+    for (NSNumber *state in @[@(BAAnalyticsObservedStateCharging), @(BAAnalyticsObservedStateConnectedNotCharging),
+            @(BAAnalyticsObservedStateFull), @(BAAnalyticsObservedStateUnplugged), @(BAAnalyticsObservedStateUnknown)])
+        if ([shownStates containsObject:state]) [legend addObject:state];
+    self.preparedLegendStates = legend;
     self.preparedKnownDuration = @(duration);
     return duration;
 }
 
-- (void)legend:(CGRect)rect compact:(BOOL)compact vertical:(BOOL)vertical family:(BAAnalyticsFamilyReport *)family regions:(NSMutableArray *)regions {
-    NSArray *states = @[@(BAAnalyticsObservedStateCharging), @(BAAnalyticsObservedStateConnectedNotCharging),
-        @(BAAnalyticsObservedStateFull), @(BAAnalyticsObservedStateUnplugged), @(BAAnalyticsObservedStateUnknown)];
+- (void)legend:(CGRect)rect frames:(NSArray<NSValue *> *)frames family:(BAAnalyticsFamilyReport *)family regions:(NSMutableArray *)regions {
+    NSArray *states = self.preparedLegendStates;
     UIFont *font = BAProcessFont(UIFontTextStyleCaption2, 11, UIFontWeightRegular);
-    NSUInteger columns = BAEventLegendColumns(CGRectGetWidth(rect), font, compact, vertical);
-    NSUInteger rows = (states.count + columns - 1) / columns;
-    CGFloat cellWidth = CGRectGetWidth(rect) / columns;
-    CGFloat cellHeight = CGRectGetHeight(rect) / rows;
-    CGFloat cursorY = CGRectGetMinY(rect);
     for (NSUInteger index = 0; index < states.count; index++) {
         BAAnalyticsObservedState state = [states[index] integerValue];
-        if (vertical && !compact) cellHeight = BAEventLegendLabelHeight(state, cellWidth - 19, font) + 2;
-        CGRect cell = CGRectMake(CGRectGetMinX(rect) + (index % columns) * cellWidth,
-            vertical && !compact ? cursorY : CGRectGetMinY(rect) + (index / columns) * cellHeight, cellWidth, cellHeight);
-        cursorY = CGRectGetMaxY(cell);
+        CGRect cell = CGRectOffset(frames[index].CGRectValue, rect.origin.x, rect.origin.y);
         CGRect swatch = CGRectMake(CGRectGetMinX(cell), CGRectGetMidY(cell) - 5, 12, 10);
         [self drawState:state inRect:swatch vertical:NO];
-        NSString *text = compact ? BAEventSymbol(state) : BAEventShortName(state);
-        BAProcessText(text, CGRectMake(CGRectGetMinX(cell) + 16, CGRectGetMinY(cell), MAX(0, cellWidth - 19), cellHeight),
+        NSString *text = BAEventShortName(state);
+        BAProcessText(text, CGRectMake(CGRectGetMinX(cell) + 16, CGRectGetMinY(cell), MAX(0, cell.size.width - 19), cell.size.height),
             font, UIColor.compatSecondaryLabelColor, NSTextAlignmentLeft);
         [regions addObject:BAProcessRegion(cell, BAProcessSelection(self, @"legend", @[], BAEventStateMetrics(),
             family.window.startDate, family.window.endDate, @{@"state":@(state), @"legend":@YES}),
-            [NSString stringWithFormat:_("%@ means %@; sampled state in this window"), BAEventSymbol(state), BAProcessStateName(state)])];
+            BAProcessStateName(state))];
     }
 }
 
@@ -624,11 +623,16 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     if (!family || family.availability == BAAnalyticsReportAvailabilityLoading ||
         family.availability == BAAnalyticsReportAvailabilityUnavailable ||
         [family.window.endDate compare:family.window.startDate] != NSOrderedDescending) {
-        BAProcessHatch(CGRectInset(bounds, 0, 26), UIColor.compatSecondaryLabelColor);
-        BAProcessText(_("Observed states"), CGRectMake(bounds.origin.x, bounds.origin.y, bounds.size.width, caption.lineHeight * 2),
+        NSString *title = _("Observed states"), *status = BAProcessAvailability(family);
+        CGFloat titleHeight = BAEventTextHeight(title, bounds.size.width, caption);
+        CGFloat statusHeight = BAEventTextHeight(status, bounds.size.width, caption);
+        CGRect empty = CGRectMake(bounds.origin.x, bounds.origin.y + titleHeight + 8, bounds.size.width,
+            MAX(0, bounds.size.height - titleHeight - statusHeight - 16));
+        BAProcessHatch(empty, UIColor.compatSecondaryLabelColor);
+        BAProcessText(title, CGRectMake(bounds.origin.x, bounds.origin.y, bounds.size.width, titleHeight),
             caption, UIColor.compatLabelColor, NSTextAlignmentLeft);
-        BAProcessText(BAProcessAvailability(family), CGRectMake(bounds.origin.x, CGRectGetMidY(bounds) - caption.lineHeight,
-            bounds.size.width, caption.lineHeight * 3), caption, UIColor.compatSecondaryLabelColor, NSTextAlignmentLeft);
+        BAProcessText(status, CGRectMake(bounds.origin.x, CGRectGetMaxY(bounds) - statusHeight,
+            bounds.size.width, statusHeight), caption, UIColor.compatSecondaryLabelColor, NSTextAlignmentLeft);
         self.accessibilityLabel = [NSString stringWithFormat:_("Observed states. %@"), BAProcessAvailability(family)];
         [regions addObject:BAProcessRegion(bounds, BAProcessSelection(self, @"metric", @[], BAEventStateMetrics(),
             family.window.startDate, family.window.endDate, @{@"availability":@(family ? family.availability : BAAnalyticsReportAvailabilityLoading)}),
@@ -648,32 +652,31 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     NSTimeInterval requested = [window.endDate timeIntervalSinceDate:window.startDate];
     NSTimeInterval known = [self knownStateDuration:family transitions:transitions];
     BOOL hasUnknown = known < requested - 0.5;
-    NSString *summary = [NSString stringWithFormat:_("Known %@ / %@"), BAProcessDuration(known), BAProcessDuration(requested)];
-    NSString *events = [NSString stringWithFormat:_("%lu sampled changes%@"), (unsigned long)transitions.count,
-        hasUnknown ? _(" · gap events unknown") : @""];
+    NSString *summary = [NSString stringWithFormat:_("%@ of %@ recorded"), BAProcessDuration(known), BAProcessDuration(requested)];
+    NSString *events = [NSString stringWithFormat:_("%lu changes recorded%@"), (unsigned long)transitions.count,
+        hasUnknown ? _(" · striped areas unknown") : @""];
     if (known == 0 && transitions.count == 0) events = _("No verified states");
-    NSString *footer = largeText ? summary : [NSString stringWithFormat:@"%@\n%@", summary, events];
-    CGFloat footerHeight = ceil([footer boundingRectWithSize:CGSizeMake(bounds.size.width, CGFLOAT_MAX)
-        options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:secondary} context:nil].size.height) + 3;
-    CGFloat fullLegendHeight = 0, maximumLabelHeight = 0;
-    NSUInteger legendColumns = BAEventLegendColumns(bounds.size.width, secondary, NO, vertical);
-    CGFloat legendLabelWidth = bounds.size.width / legendColumns - 19;
-    for (NSNumber *state in @[@(BAAnalyticsObservedStateCharging), @(BAAnalyticsObservedStateConnectedNotCharging),
-            @(BAAnalyticsObservedStateFull), @(BAAnalyticsObservedStateUnplugged), @(BAAnalyticsObservedStateUnknown)]) {
-        CGFloat labelHeight = BAEventLegendLabelHeight(state.integerValue, legendLabelWidth, secondary) + 2;
-        fullLegendHeight += labelHeight;
-        maximumLabelHeight = MAX(maximumLabelHeight, labelHeight);
-    }
-    if (!vertical) fullLegendHeight = maximumLabelHeight * ceil(5.0 / legendColumns);
-    BOOL compactLegend = headerHeight + fullLegendHeight + footerHeight + 38 > bounds.size.height;
-    CGFloat legendHeight = compactLegend ? secondary.lineHeight + 6 : fullLegendHeight;
+    NSString *footer = largeText || (!vertical && !expanded) ? summary : [NSString stringWithFormat:@"%@\n%@", summary, events];
+    CGFloat footerHeight = BAEventTextHeight(footer, bounds.size.width, secondary) + 3;
+    // Measure only states represented by this timeline. A flowing legend avoids
+    // padding every short label to the longest translated state name.
+    NSArray<NSValue *> *legendFrames = BAEventLegendFrames(self.preparedLegendStates, bounds.size.width, secondary, vertical);
+    CGFloat legendHeight = 0;
+    for (NSValue *frame in legendFrames) legendHeight = MAX(legendHeight, CGRectGetMaxY(frame.CGRectValue));
     CGFloat top = bounds.origin.y + headerHeight + 7;
     CGFloat bottom = CGRectGetMaxY(bounds) - footerHeight - legendHeight - 7;
-    CGFloat plotHeight = MAX(12, bottom - top);
+    CGFloat minimumPlotHeight = vertical ? 24 : 26; // 12-point strip, 4-point gap, 8-point markers, breathing room.
+    if (bottom - top < minimumPlotHeight) {
+        // The date range already identifies the window. Coverage remains in
+        // VoiceOver/detail when larger text needs the compact canvas height.
+        footer = @""; footerHeight = 0;
+        bottom = CGRectGetMaxY(bounds) - legendHeight - 4;
+    }
+    CGFloat plotHeight = MAX(0, bottom - top);
     BAProcessText(range, CGRectMake(bounds.origin.x, bounds.origin.y, bounds.size.width, headerHeight), caption,
         UIColor.compatSecondaryLabelColor, NSTextAlignmentLeft);
     CGRect legendRect = CGRectMake(bounds.origin.x, bottom + 4, bounds.size.width, legendHeight);
-    [self legend:legendRect compact:compactLegend vertical:vertical family:family regions:regions];
+    [self legend:legendRect frames:legendFrames family:family regions:regions];
     CGRect footerRect = CGRectMake(bounds.origin.x, CGRectGetMaxY(bounds) - footerHeight, bounds.size.width, footerHeight);
     BAProcessText(footer, footerRect, secondary,
         UIColor.compatSecondaryLabelColor, NSTextAlignmentLeft);
@@ -697,45 +700,55 @@ static double BAEventCurrentAt(BAAnalyticsHistoryInterval *interval, NSDate *dat
     double margin = MAX(0.05, (maximum - minimum) * 0.08);
     minimum -= margin;
     maximum += margin;
-    BOOL showCurrent = hasCurrent && !largeText && !compactLegend && (vertical || expanded) && plotHeight > 65;
+    BOOL showCurrent = hasCurrent && !largeText && (vertical || expanded) && plotHeight > 100;
     if (vertical) {
         CGRect strip = CGRectMake(bounds.origin.x + 3, top, 14, plotHeight);
-        [self stateStrip:strip vertical:YES family:family transitions:transitions regions:regions];
         CGRect marks = CGRectMake(CGRectGetMaxX(strip) + 5, top, 10, plotHeight);
-        [self transitionMarks:marks vertical:YES family:family transitions:transitions regions:regions];
         if (showCurrent) {
-            // Keep the unit beside the trace, outside its value/time domain.
+            // Keep the unit above the trace, outside its value/time domain.
             // Both vertical tracks still use the same full time range.
-            NSString *unit = _("A ±");
-            CGFloat unitWidth = ceil([unit sizeWithAttributes:@{NSFontAttributeName:secondary}].width);
-            CGRect unitRect = CGRectMake(CGRectGetMaxX(marks) + 3, top, unitWidth, secondary.lineHeight + 2);
-            CGFloat currentLeft = CGRectGetMaxX(unitRect) + 5;
-            CGRect current = CGRectMake(currentLeft, top,
-                MAX(12, CGRectGetMaxX(bounds) - currentLeft), plotHeight);
+            NSString *unit = _("Current (A)\n+ charges\n− uses battery");
+            CGFloat currentLeft = CGRectGetMaxX(marks) + 5;
+            CGFloat currentWidth = MAX(12, CGRectGetMaxX(bounds) - currentLeft);
+            CGFloat unitHeight = ceil([unit boundingRectWithSize:CGSizeMake(currentWidth, CGFLOAT_MAX)
+                options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                attributes:@{NSFontAttributeName:secondary} context:nil].size.height);
+            // Keep the label above this entire shared time domain. The state
+            // strip and current trace both begin after the same label band.
+            CGRect unitRect = CGRectMake(currentLeft, top, currentWidth, unitHeight + 2);
+            CGFloat traceTop = CGRectGetMaxY(unitRect) + 4;
+            CGRect current = CGRectMake(currentLeft, traceTop, currentWidth, MAX(0, bottom - traceTop));
+            strip.origin.y = traceTop; strip.size.height = current.size.height;
+            marks.origin.y = traceTop; marks.size.height = current.size.height;
             [self verticalCurrent:current family:family minimum:minimum maximum:maximum regions:regions];
             BAProcessText(unit, unitRect, secondary, UIColor.compatBlueColor, NSTextAlignmentLeft);
         } else {
             BAAnalyticsDrawGlyph(BAAnalyticsGlyphClock, CGRectMake(CGRectGetMaxX(marks) + 10, top + 2, 16, 16),
                 UIColor.compatSecondaryLabelColor);
         }
+        [self stateStrip:strip vertical:YES family:family transitions:transitions regions:regions];
+        [self transitionMarks:marks vertical:YES family:family transitions:transitions regions:regions];
     } else {
-        CGFloat stripHeight = MIN(28, showCurrent ? plotHeight * 0.25 : plotHeight - 14);
-        stripHeight = MAX(12, stripHeight);
+        CGFloat stripHeight = MAX(0, MIN(28, showCurrent ? plotHeight * 0.25 : plotHeight - 14));
         CGRect strip = CGRectMake(bounds.origin.x, top, bounds.size.width, stripHeight);
         [self stateStrip:strip vertical:NO family:family transitions:transitions regions:regions];
         CGRect marks = CGRectMake(bounds.origin.x, CGRectGetMaxY(strip) + 4, bounds.size.width, 8);
         [self transitionMarks:marks vertical:NO family:family transitions:transitions regions:regions];
         if (showCurrent) {
-            CGFloat currentTop = CGRectGetMaxY(marks) + secondary.lineHeight + 7;
-            CGRect current = CGRectMake(bounds.origin.x, currentTop, bounds.size.width, MAX(12, bottom - currentTop));
-            BAProcessText(_("signed A"), CGRectMake(bounds.origin.x, CGRectGetMaxY(marks) + 3, bounds.size.width, secondary.lineHeight + 2), secondary,
+            NSString *unit = _("Current (A) · + charges · − uses battery");
+            CGFloat unitHeight = ceil([unit boundingRectWithSize:CGSizeMake(bounds.size.width, CGFLOAT_MAX)
+                options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                attributes:@{NSFontAttributeName:secondary} context:nil].size.height);
+            CGFloat currentTop = CGRectGetMaxY(marks) + unitHeight + 7;
+            CGRect current = CGRectMake(bounds.origin.x, currentTop, bounds.size.width, MAX(0, bottom - currentTop));
+            BAProcessText(unit, CGRectMake(bounds.origin.x, CGRectGetMaxY(marks) + 3, bounds.size.width, unitHeight + 2), secondary,
                 UIColor.compatBlueColor, NSTextAlignmentLeft);
             [regions addObjectsFromArray:BAProcessTrace(self, window.observations, window.intervals, window.gaps,
                 BAAnalyticsHistoryCurrentMilliamps, @"A", window.startDate, window.endDate, current,
                 minimum, maximum, 1000.0, UIColor.compatBlueColor, NO, nil)];
         }
     }
-    self.accessibilityLabel = [NSString stringWithFormat:_("Observed states, %@. %@. %@. C charging; two bars connected but not charging; F full; U unplugged; question mark unknown."),
+    self.accessibilityLabel = [NSString stringWithFormat:_("Observed states, %@. %@. %@. Lightning means charging, pause means plugged in without charging, check means full, and a crossed plug means unplugged. Stripes mean unknown."),
         BAProcessWindow(window.startDate, window.endDate), summary, events];
     return regions;
 }

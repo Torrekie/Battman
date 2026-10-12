@@ -5,6 +5,7 @@
 
 #import "common.h"
 #import "AnalyticsCardCell.h"
+#import "../BuiltIn/Canvas/BAAnalyticsCanvasCard.h"
 
 #import "ObjCExt/CALayer+smoothCorners.h"
 #import "ObjCExt/UIColor+compat.h"
@@ -139,6 +140,9 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	BOOL _jiggling;
 	BOOL _analyticsCardDisplayed;
 	BAAnalyticsCardSize _mountedCardSize;
+	BOOL _mountedCardEditing;
+	BOOL _hasMountedConfiguration;
+	BAAnalyticsMetricSnapshot *_appliedMetricSnapshot;
 }
 
 @synthesize resizeButton = _resizeButton;
@@ -255,11 +259,18 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 
 - (void)prepareForReuse {
 	[super prepareForReuse];
+	[self setAnalyticsCardDisplayed:NO];
 	[self setJiggling:NO];
 	[_resizeButton removeTarget:nil action:NULL forControlEvents:UIControlEventAllEvents];
 	[_removeButton removeTarget:nil action:NULL forControlEvents:UIControlEventAllEvents];
 	[self removeActionButtons];
-	[self unmountCardContentView];
+	if (!self.preservesBuiltInCanvasForReuse || ![_mountedCard isKindOfClass:BAAnalyticsCanvasCard.class])
+		[self unmountCardContentView];
+}
+
+- (void)releaseOffscreenCardContent {
+	if (!_analyticsCardDisplayed)
+		[self unmountCardContentView];
 }
 
 - (void)removeActionButtons {
@@ -317,6 +328,8 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	_cardContentView = nil;
 	_mountedCardIdentifier = nil;
 	_mountedCard = nil;
+	_hasMountedConfiguration = NO;
+	_appliedMetricSnapshot = nil;
 }
 
 - (void)setAnalyticsCardDisplayed:(BOOL)displayed {
@@ -336,6 +349,11 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 - (void)applyMetricSnapshot:(BAAnalyticsMetricSnapshot *)snapshot {
 	if (!_mountedCard || !_cardContentView || !snapshot)
 		return;
+	if ([_mountedCard isKindOfClass:BAAnalyticsCanvasCard.class] && _appliedMetricSnapshot == snapshot &&
+		[_cardContentView isKindOfClass:BAAnalyticsCanvasView.class] &&
+		((BAAnalyticsCanvasView *)_cardContentView).latestSnapshot == snapshot)
+		return;
+	_appliedMetricSnapshot = snapshot;
 	if ([_mountedCard respondsToSelector:@selector(analyticsCardContentView:didReceiveMetricSnapshot:)])
 		[_mountedCard analyticsCardContentView:_cardContentView didReceiveMetricSnapshot:snapshot];
 	if ([_mountedCard respondsToSelector:@selector(analyticsCardAccessibilityLabelForSize:)])
@@ -439,21 +457,28 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 - (void)configureWithCard:(id<BAAnalyticsCard>)card
 					 size:(BAAnalyticsCardSize)size
 				  editing:(BOOL)editing {
-	if (![_mountedCardIdentifier isEqualToString:card.analyticsCardIdentifier]) {
+	if (_mountedCard != card || ![_mountedCardIdentifier isEqualToString:card.analyticsCardIdentifier]) {
 		BOOL shouldRemainDisplayed = _analyticsCardDisplayed;
 		[self unmountCardContentView];
 		[self mountContentViewForCard:card];
 		if (shouldRemainDisplayed)
 			[self setAnalyticsCardDisplayed:YES];
 	}
+	BOOL builtInCanvas = [card isKindOfClass:BAAnalyticsCanvasCard.class];
+	BOOL configurationChanged = !_hasMountedConfiguration || _mountedCardSize != size || _mountedCardEditing != editing;
 	_mountedCardSize = size;
+	_mountedCardEditing = editing;
+	_hasMountedConfiguration = YES;
 
 	_normalBackgroundColor = [card respondsToSelector:@selector(analyticsCardBackgroundColor)] ? [card analyticsCardBackgroundColor] : BAAnalyticsDefaultCardBackgroundColor();
 	_cardView.backgroundColor = _normalBackgroundColor;
 	[self updateRemoveButtonStyle];
 
-	[card configureAnalyticsCardContentView:_cardContentView forSize:size editing:editing];
-	if ([card respondsToSelector:@selector(analyticsCardContentView:didChangeEditing:)])
+	if (!builtInCanvas || configurationChanged)
+		[card configureAnalyticsCardContentView:_cardContentView forSize:size editing:editing];
+	// Built-in configuration already passes editing to the canvas. Calling its
+	// separate editing callback would prepare the same evidence a second time.
+	if (!builtInCanvas && [card respondsToSelector:@selector(analyticsCardContentView:didChangeEditing:)])
 		[card analyticsCardContentView:_cardContentView didChangeEditing:editing];
 	// Also gate embedded controls/gestures, not only the canvas's detail action.
 	_cardContentView.userInteractionEnabled = !editing;
@@ -467,7 +492,8 @@ static NSArray<NSNumber *> *BAAnalyticsCardRandomJiggleValues(CGFloat amplitude)
 	_contentTopConstraint.constant = 0.0;
 	[_jiggleView bringSubviewToFront:_resizeButton];
 	[_jiggleView bringSubviewToFront:_removeButton];
-	[self setNeedsLayout];
+	if (!builtInCanvas || configurationChanged)
+		[self setNeedsLayout];
 	_resizeButton.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", _("Resize"), card.analyticsCardDisplayName];
 	_removeButton.hidden = !editing;
 	_removeButton.alpha = editing ? 1.0 : 0.0;

@@ -110,11 +110,11 @@ static NSDictionary *BASComparePreparedDrawing(NSDictionary *analysis) {
     UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleCaption1] scaledFontForFont:[UIFont systemFontOfSize:12] maximumPointSize:16];
     CGFloat line=ceil(font.lineHeight), top=38, bottom=self.bounds.size.height-line*4-22;
     UIColor *muted=[UIColor compatSecondaryLabelColor], *blue=[UIColor compatBlueColor];
-    BASText(_("20 → 80% · ≈ min"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
+    BASText(_("20 → 80% charge · minutes"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
     CGRect plot=CGRectMake(54,top,w-74,MAX(32,bottom-top));
     double maximum=self.maximum,minimum=self.minimum;
     if (!self.samples.count) {
-        BASHatch(plot); BASText(_("No complete 20–80% crossings"),CGRectInset(plot,8,8),font,muted,NSTextAlignmentLeft); return;
+        BASHatch(plot); BASText(_("No recorded charge from 20% to 80%"),CGRectInset(plot,8,8),font,muted,NSTextAlignmentLeft); return;
     }
     double lower=MAX(0,minimum-MAX(2,(maximum-minimum)*.1)),upper=maximum+MAX(2,(maximum-minimum)*.1);
     BASLine(CGPointMake(plot.origin.x,plot.origin.y),CGPointMake(plot.origin.x,CGRectGetMaxY(plot)),[UIColor compatSeparatorColor],1);
@@ -135,7 +135,7 @@ static NSDictionary *BASComparePreparedDrawing(NSDictionary *analysis) {
     NSDateFormatter *format=BASDateFormatter(@"M/d");
     BASText([format stringFromDate:first],CGRectMake(plot.origin.x,bottom+6,plot.size.width/2,line+4),font,muted,NSTextAlignmentLeft);
     BASText([format stringFromDate:last],CGRectMake(plot.origin.x+plot.size.width/2,bottom+6,plot.size.width/2,line+4),font,muted,NSTextAlignmentRight);
-    BASText(_("Each dot is one independent session"),CGRectMake(16,bottom+line+14,w-32,line*2+4),font,muted,NSTextAlignmentLeft);
+    BASText(_("Each dot is a separate charging session"),CGRectMake(16,bottom+line+14,w-32,line*2+4),font,muted,NSTextAlignmentLeft);
 }
 @end
 
@@ -150,7 +150,7 @@ static NSString *BASComparisonExclusionTitle(NSString *reason) {
         @"non-independent-overlapping-session":_("Overlapping sessions"),
         @"overlapping-source-pairs":_("Overlapping observations"),
         @"missing-trusted-pair":_("Missing trusted observations"),
-        @"unavailable-SOC-or-connection":_("SOC or connection unavailable"),
+        @"unavailable-SOC-or-connection":_("Battery level or connection unavailable"),
         @"unplugged-or-unknown-connection":_("Unplugged or unknown connection"),
         @"incompatible-measurement-source":_("Incompatible measurement sources")
     };
@@ -245,8 +245,13 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
 - (NSArray *)summaryRows {
     if (!self.analysis) return @[];
     NSMutableArray *rows = [NSMutableArray array];
-    [rows addObject:@{@"text":[NSString stringWithFormat:_("20 → 80%% · n=%lu · %@"),(unsigned long)[self.analysis[@"samples"] count],_("estimated minutes")],@"kind":@"distribution",@"item":@{}}];
-    if ([self.analysis[@"hasBox"] boolValue]) [rows addObject:@{@"text":[NSString stringWithFormat:_("min %.1f · Q1 %.1f · median %.1f · Q3 %.1f · max %.1f min"),[self.analysis[@"minimum"] doubleValue],[self.analysis[@"q1"] doubleValue],[self.analysis[@"median"] doubleValue],[self.analysis[@"q3"] doubleValue],[self.analysis[@"maximum"] doubleValue]],@"kind":@"distribution",@"item":@{}}];
+    NSUInteger count=[self.analysis[@"samples"] count];
+    [rows addObject:@{@"text":[NSString stringWithFormat:_("%lu sessions · 20 → 80%% charge"),(unsigned long)count],@"kind":@"distribution",@"item":@{}}];
+    if (count) {
+        [rows addObject:@{@"text":[NSString stringWithFormat:_("Estimated median: %.1f min"),[self.analysis[@"median"] doubleValue]],@"kind":@"distribution",@"item":@{}}];
+        [rows addObject:@{@"text":[NSString stringWithFormat:_("Recorded range: %.1f–%.1f min"),[self.analysis[@"minimum"] doubleValue],[self.analysis[@"maximum"] doubleValue]],@"kind":@"distribution",@"item":@{}}];
+    }
+    if ([self.analysis[@"hasBox"] boolValue]) [rows addObject:@{@"text":[NSString stringWithFormat:_("Middle 50%%: %.1f–%.1f min"),[self.analysis[@"q1"] doubleValue],[self.analysis[@"q3"] doubleValue]],@"kind":@"distribution",@"item":@{}}];
     NSDateFormatter *formatter=BASDateFormatter(@"M/d HH:mm");
     for (NSDictionary *sample in self.analysis[@"summaryDrawingSamples"]) [rows addObject:@{@"text":BASSampleLabel(sample,formatter),@"kind":@"session",@"item":sample,@"metrics":@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryTemperatureCelsius]}];
     [rows addObject:@{@"text":[NSString stringWithFormat:@"%@ · %lu",_("Excluded sessions"),(unsigned long)[[[self.analysis[@"exclusionCounts"] allValues] valueForKeyPath:@"@sum.self"] unsignedIntegerValue]],@"kind":@"exclusions",@"item":@{}}];
@@ -259,26 +264,41 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
     NSMutableDictionary *labels=[NSMutableDictionary dictionary], *selections=[NSMutableDictionary dictionary];
     NSDateFormatter *formatter=BASDateFormatter(@"M/d HH:mm");
     BOOL vertical=self.cardSize == BAAnalyticsCardSize1x2;
-    BASText(vertical ? @"20 → 80%" : _("20 → 80% · ≈ min"),CGRectMake(12,10,w-66,line+6),BASFont(13),[UIColor compatLabelColor],NSTextAlignmentLeft);
-    BASText([NSString stringWithFormat:@"n=%lu",(unsigned long)samples.count],CGRectMake(w-60,10,48,line+6),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentRight);
-    BASText(BASWindow(self.familyReport.window),CGRectMake(12,16+line,w-24,line*2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
-    CGFloat top=22+line*(vertical?3:2), bottom=h-line*(vertical?3:2)-16;
+    UIFont *titleFont=BASFont(13);
+    NSString *title=_("20 → 80% charge");
+    NSString *countLabel=[NSString stringWithFormat:_("%lu sessions"),(unsigned long)samples.count];
+    CGFloat countWidth=ceil([countLabel sizeWithAttributes:@{NSFontAttributeName:font}].width)+2;
+    CGFloat titleWidth=vertical ? w-24 : MAX(1,w-32-countWidth);
+    CGFloat titleHeight=BASTextHeight(title,titleWidth,titleFont);
+    BASText(title,CGRectMake(12,10,titleWidth,titleHeight),titleFont,[UIColor compatLabelColor],NSTextAlignmentLeft);
+    CGFloat countY=vertical ? 14+titleHeight : 10+(titleHeight-line)/2;
+    BASText(countLabel,CGRectMake(vertical?12:w-12-countWidth,countY,vertical?w-24:countWidth,line+2),font,[UIColor compatSecondaryLabelColor],vertical?NSTextAlignmentLeft:NSTextAlignmentRight);
+    CGFloat windowY=vertical ? countY+line+6 : 14+titleHeight;
+    NSString *window=BASWindow(self.familyReport.window);
+    CGFloat windowHeight=BASTextHeight(window,w-24,font);
+    BASText(window,CGRectMake(12,windowY,w-24,windowHeight),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
     NSUInteger excluded=0; for (NSNumber *count in [self.analysis[@"exclusionCounts"] allValues]) excluded += count.unsignedIntegerValue;
-    NSString *definition=hasBox ? (vertical?_("Q1–Q3\nobs min/max"):_("Q1–Q3 · obs min/max")) : _("n < 3 · points");
-    BASText([NSString stringWithFormat:@"%@ · %lu %@",definition,(unsigned long)excluded,_("excluded")],CGRectMake(12,bottom+5,w-24,line*(vertical?3:2)+4),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
-    [self addHit:hits rect:CGRectMake(8,bottom,w-16,h-bottom) kind:@"exclusions" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:[NSString stringWithFormat:@"%@, %lu %@",definition,(unsigned long)excluded,_("excluded")]];
+    NSString *definition=hasBox ? _("Box: middle 50%") : _("Dots: separate charges");
+    NSString *footer=[NSString stringWithFormat:_("%@ · %lu excluded"),definition,(unsigned long)excluded];
+    CGFloat footerHeight=BASTextHeight(footer,w-24,font);
+    CGFloat top=windowY+windowHeight+6, bottom=h-footerHeight-12;
+    BASText(footer,CGRectMake(12,bottom,w-24,footerHeight),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+    [self addHit:hits rect:CGRectMake(8,bottom-3,w-16,h-bottom) kind:@"exclusions" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:footer];
     if (!samples.count) {
         BASHatch(CGRectMake(12,top,w-24,MAX(8,bottom-top-8)));
-        BASText(_("No complete 20–80% crossings"),CGRectMake(18,top+12,w-36,MAX(line*2,bottom-top-12)),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
-        [self addHit:hits rect:CGRectMake(12,top,w-24,MAX(8,bottom-top)) kind:@"distribution" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:_("No complete 20–80% crossings")];
+        BASText(_("No recorded charge from 20% to 80%"),CGRectMake(18,top+12,w-36,MAX(line*2,bottom-top-12)),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+        [self addHit:hits rect:CGRectMake(12,top,w-24,MAX(8,bottom-top)) kind:@"distribution" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:_("No recorded charge from 20% to 80%")];
         return;
     }
     double lo=[self.analysis[@"minimum"] doubleValue],hi=[self.analysis[@"maximum"] doubleValue];
     double padding=MAX(2,(hi-lo)*.12), axisLo=MAX(0,lo-padding),axisHi=hi+padding;
     BOOL scatter=self.cardSize == BAAnalyticsCardSize2x2;
     CGFloat chartBottom=scatter ? top+(bottom-top)*.47 : bottom-(vertical?line+8:8);
-    CGRect chart=CGRectMake(vertical?40:24,top+12,vertical?w-56:w-48,MAX(16,chartBottom-top-line-12));
-    [self addHit:hits rect:CGRectInset(chart,-8,-8) kind:@"distribution" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:[NSString stringWithFormat:_("%@, n=%lu, %@ %.1f min"),_("20–80% charge duration distribution"),(unsigned long)samples.count,_("estimated median"),[self.analysis[@"median"] doubleValue]]];
+    NSString *maximumLabel=[NSString stringWithFormat:@"%.0f",hi], *minimumLabel=[NSString stringWithFormat:@"%.0f",lo];
+    CGFloat valueWidth=MAX([maximumLabel sizeWithAttributes:@{NSFontAttributeName:font}].width,[minimumLabel sizeWithAttributes:@{NSFontAttributeName:font}].width);
+    CGFloat chartLeft=vertical ? MAX(40,ceil(valueWidth)+16) : 24;
+    CGRect chart=CGRectMake(chartLeft,top+12,w-chartLeft-(vertical?16:24),MAX(16,chartBottom-top-line-12));
+    [self addHit:hits rect:CGRectInset(chart,-8,-8) kind:@"distribution" item:@{} metrics:@[BAAnalyticsHistorySOCPercent] label:[NSString stringWithFormat:_("20–80%% charge, %lu sessions, estimated median %.1f min"),(unsigned long)samples.count,[self.analysis[@"median"] doubleValue]]];
     CGFloat (^position)(double)=^CGFloat(double value) {
         double t=(value-axisLo)/(axisHi-axisLo);
         return vertical ? CGRectGetMaxY(chart)-t*chart.size.height : chart.origin.x+t*chart.size.width;
@@ -287,10 +307,11 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
     CGFloat center=vertical ? chart.origin.x+chart.size.width*.4 : chart.origin.y+chart.size.height*.35;
     CGFloat boxHalf=MAX(3,MIN(11,(chart.size.height-12)/2));
     if (vertical) {
-        BASLine(CGPointMake(31,chart.origin.y),CGPointMake(31,CGRectGetMaxY(chart)),[UIColor compatSeparatorColor],1);
-        BASText([NSString stringWithFormat:@"%.0f",hi],CGRectMake(4,position(hi)-line/2,24,line+2),font,muted,NSTextAlignmentRight);
-        BASText([NSString stringWithFormat:@"%.0f",lo],CGRectMake(4,position(lo)-line/2,24,line+2),font,muted,NSTextAlignmentRight);
-        BASText(_("≈ min"),CGRectMake(12,chartBottom+1,w-24,line+3),font,muted,NSTextAlignmentLeft);
+        CGFloat axisX=chart.origin.x-8;
+        BASLine(CGPointMake(axisX,chart.origin.y),CGPointMake(axisX,CGRectGetMaxY(chart)),[UIColor compatSeparatorColor],1);
+        BASText(maximumLabel,CGRectMake(4,position(hi)-line/2,axisX-8,line+2),font,muted,NSTextAlignmentRight);
+        if (fabs(position(lo)-position(hi))>line+3) BASText(minimumLabel,CGRectMake(4,position(lo)-line/2,axisX-8,line+2),font,muted,NSTextAlignmentRight);
+        BASText(_("Minutes"),CGRectMake(12,chartBottom+1,w-24,line+3),font,muted,NSTextAlignmentLeft);
     } else {
         CGFloat axis=CGRectGetMaxY(chart);
         BASLine(CGPointMake(chart.origin.x,axis),CGPointMake(CGRectGetMaxX(chart),axis),[UIColor compatSeparatorColor],1);
@@ -324,7 +345,7 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
         double tlo=[temperature[@"minimum"] doubleValue],thi=[temperature[@"maximum"] doubleValue];
         NSUInteger temperatureCount=[temperature[@"count"] unsignedIntegerValue];
         BAAnalyticsDrawGlyph(BAAnalyticsGlyphThermometer,CGRectMake(12,sy-line-8,13,line),muted);
-        BASText(@"°C",CGRectMake(30,sy-line-8,w-42,line+4),font,muted,NSTextAlignmentLeft);
+        BASText(_("Peak temperature · °C"),CGRectMake(30,sy-line-8,w-42,line+4),font,muted,NSTextAlignmentLeft);
         if (!temperatureCount) {
             BASHatch(plot); BASText(_("Temperature unavailable"),CGRectInset(plot,6,4),font,muted,NSTextAlignmentLeft);
         } else {
@@ -334,7 +355,7 @@ id<BAAnalyticsCard> BAAnalyticsCreateCompareCanvasCard(void) {
             BASText([NSString stringWithFormat:@"%.1f",thi],CGRectMake(4,plot.origin.y,40,line+2),font,muted,NSTextAlignmentRight);
             BASText([NSString stringWithFormat:@"%.1f",tlo],CGRectMake(4,CGRectGetMaxY(plot)-line,40,line+2),font,muted,NSTextAlignmentRight);
             BASText([NSString stringWithFormat:@"%.1f",axisLo],CGRectMake(plot.origin.x,CGRectGetMaxY(plot)+2,plot.size.width/2,line+3),font,muted,NSTextAlignmentLeft);
-            BASText([NSString stringWithFormat:_("%.1f ≈ min"),axisHi],CGRectMake(plot.origin.x+plot.size.width/2,CGRectGetMaxY(plot)+2,plot.size.width/2,line+3),font,muted,NSTextAlignmentRight);
+            BASText([NSString stringWithFormat:_("%.1f min"),axisHi],CGRectMake(plot.origin.x+plot.size.width/2,CGRectGetMaxY(plot)+2,plot.size.width/2,line+3),font,muted,NSTextAlignmentRight);
             // Sessions remain independent marks. No line or causal inference between them.
             for (NSDictionary *sample in temperature[@"samples"]) {
                 CGPoint p=CGPointMake(plot.origin.x+([sample[@"minutes"] doubleValue]-axisLo)/(axisHi-axisLo)*plot.size.width,CGRectGetMaxY(plot)-([sample[@"peakCelsius"] doubleValue]-tlo)/(thi-tlo)*plot.size.height);

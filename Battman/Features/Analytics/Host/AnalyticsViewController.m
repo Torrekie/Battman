@@ -22,6 +22,19 @@ UIImage *imageForSFProGlyph(NSString *glyph, NSString *fontName, CGFloat fontSiz
 
 static NSString *const BAAnalyticsCardCellIdentifier = @"BAAnalyticsCardCell";
 
+@interface BAAnalyticsCollectionView : UICollectionView
+@end
+
+@implementation BAAnalyticsCollectionView
+- (BOOL)touchesShouldCancelInContentView:(UIView *)view {
+	// The canvas is a UIControl for detail taps. A finger drag must still hand
+	// its touch to the collection view instead of remaining captured by it.
+	if ([view isKindOfClass:BAAnalyticsCanvasView.class])
+		return YES;
+	return [super touchesShouldCancelInContentView:view];
+}
+@end
+
 static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	return UIAccessibilityIsReduceMotionEnabled() ? 0.0 : duration;
 }
@@ -46,6 +59,9 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 @property (nonatomic, strong) NSMutableArray<BAAnalyticsCardState *> *cardStates;
 @property (nonatomic, strong) BAAnalyticsMetricService *metricService;
 @property (nonatomic, strong) NSHashTable<BAAnalyticsCardCell *> *visibleCardCells;
+@property (nonatomic, strong) NSHashTable<BAAnalyticsCardCell *> *createdCardCells;
+@property (nonatomic, strong) NSMutableSet<NSString *> *canvasReuseIdentifiers;
+@property (nonatomic, strong) NSMapTable<NSString *, BAAnalyticsCardCell *> *canvasCellsByIdentifier;
 @property (nonatomic) BOOL metricSubscribed;
 @property (nonatomic, strong) UIBarButtonItem *addCardButtonItem;
 @property (nonatomic) BOOL movingCard;
@@ -107,6 +123,9 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	if ([userDefaults objectForKey:BAAnalyticsCardLayoutDefaultsKey] == nil && [userDefaults objectForKey:BAAnalyticsLegacyCardLayoutDefaultsKey] != nil)
 		[self saveCardLayout];
 	self.visibleCardCells = [NSHashTable weakObjectsHashTable];
+	self.createdCardCells = [NSHashTable weakObjectsHashTable];
+	self.canvasReuseIdentifiers = [NSMutableSet set];
+	self.canvasCellsByIdentifier = [NSMapTable strongToWeakObjectsMapTable];
 	BOOL active = UIApplication.sharedApplication.applicationState != UIApplicationStateBackground;
 	[self.metricService setApplicationActive:active];
 	[self.historyService setApplicationActive:active];
@@ -130,7 +149,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	self.collectionLayout.minimumColumnWidth = 170.0;
 	self.collectionLayout.maximumNumberOfColumns = 6;
 
-	self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionLayout];
+	self.collectionView = [[BAAnalyticsCollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionLayout];
 	self.collectionView.translatesAutoresizingMaskIntoConstraints = NO;
 	self.collectionView.backgroundColor = [UIColor tertiaryCompatFillColor];
 	self.collectionView.alwaysBounceVertical = YES;
@@ -195,6 +214,30 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	[self updateMetricSubscription];
 }
 
+- (void)viewDidDisappear:(BOOL)animated {
+	[super viewDidDisappear:animated];
+	[self setCanvasPresentationUpdatesDeferred:NO];
+}
+
+- (void)setCanvasPresentationUpdatesDeferred:(BOOL)deferred {
+	for (id<BAAnalyticsCard> card in self.availableCards)
+		if ([card isKindOfClass:BAAnalyticsCanvasCard.class])
+			((BAAnalyticsCanvasCard *)card).presentationUpdatesDeferred = deferred;
+}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+	[self setCanvasPresentationUpdatesDeferred:YES];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+	if (!decelerate)
+		[self setCanvasPresentationUpdatesDeferred:NO];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+	[self setCanvasPresentationUpdatesDeferred:NO];
+}
+
 - (void)applicationWillResignActive:(NSNotification *)notification {
 	[self.metricService setApplicationActive:NO];
 	[self.historyService setApplicationActive:NO];
@@ -206,12 +249,17 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 }
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification {
+	// An interrupted drag may not deliver its normal deceleration callback.
+	[self setCanvasPresentationUpdatesDeferred:NO];
 	[self.metricService setApplicationActive:YES];
 	[self.historyService setApplicationActive:YES];
 	[self.metricService refreshNow];
 }
 
 - (void)applicationDidReceiveMemoryWarning:(NSNotification *)notification {
+	for (BAAnalyticsCardCell *cell in self.createdCardCells.allObjects)
+		if (cell.preservesBuiltInCanvasForReuse)
+			[cell releaseOffscreenCardContent];
 	[self.metricService handleMemoryPressure];
 	[self.historyService handleMemoryPressure];
 	[self updateCachedHistoryPrompt];
@@ -412,8 +460,29 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 }
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-	BAAnalyticsCardCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:BAAnalyticsCardCellIdentifier forIndexPath:indexPath];
 	BAAnalyticsCardState *state = self.cardStates[indexPath.item];
+	BOOL builtInCanvas = [state.card isKindOfClass:BAAnalyticsCanvasCard.class];
+	NSString *identifier = state.card.analyticsCardIdentifier;
+	NSString *reuseIdentifier = BAAnalyticsCardCellIdentifier;
+	if (builtInCanvas) {
+		// Prepared evidence and its rendered backing survive a scroll round trip.
+		// Only the finite built-in set gets dedicated pools; plug-ins retain the
+		// existing shared pool and unmount-on-reuse contract.
+		reuseIdentifier = [BAAnalyticsCardCellIdentifier stringByAppendingFormat:@".%@", identifier];
+		if (![self.canvasReuseIdentifiers containsObject:reuseIdentifier]) {
+			[collectionView registerClass:BAAnalyticsCardCell.class forCellWithReuseIdentifier:reuseIdentifier];
+			[self.canvasReuseIdentifiers addObject:reuseIdentifier];
+		}
+	}
+	BAAnalyticsCardCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifier forIndexPath:indexPath];
+	cell.preservesBuiltInCanvasForReuse = builtInCanvas;
+	[self.createdCardCells addObject:cell];
+	if (builtInCanvas) {
+		BAAnalyticsCardCell *previousCell = [self.canvasCellsByIdentifier objectForKey:identifier];
+		if (previousCell != cell)
+			[previousCell releaseOffscreenCardContent];
+		[self.canvasCellsByIdentifier setObject:cell forKey:identifier];
+	}
 	[cell configureWithCard:state.card size:state.size editing:self.editing];
 	if ([cell.analyticsCardContentView isKindOfClass:BAAnalyticsCanvasView.class]) {
 		BAAnalyticsCanvasView *canvas = (BAAnalyticsCanvasView *)cell.analyticsCardContentView;
@@ -446,6 +515,13 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 	BAAnalyticsCardCell *analyticsCell = (BAAnalyticsCardCell *)cell;
 	[analyticsCell setAnalyticsCardDisplayed:NO];
 	[self.visibleCardCells removeObject:analyticsCell];
+	NSString *mountedIdentifier = analyticsCell.mountedCardIdentifier;
+	// A resize/reload can briefly create a replacement cell. Retain at most the
+	// newest canvas per built-in identity after the outgoing cell is offscreen.
+	if (analyticsCell.preservesBuiltInCanvasForReuse && mountedIdentifier.length > 0 &&
+		([self.canvasCellsByIdentifier objectForKey:mountedIdentifier] != analyticsCell ||
+		 ![self isCardIdentifierVisible:mountedIdentifier]))
+		[analyticsCell releaseOffscreenCardContent];
 	[self updateMetricSubscription];
 }
 

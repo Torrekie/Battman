@@ -150,6 +150,7 @@ BAAnalyticsDetailSelection *BALiveSelection(BAAnalyticsCanvasView *view, NSStrin
 - (instancetype)initWithFrame:(CGRect)frame {
     if ((self = [super initWithFrame:frame])) {
         self.backgroundColor = UIColor.clearColor;
+        self.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
         _summaryLabel = [UILabel new];
         _summaryLabel.numberOfLines = 0;
         _summaryLabel.isAccessibilityElement = NO;

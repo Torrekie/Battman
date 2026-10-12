@@ -3539,3 +3539,405 @@ msgstr "先前階段"
 
 msgid "Newest connection has one reading; showing previous session"
 msgstr "最新接電片段僅有一筆讀數，顯示先前階段"
+
+msgid " · striped areas unknown"
+msgstr " · 斜紋區域狀態未知"
+
+#, objc-format
+msgid "%+.3g W"
+msgstr "%+.3g W"
+
+#, objc-format
+msgid "%@ average"
+msgstr "平均 %@"
+
+#, objc-format
+msgid "%@ of %@ recorded"
+msgstr "已記錄 %@，總計 %@"
+
+#, objc-format
+msgid "%@ · %lu excluded"
+msgstr "%@ · %lu 次未計入"
+
+#, objc-format
+msgid "%@, hourly battery drop and recorded time"
+msgstr "%@，每小時電量下降與記錄時間"
+
+#, objc-format
+msgid "%@. %@. %@. Capacity readings from %@; %lu valid readings. Sparse point estimates; gaps and configuration changes are not joined. Capacity retention is not a health score."
+msgstr "%@。%@。%@。容量讀值來自 %@；共 %lu 筆有效讀值。讀值是稀疏的估計值，不連接資料缺失或設定變更的區段。容量保持率不代表電池健康評分。"
+
+#, objc-format
+msgid "%@: %lu readings"
+msgstr "%@：%lu 筆讀值"
+
+#, objc-format
+msgid "%lu capacity readings"
+msgstr "%lu 筆容量讀值"
+
+#, objc-format
+msgid "%lu changes recorded%@"
+msgstr "已記錄 %lu 次變化%@"
+
+#, objc-format
+msgid "%lu of %lu cells"
+msgstr "%lu / %lu 個電芯"
+
+#, objc-format
+msgid "%lu readings · mAh"
+msgstr "%lu 筆讀值 · mAh"
+
+#, objc-format
+msgid "%lu sessions"
+msgstr "%lu 次充電"
+
+#, objc-format
+msgid "%lu sessions · 20 → 80%% charge"
+msgstr "%lu 次充電 · 電量 20 → 80%%"
+
+msgid "+ charges · − uses battery"
+msgstr "+ 充入 · − 消耗"
+
+#, objc-format
+msgid "0–%.1f%%"
+msgstr "0–%.1f%%"
+
+msgid "1 day"
+msgstr "1 天"
+
+msgid "20 → 80% charge"
+msgstr "電量 20 → 80%"
+
+msgid "20 → 80% charge · minutes"
+msgstr "電量 20 → 80% · 分鐘"
+
+#, objc-format
+msgid "20–80%% charge, %lu sessions, estimated median %.1f min"
+msgstr "電量 20–80%%，%lu 次充電，估計中位數 %.1f 分鐘"
+
+msgid "7 days"
+msgstr "7 天"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Average battery power"
+msgstr "平均電池功率"
+
+msgid "Bar length = recorded time"
+msgstr "長條長度表示記錄時間"
+
+msgid "Battery drop / hour"
+msgstr "每小時電量下降"
+
+msgid "Battery drop per hour"
+msgstr "每小時電量下降"
+
+msgid "Battery level"
+msgstr "電量"
+
+#, objc-format
+msgid "Battery level %@ · %@"
+msgstr "電量 %@ · %@"
+
+#, objc-format
+msgid "Battery level %@ · h"
+msgstr "電量 %@ · 小時"
+
+#, objc-format
+msgid "Battery level %@, %@"
+msgstr "電量 %@，%@"
+
+#, objc-format
+msgid "Battery level and temperature · %@"
+msgstr "電量與溫度 · %@"
+
+msgid "Battery level missing"
+msgstr "電量記錄缺失"
+
+msgid "Battery level or connection unavailable"
+msgstr "電量或接電狀態無法取得"
+
+msgid "Battery level recorded"
+msgstr "已記錄電量"
+
+msgid "Battery level unavailable"
+msgstr "無法取得電量"
+
+msgid "Battery level · time"
+msgstr "電量停留時間"
+
+msgid "Battery level × temperature"
+msgstr "電量 × 溫度"
+
+msgid "Battery power"
+msgstr "電池功率"
+
+msgid "Battery use (W)"
+msgstr "耗電功率 (W)"
+
+msgid "Box: middle 50%"
+msgstr "色塊：中間 50%"
+
+msgid "Capacity history"
+msgstr "容量歷史"
+
+msgid "Capacity trend · mAh"
+msgstr "容量趨勢 · mAh"
+
+#, objc-format
+msgid "Cell spread %.0f mV"
+msgstr "電芯壓差 %.0f mV"
+
+#, objc-format
+msgid "Charge %.0f%% → %.0f%%"
+msgstr "電量 %.0f%% → %.0f%%"
+
+msgid "Charge (%)"
+msgstr "電量 (%)"
+
+msgid "Charge and battery use"
+msgstr "電量與耗電"
+
+msgid "Charge change unavailable"
+msgstr "無法取得電量變化"
+
+msgid "Charge unavailable"
+msgstr "無法取得電量"
+
+msgid "Charger input"
+msgstr "充電器輸入"
+
+#, objc-format
+msgid "Charging %@"
+msgstr "充電中 %@"
+
+msgid "Current (A)"
+msgstr "電流 (A)"
+
+msgid "Current (A)\n+ charges\n− uses battery"
+msgstr "電流 (A)\n+ 充入\n− 消耗"
+
+msgid "Current (A) · + charges · − uses battery"
+msgstr "電流 (A) · + 充入 · − 消耗"
+
+msgid "Daily battery drop per hour"
+msgstr "當天每小時電量下降"
+
+#, objc-format
+msgid "Darker: more time · up to %@"
+msgstr "越深停留越久 · 最多 %@"
+
+#, objc-format
+msgid "Dashed: %@"
+msgstr "虛線：%@"
+
+msgid "Discharging"
+msgstr "放電中"
+
+#, objc-format
+msgid "Discharging %@"
+msgstr "放電中 %@"
+
+msgid "Dots: separate charges"
+msgstr "圓點：每次充電"
+
+msgid "Each dot is a separate charging session"
+msgstr "每個圓點表示一次獨立充電"
+
+msgid "Earlier readings"
+msgstr "較早讀值"
+
+#, objc-format
+msgid "Energy used ≈%.2f Wh · %@ recorded"
+msgstr "耗電約 %.2f Wh · 已記錄 %@"
+
+#, objc-format
+msgid "Estimated median: %.1f min"
+msgstr "估計中位數：%.1f 分鐘"
+
+msgid "From battery"
+msgstr "電池放出"
+
+#, objc-format
+msgid "From battery %.2f A"
+msgstr "電池放出 %.2f A"
+
+#, objc-format
+msgid "Full charge %@ mAh, %@, %@"
+msgstr "滿充容量 %@ mAh，%@，%@"
+
+#, objc-format
+msgid "Gained %.1f%% in %@ recorded"
+msgstr "電量增加 %.1f%% · 已記錄 %@"
+
+#, objc-format
+msgid "Highest reading %.1f °C"
+msgstr "最高讀值 %.1f °C"
+
+msgid "History range"
+msgstr "歷史範圍"
+
+msgid "Incomplete records"
+msgstr "記錄不完整"
+
+msgid "Into battery"
+msgstr "充入電池"
+
+#, objc-format
+msgid "Into battery %.2f A"
+msgstr "充入電池 %.2f A"
+
+msgid "Later readings"
+msgstr "較新讀值"
+
+msgid "Maximum capacity"
+msgstr "最大容量"
+
+#, objc-format
+msgid "Middle 50%%: %.1f–%.1f min"
+msgstr "中間 50%%：%.1f–%.1f 分鐘"
+
+msgid "Minutes"
+msgstr "分鐘"
+
+msgid "No capacity history"
+msgstr "尚無容量歷史"
+
+msgid "No capacity readings"
+msgstr "尚無容量讀值"
+
+#, objc-format
+msgid "No current flow · %@"
+msgstr "無電流 · %@"
+
+msgid "No data"
+msgstr "無資料"
+
+msgid "No net flow"
+msgstr "無淨充放電"
+
+msgid "No recorded charge from 20% to 80%"
+msgstr "未記錄到從 20% 充至 80% 的過程"
+
+msgid "No recorded unplugged battery level"
+msgstr "未記錄到拔電後的電量"
+
+msgid "No usable history"
+msgstr "尚無可用歷史"
+
+msgid "No usable readings"
+msgstr "尚無可用讀值"
+
+#, objc-format
+msgid "Observed states, %@. %@. %@. Lightning means charging, pause means plugged in without charging, check means full, and a crossed plug means unplugged. Stripes mean unknown."
+msgstr "已記錄的狀態，%@。%@。%@。閃電表示充電中，暫停表示已接電但未充電，勾號表示已充滿，劃線插頭表示已拔電。斜紋表示未知。"
+
+msgid "Orange: level rose"
+msgstr "橘色：電量上升"
+
+msgid "Peak temperature · °C"
+msgstr "最高溫度 · °C"
+
+msgid "Plugged in"
+msgstr "已接電"
+
+msgid "Plugged in, paused"
+msgstr "已接電，暫停充電"
+
+msgid "Power readings"
+msgstr "功率讀值"
+
+msgid "Power readings · W"
+msgstr "功率讀值 · W"
+
+msgid "Readings taken separately"
+msgstr "讀值分別取得"
+
+#, objc-format
+msgid "Recorded %@ · missing %@"
+msgstr "已記錄 %@ · 缺失 %@"
+
+#, objc-format
+msgid "Recorded range: %.1f–%.1f min"
+msgstr "記錄範圍：%.1f–%.1f 分鐘"
+
+#, objc-format
+msgid "Recorded unplugged %@"
+msgstr "已記錄拔電時間 %@"
+
+msgid "Swipe for history; tap a reading for its value and time."
+msgstr "滑動查看歷史；點一下讀值可查看數值與時間。"
+
+msgid "Temp. (°C)"
+msgstr "溫度 (°C)"
+
+msgid "Time by battery level"
+msgstr "電量停留時間"
+
+msgid "Time by battery level · h"
+msgstr "電量停留時間 · 小時"
+
+msgid "Too few readings to compare"
+msgstr "讀值太少，無法比較"
+
+#, objc-format
+msgid "Used %.1f%% in %@ recorded"
+msgstr "電量消耗 %.1f%% · 已記錄 %@"
+
+msgid "mAh · swipe to browse; tap to read"
+msgstr "mAh · 滑動瀏覽，點一下讀值"
+
+msgid "mAh · tap a reading for its value"
+msgstr "mAh · 點一下查看詳細讀值"
+
+#, objc-format
+msgid "±%.1f%%"
+msgstr "±%.1f%%"
+
+#, objc-format
+msgid "≈%@ recorded"
+msgstr "已記錄約 %@"
+
+#, objc-format
+msgid "≈%@ · Incomplete readings"
+msgstr "約 %@ · 讀值不完整"
+
+#, objc-format
+msgid "Current trend · %@"
+msgstr "電流趨勢 · %@"
+
+msgid "Battery level (%) × temperature"
+msgstr "電量 (%) × 溫度"
+
+#, objc-format
+msgid "Battery drop %.2f%% / h"
+msgstr "電量下降 %.2f%% / 小時"
+
+#, objc-format
+msgid "%lu of %lu cells shown"
+msgstr "顯示 %lu / %lu 個電芯"
+
+#, objc-format
+msgid "%lu cells shown · %lu in details"
+msgstr "顯示 %lu 個電芯 · 詳情另有 %lu 個"
+
+msgid "Charging paused"
+msgstr "暫停充電"
+
+msgid "Latest maximum capacity"
+msgstr "最新最大容量"
+
+msgid "Latest full charge (mAh)"
+msgstr "最新滿充容量 (mAh)"
+
+msgid "Battery level drop"
+msgstr "電量下降"
+
+#, objc-format
+msgid "%.1f%% · %@ recorded"
+msgstr "%.1f%% · 已記錄 %@"
+
+#, objc-format
+msgid "Stronger color: more time · up to %@"
+msgstr "顏色越鮮明，停留越久 · 最多 %@"

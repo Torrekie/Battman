@@ -4,6 +4,12 @@
 #import "BAAnalyticsProcessDrawing.h"
 #include <math.h>
 
+static CGFloat BASessionTextHeight(NSString *text, CGFloat width, UIFont *font) {
+    return ceil(MAX(font.lineHeight, [text boundingRectWithSize:CGSizeMake(MAX(1, width), CGFLOAT_MAX)
+        options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+        attributes:@{NSFontAttributeName:font} context:nil].size.height));
+}
+
 // These summaries use the session's normalized evidence only. In particular,
 // observation counts do not substitute for elapsed per-metric coverage.
 static NSTimeInterval BASessionCoverage(BAAnalyticsHistorySession *session, NSString *metric) {
@@ -150,11 +156,12 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
         NSString *status = BAProcessAvailability(family);
         if (session) status = _("No valid session time range");
         NSString *window = family ? BAProcessWindow(family.window.startDate, family.window.endDate) : _("History time range unavailable");
-        BAProcessText(window, CGRectMake(12, 10, width - 24, caption.lineHeight * 2), caption, muted, NSTextAlignmentLeft);
-        CGRect empty = CGRectMake(48, caption.lineHeight * 2 + 18, width - 60, MAX(20, height - caption.lineHeight * 4 - 30));
+        CGFloat windowHeight = BASessionTextHeight(window, width - 24, caption);
+        CGFloat statusHeight = BASessionTextHeight(status, width - 24, mark);
+        BAProcessText(window, CGRectMake(12, 10, width - 24, windowHeight), caption, muted, NSTextAlignmentLeft);
+        CGRect empty = CGRectMake(12, windowHeight + 18, width - 24, MAX(0, height - windowHeight - statusHeight - 36));
         BAProcessHatch(empty, muted);
-        BAProcessText(_("SOC %\n°C\nA ±"), CGRectMake(12, CGRectGetMinY(empty), 36, CGRectGetHeight(empty)), caption, muted, NSTextAlignmentLeft);
-        BAProcessText(status, CGRectInset(empty, 6, 6), mark, muted, NSTextAlignmentCenter);
+        BAProcessText(status, CGRectMake(12, height - 10 - statusHeight, width - 24, statusHeight), mark, muted, NSTextAlignmentLeft);
         BAAnalyticsDetailSelection *selection = BAProcessSelection(self, _("unavailable"), @[], metrics,
             family.window.startDate, family.window.endDate, @{@"availability": status});
         [regions addObject:BAProcessRegion(self.bounds, selection, [NSString stringWithFormat:_("%@. %@"), status, window])];
@@ -191,10 +198,11 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
     NSString *boundary = session.startBoundaryKnown && session.endBoundaryKnown ? _("sampled boundaries") : _("partial boundaries");
     NSString *coverage = [NSString stringWithFormat:_("Covered SOC %@; °C %@; A %@ / %@"),
         BAProcessDuration(socCoverage), BAProcessDuration(temperatureCoverage), BAProcessDuration(currentCoverage), BAProcessDuration(duration)];
-    NSString *socSummary = soc.count ? [NSString stringWithFormat:_("SOC %.0f → %.0f%%"), BAProcessValue(soc.firstObject, BAAnalyticsHistorySOCPercent).doubleValue,
-        BAProcessValue(soc.lastObject, BAAnalyticsHistorySOCPercent).doubleValue] : _("SOC unavailable");
+    NSString *socSummary = soc.count ? [NSString stringWithFormat:_("Charge %.0f%% → %.0f%%"), BAProcessValue(soc.firstObject, BAAnalyticsHistorySOCPercent).doubleValue,
+        BAProcessValue(soc.lastObject, BAAnalyticsHistorySOCPercent).doubleValue] : _("Charge unavailable");
     NSString *temperatureSummary = peak ? [NSString stringWithFormat:_("Observed peak %.1f °C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue] : _("Temperature unavailable");
-    NSString *currentSummary = current.count ? [NSString stringWithFormat:_("Last %+.2f A"), BAProcessValue(current.lastObject, BAAnalyticsHistoryCurrentMilliamps).doubleValue / 1000.0] : _("Current unavailable");
+    double lastAmps = BAProcessValue(current.lastObject, BAAnalyticsHistoryCurrentMilliamps).doubleValue / 1000.0;
+    NSString *currentSummary = current.count ? [NSString stringWithFormat:lastAmps >= 0 ? _("Into battery %.2f A") : _("From battery %.2f A"), fabs(lastAmps)] : _("Current unavailable");
     NSArray *sessions = family.payload[BAAnalyticsPayloadSessions];
     id newest = [sessions isKindOfClass:NSArray.class] ? sessions.lastObject : nil;
     BOOL showingPrevious = [newest isKindOfClass:BAAnalyticsHistorySession.class] &&
@@ -221,60 +229,75 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
     BOOL inlinePrevious = showingPrevious && !tall &&
         [combinedHeader sizeWithAttributes:@{NSFontAttributeName:caption}].width <= width - 24;
     BOOL twoHeaderRows = showingPrevious && !inlinePrevious;
-    CGFloat headerHeight = caption.lineHeight * (twoHeaderRows ? 2 : 1) + 8 + (twoHeaderRows ? 2 : 0);
+    NSString *header = inlinePrevious ? combinedHeader : window;
+    CGFloat windowHeight = BASessionTextHeight(header, width - 24, caption);
+    CGFloat headerHeight = windowHeight + 8 + (twoHeaderRows ? caption.lineHeight + 2 : 0);
     if (twoHeaderRows)
         BAProcessText(_("Previous session"), CGRectMake(12, 8, width - 24, caption.lineHeight + 2), caption, muted, NSTextAlignmentLeft);
     CGFloat windowY = twoHeaderRows ? 10 + caption.lineHeight : 8;
-    BAProcessText(inlinePrevious ? combinedHeader : window, CGRectMake(12, windowY, width - 24, caption.lineHeight + 2), caption, muted, NSTextAlignmentLeft);
+    BAProcessText(header, CGRectMake(12, windowY, width - 24, windowHeight + 2), caption, muted, NSTextAlignmentLeft);
     [regions addObject:BAProcessRegion(CGRectMake(12, 4, width - 24, headerHeight), sessionSelection,
         [NSString stringWithFormat:_("Connected session, %@, %@"), window, boundary])];
 
     if (largeText && !tall) {
         NSArray *labels = @[
-            soc.count ? [NSString stringWithFormat:_("SOC %.0f → %.0f%%"), BAProcessValue(soc.firstObject, BAAnalyticsHistorySOCPercent).doubleValue,
-                BAProcessValue(soc.lastObject, BAAnalyticsHistorySOCPercent).doubleValue] : _("SOC — %"),
-            peak ? [NSString stringWithFormat:_("obs. %.1f °C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue] : _("— °C"),
-            current.count ? [NSString stringWithFormat:_("%+.3g A"), BAProcessValue(current.lastObject, BAAnalyticsHistoryCurrentMilliamps).doubleValue / 1000] : _("— A")];
+            socSummary,
+            peak ? [NSString stringWithFormat:_("Highest reading %.1f °C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue] : _("Temperature unavailable"),
+            currentSummary];
         NSArray *colors = @[UIColor.compatGreenColor, UIColor.compatOrangeColor, UIColor.compatBlueColor];
         NSArray *selectedRecords = @[
             soc.count ? @[soc.firstObject.identifier, soc.lastObject.identifier] : @[],
             peak ? @[peak.identifier] : @[],
             current.count ? @[current.lastObject.identifier] : @[]];
-        CGFloat rowHeight = mark.lineHeight + 3;
         CGFloat y = headerHeight + 6;
         for (NSUInteger index = 0; index < labels.count; index++) {
-            CGRect row = index == 0 ? CGRectMake(12, y, width - 24, rowHeight) :
-                CGRectMake(index == 1 ? 12 : width / 2, y + rowHeight, width / 2 - 12, rowHeight);
+            CGFloat rowHeight = BASessionTextHeight(labels[index], width - 24, mark) + 3;
+            CGRect row = CGRectMake(12, y, width - 24, rowHeight);
             BAProcessText(labels[index], row, mark, colors[index], NSTextAlignmentLeft);
             BAAnalyticsDetailSelection *selection = BAProcessSelection(self, index == 0 || [selectedRecords[index] count] == 0 ? @"metric" : @"record", selectedRecords[index], @[metrics[index]],
                 index == 0 ? session.startDate : (index == 1 ? peak.timestamp : current.lastObject.timestamp),
                 index == 0 ? session.endDate : (index == 1 ? peak.timestamp : current.lastObject.timestamp), sessionContext);
             [regions addObject:BAProcessRegion(row, selection, labels[index])];
+            y = CGRectGetMaxY(row);
         }
-        y += rowHeight * 2;
         CGFloat stateLeft = 12;
         CGRect stateRect = CGRectMake(stateLeft, y + 2, width - stateLeft - 12, 12);
         BAProcessStateStrip(self, session.intervals, session.gaps, session.startDate, session.endDate, stateRect, session.identifier, regions);
         y = CGRectGetMaxY(stateRect) + 2;
-        NSString *shortCoverage = [NSString stringWithFormat:_("Coverage SOC %.0f%% T %.0f%% A %.0f%%"),
-            socCoverage / duration * 100, temperatureCoverage / duration * 100, currentCoverage / duration * 100];
+        NSString *shortCoverage = [NSString stringWithFormat:partial ? _("≈%@ · Incomplete readings") : _("≈%@ recorded"), BAProcessDuration(duration)];
         UIFont *coverageFont = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleCaption1]
             scaledFontForFont:[UIFont systemFontOfSize:11] maximumPointSize:14];
-        BAProcessText(shortCoverage, CGRectMake(12, y + 2, width - 24, MAX(coverageFont.lineHeight, height - y - 4)), coverageFont, muted, NSTextAlignmentLeft);
-        [regions addObject:BAProcessRegion(CGRectMake(12, y, width - 24, MAX(1, height - y)), sessionSelection, coverage)];
+        CGFloat coverageHeight = BASessionTextHeight(shortCoverage, width - 24, coverageFont);
+        if (y + 2 + coverageHeight <= height - 6) {
+            BAProcessText(shortCoverage, CGRectMake(12, y + 2, width - 24, coverageHeight), coverageFont, muted, NSTextAlignmentLeft);
+            [regions addObject:BAProcessRegion(CGRectMake(12, y, width - 24, coverageHeight + 2), sessionSelection, coverage)];
+        } else {
+            // The header retains the exact time window; the full duration and
+            // coverage stay available with the state strip and VoiceOver.
+            [regions addObject:BAProcessRegion(stateRect, sessionSelection, coverage)];
+        }
         return regions;
     }
 
-    CGFloat footerHeight = caption.lineHeight * (largeText ? 3 : 2) + (tall ? 6 : 2);
+    NSString *windowLine = [NSString stringWithFormat:partial ? _("≈%@ · Incomplete readings") : _("≈%@ recorded"), BAProcessDuration(duration)];
+    NSString *directionLine = _("+ charges · − uses battery");
+    CGFloat windowLineHeight = BASessionTextHeight(windowLine, width - 24, caption);
+    CGFloat directionHeight = BASessionTextHeight(directionLine, width - 24, caption);
+    CGFloat footerHeight = windowLineHeight + directionHeight + 6;
     CGFloat stateHeight = tall ? MAX(12, MIN(22, caption.lineHeight + 2)) : 10;
     CGFloat gap = tall ? 14 : 3;
-    CGFloat temperatureGap = tall ? MAX(gap, ceil(caption.lineHeight) + 4) : gap;
     // Keep observed endpoint values in their own row. A high SOC must not
     // clamp its annotation into the trace, nor obscure nearby observations.
     CGFloat endpointHeight = soc.count ? ceil(mark.lineHeight) + 4 : 0;
-    CGFloat available = MAX(30, height - headerHeight - endpointHeight - footerHeight - stateHeight - 3 * gap - temperatureGap - (tall ? 9 : 4));
-    CGFloat left = MAX(40, MIN(65, caption.pointSize * 3.4));
+    NSArray *units = @[_("Charge (%)"), _("Temp. (°C)"), _("Current (A)")];
+    CGFloat labelWidth = 0;
+    for (NSString *unit in units) labelWidth = MAX(labelWidth, ceil([unit sizeWithAttributes:@{NSFontAttributeName:caption}].width));
+    CGFloat left = MAX(46, MIN(width * .34, labelWidth + 23));
     CGFloat plotWidth = MAX(1, width - left - 13);
+    NSString *peakText = peak ? [NSString stringWithFormat:_("Highest reading %.1f °C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue] : nil;
+    CGFloat peakHeight = peakText ? BASessionTextHeight(peakText, plotWidth, caption) : 0;
+    CGFloat temperatureGap = tall && peak ? MAX(gap, peakHeight + 4) : gap;
+    CGFloat available = MAX(30, height - headerHeight - endpointHeight - footerHeight - stateHeight - 3 * gap - temperatureGap - (tall ? 9 : 4));
     CGFloat endpointY = headerHeight + gap;
     CGFloat y = endpointY + endpointHeight;
     CGRect socPlot = CGRectMake(left, y, plotWidth, available * 0.46);
@@ -284,7 +307,6 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
     CGRect currentPlot = CGRectMake(left, y, plotWidth, available * 0.29);
     CGRect statePlot = CGRectMake(left, CGRectGetMaxY(currentPlot) + gap, plotWidth, stateHeight);
     NSArray *plots = @[[NSValue valueWithCGRect:socPlot], [NSValue valueWithCGRect:temperaturePlot], [NSValue valueWithCGRect:currentPlot]];
-    NSArray *units = @[_("SOC %"), @"°C", _("A ±")];
     NSArray *colors = @[UIColor.compatGreenColor, UIColor.compatOrangeColor, UIColor.compatBlueColor];
     NSArray *observed = @[soc, temperature, current];
     double temperatureMinimum = self.preparedTemperatureMinimum, temperatureMaximum = self.preparedTemperatureMaximum;
@@ -351,11 +373,11 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
             [NSString stringWithFormat:_("Last observed SOC %.0f percent, %@"), BAProcessValue(last, BAAnalyticsHistorySOCPercent).doubleValue, BAProcessClock(last.timestamp)])];
     }
     if (peak) {
-        NSString *peakLabel = [NSString stringWithFormat:_("Peak (obs.) %.1f°C"), BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue];
+        NSString *peakLabel = peakText;
         CGFloat peakX = BAProcessTimeX(peak.timestamp, session.startDate, session.endDate, temperaturePlot);
-        CGFloat labelWidth = MIN(plotWidth, caption.pointSize * 11.5);
+        CGFloat labelWidth = MIN(plotWidth, ceil([peakLabel sizeWithAttributes:@{NSFontAttributeName:caption}].width) + 4);
         CGRect label = CGRectMake(MAX(CGRectGetMinX(temperaturePlot), MIN(peakX - labelWidth * 0.5, CGRectGetMaxX(temperaturePlot) - labelWidth)),
-            CGRectGetMinY(temperaturePlot) - caption.lineHeight - 1, labelWidth, caption.lineHeight + 2);
+            CGRectGetMinY(temperaturePlot) - peakHeight - 1, labelWidth, peakHeight + 2);
         if (tall) BAProcessText(peakLabel, label, caption, UIColor.compatOrangeColor, NSTextAlignmentCenter);
         else {
             double peakValue = BAProcessValue(peak, BAAnalyticsHistoryTemperatureCelsius).doubleValue;
@@ -381,13 +403,8 @@ static BAAnalyticsObservation *BASessionPeak(NSArray<BAAnalyticsObservation *> *
         }
     }
     CGFloat footerY = CGRectGetMaxY(statePlot) + 5;
-    NSString *coverageLine = [NSString stringWithFormat:_("Coverage SOC %.0f%% · °C %.0f%% · A %.0f%%"),
-        socCoverage / duration * 100, temperatureCoverage / duration * 100, currentCoverage / duration * 100];
-    NSString *windowLine = [NSString stringWithFormat:_("≈%@ · n=%lu%@"), BAProcessDuration(duration),
-        (unsigned long)session.observations.count, partial ? _(" · partial") : @""];
-    CGFloat coverageHeight = caption.lineHeight * (largeText ? 2 : 1);
-    BAProcessText(coverageLine, CGRectMake(12, footerY, width - 24, coverageHeight + 2), caption, muted, NSTextAlignmentLeft);
-    BAProcessText(windowLine, CGRectMake(12, footerY + coverageHeight, width - 24, caption.lineHeight + 3), caption, muted, NSTextAlignmentLeft);
+    BAProcessText(windowLine, CGRectMake(12, footerY, width - 24, windowLineHeight), caption, muted, NSTextAlignmentLeft);
+    BAProcessText(directionLine, CGRectMake(12, footerY + windowLineHeight + 2, width - 24, directionHeight), caption, muted, NSTextAlignmentLeft);
     [regions addObject:BAProcessRegion(CGRectMake(12, footerY, width - 24, footerHeight), sessionSelection,
         [NSString stringWithFormat:_("%@. %@"), coverage, windowLine])];
     return regions;

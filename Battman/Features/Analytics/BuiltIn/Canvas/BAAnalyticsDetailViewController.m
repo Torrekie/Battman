@@ -228,6 +228,7 @@ static NSDictionary *BADetailSelectedEvidence(BAAnalyticsFamilyReport *family, B
 }
 
 - (UIView *)makeVisualizationView { return nil; }
+- (BOOL)allowsVisualizationInteraction { return NO; }
 - (CGFloat)visualizationHeight {
     CGFloat height = [self.visualization sizeThatFits:CGSizeMake(self.tableView.bounds.size.width - 32, CGFLOAT_MAX)].height;
     return height >= 200 && height <= 900 ? height : 330;
@@ -241,7 +242,7 @@ static NSDictionary *BADetailSelectedEvidence(BAAnalyticsFamilyReport *family, B
     self.tableView.estimatedRowHeight = 68;
     self.visualization = [self makeVisualizationView];
     if (self.visualization) {
-        self.visualization.userInteractionEnabled = NO;
+        self.visualization.userInteractionEnabled = [self allowsVisualizationInteraction];
         self.visualization.backgroundColor = UIColor.compatBackgroundColor;
         self.visualization.layer.cornerRadius = 18;
         self.visualization.clipsToBounds = YES;

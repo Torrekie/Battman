@@ -10,6 +10,7 @@ FOUNDATION_EXPORT NSString *BASWindow(BAAnalyticsHistoryWindow *window);
 // Per-thread reuse; refreshes formatting when the locale or calendar changes.
 FOUNDATION_EXPORT NSDateFormatter *BASDateFormatter(NSString *format);
 FOUNDATION_EXPORT UIFont *BASFont(CGFloat size);
+FOUNDATION_EXPORT CGFloat BASTextHeight(NSString *text, CGFloat width, UIFont *font);
 FOUNDATION_EXPORT void BASText(NSString *text, CGRect rect, UIFont *font, UIColor *color, NSTextAlignment alignment);
 FOUNDATION_EXPORT void BASFill(CGRect rect, UIColor *color);
 FOUNDATION_EXPORT void BASLine(CGPoint a, CGPoint b, UIColor *color, CGFloat width);

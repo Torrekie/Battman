@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<BAAnalyticsObservation *> *selectedObservations;
 // Card-specific subclasses live with their card and supply its visualization.
 - (nullable UIView *)makeVisualizationView;
+- (BOOL)allowsVisualizationInteraction;
 - (CGFloat)visualizationHeight;
 - (NSArray<NSDictionary *> *)summaryRows;
 - (instancetype)initWithDisplayName:(NSString *)displayName

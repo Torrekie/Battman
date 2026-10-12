@@ -420,7 +420,7 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     UIColor *muted = UIColor.compatSecondaryLabelColor;
     if (!session || [session.endDate compare:session.startDate] != NSOrderedDescending) {
         NSString *unavailable = BAProcessAvailability(family);
-        BAProcessText(_("Unplugged · SOC % / output |W|"), CGRectMake(12, 12, width - 24, strong.lineHeight * 2), strong, muted, NSTextAlignmentLeft);
+        BAProcessText(_("Charge and battery use"), CGRectMake(12, 12, width - 24, strong.lineHeight * 2), strong, muted, NSTextAlignmentLeft);
         CGRect missing = CGRectMake(12, height * 0.45, width - 24, MAX(8, height * 0.2));
         BAProcessHatch(missing, muted);
         BAProcessText(unavailable, CGRectMake(12, CGRectGetMaxY(missing) + 5, width - 24, height - CGRectGetMaxY(missing) - 8), caption, muted, NSTextAlignmentLeft);
@@ -438,22 +438,22 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     BAAnalyticsStateTransition *reconnection = self.preparedReconnection;
     BOOL tall = self.cardSize == BAAnalyticsCardSize2x2;
     BOOL largeText = BAProcessLargeText(self);
-    NSTimeInterval duration = MAX(0, [session.endDate timeIntervalSinceDate:session.startDate]);
     NSString *window = BAProcessWindow(session.startDate, session.endDate);
-    NSString *rate = statistics.socSeconds > 0 ? [NSString stringWithFormat:_("~%.1f pp/h"), statistics.socLoss * 3600 / statistics.socSeconds] : _("pp/h unavailable");
-    NSString *socSummary = [NSString stringWithFormat:_("SOC %@ / %@ · %@"), BAProcessDuration(statistics.socSeconds), BAProcessDuration(duration), rate];
-    NSString *powerSummary = statistics.powerSeconds > 0 ? [NSString stringWithFormat:_("Output ~%.2f Wh · %@ valid"), statistics.outputWattHours, BAProcessDuration(statistics.powerSeconds)] : _("Output energy unavailable");
+    NSString *socSummary = statistics.socSeconds > 0 ? [NSString stringWithFormat:
+        statistics.socLoss >= 0 ? _("Used %.1f%% in %@ recorded") : _("Gained %.1f%% in %@ recorded"),
+        fabs(statistics.socLoss), BAProcessDuration(statistics.socSeconds)] : _("Charge change unavailable");
+    NSString *powerSummary = statistics.powerSeconds > 0 ? [NSString stringWithFormat:_("Energy used ≈%.2f Wh · %@ recorded"), statistics.outputWattHours, BAProcessDuration(statistics.powerSeconds)] : _("Output energy unavailable");
     NSString *boundary = reconnection ? [NSString stringWithFormat:_("Reconnected ~%@"), BAProcessWindow(reconnection.earliestDate, reconnection.latestDate)] : _("Reconnection not observed");
     if (!session.startBoundaryKnown || !session.endBoundaryKnown) boundary = [boundary stringByAppendingString:_(" · partial")];
-    NSString *powerCaption = [NSString stringWithFormat:_("Output |W| · %@ valid"), BAProcessDuration(statistics.powerSeconds)];
+    NSString *powerCaption = _("Battery use (W)");
 
     BAAnalyticsObservation *firstSOC = self.preparedFirstSOC, *lastSOC = self.preparedLastSOC;
 
     // Large text reduces secondary tracks and summary text, rather than
     // shrinking every label. Exact rate/energy remain accessible selections.
-    if (largeText && !tall) socSummary = [NSString stringWithFormat:_("SOC %@ / %@"), BAProcessDuration(statistics.socSeconds), BAProcessDuration(duration)];
-    CGFloat windowHeight = BADischargeTextHeight(window, width - 24, caption);
-    CGRect windowRect = CGRectMake(12, 8, width - 24, windowHeight + 1);
+    CGFloat windowHeight = BADischargeTextHeight(window, width - 46, caption);
+    CGRect windowRect = CGRectMake(34, 8, width - 46, windowHeight + 1);
+    BAAnalyticsDrawGlyph(BAAnalyticsGlyphUnplugged, CGRectMake(12, 8, 15, 15), muted);
     BAProcessText(window, windowRect, caption, muted, NSTextAlignmentLeft);
     [regions addObject:BAProcessRegion(windowRect, BAProcessSelection(self, @"session", @[],
         @[BAAnalyticsHistorySOCPercent, BAAnalyticsHistoryBatteryPowerWatts], session.startDate, session.endDate, context),
@@ -500,7 +500,7 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
         BAProcessText(@"0%", CGRectMake(12, CGRectGetMaxY(socPlot) - caption.lineHeight, 27, caption.lineHeight), caption, muted, NSTextAlignmentLeft);
         BADischargeLine(CGPointMake(plotX, graphTop), CGPointMake(plotX, CGRectGetMaxY(socPlot)), UIColor.compatSeparatorColor, NO);
     } else if (largeText) {
-        BAProcessText(_("SOC %"), CGRectMake(plotX, annotationY, plotWidth, strong.lineHeight), caption, UIColor.compatGreenColor, NSTextAlignmentLeft);
+        BAProcessText(_("Charge (%)"), CGRectMake(plotX, annotationY, plotWidth, strong.lineHeight), caption, UIColor.compatGreenColor, NSTextAlignmentLeft);
     }
     [regions addObjectsFromArray:BAProcessTrace(self, session.observations, intervals, session.gaps, BAAnalyticsHistorySOCPercent, @"%",
         session.startDate, session.endDate, socPlot, 0, 100, 1, UIColor.compatGreenColor, NO, session.identifier)];
@@ -519,11 +519,14 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
             firstSOC.timestamp, firstSOC.timestamp, context), [NSString stringWithFormat:_("First observed %@, %@"), value, BAProcessClock(firstSOC.timestamp)])];
     }
     CGRect powerLabelRect = CGRectMake(12, CGRectGetMaxY(socPlot) + 5, width - 24, powerLabelHeight);
-    if (!tall && !largeText && [powerCaption sizeWithAttributes:@{NSFontAttributeName:caption}].width < width - 102) {
-        powerLabelRect.size.width -= 78;
-        NSString *endLabel = reconnection ? [NSString stringWithFormat:@"~%@", BAProcessClock(reconnection.latestDate)] : _("End ?");
-        CGRect boundaryRect = CGRectMake(width - 82, powerLabelRect.origin.y, 70, caption.lineHeight);
-        BAProcessText(endLabel, boundaryRect, caption, muted, NSTextAlignmentRight);
+    NSString *endLabel = reconnection ? [NSString stringWithFormat:@"≈%@", BAProcessClock(reconnection.latestDate)] : nil;
+    CGFloat endWidth = endLabel ? ceil([endLabel sizeWithAttributes:@{NSFontAttributeName:caption}].width) + 20 : 0;
+    if (!tall && !largeText && reconnection && [powerCaption sizeWithAttributes:@{NSFontAttributeName:caption}].width + endWidth + 12 < width - 24) {
+        powerLabelRect.size.width -= endWidth + 8;
+        CGRect boundaryRect = CGRectMake(width - 12 - endWidth, powerLabelRect.origin.y, endWidth, caption.lineHeight);
+        BAAnalyticsDrawGlyph(BAAnalyticsGlyphConnected, CGRectMake(boundaryRect.origin.x, boundaryRect.origin.y, 13, 13), muted);
+        CGRect timeRect = CGRectMake(boundaryRect.origin.x + 18, boundaryRect.origin.y, endWidth - 18, boundaryRect.size.height);
+        BAProcessText(endLabel, timeRect, caption, muted, NSTextAlignmentRight);
         NSMutableDictionary *details = [context mutableCopy];
         if (reconnection) details[@"transitionIdentifier"] = reconnection.identifier;
         details[@"boundaryEstimate"] = @YES;
@@ -531,7 +534,6 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
             @[BAAnalyticsHistoryExternalConnected], reconnection ? reconnection.earliestDate : session.endDate,
             reconnection ? reconnection.latestDate : session.endDate, details), boundary)];
     }
-    if (largeText && !tall) powerCaption = _("Output |W|");
     BAProcessText(powerCaption, powerLabelRect, caption, UIColor.compatBlueColor, NSTextAlignmentLeft);
     CGRect powerPlot = CGRectMake(plotX, CGRectGetMaxY(powerLabelRect) + 3, plotWidth, powerHeight);
     [regions addObjectsFromArray:[self renderPower:session intervals:intervals plot:powerPlot]];
@@ -596,7 +598,7 @@ static NSIndexSet *BADischargePowerDisplayIndices(BAAnalyticsHistorySession *ses
     BAAnalyticsHistorySession *session = BAProcessSession(self.familyReport, @"unplugged");
     if (!session) return @[];
     BADischargeStatistics stats = BADischargeSummarize(session, BADischargeIntervals(session));
-    return @[@{@"title":_("SOC loss over covered intervals"), @"value":stats.socSeconds > 0 ? [NSString stringWithFormat:_("%.1f pp · %@ covered"), stats.socLoss, BAProcessDuration(stats.socSeconds)] : _("Unavailable")},
+    return @[@{@"title":_("Battery level drop"), @"value":stats.socSeconds > 0 ? [NSString stringWithFormat:_("%.1f%% · %@ recorded"), stats.socLoss, BAProcessDuration(stats.socSeconds)] : _("Unavailable")},
         @{@"title":_("Battery output energy"), @"value":stats.powerSeconds > 0 ? [NSString stringWithFormat:_("%.2f Wh · %@ covered"), stats.outputWattHours, BAProcessDuration(stats.powerSeconds)] : _("Unavailable")}];
 }
 @end

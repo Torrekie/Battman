@@ -1,7 +1,7 @@
 #import "BAStatisticsDrawing.h"
 #import "../Canvas/BAAnalyticsDetailViewController.h"
 static NSString *BASRhythmLabel(NSDictionary *item) {
-    NSString *rate = item[@"rate"] ? [NSString stringWithFormat:_("%.2f pp/h"), [item[@"rate"] doubleValue]] : _("No valid unplugged SOC");
+    NSString *rate = item[@"rate"] ? [NSString stringWithFormat:_("Battery drop %.2f%% / h"), [item[@"rate"] doubleValue]] : _("No recorded unplugged battery level");
     return [NSString stringWithFormat:@"%@ · %@ · %@ %@ · %@ %@ · %@ %@",item[@"hourLabel"] ?: item[@"label"] ?: @"",rate,BASTime([item[@"validSeconds"] doubleValue]),_("unplugged"),BASTime([item[@"connectedSeconds"] doubleValue]),_("connected"),BASTime([item[@"missingSeconds"] doubleValue]),_("missing")];
 }
 @interface BASRhythmView : BASStatisticalView
@@ -20,18 +20,21 @@ static NSString *BASRhythmLabel(NSDictionary *item) {
     UIFont *font=[[UIFontMetrics metricsForTextStyle:UIFontTextStyleCaption1] scaledFontForFont:[UIFont systemFontOfSize:12] maximumPointSize:16];
     CGFloat line=ceil(font.lineHeight);
     UIColor *muted=[UIColor compatSecondaryLabelColor], *blue=[UIColor compatBlueColor], *orange=[UIColor compatOrangeColor], *gray=[UIColor compatGray4Color];
-    BASText(_("SOC ↓ · pp/h"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
+    BASText(_("Battery drop / hour"),CGRectMake(16,8,w-32,line+4),font,muted,NSTextAlignmentLeft);
     NSArray<NSDictionary *> *hours=self.day[@"hours"] ?: @[];
-    CGRect plot=CGRectMake(54,line+26,w-70,MAX(40,self.bounds.size.height-line*6-72));
-    if (!hours.count) { BASHatch(plot); return; }
     double scale=1; BOOL negative=NO;
     for (NSDictionary *hour in hours) if (hour[@"rate"]) { double value=[hour[@"rate"] doubleValue]; scale=MAX(scale,fabs(value)); negative|=value<0; }
+    NSString *upperLabel=[NSString stringWithFormat:@"%.1f%%",scale], *lowerLabel=[NSString stringWithFormat:@"−%.1f%%",scale];
+    CGFloat axisWidth=ceil([(negative?lowerLabel:upperLabel) sizeWithAttributes:@{NSFontAttributeName:font}].width);
+    CGFloat left=MAX(54,axisWidth+18);
+    CGRect plot=CGRectMake(left,line+26,w-left-16,MAX(40,self.bounds.size.height-line*6-72));
+    if (!hours.count) { BASHatch(plot); return; }
     CGFloat zero=negative ? CGRectGetMidY(plot) : CGRectGetMaxY(plot), range=negative ? plot.size.height*.45 : plot.size.height*.9;
     BASLine(CGPointMake(plot.origin.x,plot.origin.y),CGPointMake(plot.origin.x,CGRectGetMaxY(plot)),[UIColor compatSeparatorColor],1);
     BASLine(CGPointMake(plot.origin.x,zero),CGPointMake(CGRectGetMaxX(plot),zero),[UIColor compatSeparatorColor],1);
-    BASText([NSString stringWithFormat:@"%.1f",scale],CGRectMake(4,zero-range-line/2,42,line+4),font,muted,NSTextAlignmentRight);
-    BASText(@"0",CGRectMake(4,zero-line/2,42,line+4),font,muted,NSTextAlignmentRight);
-    if (negative) BASText([NSString stringWithFormat:@"−%.1f",scale],CGRectMake(4,zero+range-line/2,42,line+4),font,muted,NSTextAlignmentRight);
+    BASText(upperLabel,CGRectMake(4,zero-range-line/2,left-12,line+4),font,muted,NSTextAlignmentRight);
+    BASText(@"0%",CGRectMake(4,zero-line/2,left-12,line+4),font,muted,NSTextAlignmentRight);
+    if (negative) BASText(lowerLabel,CGRectMake(4,zero+range-line/2,left-12,line+4),font,muted,NSTextAlignmentRight);
     CGFloat column=plot.size.width/hours.count, railY=CGRectGetMaxY(plot)+10;
     NSUInteger index=0;
     for (NSDictionary *hour in hours) {
@@ -88,7 +91,7 @@ static NSString *BASRhythmLabel(NSDictionary *item) {
     chart.backgroundColor=[UIColor compatBackgroundColor]; chart.autoresizingMask=UIViewAutoresizingFlexibleWidth;
     chart.day=day; if ([self.selection.kind isEqualToString:@"hour"]) chart.selectedStart=self.selection.startDate;
     chart.isAccessibilityElement=YES;
-    chart.accessibilityLabel=[NSString stringWithFormat:_("%@, hourly SOC decline and observation coverage"),day[@"label"]];
+    chart.accessibilityLabel=[NSString stringWithFormat:_("%@, hourly battery drop and recorded time"),day[@"label"]];
     return chart;
 }
 - (NSArray<NSDictionary *> *)summaryRows {
@@ -98,12 +101,12 @@ static NSString *BASRhythmLabel(NSDictionary *item) {
     if ([self.selection.kind isEqualToString:@"hour"]) {
         NSDictionary *context=self.selection.context;
         if (context[@"localHour"]) [rows addObject:@{@"title":_("Selected hour"),@"value":context[@"localHour"]}];
-        [rows addObject:@{@"title":_("SOC decline"),@"value":context[@"ratePPPerHour"] ? [NSString stringWithFormat:_("%.2f pp/h"),[context[@"ratePPPerHour"] doubleValue]] : _("No valid unplugged SOC")}];
+        [rows addObject:@{@"title":_("Battery drop per hour"),@"value":context[@"ratePPPerHour"] ? [NSString stringWithFormat:_("%.2f pp/h"),[context[@"ratePPPerHour"] doubleValue]] : _("No recorded unplugged battery level")}];
         [rows addObject:@{@"title":_("Observed unplugged time"),@"value":BASTime([context[@"validUnpluggedMinutes"] doubleValue]*60)}];
         [rows addObject:@{@"title":_("Connected time"),@"value":BASTime([context[@"connectedMinutes"] doubleValue]*60)}];
         [rows addObject:@{@"title":_("Missing time"),@"value":BASTime([context[@"missingMinutes"] doubleValue]*60)}];
     } else if (day) {
-        [rows addObject:@{@"title":_("Day SOC decline"),@"value":day[@"rate"] ? [NSString stringWithFormat:_("%.2f pp/h"),[day[@"rate"] doubleValue]] : _("No valid unplugged SOC")}];
+        [rows addObject:@{@"title":_("Daily battery drop per hour"),@"value":day[@"rate"] ? [NSString stringWithFormat:_("%.2f pp/h"),[day[@"rate"] doubleValue]] : _("No recorded unplugged battery level")}];
     }
     [rows addObject:@{@"title":_("Window observation coverage"),@"value":BASCoverage(analysis,@"validSeconds",@"missingSeconds")}];
     [rows addObject:@{@"title":_("Method"),@"value":_("Signed SOC decline divided by trusted unplugged time. Connected and missing intervals do not enter the rate. A negative value is an observed SOC rise, not inferred charging.")}];
@@ -146,9 +149,13 @@ id<BAAnalyticsCard> BAAnalyticsCreateRhythmCanvasCard(void) {
 - (void)drawStatistics:(NSMutableArray *)hits {
     CGFloat w=self.bounds.size.width,h=self.bounds.size.height; UIFont *font=BASFont(11);CGFloat line=ceil(font.lineHeight);
     NSArray *days=self.analysis[@"days"] ?: @[]; BOOL matrix=self.cardSize==BAAnalyticsCardSize2x2;
-    BASText(_("SOC ↓ · pp/h"),CGRectMake(12,10,w-24,line+4),BASFont(13),[UIColor compatLabelColor],NSTextAlignmentLeft);
-    BASText(BASWindow(self.familyReport.window),CGRectMake(12,16+line,w-24,line*2),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
-    CGFloat top=22+line*(matrix?3:2),bottom=h-line*3-20;
+    UIFont *titleFont=BASFont(13);
+    NSString *title=_("Battery drop / hour"), *window=BASWindow(self.familyReport.window);
+    CGFloat titleHeight=BASTextHeight(title,w-24,titleFont),windowHeight=BASTextHeight(window,w-24,font);
+    BASText(title,CGRectMake(12,10,w-24,titleHeight),titleFont,[UIColor compatLabelColor],NSTextAlignmentLeft);
+    CGFloat windowY=14+titleHeight;
+    BASText(window,CGRectMake(12,windowY,w-24,windowHeight),font,[UIColor compatSecondaryLabelColor],NSTextAlignmentLeft);
+    CGFloat top=windowY+windowHeight+8,bottom=h-line*3-20;
     double scale=0; BOOL hasNegative=NO;
     for (NSDictionary *day in days) {
         if (matrix) { for (NSDictionary *hour in day[@"hours"]) if (hour[@"rate"]) { scale=MAX(scale,fabs([hour[@"rate"] doubleValue])); hasNegative |= [hour[@"rate"] doubleValue]<0; } }
@@ -160,14 +167,18 @@ id<BAAnalyticsCard> BAAnalyticsCreateRhythmCanvasCard(void) {
     if (!days.count) {
         BASHatch(CGRectMake(12,top,w-24,MAX(8,bottom-top)));
     } else if (matrix) {
-        CGFloat left=42,cw=(w-left-12)/24,ch=MAX(8,(bottom-top-line-8)/days.count);
+        CGFloat dayLabelWidth=0;
+        for (NSDictionary *day in days) dayLabelWidth=MAX(dayLabelWidth,ceil([day[@"label"] sizeWithAttributes:@{NSFontAttributeName:font}].width));
+        CGFloat left=MAX(42,dayLabelWidth+14),cw=(w-left-12)/24,ch=MAX(8,(bottom-top-line-8)/days.count);
         BASText(@"00",CGRectMake(left,top,30,line+3),font,muted,NSTextAlignmentLeft);
         BASText(@"12",CGRectMake(left+12*cw-15,top,30,line+3),font,muted,NSTextAlignmentCenter);
-        BASText(_("23 h"),CGRectMake(w-48,top,36,line+3),font,muted,NSTextAlignmentRight);top+=line+5;
+        NSString *endHour=_("23 h");
+        CGFloat endHourWidth=ceil([endHour sizeWithAttributes:@{NSFontAttributeName:font}].width)+2;
+        BASText(endHour,CGRectMake(w-12-endHourWidth,top,endHourWidth,line+3),font,muted,NSTextAlignmentRight);top+=line+5;
         NSUInteger row=0;
         for (NSDictionary *day in days) {
             CGFloat y=top+row*ch;
-            BASText(day[@"label"],CGRectMake(4,y+(ch-line)/2,35,line+3),font,muted,NSTextAlignmentRight);
+            BASText(day[@"label"],CGRectMake(6,y+(ch-line)/2,left-12,line+3),font,muted,NSTextAlignmentRight);
             NSMutableDictionary<NSNumber *,NSMutableArray *> *hours=[NSMutableDictionary dictionary];
             for (NSDictionary *hour in day[@"hours"]) { NSNumber *key=hour[@"hour"]; if (!key) continue; if (!hours[key]) hours[key]=[NSMutableArray array]; [hours[key] addObject:hour]; }
             for (NSInteger hourIndex=0;hourIndex<24;hourIndex++) {
@@ -207,6 +218,9 @@ id<BAAnalyticsCard> BAAnalyticsCreateRhythmCanvasCard(void) {
     } else {
         CGFloat cw=(w-24)/days.count,labelY=h-line*3-22,chartEnd=labelY-6,chartHeight=MAX(8,chartEnd-top),zero=top+chartHeight*(hasNegative?.5:.8);
         BASLine(CGPointMake(12,zero),CGPointMake(w-12,zero),[UIColor compatSeparatorColor],1);
+        CGFloat widestDate=0;
+        for (NSDictionary *day in days) widestDate=MAX(widestDate,ceil([day[@"label"] sizeWithAttributes:@{NSFontAttributeName:font}].width));
+        NSUInteger tickStride=MAX(1,(NSUInteger)ceil((widestDate+6)/cw));
         NSUInteger index=0;
         for (NSDictionary *day in days) {
             CGFloat x=12+index*cw,bw=MAX(4,cw-8);double duration=[day[@"endDate"] timeIntervalSinceDate:day[@"startDate"]];
@@ -224,17 +238,35 @@ id<BAAnalyticsCard> BAAnalyticsCreateRhythmCanvasCard(void) {
                 if (validWidth>0) BASFill(CGRectMake(x,rail.origin.y,validWidth,4),blue);
                 if (connectedWidth>0) BASFill(CGRectMake(x+validWidth,rail.origin.y,connectedWidth,4),gray);
             }
-            BASText(day[@"label"],CGRectMake(x,labelY,cw-4,line+3),font,muted,NSTextAlignmentCenter);
+            if (index==0 || index+1==days.count || (index%tickStride==0 && index+tickStride<days.count)) {
+                CGFloat dateWidth=MAX(cw-4,widestDate),dateX=MIN(w-12-dateWidth,MAX(12,x+(bw-dateWidth)/2));
+                BASText(day[@"label"],CGRectMake(dateX,labelY,dateWidth,line+3),font,muted,NSTextAlignmentCenter);
+            }
             [self addHit:hits rect:CGRectMake(x,top,bw,labelY-top+line+4) kind:@"day" item:day metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryExternalConnected] label:BASRhythmLabel(day)];index++;
         }
     }
     CGFloat legendY=h-line*2-17;
-    BASText([NSString stringWithFormat:hasNegative ? _("±%.1f pp/h") : _("0–%.1f pp/h"),scale],CGRectMake(12,legendY,w*.47,line+3),font,muted,NSTextAlignmentLeft);
-    BASFill(CGRectMake(w*.52,legendY,24,17),gray);
-    BAAnalyticsDrawGlyph(BAAnalyticsGlyphConnected,CGRectMake(w*.52+5,legendY+1,14,15),muted);
-    BASHatch(CGRectMake(w*.76,legendY+1,24,15));
-    NSString *coverage=[NSString stringWithFormat:@"%@ / %@ %@",BASTime([self.analysis[@"validSeconds"] doubleValue]),BASTime([self.analysis[@"windowSeconds"] doubleValue]),_("unplugged")];
-    BASText(coverage,CGRectMake(12,h-line-10,w-24,line+3),font,muted,NSTextAlignmentLeft);
+    NSString *range=[NSString stringWithFormat:hasNegative ? _("±%.1f%%") : _("0–%.1f%%"),scale];
+    NSString *pluggedLabel=_("Plugged in"), *missingLabel=_("No data");
+    CGFloat rangeWidth=ceil([range sizeWithAttributes:@{NSFontAttributeName:font}].width)+12;
+    CGFloat connectedWidth=ceil([pluggedLabel sizeWithAttributes:@{NSFontAttributeName:font}].width)+18;
+    CGFloat missingWidth=ceil([missingLabel sizeWithAttributes:@{NSFontAttributeName:font}].width)+16;
+    CGFloat legendGap=MAX(0,(w-24-rangeWidth-connectedWidth-missingWidth)/2);
+    BASFill(CGRectMake(12,legendY+3,8,8),blue);
+    if (hasNegative) BASFill(CGRectMake(12,legendY+7,8,4),[UIColor compatOrangeColor]);
+    BASText(range,CGRectMake(24,legendY,rangeWidth-12,line+3),font,muted,NSTextAlignmentLeft);
+    CGFloat connectedX=12+rangeWidth+legendGap, missingX=connectedX+connectedWidth+legendGap;
+    BASFill(CGRectMake(connectedX,legendY+2,14,12),gray);
+    BAAnalyticsDrawGlyph(BAAnalyticsGlyphConnected,CGRectMake(connectedX+2,legendY+2,10,12),muted);
+    BASText(pluggedLabel,CGRectMake(connectedX+18,legendY,connectedWidth-18,line+3),font,muted,NSTextAlignmentLeft);
+    BASHatch(CGRectMake(missingX,legendY+3,11,10));
+    BASText(missingLabel,CGRectMake(missingX+16,legendY,missingWidth-16,line+3),font,muted,NSTextAlignmentLeft);
+    NSString *coverage=[NSString stringWithFormat:_("Recorded unplugged %@"),BASTime([self.analysis[@"validSeconds"] doubleValue])];
+    NSString *riseLegend=_("Orange: level rose");
+    CGFloat riseWidth=hasNegative ? ceil([riseLegend sizeWithAttributes:@{NSFontAttributeName:font}].width)+8 : 0;
+    if ([coverage sizeWithAttributes:@{NSFontAttributeName:font}].width > w-24-riseWidth) coverage=[NSString stringWithFormat:_("Unplugged %@"),BASTime([self.analysis[@"validSeconds"] doubleValue])];
+    BASText(coverage,CGRectMake(12,h-line-10,w-24-riseWidth,line+3),font,muted,NSTextAlignmentLeft);
+    if (hasNegative) BASText(riseLegend,CGRectMake(w-12-riseWidth,h-line-10,riseWidth,line+3),font,[UIColor compatOrangeColor],NSTextAlignmentRight);
     [self addHit:hits rect:CGRectMake(8,legendY-4,w-16,h-legendY+4) kind:@"coverage" item:@{} metrics:@[BAAnalyticsHistorySOCPercent,BAAnalyticsHistoryExternalConnected] label:BASRhythmLabel(self.analysis)];
 }
 @end
