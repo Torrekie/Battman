@@ -57,8 +57,8 @@
 		687743032D46144D00375A2C /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		6877430B2D46198900375A2C /* libintl-iphonesimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "libintl-iphonesimulator.h"; sourceTree = "<group>"; };
 		6877430C2D46199600375A2C /* libintl-iphoneos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "libintl-iphoneos.h"; sourceTree = "<group>"; };
-		6877430D2D4619E600375A2C /* libintl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libintl.h; sourceTree = "<group>"; };
-		F069158A38666A498D0B5693 /* COPYING.LIB */ = {isa = PBXFileReference; lastKnownFileType = text; path = "gettext-0.23/gettext-runtime/intl/COPYING.LIB"; sourceTree = SOURCE_ROOT; };
+		6877430D2D4619E600375A2C /* libintl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libintl.h; path = "battman-gettext/include/libintl.h"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F069158A38666A498D0B5693 /* COPYING.LIB */ = {isa = PBXFileReference; lastKnownFileType = text; path = "battman-gettext/COPYING.LIB"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -215,22 +215,25 @@
 /* Begin PBXShellScriptBuildPhase section */
 		687742EC2D438BD600375A2C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(PROJECT_DIR)/gettext-0.23/configure",
-				"$(PROJECT_DIR)/gettext-0.23/configure.ac",
+				"$(PROJECT_DIR)/Scripts/Build/build-gettext.sh",
 			);
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/battman-gettext/libintl.a",
+				"$(BUILT_PRODUCTS_DIR)/battman-gettext/include/libintl.h",
+				"$(BUILT_PRODUCTS_DIR)/battman-gettext/COPYING.LIB",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#! /bin/sh\nset -e -x\n\nINITDIR=`pwd`\nSKIP_BUILD=0\n\nif [ ! -d ${INITDIR} ]; then false; fi\n\nALTBINDIR=\"${INITDIR}/${PLATFORM_NAME}/altbin\"\n\nif [ -e \"${INITDIR}/${PLATFORM_NAME}/dst/usr/lib/libintl.a\" ]; then cp \"${INITDIR}/${PLATFORM_NAME}/dst/usr/lib/libintl.a\" \"${PROJECT_DIR}/libs/libintl-${PLATFORM_NAME}.a\" && SKIP_BUILD=1; fi\n\nif [ -e \"${INITDIR}/${PLATFORM_NAME}/dst/usr/include/libintl.h\" ]; then cp \"${INITDIR}/${PLATFORM_NAME}/dst/usr/include/libintl.h\" \"${PROJECT_DIR}/includes/libintl-${PLATFORM_NAME}.h\" && SKIP_BUILD=1; fi\n\nif [ ${SKIP_BUILD} == 1 ]; then exit 0; fi\n\nVERSIONFLAGS=\"${DEPLOYMENT_TARGET_CLANG_FLAG_PREFIX}${IPHONEOS_DEPLOYMENT_TARGET} -isysroot ${SDKROOT}\"\n\n\nmkdir -p ${ALTBINDIR}\nln -sf $(xcrun --find --sdk \"${SDK_NAME}\" clang) ${ALTBINDIR}/aarch64-apple-darwin20.1.0-cc\nln -sf $(xcrun --find --sdk \"${SDK_NAME}\" clang++) ${ALTBINDIR}/aarch64-apple-darwin20.1.0-c++\nln -sf $(xcrun --find --sdk \"${SDK_NAME}\" ld) ${ALTBINDIR}/aarch64-apple-darwin20.1.0-ld\n\nexport PATH=\"${ALTBINDIR}:${PATH}\"\n#export CC=cc CXX=c++\nexport CFLAGS=\"${VERSIONFLAGS}\"\nexport CXXFLAGS=\"${VERSIONFLAGS}\"\nexport LDFLAGS=\"${VERSIONFLAGS}\"\n\n[ ! -e ${INITDIR}/${PLATFORM_NAME}/config.status ] && cd ${INITDIR}/${PLATFORM_NAME} &&\n${INITDIR}/gettext-0.23/configure -C \\\n    --build=\"aarch64-apple-darwin20.3.0\" \\\n    --host=\"aarch64-apple-darwin20.1.0\" \\\n    --prefix=\"/usr\" \\\n    --enable-static \\\n    --disable-shared \\\n    --with-included-gettext \\\n    --disable-silent-rules \\\n    --with-included-glib \\\n    --with-included-libcroco \\\n    --with-included-libunistring \\\n    --disable-java \\\n    --disable-csharp \\\n    --without-emacs \\\n    --without-git \\\n    --without-cvs \\\n    --without-xz\ncd ${INITDIR}/${PLATFORM_NAME} && make V=1 -j4\ncd ${INITDIR}/${PLATFORM_NAME} && make install DESTDIR=\"${INITDIR}/${PLATFORM_NAME}/dst\"\n\nif [ -e \"${INITDIR}/${PLATFORM_NAME}/dst/usr/lib/libintl.a\" ]; then cp \"${INITDIR}/${PLATFORM_NAME}/dst/usr/lib/libintl.a\" \"${PROJECT_DIR}/libs/libintl-${PLATFORM_NAME}.a\" && SKIP_BUILD=1; fi\nif [ -e \"${INITDIR}/${PLATFORM_NAME}/dst/usr/include/libintl.h\" ]; then cp \"${INITDIR}/${PLATFORM_NAME}/dst/usr/include/libintl.h\" \"${PROJECT_DIR}/includes/libintl-${PLATFORM_NAME}.h\" && SKIP_BUILD=1; fi\n";
+			shellScript = "bash \"${PROJECT_DIR}/Scripts/Build/build-gettext.sh\"";
 		};
 		6877431F2D47641700375A2C /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -248,7 +251,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#! /bin/sh\nset -e -x\n\nINITDIR=`pwd`\n\ncd ${INITDIR}/${PLATFORM_NAME} && make V=1 -j4 clean || true\nrm -rf ${INITDIR}/${PLATFORM_NAME}/dst\nrm -f \"${PROJECT_DIR}/libs/libintl-${PLATFORM_NAME}.a\"\nrm -f \"${PROJECT_DIR}/includes/libintl-${PLATFORM_NAME}.h\"\n";
+			shellScript = "set -eu\n: \"${BUILD_DIR:?}\"\n: \"${BUILT_PRODUCTS_DIR:?}\"\nrm -rf \"${BUILD_DIR}/BattmanDependencies/gettext-0.23\" \"${BUILT_PRODUCTS_DIR}/battman-gettext\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -397,8 +400,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/libs",
-					"-lintl-$(PLATFORM_NAME)",
+					"$(BUILT_PRODUCTS_DIR)/battman-gettext/libintl.a",
 					"-Wl,-all_load",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnu.intl;
@@ -481,8 +483,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/libs",
-					"-lintl-$(PLATFORM_NAME)",
+					"$(BUILT_PRODUCTS_DIR)/battman-gettext/libintl.a",
 					"-Wl,-all_load",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnu.intl;

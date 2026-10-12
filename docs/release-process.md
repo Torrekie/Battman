@@ -45,6 +45,10 @@ three roots, official publisher, SDK-example publisher, and release checksum.
 Apple/ad-hoc/TrollStore platform signing is a separate mechanism and does not
 replace any of them.
 
+The gettext Xcode dependency downloads a fixed GNU source archive, checks its
+SHA-256, and builds the runtime serially. Its headers, libraries, source cache
+and license are generated under Xcode's build directories. A checkout needs no
+prebuilt gettext files; its first Xcode build needs network access to GNU.
 Xcode app products embed the built `intl.framework` and its LGPL license.
 The app finalizer signs this framework before signing the app; framework-target
 signing is disabled so recent Xcode versions do not request a development

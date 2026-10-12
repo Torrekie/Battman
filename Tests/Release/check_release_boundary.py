@@ -36,6 +36,17 @@ if project.count("/* Distribution.m in Sources */ =") != 3:
 if project.count('/* intl.framework in Embed Frameworks */ =') != 3:
     fail("every Xcode app target must embed its gettext runtime")
 intl_project = (ROOT / "gettext.xcodeproj/project.pbxproj").read_text(encoding="utf-8")
+gettext_builder = (ROOT / "Scripts/Build/build-gettext.sh").read_text(encoding="utf-8")
+for required in (
+    "bf31a9b6bdf3e364669c7bd9858f97e4a0c408a8d22940c5d4ab638b65460f85",
+    "shasum -a 256 --check --status", "make -C intl -j1",
+    'output="$BUILT_PRODUCTS_DIR/battman-gettext"',
+):
+    if required not in gettext_builder:
+        fail(f"gettext builder omits reproducible input or bounded build contract: {required}")
+for required in ('battman-gettext/include/libintl.h', '$(BUILT_PRODUCTS_DIR)/battman-gettext/libintl.a'):
+    if required not in intl_project:
+        fail(f"gettext target omits generated dependency: {required}")
 if "COPYING.LIB in Resources" not in intl_project or intl_project.count("CODE_SIGNING_ALLOWED = NO;") != 2:
     fail("gettext must carry its license and defer signing to app finalization")
 
