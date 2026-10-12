@@ -260,6 +260,7 @@ static NSTimeInterval BAAnalyticsMotionDuration(NSTimeInterval duration) {
 }
 
 - (void)updateEditingButtons {
+	self.editButtonItem.title = self.editing ? _("Done") : _("Edit");
 	self.navigationItem.leftBarButtonItem = self.editing ? self.addCardButtonItem : nil;
 	self.addCardButtonItem.enabled = [self hiddenCards].count > 0;
 }

@@ -3472,3 +3472,6 @@ msgstr ""
 
 msgid "Cached · %@"
 msgstr ""
+
+msgid "Edit"
+msgstr ""

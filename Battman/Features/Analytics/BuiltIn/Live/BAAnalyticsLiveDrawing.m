@@ -75,7 +75,7 @@ void BALiveHatch(CGRect rect) {
     CGContextSaveGState(context);
     CGContextClipToRect(context, rect);
     [[UIColor secondaryCompatFillColor] setFill];
-    UIRectFill(rect);
+    UIRectFillUsingBlendMode(rect, kCGBlendModeNormal);
     CGContextSetStrokeColorWithColor(context, [UIColor.compatSecondaryLabelColor colorWithAlphaComponent:0.45].CGColor);
     CGContextSetLineWidth(context, 0.65);
     for (CGFloat x = CGRectGetMinX(rect) - CGRectGetHeight(rect); x < CGRectGetMaxX(rect); x += 6) {

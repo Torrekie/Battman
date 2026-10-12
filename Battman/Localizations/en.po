@@ -3513,3 +3513,6 @@ msgstr "Showing cached history; refreshing in background"
 
 msgid "Cached · %@"
 msgstr "Cached · %@"
+
+msgid "Edit"
+msgstr "Edit"

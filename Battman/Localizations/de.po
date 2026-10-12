@@ -3513,3 +3513,6 @@ msgstr "Gespeicherter Verlauf; Aktualisierung im Hintergrund"
 
 msgid "Cached · %@"
 msgstr "Cache · %@"
+
+msgid "Edit"
+msgstr "Bearbeiten"

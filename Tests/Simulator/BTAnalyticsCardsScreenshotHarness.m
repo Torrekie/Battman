@@ -563,6 +563,17 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     Require(detailCount==7,@"Optional card detail scope changed unexpectedly");
 }
 - (void)testCapacityCurrentDetail {
+    // A translucent missing-data fill must blend over an opaque light canvas.
+    uint8_t pixels[12 * 12 * 4] = {0};
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef bitmap = CGBitmapContextCreate(pixels, 12, 12, 8, 12 * 4, space,
+        kCGImageAlphaNoneSkipLast | kCGBitmapByteOrder32Big);
+    CGColorSpaceRelease(space);
+    Require(bitmap != NULL, @"Missing-data blend fixture has no graphics context");
+    CGContextSetRGBFillColor(bitmap, 1, 1, 1, 1); CGContextFillRect(bitmap, CGRectMake(0, 0, 12, 12));
+    UIGraphicsPushContext(bitmap); BALiveHatch(CGRectMake(0, 0, 12, 12)); UIGraphicsPopContext();
+    CGContextRelease(bitmap);
+    Require(pixels[(6 * 12 + 6) * 4] > 128, @"Missing-data fill replaced the light canvas with an opaque dark block");
     BAAnalyticsCanvasCard *card = (id)BAAnalyticsCreateCapacityCanvasCard();
     UIView *canvas = [card makeAnalyticsCardContentView];
     NSDate *now = [NSDate date];
@@ -614,6 +625,87 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     detail = (id)[card detailViewControllerForSelection:nil size:BAAnalyticsCardSize1x1]; rows = [detail summaryRows];
     Require(CapacitySummaryNumber(rows,0).doubleValue == 3100 && [rows[1][@"value"] isEqual:cond_localize("Unavailable")] &&
         [rows[2][@"value"] isEqual:cond_localize("Unavailable")],@"A design-only live snapshot was paired with historical FCC");
+
+    // Real capacity windows also contain newer rows from unrelated tables.
+    // A selected historical range must use its own FCC evidence, rather than
+    // the family's last row or a denominator from the current acquisition.
+    NSMutableArray<BAAnalyticsObservation *> *historyPoints = [NSMutableArray array];
+    NSDate *origin = [now dateByAddingTimeInterval:-3600];
+    for (NSUInteger index = 0; index < 260; index++) {
+        NSDate *time = [origin dateByAddingTimeInterval:10.0 * index];
+        [historyPoints addObject:[[BAAnalyticsObservation alloc] initWithIdentifier:[NSString stringWithFormat:@"capacity.range.%lu", (unsigned long)index]
+            timestamp:time sourceTimestamp:time.timeIntervalSince1970 timestampValidated:YES values:@{metric:@(3100 + index)} fieldMetadata:@{metric:field}]];
+    }
+    BAAnalyticsObservation *lastFCC = historyPoints.lastObject;
+    NSDate *unrelatedTime = [now dateByAddingTimeInterval:-900];
+    [historyPoints addObject:[[BAAnalyticsObservation alloc] initWithIdentifier:@"capacity.unrelated.latest" timestamp:unrelatedTime
+        sourceTimestamp:unrelatedTime.timeIntervalSince1970 timestampValidated:YES values:@{} fieldMetadata:@{}]];
+    BAAnalyticsHistoryWindow *denseWindow = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:origin endDate:now
+        observations:historyPoints intervals:@[] gaps:@[] coverageMetricIdentifiers:NSSet.set coveredDuration:0 missingDuration:3600 coverageSecondsByMetric:@{}];
+    BAAnalyticsFamilyReport *denseFamily = [[BAAnalyticsFamilyReport alloc] initWithFamily:BAAnalyticsFamilyCapacity availability:BAAnalyticsReportAvailabilityPartial
+        window:denseWindow payload:@{BAAnalyticsPayloadLatestObservation:lastFCC} limitations:@[]];
+    BAAnalyticsReport *denseReport = [[BAAnalyticsReport alloc] initWithSequenceNumber:24 generatedAt:now sourceProfileIdentifier:@"fixture.capacity.range"
+        fieldMetadata:@{metric:field} familyReports:@{BAAnalyticsFamilyCapacity:denseFamily} error:nil];
+    BAAnalyticsCanvasCard *denseCard = (id)BAAnalyticsCreateCapacityCanvasCard(); [denseCard setValue:denseReport forKey:@"latestReport"];
+    BAAnalyticsCanvasView *denseCanvas = (id)[denseCard makeAnalyticsCardContentView];
+    denseCanvas.frame = CGRectMake(0, 0, 173, 173);
+    [denseCard analyticsCardContentView:denseCanvas didReceiveMetricSnapshot:snapshot];
+    [denseCard configureAnalyticsCardContentView:denseCanvas forSize:BAAnalyticsCardSize1x1 editing:NO]; AwaitPreparedCanvases(denseCanvas);
+    BAAnalyticsCanvasHitRegion *overviewHit = nil;
+    for (BAAnalyticsCanvasHitRegion *hit in denseCanvas.hitRegions) if ([hit.selection.kind isEqual:@"overview"]) overviewHit = hit;
+    Require(overviewHit != nil, @"Dense compact capacity trend has no overview affordance");
+    BAFixtureTouch *centerTouch = [BAFixtureTouch new]; centerTouch.point = CGPointMake(CGRectGetMidX(overviewHit.rect), CGRectGetMidY(overviewHit.rect));
+    [denseCanvas endTrackingWithTouch:(UITouch *)(id)centerTouch withEvent:nil];
+    Require([denseCanvas.selectedDetail.kind isEqual:@"overview"], @"Compact capacity canvas selected an arbitrary historical slice");
+    denseCanvas.frame = CGRectMake(0, 0, 358, 358);
+    [denseCard configureAnalyticsCardContentView:denseCanvas forSize:BAAnalyticsCardSize2x2 editing:NO]; AwaitPreparedCanvases(denseCanvas);
+    NSUInteger sliceHits = 0;
+    for (BAAnalyticsCanvasHitRegion *hit in denseCanvas.hitRegions) {
+        if (![hit.selection.kind isEqual:@"capacity-observations"] ||
+            [hit.selection.endDate timeIntervalSinceDate:hit.selection.startDate] >= [lastFCC.timestamp timeIntervalSinceDate:origin]) continue;
+        Require(CGRectGetWidth(hit.rect) >= 44 && CGRectGetHeight(hit.rect) >= 44, @"Large capacity trend has overlapping narrow slice targets");
+        sliceHits++;
+    }
+    Require(sliceHits > 1, @"Large capacity trend lost its historical slice interactions");
+    BAAnalyticsDetailSelection *range = [BAAnalyticsDetailSelection selectionForFamily:BAAnalyticsFamilyCapacity kind:@"capacity-observations"
+        recordIdentifiers:nil metricIdentifiers:@[metric, BAAnalyticsHistoryDesignCapacityMilliampHours]
+        startDate:historyPoints[100].timestamp endDate:historyPoints[120].timestamp
+        context:@{@"validatedMetricIdentifiers":@[metric], @"reportSequence":@24}];
+    detail = (id)[denseCard detailViewControllerForSelection:range size:BAAnalyticsCardSize2x2];
+    WaitForFixture(^BOOL { return detail.selectedObservations.count == 21; }, 5, @"Capacity historical slice did not select its original records");
+    rows = [detail summaryRows];
+    Require(CapacitySummaryNumber(rows,0).doubleValue == 3220 && [rows[1][@"value"] isEqual:cond_localize("Unavailable")] &&
+        [rows[2][@"value"] isEqual:cond_localize("Unavailable")], @"Historical capacity range used an unrelated row or borrowed the live denominator");
+    [self.navigation pushViewController:detail animated:NO]; [detail.view layoutIfNeeded]; AwaitPreparedCanvases(detail.view);
+    BAAnalyticsCanvasView *detailCanvas = [detail valueForKey:@"visualization"];
+    NSArray *visiblePoints = [detailCanvas valueForKey:@"capacityObservations"];
+    Require(visiblePoints.count == detail.selectedObservations.count && visiblePoints.firstObject == historyPoints[100] &&
+        visiblePoints.lastObject == historyPoints[120], @"Capacity detail chart did not match its selected evidence window");
+    Require(detailCanvas.latestSnapshot == nil && [[detailCanvas valueForKey:@"fullCharge"] doubleValue] == 3220 &&
+        [detailCanvas valueForKey:@"designCapacity"] == nil, @"Historical capacity detail graphic adopted current acquisition values");
+    [self saveView:self.window name:@"detail-capacity-historical-slice-en.png"];
+    [self.navigation popViewControllerAnimated:NO]; DrainUI();
+
+    BAAnalyticsMetricSnapshot *newer = [[BAAnalyticsMetricSnapshot alloc] initWithSequenceNumber:25 timestamp:[now dateByAddingTimeInterval:1]
+        values:@{BAAnalyticsMetricFullChargeCapacityMilliampHours:@6100, BAAnalyticsMetricDesignCapacityMilliampHours:@8000} histories:nil];
+    [denseCard analyticsCardContentView:denseCanvas didReceiveMetricSnapshot:newer];
+    BAAnalyticsDetailSelection *frozen = [BAAnalyticsDetailSelection selectionForFamily:BAAnalyticsFamilyCapacity kind:@"overview"
+        recordIdentifiers:nil metricIdentifiers:@[metric] startDate:origin endDate:lastFCC.timestamp context:@{@"source":@"metricSnapshot",
+            @"fullChargeMilliampHours":@5591, @"designCapacityMilliampHours":@7596, @"observationTimestamp":@(now.timeIntervalSince1970), @"reportSequence":@24}];
+    BAAnalyticsDetailViewController *frozenDetail = (id)[denseCard detailViewControllerForSelection:frozen size:BAAnalyticsCardSize2x2];
+    BAAnalyticsCanvasView *frozenCanvas = (id)[frozenDetail makeVisualizationView]; frozenCanvas.frame = CGRectMake(0, 0, 358, 330); AwaitPreparedCanvases(frozenCanvas);
+    Require([[frozenCanvas valueForKey:@"fullCharge"] doubleValue] == 5591 && [[frozenCanvas valueForKey:@"designCapacity"] doubleValue] == 7596,
+        @"Capacity detail graphic replaced its frozen current pair with a newer snapshot");
+    // The selection carries Unix seconds, rather than NSDate's reference epoch.
+    // Compare that stored representation without another epoch round trip.
+    Require([[frozenCanvas valueForKey:@"capacityTimestamp"] timeIntervalSince1970] == [frozen.context[@"observationTimestamp"] doubleValue],
+        @"Capacity detail graphic replaced its frozen acquisition timestamp");
+    [denseCard analyticsCardContentView:denseCanvas didReceiveMetricSnapshot:designOnly];
+    BAAnalyticsDetailViewController *historyOverview = (id)[denseCard detailViewControllerForSelection:nil size:BAAnalyticsCardSize2x2];
+    WaitForFixture(^BOOL { return historyOverview.selectedObservations.count == historyPoints.count; }, 5, @"Capacity overview evidence did not finish");
+    rows = [historyOverview summaryRows];
+    Require(CapacitySummaryNumber(rows,0).doubleValue == 3359 && [rows[1][@"value"] isEqual:cond_localize("Unavailable")],
+        @"Capacity overview used the family's unrelated final row or a live design-only denominator");
 }
 - (void)testRealHistoryPublication {
     // Exercise the actual asynchronous service through the production cell
@@ -1251,6 +1343,7 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
     [json writeToFile:[self.output stringByAppendingPathComponent:@"validation.json"] atomically:YES];
 }
 - (void)runChecks {
+    BOOL capacityOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_CAPACITY_ONLY"] isEqual:@"1"];
     BOOL historyOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_HISTORY_ONLY"] isEqual:@"1"];
     BOOL performanceOnly = [NSProcessInfo.processInfo.environment[@"BATTMAN_ANALYTICS_PERFORMANCE_ONLY"] isEqual:@"1"];
     NSArray<NSString *> *checks = performanceOnly ? @[@"actual host lifecycle, editing, navigation and frozen optional details",
@@ -1263,6 +1356,12 @@ static NSArray<NSDictionary *> *CanvasHitSignature(BAAnalyticsCanvasView *canvas
           @"editing suppresses card touch, embedded gestures and accessibility actions",@"resize/remove/add/reorder/persistence",@"visible-only subscriptions",
           @"current capacity detail without history and no mixed-source capacity ratios",@"real asynchronous history publication and visible canvas lifecycle",@"lazy host history activation after a missed BecomeActive notification"];
     @try {
+        if (capacityOnly) {
+            [self testCapacityCurrentDetail];
+            [self writeValidationWithChecks:@[@"capacity overview and historical selection keep chart, readings and exact evidence consistent"] passed:YES];
+            [@"PASS" writeToFile:[self.output stringByAppendingPathComponent:@"analytics-v3.status"] atomically:YES encoding:NSUTF8StringEncoding error:nil];
+            return;
+        }
         if (performanceOnly) {
             [self testRegistrationAndMigration]; [self testHost]; [self testFamilyDetails]; [self testCapacityCurrentDetail];
             [self testPerformanceHistory]; [self testGapIndexSemantics];

@@ -497,8 +497,12 @@ static BAAnalyticsHistoryWindow *BAWindow(NSDate *start, NSDate *end, NSArray<BA
 		if ((checked++ & 63) == 0 && cancelled()) return nil;
 		NSDate *a = [interval.startDate laterDate:start], *b = [interval.endDate earlierDate:end];
 		if ([b compare:a] != NSOrderedDescending) continue;
-		[clipped addObject:[[BAAnalyticsHistoryInterval alloc] initWithStartDate:a endDate:b startObservation:interval.startObservation
-			endObservation:interval.endObservation coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:interval.state]];
+		// Immutable intervals can be shared by overlapping family windows. Only
+		// boundary intervals need a new object with different clipped dates.
+		BAAnalyticsHistoryInterval *owned = [a isEqual:interval.startDate] && [b isEqual:interval.endDate] ? interval :
+			[[BAAnalyticsHistoryInterval alloc] initWithStartDate:a endDate:b startObservation:interval.startObservation
+				endObservation:interval.endObservation coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:interval.state];
+		[clipped addObject:owned];
 	}
 	NSDate *cursor = start;
 	for (NSArray *span in BASpans(clipped, required, start, end, cancelled)) @autoreleasepool {

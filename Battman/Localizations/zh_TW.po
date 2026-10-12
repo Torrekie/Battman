@@ -3514,3 +3514,6 @@ msgstr "正在顯示歷史快取，背景更新中"
 
 msgid "Cached · %@"
 msgstr "快取 · %@"
+
+msgid "Edit"
+msgstr "編輯"

@@ -14,6 +14,18 @@ static NSNumber *BACapacityFCC(NSNumber *value) {
     return value && value.doubleValue >= 0 ? value : nil;
 }
 
+static BOOL BACapacitySelectionUsesCurrentSnapshot(BAAnalyticsDetailSelection *selection) {
+    return !selection || [selection.kind isEqual:@"overview"] ||
+        ([selection.kind isEqual:@"capacity-ratio"] && [selection.context[@"source"] isEqual:@"metricSnapshot"]);
+}
+
+static BAAnalyticsObservation *BACapacityLastValidObservation(NSArray<BAAnalyticsObservation *> *points) {
+    for (BAAnalyticsObservation *point in points.reverseObjectEnumerator) {
+        if (BACapacityFCC(BALiveObservationValue(point, BAAnalyticsHistoryFullChargeCapacityMilliampHours))) return point;
+    }
+    return nil;
+}
+
 static NSString *BACapacityNumber(double value, NSUInteger decimals) {
     NSNumberFormatter *formatter = [NSNumberFormatter new];
     formatter.numberStyle = NSNumberFormatterDecimalStyle;
@@ -67,18 +79,22 @@ typedef struct {
 @implementation BACapacityPreparationToken
 @end
 
-// Foundation-only preparation. Original records and every trusted/untrusted
-// edge are retained; the small display envelope is chosen later from these.
-static BACapacityPreparedHistory *BACapacityPrepare(BAAnalyticsFamilyReport *family, BACapacityPreparationToken *token) {
+// Foundation-only preparation. Original records in the selected scope and
+// every trusted/untrusted edge are retained before choosing a display envelope.
+static BACapacityPreparedHistory *BACapacityPrepare(BAAnalyticsFamilyReport *family, BAAnalyticsDetailSelection *selection, BACapacityPreparationToken *token) {
     if (token.isCancelled) return nil;
     BACapacityPreparedHistory *prepared = [BACapacityPreparedHistory new];
     NSMutableArray<BAAnalyticsObservation *> *points = [NSMutableArray array];
+    NSSet<NSString *> *selectedIDs = [NSSet setWithArray:selection.recordIdentifiers ?: @[]];
     NSUInteger scanned = 0; BOOL ordered = YES; BAAnalyticsObservation *priorPoint = nil;
     for (BAAnalyticsObservation *point in family.window.observations) {
         if ((scanned++ & 255) == 0 && token.isCancelled) return nil;
         if (BACapacityFCC(BALiveObservationValue(point, BAAnalyticsHistoryFullChargeCapacityMilliampHours)) &&
             [point.timestamp compare:family.window.startDate] != NSOrderedAscending &&
-            [point.timestamp compare:family.window.endDate] != NSOrderedDescending) {
+            [point.timestamp compare:family.window.endDate] != NSOrderedDescending &&
+            (!selectedIDs.count || [selectedIDs containsObject:point.identifier]) &&
+            (!selection.startDate || [point.timestamp compare:selection.startDate] != NSOrderedAscending) &&
+            (!selection.endDate || [point.timestamp compare:selection.endDate] != NSOrderedDescending)) {
             NSComparisonResult order = priorPoint ? [priorPoint.timestamp compare:point.timestamp] : NSOrderedAscending;
             if (order == NSOrderedDescending || (order == NSOrderedSame && [priorPoint.identifier compare:point.identifier] == NSOrderedDescending)) ordered = NO;
             [points addObject:point]; priorPoint = point;
@@ -214,6 +230,9 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 @property (nonatomic) CGFloat displayWidth;
 @property (nonatomic, strong) NSDateFormatter *pointFormatter;
 @property (nonatomic, strong) BACapacityPreparationToken *preparationToken;
+// Set before a detail canvas receives its report. Historical selections scope
+// both the graphic and its capacity pair; overview keeps the complete trend.
+@property (nonatomic, strong) BAAnalyticsDetailSelection *capacitySelection;
 - (void)refreshCapacity;
 - (void)startHistoryPreparation;
 - (void)renderCapacityWithRegions:(NSMutableArray *)regions;
@@ -284,12 +303,13 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     self.preparingHistory = YES;
     BAAnalyticsFamilyReport *family = self.requestedFamily;
     BAAnalyticsReport *report = self.requestedReport;
+    BAAnalyticsDetailSelection *selection = BACapacitySelectionUsesCurrentSnapshot(self.capacitySelection) ? nil : self.capacitySelection;
     NSUInteger generation = self.preparationGeneration;
     BACapacityPreparationToken *token = [BACapacityPreparationToken new]; self.preparationToken = token;
     __weak BAAnalyticsCapacityCanvasView *weakSelf = self;
     dispatch_async(BAAnalyticsCanvasPreparationQueue(), ^{
         @autoreleasepool {
-            BACapacityPreparedHistory *prepared = BACapacityPrepare(family, token);
+            BACapacityPreparedHistory *prepared = BACapacityPrepare(family, selection, token);
             dispatch_async(dispatch_get_main_queue(), ^{
                 BAAnalyticsCapacityCanvasView *view = weakSelf;
                 if (!view) return;
@@ -339,6 +359,15 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
         self.currentSource = @"historyObservation";
     }
     if (!self.fullCharge) self.designCapacity = nil;
+    NSNumber *frozenFull = BACapacityFCC(BALiveFiniteNumber(self.capacitySelection.context[@"fullChargeMilliampHours"]));
+    if (frozenFull) {
+        self.fullCharge = frozenFull;
+        self.designCapacity = BACapacityPositive(BALiveFiniteNumber(self.capacitySelection.context[@"designCapacityMilliampHours"]));
+        NSNumber *time = BALiveFiniteNumber(self.capacitySelection.context[@"observationTimestamp"]);
+        self.capacityTimestamp = time ? [NSDate dateWithTimeIntervalSince1970:time.doubleValue] : nil;
+        self.currentSource = self.capacitySelection.context[@"source"] ?: @"historyObservation";
+        self.currentRecordIdentifiers = self.capacitySelection.recordIdentifiers;
+    }
     self.accessibilityLabel = [self capacitySummary];
     [self setNeedsLayout];
     [self setNeedsDisplay];
@@ -595,7 +624,15 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     if (!regions || !self.detailEnabled) return;
     NSArray *metrics = @[BAAnalyticsHistoryFullChargeCapacityMilliampHours, BAAnalyticsHistoryDesignCapacityMilliampHours, BAAnalyticsHistoryCycleCount];
     if (points.count > 192) {
-        NSUInteger slices = span > 0 ? MAX(1, MIN(64, (NSUInteger)ceil(graph.size.width / 6))) : 1;
+        // A small trend is an overview affordance. Dense six-point-wide slices
+        // became overlapping 44-point targets and selected arbitrary time ranges
+        // when users tapped the compact card's central canvas.
+        if (self.cardSize == BAAnalyticsCardSize1x1 || graph.size.width < 132 || graph.size.height < 44) {
+            [regions addObject:[BAAnalyticsCanvasHitRegion regionWithRect:graph selection:[self overviewSelection]
+                accessibilityLabel:[self capacitySummary]]];
+            return;
+        }
+        NSUInteger slices = span > 0 ? MAX(1, MIN(64, (NSUInteger)floor(graph.size.width / 44))) : 1;
         for (NSUInteger slice = 0; slice < slices; slice++) {
             NSDate *start = [NSDate dateWithTimeIntervalSince1970:first + span * slice / slices];
             NSDate *end = [NSDate dateWithTimeIntervalSince1970:first + span * (slice + 1) / slices];
@@ -649,15 +686,18 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
 - (UIView *)makeVisualizationView {
     BAAnalyticsCapacityCanvasView *view = [BAAnalyticsCapacityCanvasView new];
     view.cardSize = BAAnalyticsCardSize2x2; view.familyIdentifier = self.familyReport.family;
-    view.latestReport = self.report; view.latestSnapshot = self.snapshot;
+    view.capacitySelection = self.selection;
+    view.latestReport = self.report;
+    view.latestSnapshot = BACapacitySelectionUsesCurrentSnapshot(self.selection) ? self.snapshot : nil;
     view.detailEnabled = NO;
     [view refreshCapacity];
     return view;
 }
 - (NSArray<NSDictionary *> *)summaryRows {
-    BAAnalyticsObservation *point = self.selectedObservations.count == 1 ? self.selectedObservations.firstObject : self.familyReport.window.observations.lastObject;
+    BAAnalyticsObservation *point = BACapacityLastValidObservation(self.selectedObservations);
     BOOL snapshotSelection = [self.selection.context[@"source"] isEqual:@"metricSnapshot"];
     BOOL overview = !self.selection || [self.selection.kind isEqual:@"overview"];
+    if (!point && overview) point = BACapacityLastValidObservation(self.familyReport.window.observations);
     NSNumber *full = BACapacityFCC(BALiveFiniteNumber(self.selection.context[@"fullChargeMilliampHours"]));
     NSNumber *design = full ? BACapacityPositive(BALiveFiniteNumber(self.selection.context[@"designCapacityMilliampHours"])) : nil;
     if (!full && (snapshotSelection || overview)) {
@@ -689,8 +729,7 @@ static NSArray<NSNumber *> *BACapacityEnvelope(BACapacityPreparedHistory *prepar
     if (!report && (!sequence || self.latestReport.sequenceNumber == sequence.unsignedLongLongValue)) report = self.latestReport;
     // A stale hit target may outlive a frame, but must never query newer evidence.
     if (sequence && !report) return nil;
-    BOOL current = !selection || [selection.kind isEqual:@"overview"] ||
-        ([selection.kind isEqual:@"capacity-ratio"] && [selection.context[@"source"] isEqual:@"metricSnapshot"]);
+    BOOL current = BACapacitySelectionUsesCurrentSnapshot(selection);
     BOOL hasFrozenSnapshot = [selection.context[@"source"] isEqual:@"metricSnapshot"] &&
         BACapacityFCC(BALiveFiniteNumber(selection.context[@"fullChargeMilliampHours"])) != nil;
     NSNumber *full = BACapacityFCC(BALiveFiniteNumber([self.latestSnapshot valueForMetricIdentifier:BAAnalyticsMetricFullChargeCapacityMilliampHours]));

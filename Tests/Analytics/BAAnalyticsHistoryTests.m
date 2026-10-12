@@ -145,6 +145,22 @@ static void TestImmutableEvidence(void) {
 	Assert([family.payload[@"selectionEvidence"] count] == 1, "family report froze nested selection evidence");
 	Assert([report reportForFamily:BAAnalyticsFamilyDwell] == family && report.fieldMetadata.count == 1, "report detached mutable source maps");
 	Assert([observation copy] == observation && [family copy] == family && [report copy] == report, "immutable models were safe to retain across refreshes");
+	NSDate *end = [timestamp dateByAddingTimeInterval:60];
+	BAAnalyticsObservation *last = [[BAAnalyticsObservation alloc] initWithIdentifier:@"fixture.last" timestamp:end
+		sourceTimestamp:FixtureEpoch + 60 timestampValidated:YES values:observation.values fieldMetadata:observation.fieldMetadata];
+	BAAnalyticsHistoryInterval *interval = [[BAAnalyticsHistoryInterval alloc] initWithStartDate:timestamp endDate:end
+		startObservation:observation endObservation:last coveredMetricIdentifiers:[NSSet setWithObject:BAAnalyticsHistorySOCPercent]
+		state:BAAnalyticsObservedStateUnknown];
+	BAAnalyticsHistoryWindow *full = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:timestamp endDate:end
+		observations:@[observation, last] intervals:@[interval] gaps:@[] coverageMetricIdentifiers:interval.coveredMetricIdentifiers
+		coveredDuration:0 missingDuration:0 coverageSecondsByMetric:@{}];
+	Assert(full.intervals.firstObject == interval, "unclipped windows reuse their immutable interval evidence");
+	BAAnalyticsHistoryWindow *clipped = [[BAAnalyticsHistoryWindow alloc] initWithStartDate:[timestamp dateByAddingTimeInterval:15] endDate:end
+		observations:@[observation, last] intervals:@[interval] gaps:@[] coverageMetricIdentifiers:interval.coveredMetricIdentifiers
+		coveredDuration:0 missingDuration:0 coverageSecondsByMetric:@{}];
+	Assert(clipped.intervals.firstObject != interval && clipped.intervals.firstObject.startObservation == observation,
+		"boundary clips create a distinct interval while retaining original sample endpoints");
+	AssertNear(clipped.intervals.firstObject.duration, 45, "interval reuse retains exact clipping semantics");
 }
 
 static void TestFieldsAndIndependentCoverage(void) {
@@ -498,13 +514,19 @@ static void TestCachedReportGraph(void) {
     NSError *error = nil;
     NSData *data = BAAnalyticsEncodeCachedReport(report, &error);
     Assert(data != nil && error == nil, "completed report encoded without acquisition failure");
+    Assert(data.length >= 8 && !memcmp(data.bytes, "bplist00", 8), "small caches retain the legacy raw binary-plist representation");
     Assert(BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return YES; }) == nil,
         "cancelled cache write returns before serializing a generation");
+    Assert([error.userInfo[@"stage"] isEqual:@1] && [error.userInfo[@"reason"] isEqual:@3] &&
+        [error.userInfo[@"visits"] isEqual:@0] && [error.userInfo[@"counts"] count] == 8,
+        "cancelled encoding returns bounded numeric diagnostics without record content");
     Assert(BAAnalyticsDecodeCachedReportCancellable(data, report.generatedAt, &error, ^BOOL { return YES; }) == nil,
         "cancelled bootstrap returns before decoding a graph");
     __block NSUInteger encodeChecks = 0;
     Assert(BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return ++encodeChecks > 2; }) == nil && encodeChecks > 2,
         "cooperative cancellation interrupts a cache graph encode");
+    Assert([error.userInfo[@"reason"] isEqual:@3] && [error.userInfo[@"visits"] unsignedIntegerValue] > 0,
+        "cooperative cache cancellation reports its reason and work count");
     __block NSUInteger decodeChecks = 0;
     Assert(BAAnalyticsDecodeCachedReportCancellable(data, report.generatedAt, &error, ^BOOL { return ++decodeChecks > 2; }) == nil && decodeChecks > 2,
         "cooperative cancellation interrupts cache graph reconstruction");
@@ -605,9 +627,120 @@ static void TestCachedReportGraph(void) {
     BAAnalyticsReport *incomplete = [[BAAnalyticsReport alloc] initWithSequenceNumber:1 generatedAt:report.generatedAt sourceProfileIdentifier:report.sourceProfileIdentifier
         fieldMetadata:report.fieldMetadata familyReports:@{family.family: loading} error:nil];
     Assert(BAAnalyticsEncodeCachedReport(incomplete, &error) == nil && error != nil, "loading reports never overwrite completed cache");
+    Assert([error.userInfo[@"stage"] isEqual:@1] && [error.userInfo[@"reason"] isEqual:@8],
+        "incomplete evidence has a distinct cache eligibility diagnostic");
     BAAnalyticsReport *failed = [[BAAnalyticsReport alloc] initWithSequenceNumber:1 generatedAt:report.generatedAt sourceProfileIdentifier:report.sourceProfileIdentifier
         fieldMetadata:report.fieldMetadata familyReports:report.familyReports error:[NSError errorWithDomain:@"fixture" code:SQLITE_INTERRUPT userInfo:nil]];
     Assert(BAAnalyticsEncodeCachedReport(failed, &error) == nil && error != nil, "failed and cancelled reports cannot be cached");
+}
+
+static void AssertCompressedFixtureRejected(NSData *data, NSDate *date, NSUInteger reason, const char *message) {
+    @autoreleasepool {
+        NSError *error = nil;
+        Assert(BAAnalyticsDecodeCachedReport(data, date, &error) == nil && error != nil &&
+            (!reason || [error.userInfo[@"reason"] unsignedIntegerValue] == reason), message);
+    }
+}
+
+static void TestProductionShapedCachedReport(void) {
+    NSUInteger count = 24000;
+    NSTimeInterval step = 20;
+    NSString *rows = [NSString stringWithFormat:@"WITH RECURSIVE records(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM records WHERE i<%lu) "
+        "INSERT INTO PLBatteryAgent_EventBackward_Battery (ID,timestamp,Level,InstantAmperage,ExternalConnected,IsCharging,FullyCharged,AppleRawMaxCapacity,Voltage) "
+        "SELECT i+1,%.3f+i*%.3f,20+(i%%60),400,1,1,0,5900-(i%%43),12000+(i%%100) FROM records", (unsigned long)(count - 1), FixtureEpoch, step];
+    NSString *ui = [NSString stringWithFormat:@"INSERT INTO PLBatteryAgent_EventBackward_BatteryUI VALUES (1,%.3f,80,1)",
+        FixtureEpoch + (count - 1) * step + step / 2];
+    NSURL *url = Fixture(YES, @[OffsetRow(1, -3600, 0), rows,
+        @"CREATE TABLE PLBatteryAgent_EventBackward_BatteryUI (ID INTEGER PRIMARY KEY,timestamp REAL,Level REAL,IsCharging INTEGER)", ui]);
+    BAAnalyticsReport *report = Read(url, (count - 1) * step + step, 62);
+    BAAnalyticsFamilyReport *capacity = report.familyReports[BAAnalyticsFamilyCapacity];
+    BAAnalyticsObservation *last = capacity.window.observations.lastObject;
+    Assert(report.familyReports.count == 10 && capacity.window.observations.count == count + 1 &&
+        last.values[BAAnalyticsHistoryFullChargeCapacityMilliampHours] == nil,
+        "production-shaped cache graph has many metrics and windows ending in a non-FCC source record");
+    BAAnalyticsObservation *latestFCC = capacity.payload[BAAnalyticsPayloadLatestObservation];
+    Assert(latestFCC.values[BAAnalyticsHistoryFullChargeCapacityMilliampHours] != nil && latestFCC != last,
+        "capacity retains its latest relevant observation independently of other tables");
+    BAAnalyticsHistoryWindow *rhythm = report.familyReports[BAAnalyticsFamilyRhythm].window;
+    BAAnalyticsHistoryWindow *compare = report.familyReports[BAAnalyticsFamilyCompare].window;
+    Assert(rhythm.intervals.count == count - 1 && rhythm.intervals.firstObject == compare.intervals.firstObject,
+        "reader shares full immutable intervals between overlapping family windows");
+    NSError *error = nil;
+    __block NSUInteger encodeChecks = 0;
+    NSData *data = nil;
+    @autoreleasepool {
+        data = BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { encodeChecks++; return NO; });
+    }
+    Assert(data != nil && error == nil, "production-shaped multiwindow evidence fits the unchanged bounded cache codec");
+    Assert(data.length > 16 && data.length <= 16 * 1024 * 1024 && !memcmp(data.bytes, "BAHCACHE", 8),
+        "large production-shaped graph uses lossless compressed storage within the original physical file cap");
+    const uint8_t *header = data.bytes;
+    NSUInteger logicalSize = ((NSUInteger)header[12] << 24) | ((NSUInteger)header[13] << 16) | ((NSUInteger)header[14] << 8) | header[15];
+    Assert(logicalSize > 16 * 1024 * 1024 && logicalSize <= 64 * 1024 * 1024,
+        "compressed fixture exercises a logical graph exceeding the former raw storage limit");
+    BAAnalyticsReport *restored = nil;
+    @autoreleasepool {
+        restored = BAAnalyticsDecodeCachedReport(data, report.generatedAt, &error);
+    }
+    Assert(restored != nil && error == nil && restored.isCached,
+        "production-shaped cache restores its original completed generation");
+    BAAnalyticsFamilyReport *copy = restored.familyReports[BAAnalyticsFamilyCapacity];
+    BAAnalyticsObservation *cachedFCC = copy.payload[BAAnalyticsPayloadLatestObservation];
+    Assert(copy.window.observations.count == count + 1 && [cachedFCC.identifier isEqual:latestFCC.identifier] &&
+        copy.window.observations.lastObject.values[BAAnalyticsHistoryFullChargeCapacityMilliampHours] == nil,
+        "roundtrip preserves every dense FCC record and the later independent non-FCC reading");
+    Assert([restored.familyReports[BAAnalyticsFamilyRhythm].window.coverageSecondsByMetric isEqual:rhythm.coverageSecondsByMetric],
+        "dense cache roundtrip preserves exact per-metric coverage");
+    double minimum = INFINITY, maximum = -INFINITY;
+    for (BAAnalyticsObservation *point in copy.window.observations) {
+        NSNumber *value = point.values[BAAnalyticsHistoryFullChargeCapacityMilliampHours];
+        if (value) { minimum = MIN(minimum, value.doubleValue); maximum = MAX(maximum, value.doubleValue); }
+    }
+    AssertNear(minimum, 5858, "compression preserves the full dense capacity minimum");
+    AssertNear(maximum, 5900, "compression preserves the full dense capacity maximum");
+    for (NSString *key in report.familyReports) {
+        BAAnalyticsFamilyReport *before = report.familyReports[key], *after = restored.familyReports[key];
+        Assert(before.window.observations.count == after.window.observations.count && before.window.intervals.count == after.window.intervals.count &&
+            before.window.gaps.count == after.window.gaps.count && [before.window.coverageSecondsByMetric isEqual:after.window.coverageSecondsByMetric],
+            "compression retains every family's exact records intervals gaps and validated coverage");
+        AssertNear(before.window.missingDuration, after.window.missingDuration, "compression retains each family's missing time");
+    }
+    restored = nil;
+
+    NSMutableData *corrupt = [data mutableCopy];
+    ((uint8_t *)corrupt.mutableBytes)[11] = 2;
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 11,
+        "unknown compression envelope version is rejected");
+    AssertCompressedFixtureRejected([data subdataWithRange:NSMakeRange(0, 12)], report.generatedAt, 11,
+        "truncated compression header is rejected before inflation");
+    corrupt = [data mutableCopy];
+    memset((uint8_t *)corrupt.mutableBytes + 12, 0, 4);
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 12,
+        "zero logical size is rejected before inflation");
+    ((uint8_t *)corrupt.mutableBytes)[12] = 4; ((uint8_t *)corrupt.mutableBytes)[15] = 1;
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 12,
+        "over-64-MiB size declaration is rejected before allocation");
+    corrupt = [data mutableCopy];
+    ((uint8_t *)corrupt.mutableBytes)[15] ^= 1;
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 18,
+        "declared size must match the exact inflated byte count");
+    corrupt = [data mutableCopy];
+    ((uint8_t *)corrupt.mutableBytes)[corrupt.length - 1] ^= 1;
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 0, "corrupt compressed checksum is rejected");
+    AssertCompressedFixtureRejected([data subdataWithRange:NSMakeRange(0, data.length - 1)], report.generatedAt, 20,
+        "incomplete compressed stream must reach a validated EOF");
+    corrupt = [data mutableCopy]; uint8_t tail = 0; [corrupt appendBytes:&tail length:1];
+    AssertCompressedFixtureRejected(corrupt, report.generatedAt, 19,
+        "trailing bytes after the zlib stream are rejected");
+    __block NSUInteger decodeChecks = 0;
+    Assert(BAAnalyticsDecodeCachedReportCancellable(data, report.generatedAt, &error, ^BOOL { return ++decodeChecks > 2; }) == nil &&
+        [error.userInfo[@"stage"] isEqual:@8] && [error.userInfo[@"reason"] isEqual:@3], "inflation is cooperatively cancelled between bounded chunks");
+    NSUInteger stopBeforeEnd = encodeChecks - 2;
+    __block NSUInteger cancelledEncodeChecks = 0;
+    @autoreleasepool {
+        Assert(BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return ++cancelledEncodeChecks > stopBeforeEnd; }) == nil &&
+            [error.userInfo[@"stage"] isEqual:@6] && [error.userInfo[@"reason"] isEqual:@3], "deflation is cooperatively cancelled between bounded chunks");
+    }
 }
 
 @interface HistorySubscriber : NSObject <BAAnalyticsHistoryServiceSubscriber>
@@ -877,6 +1010,7 @@ int main(void) {
 			TestRotatedHistorySources();
 			TestRotatedSourceBounds();
 			TestCachedReportGraph();
+			TestProductionShapedCachedReport();
 			TestVisibleActiveWeakSubscriptions();
 			TestPersistentHistoryService();
 			TestArchiveEnrichmentService();

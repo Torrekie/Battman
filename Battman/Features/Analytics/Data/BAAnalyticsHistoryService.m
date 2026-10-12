@@ -20,6 +20,28 @@ static BOOL BAHistoryHasCompletedEvidence(BAAnalyticsReport *report) {
 	return NO;
 }
 
+#if DEBUG
+static unsigned long long BAHistoryCacheDiagnosticNumber(NSDictionary *values, NSString *key) {
+	id value = values[key];
+	return [value isKindOfClass:NSNumber.class] ? [value unsignedLongLongValue] : 0;
+}
+static void BAHistoryLogCacheWrite(NSUInteger stage, NSUInteger bytes, BOOL cancelled, NSError *error) {
+	NSDictionary *info = error.userInfo;
+	NSDictionary *counts = [info[@"counts"] isKindOfClass:NSDictionary.class] ? info[@"counts"] : @{};
+	// Write stages: 1 source identity, 2 encode, 3 directory, 4 envelope,
+	// 5 atomic write, 6 stored, 7 restore failure. Never print I/O descriptions or source paths.
+	NSLog(@"[AnalyticsHistory] cache stage=%lu code=%ld cancelled=%d bytes=%lu encodeStage=%llu reason=%llu visits=%llu nodes=%llu metadata=%llu observations=%llu intervals=%llu gaps=%llu transitions=%llu sessions=%llu windows=%llu families=%llu ioCode=%ld",
+		(unsigned long)stage, (long)error.code, cancelled, (unsigned long)bytes,
+		BAHistoryCacheDiagnosticNumber(info, @"stage"), BAHistoryCacheDiagnosticNumber(info, @"reason"),
+		BAHistoryCacheDiagnosticNumber(info, @"visits"), BAHistoryCacheDiagnosticNumber(info, @"nodes"),
+		BAHistoryCacheDiagnosticNumber(counts, @"metadata"), BAHistoryCacheDiagnosticNumber(counts, @"observation"),
+		BAHistoryCacheDiagnosticNumber(counts, @"interval"), BAHistoryCacheDiagnosticNumber(counts, @"gap"),
+		BAHistoryCacheDiagnosticNumber(counts, @"transition"), BAHistoryCacheDiagnosticNumber(counts, @"session"),
+		BAHistoryCacheDiagnosticNumber(counts, @"window"), BAHistoryCacheDiagnosticNumber(counts, @"family"),
+		[info[@"ioCode"] isKindOfClass:NSNumber.class] ? [info[@"ioCode"] longValue] : 0L);
+}
+#endif
+
 static NSString *BAArchiveToken(struct stat info) {
 	NSString *input = [NSString stringWithFormat:@"%llu:%llu:%lld:%lld:%lld:%ld", (unsigned long long)info.st_dev,
 		(unsigned long long)info.st_ino, (long long)info.st_birthtimespec.tv_sec, (long long)info.st_size,
@@ -183,9 +205,13 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 			NSData *bytes = !cancellation.cancelled && size.unsignedLongLongValue <= 17 * 1024 * 1024 ? [NSData dataWithContentsOfURL:file options:0 error:NULL] : nil;
 			id envelope = bytes ? [NSPropertyListSerialization propertyListWithData:bytes options:NSPropertyListImmutable format:NULL error:NULL] : nil;
 			BAAnalyticsReport *cached = nil;
+			NSError *decodeError = nil;
 			if ([envelope isKindOfClass:NSDictionary.class] && [envelope[@"version"] isEqual:@1] &&
 				identity && [envelope[@"source"] isEqual:identity] && [envelope[@"report"] isKindOfClass:NSData.class])
-				cached = BAAnalyticsDecodeCachedReportCancellable(envelope[@"report"], NSDate.date, NULL, ^BOOL { return cancellation.cancelled; });
+				cached = BAAnalyticsDecodeCachedReportCancellable(envelope[@"report"], NSDate.date, &decodeError, ^BOOL { return cancellation.cancelled; });
+#if DEBUG
+			if (decodeError) BAHistoryLogCacheWrite(7, [decodeError.userInfo[@"bytes"] unsignedIntegerValue], cancellation.cancelled, decodeError);
+#endif
 			dispatch_async(dispatch_get_main_queue(), ^{
 				BAAnalyticsHistoryService *service = weakSelf;
 				if (!service) return;
@@ -203,14 +229,43 @@ static NSArray<NSURL *> *BAArchiveSources(NSURL *current, NSURL *cacheDirectory,
 - (void)storeCompletedReport:(BAAnalyticsReport *)report sourceURL:(NSURL *)sourceURL cancellation:(BAHistoryReadCancellation *)cancellation {
 	if (cancellation.cancelled || !self.cacheDirectoryURL || !BAHistoryHasCompletedEvidence(report)) return;
 	NSString *identity = BAAnalyticsHistorySourceIdentity(sourceURL);
-	NSData *encoded = identity ? BAAnalyticsEncodeCachedReportCancellable(report, NULL, ^BOOL { return cancellation.cancelled; }) : nil;
-	if (!encoded || cancellation.cancelled) return;
+	if (!identity) {
+#if DEBUG
+		BAHistoryLogCacheWrite(1, 0, cancellation.cancelled, nil);
+#endif
+		return;
+	}
+	NSError *error = nil;
+	NSData *encoded = BAAnalyticsEncodeCachedReportCancellable(report, &error, ^BOOL { return cancellation.cancelled; });
+	if (!encoded || cancellation.cancelled) {
+#if DEBUG
+		BAHistoryLogCacheWrite(2, [error.userInfo[@"bytes"] unsignedIntegerValue], cancellation.cancelled, error);
+#endif
+		return;
+	}
 	NSFileManager *fm = NSFileManager.defaultManager;
-	if (![fm createDirectoryAtURL:self.cacheDirectoryURL withIntermediateDirectories:YES attributes:nil error:NULL]) return;
+	if (![fm createDirectoryAtURL:self.cacheDirectoryURL withIntermediateDirectories:YES attributes:nil error:&error]) {
+#if DEBUG
+		BAHistoryLogCacheWrite(3, encoded.length, cancellation.cancelled, error);
+#endif
+		return;
+	}
 	[self.cacheDirectoryURL setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:NULL];
 	NSData *envelope = [NSPropertyListSerialization dataWithPropertyList:@{@"version": @1, @"source": identity, @"report": encoded}
-		format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
-	if (!cancellation.cancelled) [envelope writeToURL:[self.cacheDirectoryURL URLByAppendingPathComponent:@"completed.plist"] options:NSDataWritingAtomic error:NULL];
+		format:NSPropertyListBinaryFormat_v1_0 options:0 error:&error];
+	if (!envelope) {
+#if DEBUG
+		BAHistoryLogCacheWrite(4, encoded.length, cancellation.cancelled, error);
+#endif
+		return;
+	}
+	if (cancellation.cancelled) return;
+	BOOL stored = [envelope writeToURL:[self.cacheDirectoryURL URLByAppendingPathComponent:@"completed.plist"] options:NSDataWritingAtomic error:&error];
+#if DEBUG
+	BAHistoryLogCacheWrite(stored ? 6 : 5, encoded.length, cancellation.cancelled, error);
+#else
+	(void)stored;
+#endif
 }
 - (void)dealloc {
 	_readCancellation.cancelled = YES;

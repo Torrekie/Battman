@@ -3514,3 +3514,6 @@ msgstr "正在显示历史缓存，后台刷新中"
 
 msgid "Cached · %@"
 msgstr "缓存 · %@"
+
+msgid "Edit"
+msgstr "编辑"

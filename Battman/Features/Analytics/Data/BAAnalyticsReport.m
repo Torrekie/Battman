@@ -3,6 +3,7 @@
 #import <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zlib.h>
 
 static BOOL BAReportValidDate(id date) {
 	return [date isKindOfClass:[NSDate class]] && isfinite([date timeIntervalSince1970]);
@@ -239,9 +240,9 @@ static NSTimeInterval BAReportUnionDuration(NSArray<BAAnalyticsHistoryInterval *
 		NSDate *end = [endDate earlierDate:interval.endDate];
 		if ([end compare:start] != NSOrderedDescending)
 			continue;
-		BAAnalyticsHistoryInterval *clipped = [[BAAnalyticsHistoryInterval alloc]
-			initWithStartDate:start endDate:end startObservation:interval.startObservation endObservation:interval.endObservation
-			coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:interval.state];
+		BAAnalyticsHistoryInterval *clipped = [start isEqual:interval.startDate] && [end isEqual:interval.endDate] ? interval :
+			[[BAAnalyticsHistoryInterval alloc] initWithStartDate:start endDate:end startObservation:interval.startObservation
+				endObservation:interval.endObservation coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:interval.state];
 		if (clipped)
 			[safeIntervals addObject:clipped];
 	}
@@ -417,12 +418,102 @@ static NSTimeInterval BAReportUnionDuration(NSArray<BAAnalyticsHistoryInterval *
 // Explicit value/reference tables keep cache decoding independent of Objective-C
 // class names. No archive can request an arbitrary class or selector.
 static NSUInteger const BACacheMaximumBytes = 16 * 1024 * 1024;
+static NSUInteger const BACacheMaximumLogicalBytes = 64 * 1024 * 1024;
+static uint8_t const BACacheCompressedMagic[8] = {'B', 'A', 'H', 'C', 'A', 'C', 'H', 'E'};
 static NSUInteger const BACacheMaximumContainerItems = 120000;
 static NSUInteger const BACacheMaximumValueVisits = 2000000;
 static NSTimeInterval const BACacheMaximumAge = 24 * 3600;
 
 static void BACacheRequire(BOOL condition) {
     if (!condition) [NSException raise:@"BAAnalyticsInvalidCache" format:@"Invalid or excessive history cache."];
+}
+
+static NSData *BACacheCompress(NSData *data, BOOL (^cancelled)(void), NSUInteger *reason, NSInteger *ioCode) {
+    NSUInteger length = data.length;
+    if (!length || length > BACacheMaximumLogicalBytes) { *reason = 10; return nil; }
+    uint8_t header[16] = {'B', 'A', 'H', 'C', 'A', 'C', 'H', 'E', 0, 0, 0, 1,
+        (uint8_t)(length >> 24), (uint8_t)(length >> 16), (uint8_t)(length >> 8), (uint8_t)length};
+    NSMutableData *result = [NSMutableData dataWithBytes:header length:sizeof header];
+    z_stream stream = {0};
+    int status = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
+    if (status != Z_OK) { *reason = 13; *ioCode = status; return nil; }
+    BOOL complete = NO;
+    @try {
+        uint8_t output[65536];
+        NSUInteger offset = 0;
+        for (;;) {
+            if (cancelled()) { *reason = 3; break; }
+            if (!stream.avail_in && offset < length) {
+                NSUInteger count = MIN(length - offset, (NSUInteger)65536);
+                stream.next_in = (Bytef *)data.bytes + offset; stream.avail_in = (uInt)count;
+                offset += count;
+            }
+            uInt previousInput = stream.avail_in;
+            stream.next_out = output; stream.avail_out = sizeof output;
+            status = deflate(&stream, offset == length ? Z_FINISH : Z_NO_FLUSH);
+            NSUInteger produced = sizeof output - stream.avail_out;
+            if (produced > BACacheMaximumBytes - result.length) { *reason = 15; break; }
+            [result appendBytes:output length:produced];
+            if (status == Z_STREAM_END) { complete = YES; break; }
+            if (status != Z_OK) { *reason = 14; *ioCode = status; break; }
+            if (!produced && stream.avail_in == previousInput) { *reason = 14; *ioCode = Z_BUF_ERROR; break; }
+        }
+    } @finally {
+        int closed = deflateEnd(&stream);
+        if (complete && closed != Z_OK) { complete = NO; *reason = 14; *ioCode = closed; }
+    }
+    if (complete && cancelled()) { complete = NO; *reason = 3; }
+    return complete ? [result copy] : nil;
+}
+
+static NSData *BACacheInflate(NSData *data, BOOL (^cancelled)(void), NSUInteger *reason, NSInteger *ioCode) {
+    if (data.length <= 16) { *reason = 11; return nil; }
+    const uint8_t *header = data.bytes;
+    if (memcmp(header, BACacheCompressedMagic, sizeof BACacheCompressedMagic) || header[8] || header[9] || header[10] || header[11] != 1) {
+        *reason = 11; return nil;
+    }
+    NSUInteger declared = ((NSUInteger)header[12] << 24) | ((NSUInteger)header[13] << 16) | ((NSUInteger)header[14] << 8) | header[15];
+    if (!declared || declared > BACacheMaximumLogicalBytes) { *reason = 12; return nil; }
+    // Validate the declared bound before allocating, then grow only as checked
+    // chunks arrive. A short corrupt stream cannot reserve its declared size.
+    NSMutableData *result = [NSMutableData dataWithCapacity:MIN(declared, (NSUInteger)65536)];
+    z_stream stream = {0};
+    int status = inflateInit(&stream);
+    if (status != Z_OK) { *reason = 16; *ioCode = status; return nil; }
+    BOOL complete = NO;
+    @try {
+        uint8_t output[65536];
+        NSUInteger offset = 16;
+        for (;;) {
+            if (cancelled()) { *reason = 3; break; }
+            if (!stream.avail_in && offset < data.length) {
+                NSUInteger count = MIN(data.length - offset, (NSUInteger)65536);
+                stream.next_in = (Bytef *)data.bytes + offset; stream.avail_in = (uInt)count;
+                offset += count;
+            }
+            uInt previousInput = stream.avail_in;
+            stream.next_out = output; stream.avail_out = sizeof output;
+            status = inflate(&stream, Z_NO_FLUSH);
+            NSUInteger produced = sizeof output - stream.avail_out;
+            if (produced > declared - result.length) { *reason = 18; break; }
+            [result appendBytes:output length:produced];
+            if (status == Z_STREAM_END) {
+                if (result.length != declared) *reason = 18;
+                else if (stream.avail_in || offset != data.length) *reason = 19;
+                else complete = YES;
+                break;
+            }
+            if (status != Z_OK && status != Z_BUF_ERROR) { *reason = 17; *ioCode = status; break; }
+            if (!produced && stream.avail_in == previousInput) { *reason = 20; break; }
+        }
+    } @finally {
+        int closed = inflateEnd(&stream);
+        if (complete && closed != Z_OK) { complete = NO; *reason = 17; *ioCode = closed; }
+    }
+    if (complete && cancelled()) { complete = NO; *reason = 3; }
+    // The private result is parsed immediately and never mutated or exposed.
+    // Avoid a second allocation of the entire bounded logical buffer.
+    return complete ? result : nil;
 }
 static BOOL BACacheString(id value) {
     return [value isKindOfClass:NSString.class] && [value length] <= 4096;
@@ -492,6 +583,7 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
 
 @interface BACachedReportGraph : NSObject
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *nodes;
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *encodedReferences;
 @property (nonatomic, strong) NSMapTable<id, NSNumber *> *objectIndices;
 @property (nonatomic, strong) NSMutableDictionary<NSData *, NSNumber *> *internedNodes;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *kindCounts;
@@ -499,6 +591,7 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
 @property (nonatomic, strong) NSMutableIndexSet *decodingIndices;
 @property (nonatomic, copy) NSDate *generatedAt;
 @property (nonatomic) NSUInteger visits;
+@property (nonatomic) NSUInteger failureReason;
 @property (nonatomic, copy) BOOL (^cancelled)(void);
 - (id)encodeValue:(id)value depth:(NSUInteger)depth;
 - (id)decodeValue:(id)value depth:(NSUInteger)depth;
@@ -510,6 +603,7 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
     self = [super init];
     if (self) {
         _nodes = [NSMutableArray array];
+        _encodedReferences = [NSMutableArray array];
         _objectIndices = [[NSMapTable alloc] initWithKeyOptions:NSPointerFunctionsStrongMemory | NSPointerFunctionsObjectPointerPersonality
             valueOptions:NSPointerFunctionsStrongMemory capacity:1024];
         _internedNodes = [NSMutableDictionary dictionary];
@@ -520,17 +614,18 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
     return self;
 }
 - (void)visitDepth:(NSUInteger)depth {
-    BACacheRequire(depth <= 32 && ++self.visits <= BACacheMaximumValueVisits);
-    if ((self.visits & 63) == 1) BACacheRequire(!self.cancelled || !self.cancelled());
+    if (depth > 32) { self.failureReason = 1; BACacheRequire(NO); }
+    if (++self.visits > BACacheMaximumValueVisits) { self.failureReason = 2; BACacheRequire(NO); }
+    if ((self.visits & 63) == 1 && self.cancelled && self.cancelled()) { self.failureReason = 3; BACacheRequire(NO); }
 }
 - (void)validateDate:(id)value {
-    BACacheRequire(BAReportValidDate(value) && fabs([value timeIntervalSince1970]) <= 1e12 &&
-        [value compare:self.generatedAt] != NSOrderedDescending);
+    if (!(BAReportValidDate(value) && fabs([value timeIntervalSince1970]) <= 1e12 &&
+        [value compare:self.generatedAt] != NSOrderedDescending)) { self.failureReason = 4; BACacheRequire(NO); }
 }
 - (void)countKind:(NSString *)kind {
     NSUInteger count = [self.kindCounts[kind] unsignedIntegerValue] + 1;
-    BACacheRequire(count <= BACacheKindLimit(kind));
     self.kindCounts[kind] = @(count);
+    if (count > BACacheKindLimit(kind)) { self.failureReason = 5; BACacheRequire(NO); }
 }
 - (NSDictionary *)encodeNode:(id)value depth:(NSUInteger)depth {
     NSString *kind = BACacheKind(value);
@@ -611,7 +706,8 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
             // thousands of same-shaped interval nodes. A content digest keeps
             // graph interning bounded instead of introducing a quadratic pass.
             NSData *bytes = [NSPropertyListSerialization dataWithPropertyList:node format:NSPropertyListBinaryFormat_v1_0 options:0 error:NULL];
-            BACacheRequire(bytes && bytes.length <= BACacheMaximumBytes);
+            if (!bytes) { self.failureReason = 6; BACacheRequire(NO); }
+            if (bytes.length > BACacheMaximumBytes) { self.failureReason = 7; BACacheRequire(NO); }
             unsigned char digest[CC_SHA256_DIGEST_LENGTH];
             CC_SHA256(bytes.bytes, (CC_LONG)bytes.length, digest);
             NSData *key = [NSData dataWithBytes:digest length:sizeof(digest)];
@@ -620,10 +716,13 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
             if (!index) {
                 [self countKind:kind]; index = @(self.nodes.count);
                 [self.nodes addObject:node]; self.internedNodes[key] = index;
+                [self.encodedReferences addObject:@{@"type": @"reference", @"value": index}];
             }
             [self.objectIndices setObject:index forKey:value];
         }
-        return @{@"type": @"reference", @"value": index};
+        // Binary plists preserve container identity. Reuse each immutable
+        // reference dictionary rather than serializing one per family link.
+        return self.encodedReferences[index.unsignedIntegerValue];
     }
     if ([value isKindOfClass:NSDictionary.class]) {
         BACacheRequire([value count] <= 4096);
@@ -790,8 +889,25 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
 }
 @end
 
-static NSError *BACacheError(void) {
-    return [NSError errorWithDomain:@"BAAnalyticsHistoryCache" code:1 userInfo:@{NSLocalizedDescriptionKey: @"Invalid or excessive history cache."}];
+// Diagnostics describe codec work only. Fixed kind keys and numeric stages do
+// not reveal source paths, record identifiers, values, or exception text.
+// Stages: 1 eligibility, 2 metadata, 3 families, 4 serialization, 5 logical size,
+// 6 compression, 7 input size, 8 inflation, 9 parsing, 10 header, 11 graph,
+// 12 restored eligibility.
+// Reasons: 1 depth, 2 visits, 3 cancellation, 4 date, 5 kind count,
+// 6 node serialization, 7 node size, 8 eligibility, 9 serialization, 10 size.
+// 11 compression header, 12 declared size, 13/14 deflate init/stream,
+// 15 compressed size, 16/17 inflate init/stream, 18 size mismatch,
+// 19 trailing stream bytes, 20 incomplete stream.
+static NSError *BACacheCodecError(BACachedReportGraph *graph, NSUInteger stage, NSUInteger reason, NSUInteger bytes, NSInteger ioCode) {
+    NSMutableDictionary *counts = [NSMutableDictionary dictionary];
+    for (NSString *kind in @[@"metadata", @"observation", @"interval", @"gap", @"transition", @"session", @"window", @"family"])
+        counts[kind] = @([graph.kindCounts[kind] unsignedIntegerValue]);
+    return [NSError errorWithDomain:@"BAAnalyticsHistoryCache" code:1 userInfo:@{
+        NSLocalizedDescriptionKey: @"Invalid or excessive history cache.",
+        @"stage": @(stage), @"reason": @(graph.failureReason ?: reason), @"bytes": @(bytes),
+        @"visits": @(graph.visits), @"nodes": @(graph.nodes.count), @"counts": counts, @"ioCode": @(ioCode)
+    }];
 }
 
 NSData *BAAnalyticsEncodeCachedReport(BAAnalyticsReport *report, NSError **error) {
@@ -799,20 +915,38 @@ NSData *BAAnalyticsEncodeCachedReport(BAAnalyticsReport *report, NSError **error
 }
 NSData *BAAnalyticsEncodeCachedReportCancellable(BAAnalyticsReport *report, NSError **error, BOOL (^cancelled)(void)) {
     if (error) *error = nil;
+    BACachedReportGraph *graph = nil;
+    NSUInteger stage = 1, reason = 0, encodedBytes = 0;
+    NSInteger ioCode = 0;
     @try {
-        BACacheRequire(!cancelled() && BACacheEligibleReport(report));
-        BACachedReportGraph *graph = [BACachedReportGraph new]; graph.generatedAt = report.generatedAt;
+        if (cancelled()) { reason = 3; BACacheRequire(NO); }
+        if (!BACacheEligibleReport(report)) { reason = 8; BACacheRequire(NO); }
+        graph = [BACachedReportGraph new]; graph.generatedAt = report.generatedAt;
         graph.cancelled = cancelled;
+        stage = 2;
         NSDictionary *metadata = [graph encodeValue:report.fieldMetadata depth:0];
+        stage = 3;
         NSDictionary *families = [graph encodeValue:report.familyReports depth:0];
         NSDictionary *root = @{@"version": @1, @"generatedAt": report.generatedAt, @"sequence": @(report.sequenceNumber),
             @"profile": report.sourceProfileIdentifier, @"metadata": metadata, @"families": families, @"objects": graph.nodes};
-        BACacheRequire(!cancelled());
-        NSData *data = [NSPropertyListSerialization dataWithPropertyList:root format:NSPropertyListBinaryFormat_v1_0 options:0 error:error];
-        BACacheRequire(data && data.length <= BACacheMaximumBytes);
+        if (cancelled()) { reason = 3; BACacheRequire(NO); }
+        stage = 4;
+        NSError *serializationError = nil;
+        NSData *data = [NSPropertyListSerialization dataWithPropertyList:root format:NSPropertyListBinaryFormat_v1_0 options:0 error:&serializationError];
+        ioCode = serializationError.code;
+        encodedBytes = data.length;
+        if (!data) { reason = 9; BACacheRequire(NO); }
+        stage = 5;
+        if (data.length > BACacheMaximumLogicalBytes) { reason = 10; BACacheRequire(NO); }
+        if (data.length > BACacheMaximumBytes) {
+            stage = 6;
+            NSData *compressed = BACacheCompress(data, cancelled, &reason, &ioCode);
+            BACacheRequire(compressed != nil);
+            return compressed;
+        }
         return data;
     } @catch (NSException *exception) {
-        (void)exception; if (error) *error = BACacheError(); return nil;
+        (void)exception; if (error) *error = BACacheCodecError(graph, stage, reason, encodedBytes, ioCode); return nil;
     }
 }
 
@@ -821,12 +955,27 @@ BAAnalyticsReport *BAAnalyticsDecodeCachedReport(NSData *data, NSDate *now, NSEr
 }
 BAAnalyticsReport *BAAnalyticsDecodeCachedReportCancellable(NSData *data, NSDate *now, NSError **error, BOOL (^cancelled)(void)) {
     if (error) *error = nil;
+    BACachedReportGraph *graph = nil;
+    NSUInteger stage = 7, reason = 0, encodedBytes = [data isKindOfClass:NSData.class] ? data.length : 0;
+    NSInteger ioCode = 0;
     @try {
-        BACacheRequire(!cancelled() && [data isKindOfClass:NSData.class] && data.length > 0 && data.length <= BACacheMaximumBytes &&
-            BAReportValidDate(now) && fabs(now.timeIntervalSince1970) <= 1e12);
+        if (cancelled()) { reason = 3; BACacheRequire(NO); }
+        if (![data isKindOfClass:NSData.class] || !data.length || data.length > BACacheMaximumBytes) { reason = 10; BACacheRequire(NO); }
+        BACacheRequire(BAReportValidDate(now) && fabs(now.timeIntervalSince1970) <= 1e12);
+        NSData *logical = data;
+        if (data.length >= sizeof BACacheCompressedMagic && !memcmp(data.bytes, BACacheCompressedMagic, sizeof BACacheCompressedMagic)) {
+            stage = 8;
+            logical = BACacheInflate(data, cancelled, &reason, &ioCode);
+            BACacheRequire(logical != nil);
+            encodedBytes = logical.length;
+        }
+        stage = 9;
         NSPropertyListFormat format = 0;
-        NSDictionary *root = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:&format error:error];
+        NSError *parsingError = nil;
+        NSDictionary *root = [NSPropertyListSerialization propertyListWithData:logical options:NSPropertyListImmutable format:&format error:&parsingError];
+        ioCode = parsingError.code;
         BACacheRequire(format == NSPropertyListBinaryFormat_v1_0);
+        stage = 10;
         BACacheKeys(root, @[@"version", @"generatedAt", @"sequence", @"profile", @"metadata", @"families", @"objects"]);
         BACacheRequire(BACacheInteger(root[@"version"], 1) && [root[@"version"] integerValue] == 1 && BAReportValidDate(root[@"generatedAt"]) &&
             fabs([root[@"generatedAt"] timeIntervalSince1970]) <= 1e12 &&
@@ -837,11 +986,12 @@ BAAnalyticsReport *BAAnalyticsDecodeCachedReportCancellable(NSData *data, NSDate
         BACacheRequire(isfinite(age) && age >= 0 && age <= BACacheMaximumAge);
         NSArray *nodes = root[@"objects"];
         BACacheRequire([nodes isKindOfClass:NSArray.class] && nodes.count <= 240000);
-        BACachedReportGraph *graph = [BACachedReportGraph new]; graph.generatedAt = root[@"generatedAt"];
+        graph = [BACachedReportGraph new]; graph.generatedAt = root[@"generatedAt"];
         graph.cancelled = cancelled;
         graph.nodes = [nodes mutableCopy];
+        stage = 11;
         for (id node in nodes) {
-            BACacheRequire(!cancelled());
+            if (cancelled()) { reason = 3; BACacheRequire(NO); }
             BACacheRequire([node isKindOfClass:NSDictionary.class] && BACacheString(node[@"kind"]));
             [graph countKind:node[@"kind"]]; [graph.decodedObjects addObject:NSNull.null];
         }
@@ -852,9 +1002,10 @@ BAAnalyticsReport *BAAnalyticsDecodeCachedReportCancellable(NSData *data, NSDate
         for (NSUInteger i = 0; i < nodes.count; i++) (void)[graph decodeNode:i depth:0];
         BAAnalyticsReport *report = [[BAAnalyticsReport alloc] initWithSequenceNumber:[root[@"sequence"] unsignedLongLongValue]
             generatedAt:root[@"generatedAt"] sourceProfileIdentifier:root[@"profile"] fieldMetadata:metadata familyReports:families error:nil];
-        BACacheRequire(BACacheEligibleReport(report));
+        stage = 12;
+        if (!BACacheEligibleReport(report)) { reason = 8; BACacheRequire(NO); }
         return [report reportByMarkingCached];
     } @catch (NSException *exception) {
-        (void)exception; if (error) *error = BACacheError(); return nil;
+        (void)exception; if (error) *error = BACacheCodecError(graph, stage, reason, encodedBytes, ioCode); return nil;
     }
 }
