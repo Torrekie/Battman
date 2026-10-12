@@ -13,7 +13,7 @@ The three application variants are distinct:
 | --- | --- | --- |
 | Public | `Battman` | Public-source app and CI validation |
 | GitHub | `Battman (rel-nonfree)` | GitHub host Debian packages and replacement TIPA |
-| Havoc | `Battman-havoc` | Havoc host Debian packages, including the existing private authorization implementation |
+| Havoc | `Battman-havoc` | Havoc host Debian packages, preserving the existing channel configuration and source exclusions |
 
 The GitHub scheme selects the `Battman-nonfree` target; use the scheme's full
 name, including spaces and parentheses, with `xcodebuild -scheme`.
@@ -21,8 +21,11 @@ name, including spaces and parentheses, with `xcodebuild -scheme`.
 The executable records `public`, `github`, or `havoc` in its
 `__TEXT,__btchannel` section. Finalization verifies this against the selected
 target, and package inspection reports it separately from source identity.
-Havoc requires its private implementation and definitions; public CI does not
-supply them. There is no Havoc TIPA target, and the TIPA builder and inspector
+Havoc retains its private configuration headers; public CI does not supply
+them. The existing `nonfree-havoc.m` exclusion and `DISABLE_PROTECT` settings
+remain in place. Channel identification must never indirectly compile disabled
+DRM or change its activation state. Public and GitHub builds require no private
+configuration headers. There is no Havoc TIPA target, and the TIPA builder and inspector
 reject a Havoc executable.
 
 ## 1. Roles and separation
@@ -113,7 +116,7 @@ plug-in, Analytics, and strict release regression suite, then builds the Public
 serially with one build worker. They exercise the public source tree without
 production signing inputs. The optional `run_macos_evidence` input additionally
 runs simulator rendering, user-manual generation, and a Simulator build. Havoc's
-private authorization inputs are not part of either public CI lane.
+private configuration inputs are not part of either public CI lane.
 
 `.github/workflows/release.yml` supports three entry paths:
 
@@ -317,8 +320,8 @@ After publication, download every asset into a new directory and repeat
 checksum/signature/inspection checks.
 
 Havoc host candidates must be built separately using `Battman-havoc` in
-`Release`, with its existing private authorization implementation and
-definitions. Package that finalized app using `build-host-deb.py` for the
+`Release`, with its existing private configuration headers and unchanged
+source exclusions. Package that finalized app using `build-host-deb.py` for the
 rooted and rootless layouts. `validate-havoc-candidate.py --artifact-kind host`
 requires the embedded `havoc` channel; a Public or GitHub host Debian is not a
 substitute. GitHub host Debian records do not receive the

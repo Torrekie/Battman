@@ -19,10 +19,13 @@
 
 #include "../common.h"
 
-#if !defined(LICENSE) || LICENSE != LICENSE_NONFREE
-#define kBattmanFatalNotifyKey "com.torrekie.Battman.fatal"
-#elif __has_include("../nonfree-defs.h")
+#if LICENSE == LICENSE_NONFREE && NONFREE_TYPE != NONFREE_TYPE_GITHUB
+#if !__has_include("../nonfree-defs.h")
+#error "Private distribution builds require nonfree-defs.h"
+#endif
 #include "../nonfree-defs.h"
+#else
+#define kBattmanFatalNotifyKey "com.torrekie.Battman.fatal"
 #endif
 
 __attribute__((always_inline))

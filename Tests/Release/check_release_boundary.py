@@ -32,6 +32,18 @@ if "Battman-havoc-tipa" in project:
     fail("Havoc must have no TIPA target")
 if project.count("/* Distribution.m in Sources */ =") != 3:
     fail("every Xcode app target must compile its distribution identity")
+if "/* nonfree-havoc.m in Sources */" in project:
+    fail("the disabled Havoc DRM implementation must remain outside Compile Sources")
+if project.count('"DISABLE_PROTECT=1"') != 4:
+    fail("GitHub and Havoc Debug/Release configurations must preserve DISABLE_PROTECT")
+for name in subprocess.check_output(
+    ["git", "ls-files", "Battman"], cwd=ROOT, text=True,
+).splitlines():
+    path = ROOT / name
+    if path.suffix not in (".m", ".mm", ".c", ".cc", ".cpp", ".h", ".S"):
+        continue
+    if re.search(r'#\s*(?:include|import)\s*[<"][^>"\n]*nonfree-havoc\.m[>"]', path.read_text(encoding="utf-8")):
+        fail(f"disabled Havoc DRM was indirectly included by {name}")
 
 if project.count('/* intl.framework in Embed Frameworks */ =') != 3:
     fail("every Xcode app target must embed its gettext runtime")

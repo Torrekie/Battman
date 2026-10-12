@@ -28,7 +28,7 @@ tag, sign, upload, publish, or install artifacts.
 - Data removal waits for Analytics cache writers and reports deletion failures.
 - Legacy icons use vector fallbacks without a bundled symbol font.
 - Public, GitHub and Havoc builds retain distinct Xcode schemes. Havoc provides
-  Debian packages only; its private authorization implementation is required.
+  Debian packages only; existing DRM exclusions and protection flags are preserved.
 - Existing Analytics cards remain embedded but now use the same registry and
   lifecycle contract as external native cards.
 - Release packaging uses bounded scripts and gated workflows.

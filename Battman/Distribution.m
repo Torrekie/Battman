@@ -3,10 +3,6 @@
 #import "common.h"
 
 #if LICENSE == LICENSE_NONFREE && NONFREE_TYPE == NONFREE_TYPE_HAVOC
-#if !__has_include("nonfree-havoc.m")
-#error The Havoc target requires its private authorization implementation.
-#endif
-#include "nonfree-havoc.m"
 #define BT_DISTRIBUTION "havoc"
 #elif LICENSE == LICENSE_NONFREE && NONFREE_TYPE == NONFREE_TYPE_GITHUB
 #define BT_DISTRIBUTION "github"
