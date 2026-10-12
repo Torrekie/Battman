@@ -17,9 +17,6 @@ from release_common import (
 )
 
 
-DEFAULT_GATES = "- None recorded by the release operator."
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
@@ -38,15 +35,15 @@ def main() -> int:
     gates = arguments.known_gate
     if any(not value or "\n" in value or "\r" in value for value in gates):
         raise ReleaseError("known-gate values must be non-empty single lines")
-    rendered_gates = "\n".join(f"- {value}" for value in gates) if gates else DEFAULT_GATES
+    rendered_gates = ("### Release checks\n\n" + "\n".join(f"- {value}" for value in gates)) if gates else ""
     text = template.read_text(encoding="utf-8")
     for marker, value in {
         "@VERSION@": version,
         "@COMMIT@": commit,
         "@KNOWN_GATES@": rendered_gates,
     }.items():
-        if text.count(marker) != 1:
-            raise ReleaseError(f"release-note template must contain exactly one {marker}")
+        if text.count(marker) < 1:
+            raise ReleaseError(f"release-note template must contain {marker}")
         text = text.replace(marker, value)
     write_normalized(output, text.encode("utf-8"), epoch)
     print(output)

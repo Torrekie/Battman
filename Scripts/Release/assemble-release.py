@@ -16,6 +16,7 @@ import os
 import plistlib
 import sys
 from pathlib import Path
+from typing import Optional
 
 from release_common import (
     ReleaseError,
@@ -54,7 +55,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--deb-app", required=True, type=Path)
     parser.add_argument("--tipa-app", required=True, type=Path)
     parser.add_argument("--plugin", action="append", default=[], type=Path)
-    parser.add_argument("--sdk-example", required=True, type=Path)
+    parser.add_argument("--sdk-example", type=Path)
     parser.add_argument("--sdk-example-key-id")
     parser.add_argument("--version", required=True)
     checksum_input = parser.add_mutually_exclusive_group(required=True)
@@ -222,7 +223,7 @@ def _selected_official_plugin_identifiers(repo: Path) -> list[str]:
         raise ReleaseError("release matrix is missing or malformed") from error
     selection = matrix.get("officialPluginSelection")
     identifiers = selection.get("separatelyShipped") if isinstance(selection, dict) else None
-    if not isinstance(identifiers, list) or not identifiers:
+    if not isinstance(identifiers, list):
         raise ReleaseError("release matrix has no selected official plug-ins")
     from release_common import require_identifier
     selected = [require_identifier(value, "selected official plug-in identifier")
@@ -232,13 +233,15 @@ def _selected_official_plugin_identifiers(repo: Path) -> list[str]:
     return sorted(selected, key=lambda value: value.encode("utf-8"))
 
 
-def _sdk_example_identifier(repo: Path) -> str:
+def _sdk_example_identifier(repo: Path) -> Optional[str]:
     matrix_path = repo / "Packaging/Release/release-matrix.json"
     try:
         matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ReleaseError("release matrix is missing or malformed") from error
     example = matrix.get("sdkExample")
+    if example is None:
+        return None
     identifier = example.get("pluginIdentifier") if isinstance(example, dict) else None
     from release_common import require_identifier
     if not isinstance(identifier, str):
@@ -292,31 +295,38 @@ def main() -> int:
         repo, release_matrix
     )
     plugin_identities = [_plugin_release_identity(plugin) for plugin in arguments.plugin]
-    sdk_example_identity = _plugin_release_identity(arguments.sdk_example, "SDK example")
-    if sdk_example_identity[0] != sdk_example_identifier:
-        raise ReleaseError("signed SDK example identity differs from the release matrix")
-    require_plugin_package_matches_pin(
-        arguments.sdk_example, sdk_example_release_pin, "signed SDK example"
-    )
-    if arguments.sdk_example_key_id:
-        expected_sdk_example_key = _key_identifier(
-            arguments.sdk_example_key_id, "SDK example publisher key identifier"
+    sdk_example_identity = None
+    if sdk_example_identifier is None:
+        if arguments.sdk_example or arguments.sdk_example_key_id:
+            raise ReleaseError("release matrix does not select a prebuilt SDK example")
+    else:
+        if arguments.sdk_example is None:
+            raise ReleaseError("release matrix requires its selected signed SDK example")
+        sdk_example_identity = _plugin_release_identity(arguments.sdk_example, "SDK example")
+        if sdk_example_identity[0] != sdk_example_identifier:
+            raise ReleaseError("signed SDK example identity differs from the release matrix")
+        require_plugin_package_matches_pin(
+            arguments.sdk_example, sdk_example_release_pin, "signed SDK example"
         )
-        if sdk_example_identity[2] != expected_sdk_example_key:
-            raise ReleaseError(
-                "signed SDK example publisher differs from the reviewed fingerprint"
+        if arguments.sdk_example_key_id:
+            expected_sdk_example_key = _key_identifier(
+                arguments.sdk_example_key_id, "SDK example publisher key identifier"
             )
-    elif not arguments.engineering_candidate:
-        raise ReleaseError(
-            "strict release assembly requires the reviewed SDK example publisher fingerprint"
-        )
+            if sdk_example_identity[2] != expected_sdk_example_key:
+                raise ReleaseError(
+                    "signed SDK example publisher differs from the reviewed fingerprint"
+                )
+        elif not arguments.engineering_candidate:
+            raise ReleaseError(
+                "strict release assembly requires the reviewed SDK example publisher fingerprint"
+            )
     plugin_identifiers = sorted(
         (identifier for identifier, _, _ in plugin_identities),
         key=lambda value: value.encode("utf-8"),
     )
     if len(plugin_identifiers) != len(set(plugin_identifiers)):
         raise ReleaseError("official plug-in inputs contain a duplicate identifier")
-    if sdk_example_identity[0] in plugin_identifiers:
+    if sdk_example_identity and sdk_example_identity[0] in plugin_identifiers:
         raise ReleaseError("SDK example must remain separate from official plug-in selection")
     if plugin_identifiers != selected_official_identifiers:
         raise ReleaseError("official plug-in inputs do not match the owner-approved release matrix")
@@ -330,11 +340,13 @@ def main() -> int:
         sys.path.insert(0, str(repo / "PluginSDK/Tools/Package"))
         official_trust_path = repo / "OfficialPlugins/Trust/PluginTrust"
         official_trust = validate_official_trust(official_trust_path)
-        require_official_plugins(arguments.plugin, official_trust)
+        if arguments.plugin:
+            require_official_plugins(arguments.plugin, official_trust)
         require_tracked_public_input(repo, official_trust_path, "official trust snapshot")
         for plugin in arguments.plugin:
             require_tracked_public_input(repo, plugin, "official plug-in package")
-        require_tracked_public_input(repo, arguments.sdk_example, "SDK example package")
+        if arguments.sdk_example:
+            require_tracked_public_input(repo, arguments.sdk_example, "SDK example package")
     expected_trust_digest = official_trust["treeSHA256"] if official_trust else None
     required_host_content = (
         _required_host_content_markers(repo) if not arguments.engineering_candidate else None
@@ -343,6 +355,11 @@ def main() -> int:
                           expected_trust_digest, required_host_content)
     _require_app_identity(arguments.tipa_app, version, commit, source_tree, arguments.engineering_candidate,
                           expected_trust_digest, required_host_content)
+    if not arguments.plugin:
+        for app in (arguments.deb_app, arguments.tipa_app):
+            if any((app / name).exists() or (app / name).is_symlink()
+                   for name in ("PlugIns", "PluginManifests")):
+                raise ReleaseError("host-only release input contains prebuilt plug-ins")
     # A GitHub release matrix must never redistribute the Havoc-only host.
     channels = {
         extract_distribution_channel(app / "Battman")
@@ -382,6 +399,7 @@ def main() -> int:
         tipa = release / "Battman.tipa"
         tipa_report = release / "Battman.tipa.report.json"
         sdk = release / f"BattmanPluginSDK-{version}.tar.gz"
+        examples = release / f"BattmanPluginExamples-{version}.tar.gz"
         compatibility_matrix = release / "compatibility-matrix.json"
         inspection = release / "artifact-inspection.json"
         notes = release / "release-notes.md"
@@ -433,17 +451,19 @@ def main() -> int:
                 ])
                 plugin_debians.append((flavor, plugin_version, plugin_identifier, output_path))
 
-        sdk_example_version, sdk_example_identifier = (
-            sdk_example_identity[1], sdk_example_identity[0]
-        )
-        sdk_example_transport = release / (
-            f"{sdk_example_identifier}_{sdk_example_version}.battman.zip"
-        )
-        _call(scripts / "archive-plugin-package.py", [
-            "--plugin", str(arguments.sdk_example),
-            "--output", str(sdk_example_transport),
-            *common_epoch,
-        ])
+        sdk_example_transport = None
+        if sdk_example_identity:
+            sdk_example_version, sdk_example_identifier = (
+                sdk_example_identity[1], sdk_example_identity[0]
+            )
+            sdk_example_transport = release / (
+                f"{sdk_example_identifier}_{sdk_example_version}.battman.zip"
+            )
+            _call(scripts / "archive-plugin-package.py", [
+                "--plugin", str(arguments.sdk_example),
+                "--output", str(sdk_example_transport),
+                *common_epoch,
+            ])
 
         sdk_arguments = [
             "--sdk", str(repo / "PluginSDK"), "--version", version,
@@ -452,6 +472,9 @@ def main() -> int:
         if arguments.engineering_candidate:
             sdk_arguments.append("--allow-license-pending")
         _call(scripts / "build-sdk-archive.py", sdk_arguments)
+        _call(scripts / "build-example-source-archive.py", [
+            "--repo", str(repo), "--version", version, "--output", str(examples), *common_epoch,
+        ])
         write_normalized(
             compatibility_matrix,
             (repo / "Packaging/Release/compatibility-matrix.json").read_bytes(),
@@ -473,13 +496,16 @@ def main() -> int:
 
         inspect_arguments = [
             "--rooted-deb", str(rooted), "--rootless-deb", str(rootless),
-            "--tipa", str(tipa), "--sdk", str(sdk), "--version", version,
+            "--tipa", str(tipa), "--sdk", str(sdk), "--examples", str(examples), "--version", version,
             "--compatibility-matrix", str(compatibility_matrix),
-            "--sdk-example-transport", sdk_example_version,
-            sdk_example_identifier, str(sdk_example_transport),
             "--commit", commit, "--output", str(inspection), *common_epoch,
         ]
         inspect_arguments.extend(["--source-tree", source_tree])
+        if sdk_example_transport:
+            inspect_arguments.extend(["--sdk-example-transport", sdk_example_version,
+                                      sdk_example_identifier, str(sdk_example_transport)])
+        if not arguments.plugin:
+            inspect_arguments.append("--require-host-only-tipa")
         for flavor, plugin_version, plugin_identifier, path in plugin_debians:
             inspect_arguments.extend([
                 "--plugin-deb", flavor, plugin_version, plugin_identifier, str(path),
@@ -493,10 +519,10 @@ def main() -> int:
         _call(scripts / "inspect-release-artifacts.py", inspect_arguments)
 
         core_assets = [
-            rooted, rootless, tipa, tipa_report, sdk,
+            rooted, rootless, tipa, tipa_report, sdk, examples,
             *(record[3] for record in plugin_debians),
             *(record[2] for record in plugin_transports),
-            sdk_example_transport,
+            *([sdk_example_transport] if sdk_example_transport else []),
             compatibility_matrix,
             inspection, notes,
         ]

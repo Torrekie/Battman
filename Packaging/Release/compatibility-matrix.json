@@ -199,8 +199,8 @@
       ]
     },
     {
-      "availability": "Shows Unavailable when the immutable host snapshot lacks state-of-charge or charging-state metrics.",
-      "delivery": "official-plugin",
+      "availability": "Source example only; no prebuilt plug-in is included in the 1.1.0 release. When built for development, unavailable snapshot metrics remain unavailable.",
+      "delivery": "source-example",
       "hardwareBoundary": "host-snapshot-only-no-direct-hardware-access",
       "identifier": "com.torrekie.battman.plugin.charge-gauge",
       "requiredMetrics": [

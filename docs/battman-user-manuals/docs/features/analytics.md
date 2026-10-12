@@ -34,10 +34,9 @@ same observations. If a card provider is removed, its saved position remains an
 | Charging comparison | Comparable complete charging sessions with trusted upward 20–80% crossings | Partial, duplicate, overlapping, and gapped sessions are excluded. Few qualifying sessions may leave only individual points or no comparison. |
 | Discharge rhythm | Signed charge-level change per valid unplugged hour, grouped by local calendar time | Connected time, missing time, and measured zero are different. A negative rate preserves an observed charge-level rise without assuming charging. |
 
-**Charge Gauge** is an additional official plug-in selected by the release
-matrix, not one of these ten built-in cards. Its installation depends on your
-channel and the selected release's available signed artifacts. See
-[Native plug-ins](plugins.md).
+**Charge Gauge** and the SDK Analytics card are developer examples distributed
+as source only, separate from these ten built-in cards. See
+[Native plug-ins](plugins.md) for developing and testing your own card.
 
 ## Missing, partial, and cached data
 

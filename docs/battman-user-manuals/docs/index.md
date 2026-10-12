@@ -27,10 +27,9 @@ rhythm. Cards have selectable sizes, saved layouts, and details for supported
 graph selections. Missing observations remain visible as gaps or unavailable
 values.
 
-The native plug-in host and public SDK v1 are implemented. The release matrix
-also selects the separate **Charge Gauge** official plug-in and a third-party
-SDK example. This manual describes the source and packaging contract; download
-availability and production signatures must be checked on the selected release.
+The native plug-in host and public SDK v1 are implemented. **Charge Gauge** and
+the SDK Analytics card are developer examples distributed as source only.
+The application also adds **`zh_TW` (Chinese (Taiwan))** localization.
 
 Battman does not certify every A11-or-newer device and iOS combination. Its
 Analytics live graph covers foreground samples; historical cards read available

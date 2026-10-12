@@ -25,6 +25,10 @@
 - (void)setRecovery:(nullable BTPluginStartupRecovery *)recovery;
 @end
 
+@interface BTPluginDiscoveredPackage (BTPluginRuntimeLoaderTestConstruction)
+- (void)setSource:(BTPluginSource)source;
+@end
+
 @interface BTPluginRuntimeLoaderTestTrustStore : NSObject <BTPluginTrustStore>
 @property (nonatomic) NSUInteger commitInvocationCount;
 @property (nonatomic) BOOL failNextCommit;
@@ -442,6 +446,24 @@ int main(int argc, const char *argv[]) {
 		BTAssert(![manager fileExistsAtPath:sentinelPath],
 			"constructor executed before the injected final native-loader boundary");
 
+			BTPluginRuntimeEnvironment *simulatorEnvironment = [[BTPluginRuntimeEnvironment alloc]
+				initWithApplicationBundleURL:[NSURL fileURLWithPath:@"/Simulator/Battman.app" isDirectory:YES]
+				installationKind:BTPluginRuntimeInstallationKindSimulatorDevelopment];
+			for (NSNumber *source in @[ @(BTPluginSourceRootedSystem), @(BTPluginSourceRootlessSystem) ]) {
+				[discovered setSource:source.unsignedIntegerValue];
+				for (BTPluginRuntimeEnvironment *environment in @[ directEnvironment, simulatorEnvironment ]) {
+					imageLoader = [BTPluginRuntimeLoaderRecordingImageLoader new];
+					error = nil;
+					BTAssert([BTPluginRuntimeLoaderTestLoader(verifier, registry, activationStore, environment,
+						imageLoader) loadDiscoveredPackage:discovered
+						activationRecord:BTPluginRuntimeLoaderTestActivationRecord(digest, source.unsignedIntegerValue, YES)
+						startupSnapshot:enabledSnapshot developerMode:YES error:&error] != nil &&
+						imageLoader.prepareInvocationCount == 1 && imageLoader.loadInvocationCount == 1,
+						"deb/Simulator system package lost its verifier-gated direct activation path");
+				}
+			}
+			[discovered setSource:BTPluginSourceApplicationData];
+
 		NSUInteger commitBaseline = trustStore.commitInvocationCount;
 		NSUInteger attemptBaseline = activationStore.loadAttemptInvocationCount;
 		imageLoader = [BTPluginRuntimeLoaderRecordingImageLoader new];
@@ -506,14 +528,21 @@ int main(int argc, const char *argv[]) {
 		BTPluginRuntimeEnvironment *replacementEnvironment = [[BTPluginRuntimeEnvironment alloc]
 			initWithApplicationBundleURL:[NSURL fileURLWithPath:@"/Applications/Battman.app" isDirectory:YES]
 			installationKind:BTPluginRuntimeInstallationKindTrollStoreReplacement];
-		imageLoader = [BTPluginRuntimeLoaderRecordingImageLoader new];
-		error = nil;
-		BTAssert(![BTPluginRuntimeLoaderTestLoader(verifier, registry, activationStore, replacementEnvironment,
-			imageLoader) loadDiscoveredPackage:discovered activationRecord:activationRecord
-			startupSnapshot:enabledSnapshot developerMode:YES error:&error] &&
-			imageLoader.prepareInvocationCount == 0 && imageLoader.loadInvocationCount == 0 &&
-			trustStore.commitInvocationCount == commitBaseline,
-			"TrollStore app-data package bypassed the replacement-app runtime policy");
+			for (NSNumber *source in @[ @(BTPluginSourceApplicationData), @(BTPluginSourceRootedSystem),
+				@(BTPluginSourceRootlessSystem) ]) {
+				[discovered setSource:source.unsignedIntegerValue];
+				imageLoader = [BTPluginRuntimeLoaderRecordingImageLoader new];
+				error = nil;
+				BTAssert(![BTPluginRuntimeLoaderTestLoader(verifier, registry, activationStore, replacementEnvironment,
+					imageLoader) loadDiscoveredPackage:discovered
+					activationRecord:BTPluginRuntimeLoaderTestActivationRecord(digest, source.unsignedIntegerValue, YES)
+					startupSnapshot:enabledSnapshot developerMode:YES error:&error] &&
+					imageLoader.prepareInvocationCount == 0 && imageLoader.loadInvocationCount == 0 &&
+					trustStore.commitInvocationCount == commitBaseline &&
+					activationStore.loadAttemptInvocationCount == attemptBaseline,
+					"TrollStore external package bypassed the replacement-app runtime policy");
+			}
+			[discovered setSource:BTPluginSourceApplicationData];
 
 		NSURL *wrongNameRootURL = BTPluginRuntimeLoaderTestCreateRoot(temporaryURL, @"WrongName");
 		BTPluginTestCreateSignedPackage(wrongNameRootURL, fixtureURL, @"com.example.wrong.battman");

@@ -114,10 +114,10 @@ static BOOL BTPluginLoaderFail(NSError **error, NSString *description) {
 		BTPluginLoaderFail(error, @"External native plug-ins are disabled for this startup.");
 		return nil;
 	}
-	if (discoveredPackage.source == BTPluginSourceApplicationData &&
+	if (discoveredPackage.source != BTPluginSourceAppBundle &&
 		!self.environment.allowsApplicationDataNativeLoading) {
 		BTPluginLoaderFail(error,
-			@"This installation requires native app-data plug-ins to be embedded in a replacement Battman app.");
+			@"This installation requires external native plug-ins to be embedded in a replacement Battman app.");
 		return nil;
 	}
 

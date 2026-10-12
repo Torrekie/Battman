@@ -14,7 +14,7 @@ title: 代码贡献
 | `Battman/Features/Analytics/` | 宿主数据服务、卡片布局与内置卡片 |
 | `Battman/PluginHost/` | 原生插件发现、验证、信任与生命周期 |
 | `PluginSDK/` | 公开 SDK v1 头文件、模式、模板、工具与示例 |
-| `OfficialPlugins/` | 官方插件源码与发布输入 |
+| `OfficialPlugins/` | Charge Gauge 开发者源码示例与公开信任输入 |
 | `Scripts/Build/`、`Scripts/Release/`、`Packaging/` | 构建收尾、软件包生成与发布约定 |
 | `Tests/` | 针对宿主、SDK、分析与发布的专项检查 |
 | `docs/battman-user-manuals/` | 本三语手册 |

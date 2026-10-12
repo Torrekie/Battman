@@ -8,7 +8,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from release_common import (
     ReleaseError,
@@ -70,7 +70,7 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
 def _selected_official_identifiers(matrix: dict[str, Any]) -> list[str]:
     selection = matrix.get("officialPluginSelection")
     identifiers = selection.get("separatelyShipped") if isinstance(selection, dict) else None
-    if not isinstance(identifiers, list) or not identifiers:
+    if not isinstance(identifiers, list):
         raise ReleaseError("release matrix has no selected official plug-ins")
     validated = [
         require_identifier(value, "selected official plug-in identifier")
@@ -81,8 +81,10 @@ def _selected_official_identifiers(matrix: dict[str, Any]) -> list[str]:
     return sorted(validated, key=lambda value: value.encode("utf-8"))
 
 
-def _sdk_example_identifier(matrix: dict[str, Any]) -> str:
+def _sdk_example_identifier(matrix: dict[str, Any]) -> Optional[str]:
     example = matrix.get("sdkExample")
+    if example is None:
+        return None
     if not isinstance(example, dict) or set(example) != {
         "pluginIdentifier", "signedPackageRequired", "publisherIdentityReviewRequired",
         "officialTrustDelegation", "rootedRootlessAddOns", "replacementTIPAInclusion",
@@ -144,8 +146,8 @@ def _matrix_asset_names(
     matrix: dict[str, Any],
     version: str,
     official_versions: dict[str, str],
-    sdk_example_identifier: str,
-    sdk_example_version: str,
+    sdk_example_identifier: Optional[str],
+    sdk_example_version: Optional[str],
 ) -> set[str]:
     templates = matrix.get("githubAssets")
     if not isinstance(templates, list) or not templates or any(
@@ -184,6 +186,8 @@ def _matrix_asset_names(
                     "<plugin-version>", plugin_version
                 ))
         elif has_example:
+            if sdk_example_identifier is None:
+                continue
             if (
                 "<sdk-example-identifier>" not in rendered
                 or "<sdk-example-version>" not in rendered
@@ -294,7 +298,9 @@ def main() -> int:
         ("Battman.tipa", "trollstore-replacement-tipa", ["github", "trollstore-replacement"]),
     )
     for name, kind, channels in host_assets:
-        inspected_record(name, kind)
+        item = inspected_record(name, kind)
+        if kind == "trollstore-replacement-tipa" and item.get("sealedPluginIdentifiers") != official_ids:
+            raise ReleaseError("inspected TIPA plug-in set differs from official selection")
         artifacts.append(_artifact_record(
             release / name, kind,
             _artifact_channels(havoc_policy, name, kind, channels), "host-artifact",
@@ -380,29 +386,35 @@ def main() -> int:
         item for item in inspected
         if isinstance(item, dict) and item.get("kind") == "sdk-example-transport"
     ]
-    if len(example_records) != 1 or example_records[0].get("package") != sdk_example_id:
-        raise ReleaseError("SDK example inspection does not match the release matrix")
-    example_version = _package_version(
-        example_records[0].get("version"), "SDK example version"
-    )
-    example_identity = {
-        "buildVersion": example_records[0].get("buildVersion"),
-        "displayVersion": example_records[0].get("displayVersion"),
-        "pluginIdentifier": example_records[0].get("package"),
-        "releaseSequence": example_records[0].get("releaseSequence"),
-    }
-    if example_identity != sdk_example_release_pin.manifest_record() or \
-            example_version != sdk_example_release_pin.display_version:
-        raise ReleaseError("SDK example signed release identity differs from its pin")
-    example_name = f"{sdk_example_id}_{example_version}.battman.zip"
-    inspected_record(example_name, "sdk-example-transport")
-    artifacts.append(_artifact_record(
-        release / example_name, "sdk-example-transport", ["github", "direct-import"],
-        "third-party-explicit-approval-required", package=sdk_example_id,
-    ))
+    example_version = None
+    if sdk_example_id is None:
+        if example_records:
+            raise ReleaseError("release contains an unselected prebuilt SDK example")
+    else:
+        if len(example_records) != 1 or example_records[0].get("package") != sdk_example_id:
+            raise ReleaseError("SDK example inspection does not match the release matrix")
+        example_version = _package_version(
+            example_records[0].get("version"), "SDK example version"
+        )
+        example_identity = {
+            "buildVersion": example_records[0].get("buildVersion"),
+            "displayVersion": example_records[0].get("displayVersion"),
+            "pluginIdentifier": example_records[0].get("package"),
+            "releaseSequence": example_records[0].get("releaseSequence"),
+        }
+        if example_identity != sdk_example_release_pin.manifest_record() or \
+                example_version != sdk_example_release_pin.display_version:
+            raise ReleaseError("SDK example signed release identity differs from its pin")
+        example_name = f"{sdk_example_id}_{example_version}.battman.zip"
+        inspected_record(example_name, "sdk-example-transport")
+        artifacts.append(_artifact_record(
+            release / example_name, "sdk-example-transport", ["github", "direct-import"],
+            "third-party-explicit-approval-required", package=sdk_example_id,
+        ))
 
     fixed_assets = (
         (f"BattmanPluginSDK-{version}.tar.gz", "plugin-sdk", ["github"], "source-only"),
+        (f"BattmanPluginExamples-{version}.tar.gz", "plugin-example-source", ["github"], "source-only"),
         ("compatibility-matrix.json", "compatibility-matrix", ["github"], "review-contract"),
         ("artifact-inspection.json", "artifact-inspection", ["github"], "review-report"),
         ("release-notes.md", "release-notes", ["github"], "review-report"),
@@ -411,7 +423,7 @@ def main() -> int:
     )
     for name, kind, channels, policy in fixed_assets:
         path = release / name
-        if kind in {"plugin-sdk", "compatibility-matrix"}:
+        if kind in {"plugin-sdk", "plugin-example-source", "compatibility-matrix"}:
             inspected_record(name, kind)
         artifacts.append(_artifact_record(path, kind, channels, policy))
 
@@ -465,7 +477,7 @@ def main() -> int:
                 official_release_pins[identifier].manifest_record()
                 for identifier in official_ids
             ],
-            "sdkExample": sdk_example_release_pin.manifest_record(),
+            "sdkExample": sdk_example_release_pin.manifest_record() if sdk_example_release_pin else None,
         },
         "sdkExampleIdentifier": sdk_example_id,
         "version": version,

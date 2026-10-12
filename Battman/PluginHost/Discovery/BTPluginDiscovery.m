@@ -131,13 +131,12 @@ static BOOL BTPluginDiscoverySourceIsInstalled(BTPluginSource source) {
 
 @implementation BTPluginDiscovery
 
-+ (NSArray<BTPluginDiscoveryRoot *> *)defaultRootsForApplicationSupportURL:(NSURL *)applicationSupportURL
++ (NSArray<BTPluginDiscoveryRoot *> *)defaultRootsForConfigDirectoryURL:(NSURL *)configDirectoryURL
 																 mainBundleURL:(NSURL *)mainBundleURL {
-	NSURL *hostSupport = [applicationSupportURL URLByAppendingPathComponent:@"Battman" isDirectory:YES];
 	return @[
 		[BTPluginDiscoveryRoot sealedAppBundleRootURL:[mainBundleURL URLByAppendingPathComponent:@"PlugIns" isDirectory:YES]
 			metadataRootURL:[mainBundleURL URLByAppendingPathComponent:@"PluginManifests" isDirectory:YES]],
-		[BTPluginDiscoveryRoot transportPackageRootURL:[hostSupport URLByAppendingPathComponent:@"PlugIns" isDirectory:YES]
+		[BTPluginDiscoveryRoot transportPackageRootURL:[configDirectoryURL URLByAppendingPathComponent:@"PlugIns" isDirectory:YES]
 			source:BTPluginSourceApplicationData],
 		[BTPluginDiscoveryRoot transportPackageRootURL:[NSURL fileURLWithPath:@"/Library/Battman/PlugIns" isDirectory:YES]
 			source:BTPluginSourceRootedSystem],

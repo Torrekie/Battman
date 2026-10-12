@@ -1,22 +1,25 @@
-# Battman Charge Gauge
+# Charge Gauge developer source example
 
-`com.torrekie.battman.plugin.charge-gauge` is the first separately shipped
-official Battman plug-in. It owns its complete card content view and custom
-gauge layer, consumes only immutable Analytics snapshots, and has no polling
-timer or host-private dependency.
+`com.torrekie.battman.plugin.charge-gauge` is a small developer source example.
+It owns its complete card content view and custom gauge layer, consumes only
+immutable Analytics snapshots, and has no polling timer or host-private
+dependency.
 
-The six existing Analytics cards remain embedded. The embedded object produced
-here exists only for registry/rendering parity tests; Battman 1.1.0 production
-artifacts ship this card as a signed `.battman` bundle, rooted/rootless Debian
-add-ons, and sealed code in a public-channel replacement TIPA. There is no Havoc
-TIPA artifact.
+Battman 1.1.0 has ten built-in Analytics cards. Charge Gauge is not one of them
+and is not a shipped production plug-in: the formal release contains no
+compiled Charge Gauge bundle, `.battman.zip`, Debian add-on, or TIPA-embedded
+Charge Gauge code. The source remains available for separate developer builds
+and registry/rendering tests. The SDK Analytics example is also source-only in
+the release.
 
-Its signed manifest identifies the author as Torrekie and supplies the Battman
-repository homepage plus the public support email. These fields improve the
-management UI but do not replace official publisher-key verification.
+The manifest template names Torrekie and provides the repository homepage and
+public support email. These are author metadata, not permission to claim an
+official publisher identity. A developer-signed test build must pass the normal
+publisher-signature, platform, trust, and approval checks.
 
-Build the native bundle with bounded parallelism. The Makefile applies its
-local ad-hoc platform signature; publisher signing is a separate later step:
+Build the native bundle for local development/testing with bounded parallelism.
+The Makefile applies its local ad-hoc platform signature; package publisher
+signing is a separate later step:
 
 ```sh
 make -C OfficialPlugins/ChargeGauge \
@@ -57,18 +60,19 @@ Non-Commercial Attribution License; it is **not** covered by the SDK's MIT
 subtree license. For a reusable MIT starting point, use
 [`PluginSDK/Examples/AnalyticsCard`](../../PluginSDK/Examples/AnalyticsCard/).
 
-## Publisher package
+## Build a test package
 
-Packaging requires an existing official publisher public key. Render the
-manifest, build the deterministic directory package, then sign exact manifest
-bytes only on the approved publisher signer:
+For a development test, use an existing developer-controlled publisher key.
+Render the manifest, build the deterministic directory package, then sign the
+exact manifest bytes on the machine holding that test key. These steps do not
+produce a formal Battman 1.1.0 release asset or grant official trust:
 
 ```sh
 python3 PluginSDK/Tools/publisher-key-id.py publisher-public.pem \
   --raw-output /new/publisher-public.p256
 python3 PluginSDK/Tools/render-example-manifest.py \
   --template OfficialPlugins/ChargeGauge/ManifestTemplate.json.in \
-  --publisher-key-id APPROVED_64_HEX_FINGERPRINT \
+  --publisher-key-id TEST_PUBLISHER_64_HEX_FINGERPRINT \
   --output /new/ChargeGaugeManifest.json
 python3 PluginSDK/Tools/Package/build-plugin-package.py \
   --manifest-template /new/ChargeGaugeManifest.json \
@@ -83,17 +87,15 @@ python3 PluginSDK/Tools/Package/verify-plugin-package.py \
   /new/com.torrekie.battman.plugin.charge-gauge.battman
 ```
 
-Create `/new` first and use fresh output paths; substitute the independently
-reviewed fingerprint printed by the public-key command for
-`APPROVED_64_HEX_FINGERPRINT`. The package builder expects its raw 65-byte public
-point rather than PEM. The signing command is an offline production operation
-run only on the approved publisher signer. A signed package enters
-`OfficialPlugins/Packages/` only after publisher-signature, platform-signature,
-delegation-scope, reproducibility, and independent-fingerprint review.
+Create `/new` first and use fresh output paths; substitute the fingerprint
+printed by the public-key command for `TEST_PUBLISHER_64_HEX_FINGERPRINT`. The
+package builder expects the raw 65-byte public point rather than PEM. Keep the
+private key and password outside source, build output, and release materials.
+Use the verification and installation requirements in the SDK development guide;
+portable verification alone does not establish native loadability or trust.
 
-Strict release assembly preserves that directory as the trust object and emits
-`com.torrekie.battman.plugin.charge-gauge_1.0.0.battman.zip` for download. The
-archive contains the canonical
-`com.torrekie.battman.plugin.charge-gauge.battman/` root; users extract it before
-document import. The same signed package bytes also produce the two Debian
-add-ons and replacement-TIPA representation.
+Keep the resulting test package outside `OfficialPlugins/Packages/` and outside
+the formal 1.1.0 release. Do not generate release ZIPs or Debian add-ons from it,
+and do not embed it in the release TIPA. Developers testing TrollStore loading
+need their own explicitly installed, correctly signed replacement app; that
+platform requirement does not change this release's source-only example scope.

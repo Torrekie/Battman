@@ -30,11 +30,8 @@
     "Battman.tipa.report.json",
     "com.torrekie.battman_@VERSION@_iphoneos-arm.deb",
     "com.torrekie.battman_@VERSION@_iphoneos-arm64.deb",
-    "<plugin-identifier>_<plugin-version>.battman.zip",
-    "<plugin-identifier>_<plugin-version>_iphoneos-arm.deb",
-    "<plugin-identifier>_<plugin-version>_iphoneos-arm64.deb",
-    "<sdk-example-identifier>_<sdk-example-version>.battman.zip",
     "BattmanPluginSDK-@VERSION@.tar.gz",
+    "BattmanPluginExamples-@VERSION@.tar.gz",
     "compatibility-matrix.json",
     "release-manifest.json",
     "SHA256SUMS",
@@ -58,59 +55,22 @@
       "com.torrekie.battman.analytics.compare",
       "com.torrekie.battman.analytics.rhythm"
     ],
-    "separatelyShipped": [
-      "com.torrekie.battman.plugin.charge-gauge"
-    ],
-    "replacementTIPAIncludesSeparatelyShipped": true
+    "separatelyShipped": [],
+    "replacementTIPAIncludesSeparatelyShipped": false
   },
-  "sdkExample": {
-    "pluginIdentifier": "com.torrekie.battman.example.analytics",
-    "signedPackageRequired": true,
-    "publisherIdentityReviewRequired": true,
-    "officialTrustDelegation": false,
-    "rootedRootlessAddOns": false,
-    "replacementTIPAInclusion": false,
-    "activationPolicy": "third-party-explicit-approval-required"
-  },
+  "sdkExample": null,
   "signedPluginReleasePins": {
-    "official": [
-      {
-        "pluginIdentifier": "com.torrekie.battman.plugin.charge-gauge",
-        "releaseRole": "official",
-        "displayVersion": "1.0.0",
-        "buildVersion": "1",
-        "releaseSequence": 1,
-        "sourceBindings": {
-          "manifestTemplate": "OfficialPlugins/ChargeGauge/ManifestTemplate.json.in",
-          "bundleInfoPlist": "OfficialPlugins/ChargeGauge/Info.plist",
-          "displayVersionFile": "OfficialPlugins/ChargeGauge/VERSION",
-          "buildVersionFile": "OfficialPlugins/ChargeGauge/BUILD_VERSION"
-        }
-      }
-    ],
-    "sdkExample": {
-      "pluginIdentifier": "com.torrekie.battman.example.analytics",
-      "releaseRole": "sdk-example",
-      "displayVersion": "1.0",
-      "buildVersion": "1",
-      "releaseSequence": 1,
-      "sourceBindings": {
-        "manifestTemplate": "PluginSDK/Examples/AnalyticsCard/ManifestTemplate.json.in",
-        "bundleInfoPlist": "PluginSDK/Examples/AnalyticsCard/Info.plist",
-        "buildVersionFile": "PluginSDK/Examples/AnalyticsCard/BUILD_VERSION"
-      }
-    }
+    "official": [],
+    "sdkExample": null
   },
   "perPluginCandidates": {
     "transport": "<plugin-identifier>.battman directory package before channel archiving",
     "transportArchive": "<plugin-identifier>_<plugin-version>.battman.zip containing the canonical <plugin-identifier>.battman directory",
     "rootedDebian": "<plugin-identifier>_<version>_iphoneos-arm.deb",
     "rootlessDebian": "<plugin-identifier>_<version>_iphoneos-arm64.deb",
-    "selectedPluginIdentifiers": [
-      "com.torrekie.battman.plugin.charge-gauge"
-    ],
-    "matrixAssembly": "Each selected signed official package emits a .battman.zip transport, rooted and rootless Debian add-ons, and sealed replacement-TIPA code; the separately signed SDK example emits only a third-party .battman.zip. All enter inspection, SBOM, provenance, and SHA256SUMS.",
-    "selectionRequired": true,
+    "selectedPluginIdentifiers": [],
+    "matrixAssembly": "The default 1.1.0 release ships host artifacts plus SDK and example source archives. No prebuilt example plug-in or sealed plug-in is selected. Explicit future plug-in selections require matching source-bound pins, publisher signatures and official delegation.",
+    "selectionRequired": false,
     "officialTrustRequired": true
   },
   "havocManualSubmission": {

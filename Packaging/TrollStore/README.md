@@ -22,10 +22,10 @@ the outer app, installs, launches, contacts a device, or invokes TrollStore.
 The report therefore marks the result `requiresOuterResign: true` and
 `requiresExplicitInstall: true`.
 
-Battman 1.1.0 selects the separately shipped official Charge Gauge package for
-this sealed representation. The release assembler passes every reviewed
-official package to this tool and emits its rooted/rootless add-ons from the
-same signed bytes.
+Battman 1.1.0 ships a host-only TIPA. ChargeGauge and SDKAnalytics are developer
+source examples, distributed as source only. Their compiled packages, Debian
+add-ons and nested bundles are excluded from the formal release. The sealed
+representation above remains available for separately built developer tests.
 
 The user's TrollStore installation step is the point at which the replacement
 app and nested code may be re-signed. Direct data-container loading remains

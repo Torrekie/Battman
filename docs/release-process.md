@@ -1,8 +1,8 @@
 # Battman release process
 
 Release tooling and validation workflows are implemented. Production trust
-metadata, signed packages, reviewed key fingerprints, and publication approval
-remain separate requirements; a passing build does not establish that these
+metadata, selected release assets, reviewed key fingerprints, and publication
+approval remain separate requirements; a passing build does not establish that these
 materials are complete. Battman versions use numeric `MAJ.MIN.PATCH[.REV]`, with
 `Debug` and `Release` build configurations. Alpha, beta, and stable describe
 readiness rather than additional version or build channels.
@@ -33,8 +33,9 @@ reject a Havoc executable.
 The source reviewer approves the exact commit and tag. Offline root holders
 approve official publisher delegation/revocation metadata. The official
 plug-in publisher signs exact `Manifest.json` bytes. The checksum signer signs
-the complete release asset list. A separate non-official example publisher
-signs the SDK example if it ships. A release reviewer independently compares
+the complete release asset list. Developer example signing, when used for local
+tests, remains separate from the production release. A release reviewer
+independently compares
 public-key fingerprints, artifact inspection, checksums, SBOM/provenance, and
 release notes. A protected GitHub environment reviewer may create a draft only;
 Havoc submission is a separate artifact-specific approval and manual action by
@@ -43,10 +44,12 @@ Torrekie.
 One person may hold several roles in a small project, but the steps and key
 material remain separate. No private root or publisher key belongs in Git,
 ordinary pull-request CI, an app bundle, a package, logs, or local automation state.
-For the complete 1.1.0 matrix this means six distinct Battman private keys:
-three roots, official publisher, SDK-example publisher, and release checksum.
-Apple/ad-hoc/TrollStore platform signing is a separate mechanism and does not
-replace any of them.
+The trust system uses its reviewed offline roots, while release checksum
+signing uses its own key. Existing ceremony tooling can also record official
+and example publisher roles; those roles do not select packages for shipment.
+The 1.1.0 release does not require a signed SDK-example package or its publisher
+key as a release input. Apple/ad-hoc/TrollStore platform signing is a separate
+mechanism and does not replace publisher or checksum signatures.
 
 The gettext Xcode dependency downloads a fixed GNU source archive, checks its
 SHA-256, and builds the runtime serially. Its headers, libraries, source cache
@@ -66,29 +69,24 @@ Before strict assembly:
   `VERSION`;
 - retain the exact owner-approved MIT `PluginSDK/LICENSE` and its complete SDK
   subtree scope if the SDK ships;
-- decide which official cards are embedded, separately packaged, and included
-  in the replacement TIPA;
+- retain the ten selected built-in Analytics cards and the empty compiled
+  plug-in selection for 1.1.0; keep Charge Gauge and SDK examples as source only;
 - establish root threshold, root/release key custody, rotation, revocation,
   backup, incident, and recovery operators;
 - create reviewed public root policy plus threshold-signed trust metadata under
   `OfficialPlugins/Trust/PluginTrust/` without placing private keys there, then
   commit the reviewed public-only tree into the exact release tag;
-- commit already signed public official `.battman` packages under
-  `OfficialPlugins/Packages/` into that exact tag;
-- commit the separately signed public SDK Analytics example under
-  `PluginSDK/Examples/Packages/` into the exact tag; it remains third-party and receives no
-  official delegation, add-on package, or replacement-TIPA inclusion;
-- record the reviewed SDK example publisher-key fingerprint without treating
-  that publisher as officially delegated;
 - record the independently published checksum public-key fingerprint;
 - supply the reviewed checksum public key to strict assembly and retain its
   private key exclusively on the offline checksum station;
 - approve support/privacy/security intake and Havoc product classification.
 
 For 1.1.0, `Packaging/Release/release-matrix.json` selects ten embedded
-Analytics cards. Charge Gauge is separately packaged and included in
-rooted/rootless add-ons and GitHub replacement TIPAs. The trust policy calls
-for 2-of-3 offline roots with separate publisher and checksum keys. These
+Analytics cards. Charge Gauge and the SDK Analytics card are developer source
+examples, not production release plug-ins. The formal release contains no
+compiled example bundles, example `.battman.zip` files, plug-in Debian add-ons,
+or example code embedded in the GitHub TIPA. The trust policy uses 2-of-3
+offline roots; platform, publisher, and checksum signing remain distinct. These
 requirements describe the intended release inputs; they do not attest that
 production signatures or custody reviews have been completed. Production
 private keys remain confined to the owner-operated signing ceremony and never
@@ -126,12 +124,12 @@ private configuration inputs are not part of either public CI lane.
 | Push of a `v*` tag | Requires an exact clean `v<VERSION>` tag and the production public inputs, then builds and inspects an unsigned candidate for offline checksum signing. It does not create a GitHub draft. |
 | Manual dispatch with `validate_only: false` | Requires that same exact tag and production inputs. After candidate inspection and offline signature return, a protected job may create a GitHub draft. |
 
-The production build job requires reviewed public trust metadata and signed
-plug-in packages tracked in the exact tag. It also requires the public
-repository variables `BATTMAN_CHECKSUM_PUBLIC_KEY_PEM`,
-`BATTMAN_CHECKSUM_SIGNING_KEY_ID`, and
-`BATTMAN_SDK_EXAMPLE_PUBLISHER_KEY_ID`. These variables contain public material,
-not private keys. Validation-only runs skip these production-input steps;
+The production build job requires reviewed public trust metadata tracked in
+the exact tag. It also requires the public repository variables
+`BATTMAN_CHECKSUM_PUBLIC_KEY_PEM` and `BATTMAN_CHECKSUM_SIGNING_KEY_ID`.
+These variables contain public material, not private keys. The 1.1.0 release
+requires no compiled example or SDK-example publisher fingerprint. Validation-only
+runs skip these production-input steps;
 their synthetic package tests do not certify a production release matrix.
 
 For a production manual run, let `build-and-inspect` finish, download and verify
@@ -165,9 +163,6 @@ python3 Scripts/Release/assemble-release.py \
   --repo . \
   --deb-app /reviewed/input/Battman-deb.app \
   --tipa-app /reviewed/input/Battman-tipa.app \
-  --plugin OfficialPlugins/Packages/com.torrekie.battman.plugin.charge-gauge.battman \
-  --sdk-example PluginSDK/Examples/Packages/com.torrekie.battman.example.analytics.battman \
-  --sdk-example-key-id REVIEWED_SDK_EXAMPLE_64_HEX_FINGERPRINT \
   --version "$(cat VERSION)" \
   --checksum-public-key /reviewed/input/checksum-public.pem \
   --checksum-key-id APPROVED_64_HEX_FINGERPRINT \
@@ -176,14 +171,12 @@ python3 Scripts/Release/assemble-release.py \
   --builder-id urn:battman:reviewed-local-builder
 ```
 
-Add each reviewed signed official package with `--plugin`. The TIPA tool embeds
-bundle payloads in the standard nested-code location and keeps signed metadata
-separate. Rooted/rootless plug-in Debian files are built independently with
-`build-plugin-deb.py`; strict assembly also wraps the unchanged signed directory
-package as `<identifier>_<version>.battman.zip`, with the canonical
-`<identifier>.battman` root inside. It emits the transport and both add-on
-variants for every selected official package and includes them in inspection,
-SBOM, provenance, checksums, and release notes.
+For 1.1.0, do not pass `--plugin`, `--sdk-example`, or `--sdk-example-key-id`.
+The release contains no separately compiled plug-ins. Generic plug-in package
+and TIPA embedding tools remain available for developer testing and possible
+future release selections; their existence does not add examples to this
+release. Source archives must exclude compiled bundles, signed test packages,
+keys, caches, and build output.
 
 `Packaging/Release/compatibility-matrix.json` is validated against the selected
 cards, public metric namespace, minimum deployment targets, readiness policy,
@@ -191,35 +184,18 @@ and named evidence before assembly. The exact checked file is copied into the
 release directory and enters the same inspection/checksum chain. Do not edit a
 candidate copy to broaden hardware, iOS, jailbreak, or TrollStore claims.
 
-Add the one reviewed signed SDK example with `--sdk-example`. Its
-`com.torrekie.battman.example.analytics` identity is fixed by the release
-matrix. Assembly creates only its `.battman.zip` transport, marks it as requiring
-third-party explicit approval, rejects overlap with official selection, and in
-strict mode requires its primary publisher key to match the independently
-reviewed `--sdk-example-key-id` fingerprint.
+Developer examples retain their own source versions and signed-manifest
+contracts for local tests. Those identities are not production release pins for
+1.1.0. A successful example build or test signature must not introduce an extra
+asset or TIPA payload into the release.
 
-Before accepting either official or SDK-example bytes, assembly validates the
-matrix's `signedPluginReleasePins` against the canonical source manifest,
-bundle `Info.plist`, and version files, then compares identifier, display/build
-versions, and release sequence with the signed package. The SDK example's
-`BUILD_VERSION` is also compiled into its native descriptor. A plug-in release
-version change must update this complete source-bound set and pass
-`Tests/Release/test_plugin_release_pins.py`; do not rename an old signed package
-to satisfy the matrix.
-
-Strict assembly first runs `validate-official-trust.py`, requires at least one
-official package, checks every package identity and extension point against its
-signed delegation, and requires both app inputs to contain a byte-identical
-`PluginTrust` snapshot. The release workflow deterministically passes every
-top-level `OfficialPlugins/Packages/*.battman` directory; nested or linked
-inputs are rejected. Strict assembly also rejects any trust/package file that
-is outside the repository or is not tracked by the exact release tag; ignored
-or runner-injected public release inputs cannot enter the candidate.
-Engineering assembly skips production delegation only; it
-still requires the exact owner-approved official plug-in identifier set so a
-green mechanics test cannot silently omit Charge Gauge.
-Strict assembly has no production private-key option. It validates and copies
-only the reviewed checksum public key; the private key remains offline.
+Strict assembly runs `validate-official-trust.py` and requires both app inputs
+to contain a byte-identical `PluginTrust` snapshot. The public trust inputs must
+be tracked in the exact release tag; ignored or runner-injected public trust
+files cannot enter the candidate. Both strict and engineering assembly enforce
+the selected asset set, including the empty compiled plug-in selection for
+1.1.0. Strict assembly has no production private-key option. It validates and
+copies only the reviewed checksum public key; the private key remains offline.
 
 Every Xcode and Make host link also embeds canonical JSON in the thin arm64
 executable's `__TEXT,__btidentity` section. It records schema version, numeric
@@ -242,9 +218,9 @@ The matrix contains:
 
 - rooted `iphoneos-arm` and rootless `iphoneos-arm64` host Debian files;
 - GitHub replacement `Battman.tipa` and its embedding/re-sign report;
-- signed official `.battman.zip` transports plus rooted/rootless plug-in add-ons;
-- the separately signed third-party SDK example `.battman.zip`;
-- SDK source archive after its license gate closes;
+- `BattmanPluginSDK-<version>.tar.gz`, with its MIT license and editable SDK example;
+- `BattmanPluginExamples-<version>.tar.gz`, with reference sources and their
+  applicable licenses, kept free of compiled example binaries;
 - the conservative `compatibility-matrix.json` evidence/claim record;
 - artifact inspection, release notes, CycloneDX SBOM and in-toto provenance;
 - `release-manifest.json`, containing the exact final filename set and each
@@ -325,15 +301,14 @@ source exclusions. Package that finalized app using `build-host-deb.py` for the
 rooted and rootless layouts. `validate-havoc-candidate.py --artifact-kind host`
 requires the embedded `havoc` channel; a Public or GitHub host Debian is not a
 substitute. GitHub host Debian records do not receive the
-`havoc-manual-candidate` label. Separately shipped official plug-in Debian
-records may receive that label, subject to their own Havoc validation and
-manual approval.
+`havoc-manual-candidate` label. The 1.1.0 release has no plug-in Debian products:
+Charge Gauge and the SDK Analytics card remain developer source examples.
 
-Owner-selected host or plug-in Debian candidates must separately pass the
+Owner-selected host Debian candidates must separately pass the
 applicable `validate-havoc-candidate.py` checks against the explicit
 last-published version and the independently reviewed full
-`--commit`/`--source-tree`. Do not assume that a plug-in inherits the host
-classification or that a `Plugins` section exists. Review the current Havoc
+`--commit`/`--source-tree`. Any future plug-in product needs its own explicit
+release selection and classification; it cannot inherit the host's approval. Review the current Havoc
 classification and dual-hosting policy for each product, then manually upload
 only the exact `.deb` bytes after support scope, screenshots/copy, and
 artifact-specific owner approval are recorded. No release script or workflow

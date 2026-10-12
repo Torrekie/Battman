@@ -16,6 +16,10 @@
 	} \
 } while (0)
 
+@interface BTPluginDiscoveredPackage (BTPluginQuarantineTestConstruction)
+- (void)setSource:(BTPluginSource)source;
+@end
+
 @interface BTEmptyTrustStore : NSObject <BTPluginTrustStore>
 @property (nonatomic) NSUInteger mutationCount;
 @property (nonatomic, strong) BTPluginExactBuildApproval *exactApproval;
@@ -580,6 +584,57 @@ int main(int argc, const char *argv[]) {
 			replacementResult.installedPackageURL == nil,
 			"TrollStore policy did not remain replacement-app-only");
 		BTAssert(![manager fileExistsAtPath:sentinelPath], "constructor executed during replacement scheduling");
+
+			NSURL *policyRootURL = [temporaryURL URLByAppendingPathComponent:@"InstallationPolicy" isDirectory:YES];
+			BTAssert([manager createDirectoryAtURL:policyRootURL withIntermediateDirectories:YES
+				attributes:@{ NSFilePosixPermissions: @0700 } error:&error], error.localizedDescription.UTF8String);
+			NSURL *policyPackageURL = [policyRootURL URLByAppendingPathComponent:
+				@"com.example.battman.analytics.fixture.battman" isDirectory:YES];
+			BTAssert([manager copyItemAtURL:update.packageURL toURL:policyPackageURL error:&error],
+				error.localizedDescription.UTF8String);
+			BTPluginDiscoveryResult *policyDiscovery = [[BTPluginDiscovery new] discoverRoots:@[
+				[BTPluginDiscoveryRoot transportPackageRootURL:policyRootURL source:BTPluginSourceApplicationData]
+			]];
+			BTAssert(policyDiscovery.packages.count == 1, "policy fixture was not discovered");
+			BTPluginDiscoveredPackage *policyPackage = policyDiscovery.packages.firstObject;
+			BTPluginRuntimeEnvironment *simulatorEnvironment = [[BTPluginRuntimeEnvironment alloc]
+				initWithApplicationBundleURL:[NSURL fileURLWithPath:@"/Simulator/Battman.app" isDirectory:YES]
+				installationKind:BTPluginRuntimeInstallationKindSimulatorDevelopment];
+			for (NSNumber *source in @[ @(BTPluginSourceApplicationData), @(BTPluginSourceRootedSystem),
+				@(BTPluginSourceRootlessSystem) ]) {
+				// Discovery ownership checks have their own tests. Vary only the
+				// already-discovered source while retaining genuinely signed bytes.
+				[policyPackage setSource:source.unsignedIntegerValue];
+				BTPluginManagementActionResult *result = [replacementManagement
+					allowExactBuildAndScheduleDiscoveredPackage:policyPackage error:&error];
+				BTPluginActivationRecord *record = replacementActivationStore.records[policyPackage.claimedPluginIdentifier];
+				BTAssert(result.outcome == BTPluginManagementActionOutcomeRequiresReplacementApp &&
+					result.installedPackageURL == nil && record.source == BTPluginSourceImport &&
+					record.activationMode == BTPluginActivationModeRequiresReinstall,
+					"TrollStore external discovered package was scheduled for direct activation");
+				for (NSNumber *enabled in @[ @NO, @YES ]) {
+					BTAssert([replacementManagement setDiscoveredPackage:policyPackage enabled:enabled.boolValue error:&error],
+						error.localizedDescription.UTF8String);
+					record = replacementActivationStore.records[policyPackage.claimedPluginIdentifier];
+					BTAssert(record.source == BTPluginSourceImport &&
+						record.activationMode == BTPluginActivationModeRequiresReinstall && record.isEnabled == enabled.boolValue,
+						"TrollStore enable/disable changed an external package to direct activation");
+				}
+				for (BTPluginRuntimeEnvironment *environment in @[ directEnvironment, simulatorEnvironment ]) {
+					BTMemoryActivationStore *directStore = [BTMemoryActivationStore new];
+					BTPluginManagementService *directManagement = [[BTPluginManagementService alloc]
+						initWithPackageVerifier:verifier trustStore:trustStore activationStore:directStore
+						applicationDataStore:applicationDataStore quarantineStore:store environment:environment
+						discoveryRoots:discoveryRoots];
+					result = [directManagement allowExactBuildAndScheduleDiscoveredPackage:policyPackage error:&error];
+					record = directStore.records[policyPackage.claimedPluginIdentifier];
+					BTAssert(result.outcome == BTPluginManagementActionOutcomeScheduledForNextLaunch &&
+						result.installedPackageURL != nil && record.source == source.unsignedIntegerValue &&
+						record.activationMode == BTPluginActivationModeDirect,
+						"deb/Simulator discovered package lost direct activation during approval");
+				}
+			}
+			BTAssert(![manager fileExistsAtPath:sentinelPath], "constructor executed during discovered-package scheduling");
 
 		NSArray<NSURL *> *pluginDirectoryEntries = [manager contentsOfDirectoryAtURL:first.packageURL.URLByDeletingLastPathComponent
 			includingPropertiesForKeys:nil options:0 error:&error];

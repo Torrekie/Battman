@@ -76,6 +76,8 @@ NSString *cond_localize(const char *v) {
     return catalogs[FixtureLanguage][msgid] ?: msgid;
 }
 const char *cond_localize_c(const char *v) { return v; }
+// Fixture services inject their storage; never resolve production user data.
+const char *battman_config_dir(void) { return NULL; }
 id perform_selector(SEL s,id t,id v) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"

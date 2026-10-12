@@ -125,7 +125,7 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
           echo "booted_by_job=$booted_by_job" >> "$GITHUB_OUTPUT"
-      - name: Render official Charge Gauge screenshot evidence
+      - name: Render Charge Gauge source-example screenshot evidence
         env:
           BATTMAN_SIMULATOR_UDID: ${{ steps.boot-evidence-simulator.outputs.udid }}
         run: |
@@ -264,6 +264,7 @@ jobs:
           python3 Tests/Release/test_havoc_candidate_policy.py
           python3 Tests/Release/test_plugin_trust_resource_installer.py
           python3 Tests/Release/test_plugin_release_pins.py
+          python3 Tests/Release/test_host_only_release.py
           python3 Tests/Release/test_user_manual_sources.py
       - name: Build one Debug host IPA with bounded parallelism
         env:

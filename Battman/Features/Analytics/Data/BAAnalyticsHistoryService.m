@@ -1,5 +1,6 @@
 #import "BAAnalyticsHistoryService.h"
 #import "BAAnalyticsHistoryReader.h"
+#import "../../../BattmanDataPaths.h"
 #include <math.h>
 #include <sys/stat.h>
 #include <zlib.h>
@@ -16,8 +17,7 @@ static BOOL BAHistoryDataWipeRequested;
 
 static NSURL *BAHistoryCacheDirectory(void) {
 	if (!NSBundle.mainBundle.bundleIdentifier.length) return nil;
-	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-	return [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES];
+	return BattmanAnalyticsCacheDirectoryURL();
 }
 
 static BOOL BAHistoryHasCompletedEvidence(BAAnalyticsReport *report) {

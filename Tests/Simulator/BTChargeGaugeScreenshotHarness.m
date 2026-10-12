@@ -1,9 +1,9 @@
 //
 //  BTChargeGaugeScreenshotHarness.m
-//  Battman release evidence
+//  Battman tests
 //
-//  Renders the separately shipped official card through the same public
-//  registration and Analytics host-cell contract used by Battman.
+//  Renders the source example through the public registration and Analytics
+//  host-cell contract, both embedded and from a separately loaded bundle.
 //
 
 #import <Foundation/Foundation.h>
@@ -15,7 +15,11 @@
 #import "../../Battman/PluginHost/BTEmbeddedPluginRegistration.h"
 #import "../../Battman/PluginHost/BTPluginExtensionDescriptor.h"
 #import "../../Battman/PluginHost/BTPluginRegistry.h"
+#if BT_CHARGE_GAUGE_NATIVE_TEST
+#import "../../Battman/PluginHost/Runtime/BTPluginNativeImageLoaderPrivate.h"
+#else
 #import "../../OfficialPlugins/ChargeGauge/BTChargeGaugePlugin.h"
+#endif
 
 #define BTRequire(condition, message) do { \
 	if (!(condition)) { \
@@ -43,12 +47,28 @@ const char *cond_localize_c(const char *value) {
 + (instancetype)allocWithZone:(NSZone *)zone { (void)zone; abort(); }
 @end
 
+#if !BT_CHARGE_GAUGE_NATIVE_TEST
 static id<BAAnalyticsCard> BTLegacyHostCard;
 static BTPluginResultV1 BTLegacyHostRegister(void *context,
 	const BTPluginExtensionRegistrationV1 *registration, BTPluginErrorV1 *error) {
 	(void)context; (void)error;
 	BTLegacyHostCard = (__bridge id)registration->extensionObject;
 	return BTPluginResultV1Success;
+}
+#endif
+
+static BOOL BTRegisterGauge(BTPluginRegistry *registry, const char *executable, NSError **error) {
+	NSSet *declared = [NSSet setWithObject:BAAnalyticsCardExtensionPointIdentifier];
+#if BT_CHARGE_GAUGE_NATIVE_TEST
+	return [[BTPluginNativeImageLoader new] loadImageAtURL:
+		[NSURL fileURLWithPath:[NSString stringWithUTF8String:executable]]
+		expectedPluginIdentifier:@"com.torrekie.battman.plugin.charge-gauge"
+		expectedPluginVersion:@BT_CHARGE_GAUGE_PLUGIN_VERSION
+		declaredExtensionPoints:declared registry:registry error:error];
+#else
+	(void)executable;
+	return BTRegisterEmbeddedPluginDescriptor(BTChargeGaugePluginDescriptor(), registry, declared, error);
+#endif
 }
 
 id perform_selector(SEL selector, id target, id argument) {
@@ -117,7 +137,8 @@ static int BTWriteEvidence(id<BAAnalyticsCard> card, NSString *outputDirectory,
 
 int main(int argc, const char *argv[]) {
 	@autoreleasepool {
-		BTRequire(argc == 2, @"provide an existing output directory");
+		BTRequire(argc == (BT_CHARGE_GAUGE_NATIVE_TEST ? 3 : 2), @"provide an output directory and native executable when requested");
+		const char *executable = BT_CHARGE_GAUGE_NATIVE_TEST ? argv[2] : NULL;
 		NSString *outputDirectory = [NSString stringWithUTF8String:argv[1]];
 		BOOL directory = NO;
 		BTRequire([[NSFileManager defaultManager] fileExistsAtPath:outputDirectory
@@ -131,8 +152,7 @@ int main(int argc, const char *argv[]) {
 			interfaceVersion:BAAnalyticsCardExtensionPointVersion
 			requiredProtocol:@protocol(BAAnalyticsCard) error:&error],
 			error.localizedDescription ?: @"could not register Analytics extension point");
-		BTRequire(BTRegisterEmbeddedPluginDescriptor(BTChargeGaugePluginDescriptor(), registry,
-			[NSSet setWithObject:BAAnalyticsCardExtensionPointIdentifier], &error),
+		BTRequire(BTRegisterGauge(registry, executable, &error),
 			error.localizedDescription ?: @"Charge Gauge registration failed");
 		NSArray<BTPluginExtensionDescriptor *> *descriptors = [registry
 			extensionDescriptorsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier];
@@ -154,6 +174,10 @@ int main(int argc, const char *argv[]) {
 			BAAnalyticsCardSize1x1, nil, BAAnalyticsChargingStateUnavailable) == 0,
 			@"could not render unavailable state");
 
+#if !BT_CHARGE_GAUGE_NATIVE_TEST
+		// Native loading is deliberately once per process. The loose-image ABI
+		// fixture pins only the executable; resource localization is checked by
+		// the embedded fixture and complete package inventory tests.
 		NSDictionary *localizedNames = @{ @"de": @"Ladeanzeige", @"zh_CN": @"电量仪表",
 			@"zh_TW": @"電量儀表", @"en": @"Charge Gauge" };
 		for (NSString *language in @[ @"de", @"zh_CN", @"zh_TW", @"en" ]) {
@@ -162,8 +186,7 @@ int main(int argc, const char *argv[]) {
 			BTRequire([localizedRegistry registerExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier
 				interfaceVersion:BAAnalyticsCardExtensionPointVersion requiredProtocol:@protocol(BAAnalyticsCard) error:&error],
 				error.localizedDescription);
-			BTRequire(BTRegisterEmbeddedPluginDescriptor(BTChargeGaugePluginDescriptor(), localizedRegistry,
-				[NSSet setWithObject:BAAnalyticsCardExtensionPointIdentifier], &error), error.localizedDescription);
+			BTRequire(BTRegisterGauge(localizedRegistry, executable, &error), error.localizedDescription);
 			id<BAAnalyticsCard> localizedCard = [localizedRegistry
 				extensionObjectsForExtensionPointIdentifier:BAAnalyticsCardExtensionPointIdentifier].firstObject;
 			BTRequire([localizedCard.analyticsCardDisplayName isEqualToString:localizedNames[language]],
@@ -179,7 +202,8 @@ int main(int argc, const char *argv[]) {
 		BTRequire(BTChargeGaugePluginDescriptor()->registerPlugin(&legacyHost, NULL) == BTPluginResultV1Success &&
 			BTLegacyHostCard.analyticsCardDisplayName.length > 0,
 			@"Charge Gauge could not register with the original v1 host prefix");
-		printf("Charge Gauge release screenshots rendered through the public card contract.\n");
+#endif
+		printf("Charge Gauge example rendered through the public card contract.\n");
 	}
 	return 0;
 }

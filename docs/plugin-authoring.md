@@ -3,6 +3,10 @@
 Status: SDK v1 release candidate. The technical workflow is complete and works
 offline. The complete [`PluginSDK/`](../PluginSDK/) subtree is MIT licensed;
 that license does not publish a release or relicense the Battman host.
+Charge Gauge and the SDK Analytics card are developer source examples;
+Battman 1.1.0 does not ship their compiled packages, add-ons, or TIPA-embedded
+code. The build and signing commands here produce separate developer/test
+artifacts and do not authorize adding them to the formal release.
 
 ## Choose the native shape
 
@@ -192,4 +196,5 @@ private TrollStore signing internals.
 - Treat signature verification as identity/integrity, never a safety audit.
 - Publish source or an auditable build process, security contact, supported
   iOS/device range, permission/privacy behavior, checksums and release notes.
-- Do not advertise commercial/open SDK rights until the SDK license gate closes.
+- Preserve the SDK's MIT notice and the applicable license of any other source
+  you use; the SDK license does not relicense Charge Gauge or the Battman host.

@@ -4,6 +4,7 @@
 //
 
 #import "BTPluginPlatform.h"
+#import "../../BattmanDataPaths.h"
 
 #import <UIKit/UIKit.h>
 
@@ -61,7 +62,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 @property (atomic, strong, readwrite, nullable) BTPluginManagementService *managementService;
 @property (nonatomic, strong) BTPluginRuntimeLoader *runtimeLoader;
 @property (nonatomic, strong) BTPluginRuntimeEnvironment *runtimeEnvironment;
-@property (nonatomic, strong) NSURL *applicationSupportURL;
+@property (nonatomic, strong) NSURL *configDirectoryURL;
 @property (nonatomic, strong) NSURL *safeModeSentinelURL;
 @property (nonatomic, strong) BTPluginSafeModeRequest *safeModeRequest;
 @property (nonatomic) NSUInteger activeSettlementGeneration;
@@ -106,11 +107,8 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		_diagnostics = @[ diagnostic ];
 	}
 
-	NSArray<NSURL *> *supportURLs = [[NSFileManager defaultManager]
-		URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
-	_applicationSupportURL = supportURLs.firstObject ?: [NSURL fileURLWithPath:
-		[NSTemporaryDirectory() stringByAppendingPathComponent:@"Battman Application Support"] isDirectory:YES];
-	NSURL *hostSupportURL = [_applicationSupportURL URLByAppendingPathComponent:@"Battman" isDirectory:YES];
+	_configDirectoryURL = BattmanConfigDirectoryURL();
+	NSURL *hostSupportURL = _configDirectoryURL;
 	_safeModeSentinelURL = [hostSupportURL URLByAppendingPathComponent:BTPluginSafeModeSentinelName isDirectory:NO];
 	_safeModeRequest = [[BTPluginSafeModeRequest alloc] initWithSentinelURL:_safeModeSentinelURL];
 	return self;
@@ -119,7 +117,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 // Serial worker only: Keychain, filesystem, signatures and store recovery must
 // not extend the UIApplication startup watchdog interval.
 - (void)initializeExternalServices {
-	NSURL *hostSupportURL = [self.applicationSupportURL URLByAppendingPathComponent:@"Battman" isDirectory:YES];
+	NSURL *hostSupportURL = self.configDirectoryURL;
 	_activationStore = [BTPluginKeychainActivationStore new];
 
 	// Root private keys are never generated or inferred here. A missing resource
@@ -163,7 +161,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		BTPluginApplicationDataStore *applicationDataStore = [[BTPluginApplicationDataStore alloc]
 			initWithRootURL:applicationDataPluginURL packageVerifier:_packageVerifier error:&applicationDataError];
 		NSArray<BTPluginDiscoveryRoot *> *managementRoots = [BTPluginDiscovery
-			defaultRootsForApplicationSupportURL:_applicationSupportURL mainBundleURL:NSBundle.mainBundle.bundleURL];
+			defaultRootsForConfigDirectoryURL:_configDirectoryURL mainBundleURL:NSBundle.mainBundle.bundleURL];
 		if (applicationDataStore) {
 			self.managementService = [[BTPluginManagementService alloc]
 				initWithPackageVerifier:_packageVerifier trustStore:trustStore activationStore:_activationStore
@@ -297,7 +295,7 @@ static BOOL BTPluginPlatformSetError(NSError **error, NSString *description) {
 		return NO;
 	self.startupSnapshot = snapshot;
 	NSArray<BTPluginDiscoveryRoot *> *roots = [BTPluginDiscovery
-		defaultRootsForApplicationSupportURL:self.applicationSupportURL
+		defaultRootsForConfigDirectoryURL:self.configDirectoryURL
 		mainBundleURL:NSBundle.mainBundle.bundleURL];
 	self.discoveryResult = [[BTPluginDiscovery new] discoverRoots:roots];
 	NSMutableArray<BTPluginPlatformDiagnostic *> *diagnostics = [self.diagnostics mutableCopy];

@@ -13,13 +13,15 @@ checks the target's channel, and the host candidate validator checks the
 packaged executable. The public CI and GitHub release workflow do not build
 this private variant or establish that its production materials are ready.
 
-Torrekie may manually select these candidates for Havoc submission:
+For Battman 1.1.0, Torrekie may manually select these host candidates for Havoc submission:
 
 - rooted host Debian (`iphoneos-arm`, `/Applications/Battman.app`);
-- rootless host Debian (`iphoneos-arm64`, `/var/jb/Applications/Battman.app`);
-- rooted/rootless Debian add-ons for owner-selected Battman plug-ins, including
-  future plug-ins, after Havoc confirms an accepted section/classification for
-  each product.
+- rootless host Debian (`iphoneos-arm64`, `/var/jb/Applications/Battman.app`).
+
+Charge Gauge and the SDK Analytics card are developer source examples. Neither
+is a compiled 1.1.0 release product or Havoc add-on. The tools retain generic
+plug-in validation capabilities for separately approved future products; that
+does not select an example for this release.
 
 Only `.deb` files are Havoc candidates. Build the two host layouts from the
 finalized Havoc app with `Scripts/Release/build-host-deb.py`; validate that exact

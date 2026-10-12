@@ -128,10 +128,10 @@ for path in (
         fail(f"normal build/release surface invokes the owner-only ceremony: {path}")
 
 if "BTChargeGaugePlugin.m" in project or "OfficialPlugins/ChargeGauge" in project:
-    fail("the separately shipped official Charge Gauge must not be embedded in an app target")
+    fail("the Charge Gauge source example must not be embedded in an app target")
 makefile = (ROOT / "Battman/Makefile").read_text(encoding="utf-8")
 if "BTChargeGaugePlugin.m" in makefile or "OfficialPlugins/ChargeGauge" in makefile:
-    fail("the separately shipped official Charge Gauge must not enter the host Makefile")
+    fail("the Charge Gauge source example must not enter the host Makefile")
 for required in (
     "generate-build-identity.py",
     "verify-build-identity.py",
@@ -449,8 +449,6 @@ for required in (
     "officialPluginSelection",
     "separatelyShipped",
     "sdkExample",
-    "--sdk-example",
-    "--sdk-example-key-id",
     "--checksum-public-key",
     "BATTMAN_CHECKSUM_SIGNATURE_BASE64",
     "finalize-release-signature.py",
@@ -467,8 +465,8 @@ matrix = json.loads((ROOT / "Packaging/Release/release-matrix.json").read_text(e
 if matrix.get("compatibilityMatrix") != "compatibility-matrix.json":
     fail("release matrix does not bind the canonical compatibility matrix")
 for required_asset in (
-    "<plugin-identifier>_<plugin-version>.battman.zip",
-    "<sdk-example-identifier>_<sdk-example-version>.battman.zip",
+    "BattmanPluginSDK-@VERSION@.tar.gz",
+    "BattmanPluginExamples-@VERSION@.tar.gz",
     "compatibility-matrix.json",
     "release-manifest.json",
 ):
@@ -487,22 +485,16 @@ if matrix.get("officialPluginSelection") != {
         "com.torrekie.battman.analytics.compare",
         "com.torrekie.battman.analytics.rhythm",
     ],
-    "separatelyShipped": ["com.torrekie.battman.plugin.charge-gauge"],
-    "replacementTIPAIncludesSeparatelyShipped": True,
+    "separatelyShipped": [],
+    "replacementTIPAIncludesSeparatelyShipped": False,
 }:
     fail("release matrix does not match the owner-approved embedded/separate card split")
-if matrix.get("sdkExample") != {
-    "pluginIdentifier": "com.torrekie.battman.example.analytics",
-    "signedPackageRequired": True,
-    "publisherIdentityReviewRequired": True,
-    "officialTrustDelegation": False,
-    "rootedRootlessAddOns": False,
-    "replacementTIPAInclusion": False,
-    "activationPolicy": "third-party-explicit-approval-required",
-}:
-    fail("release matrix does not keep the SDK example signed but third-party")
-if matrix.get("perPluginCandidates", {}).get("selectionRequired") is not True:
-    fail("owner-approved official plug-in selection must be required")
+if matrix.get("sdkExample") is not None or matrix.get("signedPluginReleasePins") != {"official": [], "sdkExample": None}:
+    fail("the 1.1.0 release must not select a prebuilt SDK example or official plug-in")
+if matrix.get("perPluginCandidates", {}).get("selectionRequired") is not False:
+    fail("the 1.1.0 release must not require a prebuilt plug-in selection")
+if any("<plugin-" in name or "<sdk-example-" in name for name in matrix.get("githubAssets", [])):
+    fail("the 1.1.0 release must not publish prebuilt example plug-in assets")
 if matrix.get("havocManualSubmission") != {
     "submissionMode": "manual-owner-upload-only",
     "automaticUpload": False,

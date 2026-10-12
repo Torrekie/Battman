@@ -53,7 +53,7 @@ typedef NS_ENUM(NSUInteger, BTPluginInstalledRepresentation) {
 
 @interface BTPluginDiscovery : NSObject
 
-+ (NSArray<BTPluginDiscoveryRoot *> *)defaultRootsForApplicationSupportURL:(NSURL *)applicationSupportURL
++ (NSArray<BTPluginDiscoveryRoot *> *)defaultRootsForConfigDirectoryURL:(NSURL *)configDirectoryURL
 																 mainBundleURL:(NSURL *)mainBundleURL;
 
 - (BTPluginDiscoveryResult *)discoverRoots:(NSArray<BTPluginDiscoveryRoot *> *)roots;

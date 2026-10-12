@@ -80,13 +80,16 @@ make -C /tmp/ChargeCard SDK_ROOT="$PWD/PluginSDK" -j1
 The generator creates no keys and performs no publisher signing. It includes
 the MIT license with the copied example source. Follow
 [`DEVELOPING.md`](DEVELOPING.md) for the complete package flow, host contract,
-and trust behavior. The Analytics example is included as editable source;
-neither its source nor a signed example package grants official publisher trust.
+and trust behavior. The Analytics example is included as editable source only. Battman 1.1.0 ships
+no compiled SDK example, example `.battman.zip`, Debian add-on, or TIPA-embedded
+example code. A developer may build and sign it separately for testing; that
+does not grant official publisher trust.
 
 Release maintainers export the SDK from a clean source staging directory.
 `Scripts/Release/build-sdk-archive.py` in the full repository rejects build
-products, caches, and signing inputs. The separately released signed example
-under `Examples/Packages/` is excluded from the SDK source archive.
+products, caches, and signing inputs. Any locally signed test packages
+under `Examples/Packages/` are excluded from the SDK source archive and the
+1.1.0 release artifacts.
 
 `build-plugin-package.py` inventories exact payload bytes and automatically
 adds the bounded `macho-codesign-independent-sha256-v1` identity. Authors must

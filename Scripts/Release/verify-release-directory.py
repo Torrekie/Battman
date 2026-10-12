@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -199,7 +200,7 @@ def main() -> int:
     elif signature_process is not None:
         raise ReleaseError("engineering release manifest claims a production signature process")
     selected = manifest.get("selectedOfficialPluginIdentifiers")
-    if not isinstance(selected, list) or not selected or any(
+    if not isinstance(selected, list) or any(
         not isinstance(value, str) for value in selected
     ):
         raise ReleaseError("release manifest official plug-in selection is malformed")
@@ -212,16 +213,17 @@ def main() -> int:
     ):
         raise ReleaseError("release manifest official plug-in selection is not canonical")
     example_identifier = manifest.get("sdkExampleIdentifier")
-    if not isinstance(example_identifier, str):
-        raise ReleaseError("release manifest SDK example identifier is malformed")
-    require_identifier(example_identifier, "release manifest SDK example identifier")
+    if example_identifier is not None:
+        if not isinstance(example_identifier, str):
+            raise ReleaseError("release manifest SDK example identifier is malformed")
+        require_identifier(example_identifier, "release manifest SDK example identifier")
     if example_identifier in validated_selected:
         raise ReleaseError("release manifest SDK example overlaps official selection")
     signed_pins = manifest.get("signedPluginReleasePins")
     if not isinstance(signed_pins, dict) or set(signed_pins) != {"official", "sdkExample"}:
         raise ReleaseError("release manifest signed plug-in release pins are malformed")
     raw_official_pins = signed_pins.get("official")
-    if not isinstance(raw_official_pins, list) or not raw_official_pins:
+    if not isinstance(raw_official_pins, list):
         raise ReleaseError("release manifest official plug-in release pins are malformed")
     official_pins = [
         _signed_plugin_release_identity(value, "release manifest official plug-in pin")
@@ -229,11 +231,16 @@ def main() -> int:
     ]
     if [value["pluginIdentifier"] for value in official_pins] != validated_selected:
         raise ReleaseError("release manifest official plug-in pins differ from selection")
-    sdk_example_pin = _signed_plugin_release_identity(
-        signed_pins.get("sdkExample"), "release manifest SDK example pin"
-    )
-    if sdk_example_pin["pluginIdentifier"] != example_identifier:
-        raise ReleaseError("release manifest SDK example pin differs from selection")
+    sdk_example_pin = None
+    if example_identifier is None:
+        if signed_pins.get("sdkExample") is not None:
+            raise ReleaseError("release manifest has an unselected SDK example pin")
+    else:
+        sdk_example_pin = _signed_plugin_release_identity(
+            signed_pins.get("sdkExample"), "release manifest SDK example pin"
+        )
+        if sdk_example_pin["pluginIdentifier"] != example_identifier:
+            raise ReleaseError("release manifest SDK example pin differs from selection")
 
     entries = list(release.iterdir())
     if any(not path.is_file() or path.is_symlink() for path in entries):
@@ -305,11 +312,36 @@ def main() -> int:
             f"{identifier}_{plugin_version}_iphoneos-arm.deb",
             f"{identifier}_{plugin_version}_iphoneos-arm64.deb",
         })
-    expected_signed_plugin_assets.add(
-        f"{sdk_example_pin['pluginIdentifier']}_{sdk_example_pin['displayVersion']}.battman.zip"
-    )
-    if not expected_signed_plugin_assets <= seen:
+    if sdk_example_pin:
+        expected_signed_plugin_assets.add(
+            f"{sdk_example_pin['pluginIdentifier']}_{sdk_example_pin['displayVersion']}.battman.zip"
+        )
+    actual_plugin_assets = {
+        record["name"] for record in artifacts
+        if record["kind"] in {"plugin-transport", "sdk-example-transport", "plugin-debian-rooted", "plugin-debian-rootless"}
+        or record["name"].endswith(".battman.zip")
+    }
+    if actual_plugin_assets != expected_signed_plugin_assets:
         raise ReleaseError("release manifest signed plug-in assets differ from release pins")
+    required_sources = {f"BattmanPluginSDK-{version}.tar.gz", f"BattmanPluginExamples-{version}.tar.gz"}
+    if not required_sources <= seen:
+        raise ReleaseError("release manifest is missing SDK or example source archives")
+    try:
+        report = json.loads((release / "Battman.tipa.report.json").read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ReleaseError("TIPA report is not valid UTF-8 JSON") from error
+    if not isinstance(report, dict):
+        raise ReleaseError("TIPA report is malformed")
+    embedded = report.get("embeddedPlugins")
+    if not isinstance(embedded, list) or any(not isinstance(item, dict) for item in embedded) or \
+            [item.get("pluginIdentifier") for item in embedded] != validated_selected:
+        raise ReleaseError("TIPA report plug-in set differs from release selection")
+    if not validated_selected:
+        with zipfile.ZipFile(release / "Battman.tipa") as archive:
+            if any(name.startswith(("Payload/Battman.app/PlugIns/", "Payload/Battman.app/PluginManifests/"))
+                   or name.rstrip("/") in {"Payload/Battman.app/PlugIns", "Payload/Battman.app/PluginManifests"}
+                   for name in archive.namelist()):
+                raise ReleaseError("host-only TIPA contains prebuilt plug-ins")
     _verify_checksums(
         release / "SHA256SUMS",
         set(expected) - {"SHA256SUMS", "SHA256SUMS.p256.sig"},
@@ -327,6 +359,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (OSError, ReleaseError) as error:
+    except (OSError, ReleaseError, zipfile.BadZipFile) as error:
         print(f"error: {error}", file=sys.stderr)
         raise SystemExit(2)

@@ -1,6 +1,6 @@
 //
 //  BTChargeGaugePlugin.m
-//  Battman official Charge Gauge plug-in
+//  Battman Charge Gauge example plug-in
 //
 //  This implementation imports only the public Battman SDK and Apple system
 //  frameworks. It owns its complete UIView/CALayer content tree and receives

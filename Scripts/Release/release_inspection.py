@@ -34,6 +34,7 @@ from release_common import (
     write_json,
 )
 from plugin_release_pins import read_plugin_package_release_identity
+from source_archive import require_source_path
 
 
 DEB_LAYOUTS = {
@@ -399,6 +400,7 @@ def inspect_tipa(
     allow_debug: bool = False,
     commit: str | None = None,
     source_tree: str | None = None,
+    require_host_only: bool = False,
 ) -> dict[str, object]:
     path = path.resolve()
     if not path.is_file() or path.is_symlink() or path.suffix != ".tipa":
@@ -412,6 +414,8 @@ def inspect_tipa(
             if normalized in names:
                 raise ReleaseError(f"duplicate TIPA path: {normalized}")
             names.add(normalized)
+            if require_host_only and len(pure.parts) > 2 and pure.parts[2] in {"PlugIns", "PluginManifests"}:
+                raise ReleaseError("host-only TIPA contains a plug-in payload or manifest root")
             mode = (info.external_attr >> 16) & 0xFFFF
             if stat.S_ISLNK(mode) or (mode & (stat.S_IWGRP | stat.S_IWOTH | stat.S_ISUID | stat.S_ISGID)):
                 raise ReleaseError(f"unsafe TIPA entry mode: {normalized}")
@@ -492,12 +496,24 @@ def inspect_tipa(
     }
 
 
-def inspect_sdk(path: Path, version: str, allow_license_pending: bool) -> dict[str, object]:
+def inspect_sdk(path: Path, version: str, allow_license_pending: bool, *, examples: bool = False) -> dict[str, object]:
     path = path.resolve()
     if not path.is_file() or path.is_symlink() or not path.name.endswith(".tar.gz"):
         raise ReleaseError("SDK artifact is not a regular .tar.gz")
-    prefix = f"BattmanPluginSDK-{version}"
-    required = {f"{prefix}/include/BattmanPluginABI.h", f"{prefix}/SDKContractV1.json", f"{prefix}/VERSION"}
+    prefix = f"BattmanPluginExamples-{version}" if examples else f"BattmanPluginSDK-{version}"
+    sdk_prefix = f"{prefix}/PluginSDK" if examples else prefix
+    required = {f"{sdk_prefix}/{name}" for name in (
+        "include/BattmanPluginABI.h", "SDKContractV1.json", "VERSION", "Makefile",
+        "Examples/AnalyticsCard/BTAnalyticsExamplePlugin.m",
+        "Examples/AnalyticsCard/ManifestTemplate.json.in",
+    )}
+    if examples:
+        required.update(f"{prefix}/{name}" for name in (
+            "OfficialPlugins/ChargeGauge/Makefile", "OfficialPlugins/ChargeGauge/BTChargeGaugePlugin.m",
+            "OfficialPlugins/ChargeGauge/Info.plist", "OfficialPlugins/ChargeGauge/ManifestTemplate.json.in",
+            "OfficialPlugins/ChargeGauge/Resources/en.lproj/Localizable.strings",
+            "LICENSE/LICENSE.md", "LICENSE/LICENSE-en_US.md",
+        ))
     names: set[str] = set()
     license_data: bytes | None = None
     with tarfile.open(path, "r:gz") as archive:
@@ -507,11 +523,17 @@ def inspect_sdk(path: Path, version: str, allow_license_pending: bool) -> dict[s
             if name in names:
                 raise ReleaseError(f"duplicate SDK archive path: {name}")
             names.add(name)
+            require_source_path(name)
             if pure.parts[0] != prefix or member.issym() or member.islnk() or not (member.isdir() or member.isfile()):
                 raise ReleaseError(f"unsafe SDK archive entry: {name}")
             if member.uid != 0 or member.gid != 0 or member.mode & (stat.S_IWGRP | stat.S_IWOTH | stat.S_ISUID | stat.S_ISGID):
                 raise ReleaseError(f"unsafe SDK archive metadata: {name}")
-            if name == f"{prefix}/LICENSE":
+            if member.isfile():
+                source = archive.extractfile(member)
+                magic = source.read(4) if source else b""
+                if magic in {b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe", b"\xfe\xed\xfa\xcf", b"\x7fELF"}:
+                    raise ReleaseError("source archive contains a native executable")
+            if name == f"{sdk_prefix}/LICENSE":
                 if not member.isfile() or member.size > 16 * 1024:
                     raise ReleaseError("SDK archive license is not one bounded regular file")
                 stream = archive.extractfile(member)
@@ -526,7 +548,7 @@ def inspect_sdk(path: Path, version: str, allow_license_pending: bool) -> dict[s
     if not has_license and not allow_license_pending:
         raise ReleaseError("SDK archive has no owner-approved public-distribution license")
     result: dict[str, object] = {
-        "kind": "plugin-sdk",
+        "kind": "plugin-example-source" if examples else "plugin-sdk",
         "name": path.name,
         "sha256": sha256_file(path),
         "size": path.stat().st_size,
@@ -536,10 +558,18 @@ def inspect_sdk(path: Path, version: str, allow_license_pending: bool) -> dict[s
         "distributionStatus": "public-ready" if has_license else "internal-license-pending",
     }
     if has_license:
-        result.update({
-            "licenseIdentifier": "MIT",
-            "licenseSHA256": PLUGIN_SDK_MIT_LICENSE_SHA256,
-        })
+        if examples:
+            result.update({
+                "sdkLicenseIdentifier": "MIT",
+                "sdkLicenseSHA256": PLUGIN_SDK_MIT_LICENSE_SHA256,
+                "exampleLicensePath": "LICENSE/LICENSE.md",
+                "exampleLicenseIdentifier": "Torrekie-Non-Commercial-Attribution-1.0",
+            })
+        else:
+            result.update({
+                "licenseIdentifier": "MIT",
+                "licenseSHA256": PLUGIN_SDK_MIT_LICENSE_SHA256,
+            })
     return result
 
 
@@ -549,6 +579,8 @@ def main() -> int:
     parser.add_argument("--rootless-deb", required=True, type=Path)
     parser.add_argument("--tipa", required=True, type=Path)
     parser.add_argument("--sdk", required=True, type=Path)
+    parser.add_argument("--examples", type=Path)
+    parser.add_argument("--require-host-only-tipa", action="store_true")
     parser.add_argument(
         "--plugin-deb",
         action="append",
@@ -567,7 +599,6 @@ def main() -> int:
     )
     parser.add_argument(
         "--sdk-example-transport",
-        required=True,
         nargs=3,
         metavar=("VERSION", "PACKAGE", "PATH"),
         help="inspect the separately signed third-party SDK example transport",
@@ -597,10 +628,13 @@ def main() -> int:
         inspect_deb(arguments.rootless_deb, "rootless", version, package,
             allow_debug=arguments.allow_debug, commit=commit, source_tree=source_tree),
         inspect_tipa(arguments.tipa, version,
-            allow_debug=arguments.allow_debug, commit=commit, source_tree=source_tree),
+            allow_debug=arguments.allow_debug, commit=commit, source_tree=source_tree,
+            require_host_only=arguments.require_host_only_tipa),
         inspect_sdk(arguments.sdk, version, arguments.allow_license_pending),
         inspect_compatibility_matrix(arguments.compatibility_matrix, version),
     ]
+    if arguments.examples:
+        artifacts.append(inspect_sdk(arguments.examples, version, False, examples=True))
     seen_plugin_artifacts: set[tuple[str, str]] = set()
     for flavor, plugin_version, plugin_identifier, raw_path in arguments.plugin_deb:
         if flavor not in PLUGIN_DEB_LAYOUTS:
@@ -624,20 +658,21 @@ def main() -> int:
         artifacts.append(inspect_plugin_transport_archive(
             Path(raw_path), plugin_version, plugin_identifier
         ))
-    sdk_example_version, sdk_example_identifier, sdk_example_path = arguments.sdk_example_transport
-    sdk_example_identifier = require_identifier(
-        sdk_example_identifier, "SDK example transport identifier"
-    )
-    sdk_example_version = require_package_version(
-        sdk_example_version, "SDK example transport version"
-    )
-    if sdk_example_identifier in seen_plugin_transports:
-        raise ReleaseError("SDK example transport overlaps an official plug-in transport")
-    artifacts.append(inspect_plugin_transport_archive(
-        Path(sdk_example_path), sdk_example_version, sdk_example_identifier,
-        artifact_kind="sdk-example-transport",
-        activation_policy="third-party-explicit-approval-required",
-    ))
+    if arguments.sdk_example_transport:
+        sdk_example_version, sdk_example_identifier, sdk_example_path = arguments.sdk_example_transport
+        sdk_example_identifier = require_identifier(
+            sdk_example_identifier, "SDK example transport identifier"
+        )
+        sdk_example_version = require_package_version(
+            sdk_example_version, "SDK example transport version"
+        )
+        if sdk_example_identifier in seen_plugin_transports:
+            raise ReleaseError("SDK example transport overlaps an official plug-in transport")
+        artifacts.append(inspect_plugin_transport_archive(
+            Path(sdk_example_path), sdk_example_version, sdk_example_identifier,
+            artifact_kind="sdk-example-transport",
+            activation_policy="third-party-explicit-approval-required",
+        ))
     value = {
         "schemaVersion": 1,
         "status": "passed",

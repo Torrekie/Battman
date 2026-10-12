@@ -52,6 +52,9 @@ def main() -> int:
             encoding="utf-8"
         )
     )
+    assert validate_signed_plugin_release_pins(ROOT, matrix) == ({}, None)
+    # Signed plug-in publication remains an explicit developer-test policy.
+    matrix = json.loads((ROOT / "Tests/Release/Fixtures/signed-plugin-release-matrix.json").read_text())
     _, example = validate_signed_plugin_release_pins(ROOT, matrix)
     build_version_path = ROOT / "PluginSDK/Examples/AnalyticsCard/BUILD_VERSION"
     assert build_version_path.read_text(encoding="ascii") == example.build_version + "\n"

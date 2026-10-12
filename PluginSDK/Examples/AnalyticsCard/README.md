@@ -14,7 +14,8 @@ and Core Graphics drawing, responds to host-delivered immutable snapshots, and
 creates no polling timer. The same source is therefore the reference for
 embedded-versus-native behavior, not two implementations that can drift.
 
-Build it from the repository root:
+This is developer source, not a precompiled Battman 1.1.0 release plug-in.
+Build it separately for development and testing from the repository root:
 
 ```sh
 make -C PluginSDK BUILD_DIR=/tmp/battman-sdk-example -j1 example
@@ -48,14 +49,12 @@ build. Both embedded and bundle builds compile that value into
 binding. This prevents a signed package from advertising a build that the
 native entry point does not actually register.
 
-For a public SDK release, the reviewed signed example is staged under
-`PluginSDK/Examples/Packages/` and passed to strict assembly with
-`--sdk-example`. It remains a third-party package: Battman does not officially
-delegate it, put it in rooted/rootless add-ons, or embed it in the replacement
-TIPA. Its GitHub asset is a deterministic `.battman.zip`, and loading still
-requires explicit third-party approval. Strict assembly also requires the
-reviewed primary publisher fingerprint through `--sdk-example-key-id`; this
-pins release provenance without granting official trust.
+The public SDK archive includes this example's editable source. The formal
+Battman 1.1.0 release includes no compiled example, example `.battman.zip`,
+Debian add-on, or TIPA-embedded example code. Do not pass a locally built example
+to production release assembly. If building a test package yourself, platform
+signing and publisher signing remain separate, and third-party loading still
+requires explicit approval.
 
 Battman's simulator parity gate builds embedded and bundle forms in separate
 processes and compares registered metadata, lifecycle traces, and rendered

@@ -1,45 +1,66 @@
-# Battman @VERSION@
+## Battman @VERSION@
 
-Source commit: `@COMMIT@`
+In this version, I have finally put something in the 'Analytics' page, added native plug-in support, and fixed a bunch of bugs.
 
-## Highlights
+**PLEASE LET ME KNOW** when you want any new features or find any bugs. You can create a [GitHub issue](https://github.com/Torrekie/Battman/issues/new) to describe them, especially when something behaves differently on your device.
 
-- Production Analytics cards share one lifecycle and registration path with native plug-ins.
-- Offline-signed `.battman` packages, explicit third-party approval, quarantine, safe mode, and management are available.
-- Rooted, rootless, and replacement-TIPA artifacts are produced by the bounded release pipeline.
+- Implemented the 'Analytics' page with cards that you can add, remove, resize and rearrange ([#53](https://github.com/Torrekie/Battman/pull/53)).
+- Added ten Analytics cards: live readings, capacity observations, cell voltages, charging sessions, battery discharge, connection and charging states, power readings, time by battery level, charging comparison, and discharge rhythm. Graphs include capacity history and comparisons of complete 20% to 80% charging sessions; available readings depend on your device and its recorded history.
+- Added native plug-in support, including `.battman` import, plug-in management, diagnostics and recovery mode. Third-party plug-ins require your approval, and changes take effect after restarting Battman ([#53](https://github.com/Torrekie/Battman/pull/53)).
+- Added the public Plugin SDK and plug-in example sources for developers ([#53](https://github.com/Torrekie/Battman/pull/53)). Charge Gauge is provided as a **source example**, not as a shipped production plug-in.
+- Added a 'Temperature Unit' option: System, Celsius, or Fahrenheit ([#43](https://github.com/Torrekie/Battman/issues/43)).
+- Added `zh_TW` localization and documentation ([#35](https://github.com/Torrekie/Battman/pull/35)).
+- Added 'Export Powerlog' to the charging graph. Long-press the graph to export the available system battery log.
+- Improved charging-limit settings, daemon connections and charging controls; unavailable or invalid battery readings now have clearer explanations ([#54](https://github.com/Torrekie/Battman/pull/54)).
+- Fixed potential deadlocks in battery-status callbacks and improved battery refreshes while scrolling ([#39](https://github.com/Torrekie/Battman/pull/39), [#40](https://github.com/Torrekie/Battman/pull/40)).
+- Improved crash logging for the app, daemon and worker processes ([#38](https://github.com/Torrekie/Battman/pull/38)).
+- Fixed DOD0 units and misleading battery-authenticity warnings, and corrected invalid time-to-empty estimates ([#45](https://github.com/Torrekie/Battman/issues/45), [#46](https://github.com/Torrekie/Battman/pull/46)).
+- Fixed crashes when reading accessory and UPS battery information, including disconnects during a refresh ([#47](https://github.com/Torrekie/Battman/pull/47)).
+- Removed unused system-group entitlements to address the remaining iOS 17 backup issue after the earlier fix attempt ([#32](https://github.com/Torrekie/Battman/issues/32), [#41](https://github.com/Torrekie/Battman/pull/41)).
+- Improved Analytics history browsing, graph readability and scrolling responsiveness.
+- Bundled the gettext runtime so localization can work without a system gettext installation.
+- Improved **Wipe all Battman data** to wait for Analytics cache writes and report deletion failures, and replaced legacy icon-font dependencies with vector fallbacks.
 
-## Compatibility
+### Dependencies (deb)
 
-- UI and host ABI deployment target: iOS 12.0, arm64.
-- Declared hardware baseline: A11 or newer. iOS 12 through 17 coverage is
-  community-reported rather than an independently completed device matrix.
-- Individual Analytics cards show `Unavailable` when their host metric source
-  is absent; `compatibility-matrix.json` records the exact evidence and card
-  hardware boundary shipped with this release.
-- TrollStore plug-ins are embedded in a replacement TIPA; direct data-container native loading is not claimed.
+- `libintl8` or `libintl`
 
-## Security and trust
+### Support List
 
-- Plug-in publisher verification works offline.
-- Unknown third-party native code requires explicit dangerous-load approval after hard structural and native-policy checks pass.
-- APT/dpkg or marketplace availability does not grant Battman activation trust.
+The table below retains the installation-method overview from previous releases. It is **not a complete tested-device list for @VERSION@**; you still need a jailbreak or TrollStore version compatible with your particular device and iOS build.
 
-## Artifacts
+| iOS \ Chip | <= A10 / A10X | A11 | A12 Series | A13 | A14 / M1 Series | A15 / M2 Series | >= A16 / M3 Series |
+|:----------:|:-------------:|:---:|:----------:|:---:|:---------------:|:---------------:|:------------------:|
+| < 12.0 | Unsupported | Unsupported | - | - | - | - | - |
+| 12.0 | Unsupported | Jailbreak | Jailbreak | - | - | - | - |
+| 13.0 | Unsupported | Jailbreak | Jailbreak | Jailbreak | - | - | - |
+| 14.0 | Unsupported | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | - | - |
+| 15.0 | Unsupported | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | - |
+| 16.0 | Unsupported | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Jailbreak / TrollStore | Untested |
+| >= 17.0 | Unsupported | Untested | Untested | Untested | Untested | Untested | Untested |
 
-Verify `release-manifest.json` against the exact downloaded filename set, then verify every downloaded artifact with `SHA256SUMS`, its detached offline P-256 signature, and the separately owner-published fingerprint of `SHA256SUMS.p256.pub` before distribution or installation. The hosted build handled only the public key; the production checksum private key remained offline. The manifest records artifact roles, channels, and activation policy; it never authorizes publication. A public key bundled beside a signature is not identity proof by itself.
+* Unsupported: Outside Battman's current iOS 12.0 / A11-or-newer baseline.
+* Untested: No independently completed device-testing coverage is claimed for this combination.
+* Jailbreak: An installation method on compatible jailbroken systems; **Roothide jailbreak was not considered in this list**.
+* TrollStore: An installation method using [TrollStore](https://github.com/opa334/TrollStore), where that device and iOS build support it.
+* Analytics: Individual readings depend on the hardware and available system logs. Missing readings remain unavailable, and incomplete history is not treated as a complete measurement.
 
-Selected signed official plug-ins also produce a downloadable `.battman.zip`
-containing the canonical signed directory package, one rooted and one rootless
-Debian add-on, and sealed replacement-TIPA code. Installing an add-on through
-APT/dpkg is transport only; Battman still verifies its signed package and
-official delegation before activation.
+### Choose your package
 
-The SDK Analytics example is separately signed and distributed only as a
-third-party `.battman.zip`; it is not officially delegated or embedded in the
-replacement TIPA and still requires explicit dangerous-load approval.
+`com.torrekie.battman_@VERSION@_iphoneos-arm.deb`: For your rooted jailbreaks, typically on iOS 12.0 ~ 14.x.
 
-## Known release gates
+`com.torrekie.battman_@VERSION@_iphoneos-arm64.deb`: For your rootless jailbreaks, typically on iOS 15.0 or above.
+
+`Battman.tipa`: The Battman host app for TrollStore. Please notice that **DO NOT install deb and tipa versions at the same time**. You can only keep one installation on your device.
+
+`BattmanPluginSDK-@VERSION@.tar.gz`: Plugin SDK source for developers, under the MIT License.
+
+`BattmanPluginExamples-@VERSION@.tar.gz`: Buildable source examples, including the SDK Analytics card and Charge Gauge. Charge Gauge retains the repository's Non-Commercial Attribution License; the SDK subtree remains MIT-licensed. These are source archives, with no compiled plug-in packages or external plug-ins included in the release TIPA.
+
+Native plug-ins run inside Battman with its permissions. A valid signature identifies the publisher and package, but does not make the code safe. On TrollStore installations, activating an additional native plug-in requires a replacement TIPA containing it; importing a `.battman` package alone is not enough.
+
+**Full Changelog**: [v1.0.3.3...v@VERSION@](https://github.com/Torrekie/Battman/compare/v1.0.3.3...v@VERSION@)
+
+<!-- Source commit: @COMMIT@ -->
 
 @KNOWN_GATES@
-
-This file is generated locally. Publication and installation require separate owner approval.

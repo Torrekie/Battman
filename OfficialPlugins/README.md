@@ -1,20 +1,23 @@
-# Official plug-in staging boundary
+# Plug-in source examples and public trust resources
 
-First-party plug-ins that are shipped separately from the host live here.
-Their source, package identity, signing policy, and release artifacts must
-remain distinguishable from embedded providers and third-party examples.
+`ChargeGauge/` contains a small developer source example of an Analytics card.
+It demonstrates a complete content view, custom drawing, localization, and the
+public SDK contract. Its existing directory name does not make it a production
+release plug-in or grant publisher trust.
 
-`ChargeGauge/` is the first selected production source. The existing six
-Analytics cards remain embedded; Charge Gauge itself is built separately,
-enters rooted/rootless add-on packages, and is sealed into replacement TIPAs
-only from one reviewed signed `.battman` transport package.
+Battman 1.1.0 contains ten built-in Analytics cards. Charge Gauge and the SDK
+Analytics example are available as source for developers to build and test;
+the formal release ships no compiled examples, example `.battman.zip` files,
+Debian add-ons, or example code embedded in the TIPA. The source examples keep
+their respective licenses: Charge Gauge uses the repository license, while the
+`PluginSDK/` subtree and its Analytics example use MIT.
 
-The Phase 4 SDK Analytics example is deliberately not an official production
-plug-in and is never added to an app target. It is compiled in embedded and
-native forms only by the parity test. A separately shipped official plug-in
-still requires the owner-approved trust-key and release-scope decisions.
+The native/embedded example builds and parity checks are development tools.
+Their output must remain outside the formal release asset set. A successful
+local build or publisher signature does not approve distribution or make a
+publisher official.
 
-Production public inputs use two exact subdirectories:
+Public trust inputs are separate from example source:
 
 - `Trust/PluginTrust/` contains only `RootPolicy.plist`,
   `TrustMetadata.json`, and `TrustMetadata.signatures/<root-id>.sig`. The build
@@ -22,12 +25,11 @@ Production public inputs use two exact subdirectories:
   validation. The runtime independently validates the P-256 fingerprints,
   root-signature threshold, strict metadata schema, and Keychain rollback
   state before treating any publisher as official.
-- `Packages/` contains the already signed, reviewed official `.battman`
-  directory packages selected for a release. Strict assembly requires at least
-  one and rejects packages outside their signed publisher delegation scope.
+- `Packages/` is a staging location for signed packages only when a release
+  explicitly selects them. Battman 1.1.0 selects no separately distributed
+  compiled plug-ins; do not stage Charge Gauge or the SDK example there for
+  this release.
 
-Neither directory may contain private keys. The owner has approved the
-2-of-3-root trust operations and Charge Gauge split, but the public trust tree
-and signed production package remain absent until the production ceremony and
-post-code-freeze independent review occur. Engineering builds therefore still load no official
-external publisher by default.
+Neither location may contain private keys. Public trust metadata and valid
+signatures do not authorize adding an example to the release matrix. Root-key
+custody, delegation scope, and artifact review remain separate requirements.

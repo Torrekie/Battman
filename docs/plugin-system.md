@@ -42,11 +42,14 @@ Battman/PluginHost/
 
 PluginSDK/      public ABI, schemas, example, templates, and portable tools
 OfficialPlugins/ChargeGauge/
-                separately shipped first-party card
+                developer source example (not shipped as compiled 1.1.0 plug-in)
 ```
 
 Public SDK headers do not include private host headers. Embedded and native
-providers enter the same typed, transactional registry.
+providers enter the same typed, transactional registry. The formal 1.1.0
+release contains ten built-in Analytics cards but no compiled Charge Gauge or
+SDK example packages, add-ons, or TIPA-embedded examples; their source remains
+available for developer builds and tests.
 
 ## Package and ABI
 
@@ -66,14 +69,24 @@ outlive a loader call.
 
 ## Discovery roots
 
-Only direct `.battman` children of these roots are considered:
+App-data and system roots accept only direct `.battman` directory children.
+App-distributed plug-ins use direct `.bundle` children of `Battman.app/PlugIns`,
+paired with sealed metadata under `Battman.app/PluginManifests`.
 
 | Source | Root | Activation boundary |
 | --- | --- | --- |
-| App distribution | `NSBundle.builtInPlugInsURL` | sealed package and official trust |
-| App data | `Library/Application Support/Battman/PlugIns` | exact approved package and activation record |
-| Rooted package | `/Library/Battman/PlugIns` | safe root ownership plus Battman trust |
-| Rootless package | `/var/jb/Library/Battman/PlugIns` | safe root ownership plus Battman trust |
+| App distribution | `Battman.app/PlugIns` | sealed package, official authorization or explicit third-party approval, and activation record |
+| App data | `<Battman config directory>/PlugIns` | exact approved package and activation record |
+| Rooted package | `/Library/Battman/PlugIns` | jailbreak-installed host, safe root ownership, and Battman trust |
+| Rootless package | `/var/jb/Library/Battman/PlugIns` | jailbreak-installed host, safe root ownership, and Battman trust |
+
+Private plug-in files use the existing `battman_config_dir()` root: `HOME/Library`
+for recognized app containers (including Simulator), otherwise `HOME/.config/Battman`.
+The root contains `PlugIns`, `Plugin Quarantine`, and the one-shot safe-mode marker.
+Analytics caches use its `AnalyticsHistory` subdirectory. Rootless package paths
+do not change this user-data policy. Unreleased development builds that used
+Application Support retain those files; re-import a retained plug-in through the
+normal verification flow. No automatic move or overwrite is performed.
 
 Arbitrary search paths, environment variables, current directories, recursive
 searches, and standalone Mach-O files outside a package are ignored. A package
@@ -121,10 +134,14 @@ APT/dpkg packages install already signed `.battman` directories into the rooted
 or rootless discovery root. Package-manager presence does not replace Battman's
 own verification or user trust policy.
 
-On TrollStore-only systems, imported third-party code stays quarantined until a
-replacement TIPA is built with the package under `Battman.app/PlugIns` and the
-whole app is installed through TrollStore. Battman does not call TrollStore
-internals or claim that ad-hoc signing an arbitrary file makes it loadable.
+A TrollStore/TIPA-installed host permits native loading only from the sealed
+app-bundle representation. Imported third-party code requires a replacement
+TIPA with the package under `Battman.app/PlugIns`, paired sealed metadata, and
+the whole app installed through TrollStore. The embedded third-party package
+still requires explicit approval and activation. System Debian plug-ins are
+loaded directly only by a jailbreak-installed host; their presence does not
+extend a TIPA host's allowed sources. Battman does not call TrollStore internals
+or claim that ad-hoc signing an arbitrary file makes it loadable.
 
 The public SDK authoring workflow is in
 [`plugin-authoring.md`](plugin-authoring.md). Release artifact construction and

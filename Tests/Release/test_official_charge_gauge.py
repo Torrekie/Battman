@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and package the official Charge Gauge with ephemeral test identities."""
+"""Exercise explicit plug-in release fixtures; never select them for production."""
 
 from __future__ import annotations
 
@@ -37,6 +37,7 @@ EPOCH = "1700000000"
 STRICT_COMMIT_DATE = "2023-11-14T22:13:20+00:00"
 STRICT_SOURCE_PATHS = (
     Path("VERSION"),
+    Path("LICENSE"),
     Path("Battman/Makefile"),
     Path("Battman/Features/Analytics/Data/BAAnalyticsMetricSnapshotInternal.h"),
     Path("Battman/Features/Analytics/Data/BAAnalyticsHistoryModels.h"),
@@ -56,14 +57,14 @@ STRICT_SOURCE_PATHS = (
 )
 def run(
     *arguments: str,
-    cwd: Path = ROOT,
+    cwd: Path | None = None,
     extra_environment: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     environment = dict(os.environ)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     if extra_environment:
         environment.update(extra_environment)
-    result = subprocess.run(arguments, cwd=cwd, env=environment, text=True, capture_output=True)
+    result = subprocess.run(arguments, cwd=cwd or ROOT, env=environment, text=True, capture_output=True)
     if result.returncode != 0:
         raise RuntimeError(
             f"command failed ({result.returncode}): {' '.join(arguments)}\n"
@@ -129,7 +130,7 @@ def copy_fixture_path(destination: Path, relative: Path) -> None:
             source,
             target,
             ignore=shutil.ignore_patterns(
-                ".DS_Store", "__pycache__", "*.pyc", "*.pyo", "Packages"
+                ".DS_Store", "__pycache__", "*.pyc", "*.pyo", "Packages", "build"
             ),
         )
     else:
@@ -294,7 +295,7 @@ def signed_package_variant(
     return package
 
 
-def main() -> int:
+def exercise_selected_plugin_release() -> int:
     with tempfile.TemporaryDirectory(prefix="battman-official-charge-gauge-") as raw:
         temporary = Path(raw)
         build_a = temporary / "build-a"
@@ -1170,6 +1171,37 @@ def main() -> int:
         "strict clean-tag release tests passed."
     )
     return 0
+
+
+def main() -> int:
+    # Keep the signed plug-in integration scenarios in a disposable, explicitly
+    # selected release policy. The production 1.1.0 matrix remains source-only.
+    global ROOT
+    original_root = ROOT
+    with tempfile.TemporaryDirectory(prefix="battman-selected-plugin-policy-") as raw:
+        fixture = Path(raw)
+        for relative in (*STRICT_SOURCE_PATHS,
+                         Path("Battman/Features/Analytics/Host/AnalyticsCardCell.m"),
+                         Path("Tests/Release/Fixtures/MinimalAppMain.c")):
+            copy_fixture_path(fixture, relative)
+        selected = json.loads((original_root / "Tests/Release/Fixtures/signed-plugin-release-matrix.json").read_text())
+        (fixture / "Packaging/Release/release-matrix.json").write_text(json.dumps(selected, indent=2) + "\n")
+        compatibility_path = fixture / "Packaging/Release/compatibility-matrix.json"
+        compatibility = json.loads(compatibility_path.read_text())
+        for card in compatibility["analyticsCards"]:
+            if card["identifier"] == PLUGIN_ID:
+                card["delivery"] = "official-plugin"
+        compatibility_path.write_text(json.dumps(compatibility, indent=2) + "\n")
+        run("git", "init", "-q", cwd=fixture)
+        run("git", "config", "user.name", "Battman plug-in test fixture", cwd=fixture)
+        run("git", "config", "user.email", "plugin-test@invalid.example", cwd=fixture)
+        run("git", "add", "-A", cwd=fixture)
+        run("git", "commit", "-q", "-m", "Select synthetic signed plug-ins for integration tests", cwd=fixture)
+        ROOT = fixture
+        try:
+            return exercise_selected_plugin_release()
+        finally:
+            ROOT = original_root
 
 
 if __name__ == "__main__":

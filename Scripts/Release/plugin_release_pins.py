@@ -219,7 +219,7 @@ def _validate_source_bindings(
 def validate_signed_plugin_release_pins(
     repo: Path,
     matrix: dict[str, Any],
-) -> tuple[dict[str, SignedPluginReleasePin], SignedPluginReleasePin]:
+) -> tuple[dict[str, SignedPluginReleasePin], SignedPluginReleasePin | None]:
     """Validate the matrix pins and bind them to canonical source metadata."""
     repo = repo.expanduser().resolve()
     raw = matrix.get("signedPluginReleasePins")
@@ -232,18 +232,21 @@ def validate_signed_plugin_release_pins(
     example_identifier = (
         example_policy.get("pluginIdentifier") if isinstance(example_policy, dict) else None
     )
-    if not isinstance(selected, list) or not selected or any(
+    if not isinstance(selected, list) or any(
         not isinstance(identifier, str) for identifier in selected
-    ) or not isinstance(example_identifier, str):
+    ) or (example_policy is not None and not isinstance(example_identifier, str)):
         raise ReleaseError("release matrix plug-in selection is malformed")
+    if selection.get("replacementTIPAIncludesSeparatelyShipped") is not bool(selected):
+        raise ReleaseError("release matrix replacement TIPA policy differs from plug-in selection")
     selected_identifiers = [
         require_identifier(identifier, "selected official plug-in identifier")
         for identifier in selected
     ]
-    example_identifier = require_identifier(example_identifier, "SDK example identifier")
+    if example_identifier is not None:
+        example_identifier = require_identifier(example_identifier, "SDK example identifier")
 
     official_records = raw.get("official")
-    if not isinstance(official_records, list) or not official_records:
+    if not isinstance(official_records, list):
         raise ReleaseError("release matrix official signed plug-in pins are malformed")
     official: dict[str, SignedPluginReleasePin] = {}
     for index, record in enumerate(official_records):
@@ -259,6 +262,10 @@ def validate_signed_plugin_release_pins(
     ):
         raise ReleaseError("release matrix official signed plug-in pins differ from selection")
 
+    if example_policy is None:
+        if raw.get("sdkExample") is not None:
+            raise ReleaseError("unselected SDK example must not have a signed release pin")
+        return official, None
     sdk_example, bindings = _pin_record(raw.get("sdkExample"), "sdk-example", "SDK example pin")
     if sdk_example.plugin_identifier != example_identifier or example_identifier in official:
         raise ReleaseError("release matrix SDK example pin differs from policy or official selection")

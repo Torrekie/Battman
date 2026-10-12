@@ -4,6 +4,10 @@
 #import <unistd.h>
 
 #import "../../Battman/PluginHost/Discovery/BTPluginDiscovery.h"
+#import "../../Battman/BattmanDataPaths.h"
+
+static const char *BTConfigPath;
+const char *battman_config_dir(void) { return BTConfigPath; }
 
 #define BTAssert(condition, message) do { \
 	if (!(condition)) { \
@@ -34,18 +38,18 @@ static BOOL BTHasDiagnosticForLastPathComponent(BTPluginDiscoveryResult *result,
 }
 
 static void BTTestDefaultRoots(void) {
-	NSURL *support = [NSURL fileURLWithPath:@"/private/var/mobile/Containers/Data/Application/UUID/Library/Application Support"
+	NSURL *config = [NSURL fileURLWithPath:@"/private/var/mobile/Containers/Data/Application/UUID/Library"
 		isDirectory:YES];
 	NSURL *bundle = [NSURL fileURLWithPath:@"/Applications/Battman.app" isDirectory:YES];
 	NSArray<BTPluginDiscoveryRoot *> *roots = [BTPluginDiscovery
-		defaultRootsForApplicationSupportURL:support mainBundleURL:bundle];
+		defaultRootsForConfigDirectoryURL:config mainBundleURL:bundle];
 	BTAssert(roots.count == 4, "default discovery roots changed unexpectedly");
 	BTAssert(roots[0].source == BTPluginSourceAppBundle &&
 		[roots[0].rootURL.path isEqualToString:@"/Applications/Battman.app/PlugIns"] &&
 		[roots[0].metadataRootURL.path isEqualToString:@"/Applications/Battman.app/PluginManifests"],
 		"sealed app-bundle discovery root is incorrect");
 	BTAssert(roots[1].source == BTPluginSourceApplicationData &&
-		[roots[1].rootURL.path hasSuffix:@"/Library/Application Support/Battman/PlugIns"],
+		[roots[1].rootURL.path isEqualToString:[config.path stringByAppendingPathComponent:@"PlugIns"]],
 		"application-data discovery root is incorrect");
 	BTAssert(roots[2].source == BTPluginSourceRootedSystem &&
 		[roots[2].rootURL.path isEqualToString:@"/Library/Battman/PlugIns"],
@@ -57,6 +61,32 @@ static void BTTestDefaultRoots(void) {
 		BTPluginSourceCanActivate(BTPluginSourceApplicationData) &&
 		!BTPluginSourceCanActivate(BTPluginSourceQuarantine),
 		"plug-in source policy helpers are inconsistent");
+}
+
+static void BTTestInheritedDataRoots(void) {
+	// Rootful and rootless use the same HOME policy. Container and simulator
+	// roots have already been selected by common.c; no consumer may reinterpret them.
+	NSArray<NSString *> *configPaths = @[
+		@"/var/mobile/.config/Battman",
+		@"/var/mobile/.config/Battman",
+		@"/private/var/mobile/Containers/Data/Application/00000000-0000-0000-0000-000000000001/Library",
+		@"/Users/test/Library/Developer/CoreSimulator/Devices/00000000-0000-0000-0000-000000000002/data/Containers/Data/Application/00000000-0000-0000-0000-000000000003/Library",
+	];
+	NSURL *bundle = [NSURL fileURLWithPath:@"/Applications/Battman.app" isDirectory:YES];
+	for (NSString *path in configPaths) {
+		BTConfigPath = path.fileSystemRepresentation;
+		NSURL *config = BattmanConfigDirectoryURL();
+		BTAssert([config.path isEqualToString:path], "the shared helper changed the existing config root");
+		BTAssert([BattmanAnalyticsCacheDirectoryURL().path isEqualToString:
+			[path stringByAppendingPathComponent:@"AnalyticsHistory"]], "Analytics escaped the existing config root");
+		NSArray<BTPluginDiscoveryRoot *> *roots = [BTPluginDiscovery
+			defaultRootsForConfigDirectoryURL:config mainBundleURL:bundle];
+		BTAssert([roots[1].rootURL.path isEqualToString:[path stringByAppendingPathComponent:@"PlugIns"]],
+			"plug-in discovery escaped the existing config root");
+	}
+	BTConfigPath = NULL;
+	BTAssert(BattmanConfigDirectoryURL() == nil && BattmanAnalyticsCacheDirectoryURL() == nil,
+		"an unavailable config root must not select a new fallback directory");
 }
 
 static void BTTestBoundedTransportDiscovery(NSURL *temporaryURL) {
@@ -132,6 +162,7 @@ static void BTTestUnsafeRootIsRejected(NSURL *temporaryURL) {
 int main(void) {
 	@autoreleasepool {
 		BTTestDefaultRoots();
+		BTTestInheritedDataRoots();
 		NSFileManager *manager = [NSFileManager defaultManager];
 		NSError *error = nil;
 		NSURL *temporaryURL = [NSURL fileURLWithPath:[NSTemporaryDirectory()

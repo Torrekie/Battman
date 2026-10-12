@@ -16,7 +16,7 @@ an Xcode project, and a Make-based cross-build path.
 | `Battman/Features/Analytics/` | Host data services, card layout, and built-in cards |
 | `Battman/PluginHost/` | Native plug-in discovery, verification, trust, and lifecycle |
 | `PluginSDK/` | Public SDK v1 headers, schemas, templates, tools, and example |
-| `OfficialPlugins/` | Official plug-in source and release inputs |
+| `OfficialPlugins/` | Charge Gauge developer source example and public trust inputs |
 | `Scripts/Build/`, `Scripts/Release/`, `Packaging/` | Build finalization, package construction, and release contracts |
 | `Tests/` | Focused host, SDK, Analytics, and release checks |
 | `docs/battman-user-manuals/` | This three-language manual |

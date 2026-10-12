@@ -667,17 +667,8 @@ BOOL BattmanPrefsSynchronize(void) {
 			wipeDirectoryContents(containerURL, @"AppData container");
 		}
 	}
-	// In an uncontained launch, Application Support can live outside both the
-	// config directory and the optional MCM container. Remove only our cache.
-	NSURL *support = [fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-	NSURL *analyticsCache = [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES];
-	if (analyticsCache.path.length && [fileManager fileExistsAtPath:analyticsCache.path]) {
-		if (dryRun) wipeDirectoryContents(analyticsCache, @"Analytics cache");
-		else {
-			NSError *error = nil;
-			if (![fileManager removeItemAtURL:analyticsCache error:&error] && !firstError) firstError = error;
-		}
-	}
+	// Analytics caches and private plug-in files are children of configURL and
+	// were included in the existing config-directory wipe above.
 
 	NSLog(@"BattmanPrefs: %@ wipe all data operation completed", dryRun ? @"DRY RUN -" : @"");
 	return firstError;

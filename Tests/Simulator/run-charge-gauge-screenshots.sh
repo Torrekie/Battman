@@ -61,20 +61,39 @@ SOURCES=(
 	"$REPO_ROOT/Battman/PluginHost/BTPluginExtensionDescriptor.m"
 	"$REPO_ROOT/Battman/PluginHost/BTPluginIdentifiers.m"
 	"$REPO_ROOT/Battman/PluginHost/BTPluginRegistry.m"
-	"$REPO_ROOT/OfficialPlugins/ChargeGauge/BTChargeGaugePlugin.m"
 )
 FRAMEWORKS=(
 	-framework Foundation
 	-framework UIKit
 	-framework QuartzCore
 	-framework CoreGraphics
+	-framework Security
 )
 
+BUILD_VERSION="$(tr -d '\r\n' < "$REPO_ROOT/OfficialPlugins/ChargeGauge/BUILD_VERSION")"
+COMMON_FLAGS+=("-DBT_CHARGE_GAUGE_PLUGIN_VERSION=\"$BUILD_VERSION\"")
 "$CLANG" "${COMMON_FLAGS[@]}" -DDEBUG=1 -DBATTMAN_VERSION_STRING=\"1.1.0\" \
-	-DBT_PLUGIN_EMBEDDED=1 \
-	"${SOURCES[@]}" "${FRAMEWORKS[@]}" -o "$TEST_APP/ChargeGaugeEvidence"
+	-DBT_PLUGIN_EMBEDDED=1 -DBT_CHARGE_GAUGE_NATIVE_TEST=0 \
+	"${SOURCES[@]}" "$REPO_ROOT/OfficialPlugins/ChargeGauge/BTChargeGaugePlugin.m" \
+	"${FRAMEWORKS[@]}" -o "$TEST_APP/ChargeGaugeEvidence"
 codesign --force --sign - --timestamp=none "$TEST_APP" >/dev/null
 xcrun simctl spawn "$SIMULATOR_UDID" "$TEST_APP/ChargeGaugeEvidence" "$OUTPUT_DIR"
+
+# Test the developer-facing bundle target and actual dlopen/entry-point path.
+# The temporary bundle is never copied into a release or installed application.
+make -s -C "$REPO_ROOT/OfficialPlugins/ChargeGauge" bundle SDK=iphonesimulator \
+	TARGET="$TARGET" BUILD_DIR="$TEST_TMP/native" DEVELOPER_DIR="$DEVELOPER_DIR"
+# Do not let host resources mask the loose native-image fixture's fallback.
+rm -rf "$TEST_APP/"*.lproj
+"$CLANG" "${COMMON_FLAGS[@]}" -DDEBUG=1 -DBATTMAN_VERSION_STRING=\"1.1.0\" \
+	-DBT_CHARGE_GAUGE_NATIVE_TEST=1 "${SOURCES[@]}" \
+	"$REPO_ROOT/Battman/PluginHost/Runtime/BTPluginNativeImageLoader.m" \
+	"$REPO_ROOT/Battman/PluginHost/Model/BTPluginPackageErrors.m" \
+	"${FRAMEWORKS[@]}" -o "$TEST_APP/ChargeGaugeEvidence"
+codesign --force --sign - --timestamp=none "$TEST_APP" >/dev/null
+mkdir "$TEST_TMP/native-rendering"
+xcrun simctl spawn "$SIMULATOR_UDID" "$TEST_APP/ChargeGaugeEvidence" "$TEST_TMP/native-rendering" \
+	"$TEST_TMP/native/BattmanChargeGauge.bundle/BattmanChargeGauge"
 
 for screenshot in \
 	plugin-1.1.0-charge-gauge-charging-2x1.png \
@@ -83,6 +102,7 @@ for screenshot in \
 	path="$OUTPUT_DIR/$screenshot"
 	test -s "$path"
 	file "$path" | grep -q 'PNG image data'
+	cmp "$path" "$TEST_TMP/native-rendering/$screenshot"
 done
 
 python3 - "$OUTPUT_DIR" <<'PY'
@@ -102,4 +122,4 @@ for name, size in expected.items():
         raise SystemExit(f"unexpected PNG contract: {name}")
 PY
 
-echo "Charge Gauge screenshot evidence passed."
+echo "Charge Gauge embedded/native rendering parity and embedded localization passed."

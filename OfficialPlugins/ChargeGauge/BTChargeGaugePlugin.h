@@ -1,6 +1,6 @@
 //
 //  BTChargeGaugePlugin.h
-//  Battman official Charge Gauge plug-in
+//  Battman Charge Gauge example plug-in
 //
 
 #include <BattmanPluginABI.h>

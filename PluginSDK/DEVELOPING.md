@@ -5,6 +5,12 @@ The public API is the three headers in `include/`; the package schemas are in
 `schema/`. The SDK major, native ABI, package format, and Analytics card
 interface are all version 1. Battman 1.1.0 does not change those numbers.
 
+The SDK Analytics card and Charge Gauge are developer source examples. The
+formal 1.1.0 release ships no compiled example plug-ins, example `.battman.zip`
+files or Debian add-ons, and embeds neither example in its TIPA. The commands
+below build local development/test artifacts; they do not add examples to the
+release.
+
 ## Toolchain and dependencies
 
 Use macOS with Xcode and an installed iPhoneOS SDK, `make`, and Python 3.10 or
@@ -193,7 +199,7 @@ Include resources in the bundle **before** code signing. The minimal generated
 project has no resource-copy rule; add one to its Makefile if adding `.lproj`
 files. The full repository's `OfficialPlugins/ChargeGauge` demonstrates this
 rule and includes English, German, Simplified Chinese, and Traditional Chinese
-strings, localized accessibility, optional host-language selection, and iOS 12
+resource strings, localized accessibility, optional host-language selection, and iOS 12
 appearance fallbacks. Its source is distributed separately under Battman's
 repository license; it is not included in this MIT SDK subtree. SDK v1 has no
 live language-change callback, so do not assume one will arrive.

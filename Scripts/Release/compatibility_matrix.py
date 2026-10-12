@@ -169,7 +169,7 @@ EXPECTED_CARDS = {
         "host-only-normalized-unplugged-powerlog-calendar-intervals",
     ),
     "com.torrekie.battman.plugin.charge-gauge": (
-        "official-plugin",
+        "source-example",
         ["battery.state-of-charge.percent", "battery.charging.state"],
         "host-snapshot-only-no-direct-hardware-access",
     ),
@@ -270,7 +270,7 @@ def validate_compatibility_matrix_value(
     if set(cards) != set(EXPECTED_CARDS):
         raise ReleaseError("compatibility matrix Analytics card set is incomplete")
     for identifier, card in cards.items():
-        if card["delivery"] not in ("embedded", "official-plugin"):
+        if card["delivery"] not in ("embedded", "official-plugin", "source-example"):
             raise ReleaseError(f"Analytics card has an invalid delivery class: {identifier}")
         metrics = card["requiredMetrics"]
         if not isinstance(metrics, list) or not metrics or any(
@@ -281,7 +281,7 @@ def validate_compatibility_matrix_value(
         _bounded_line(card["hardwareBoundary"], f"Analytics hardware boundary {identifier}")
         expected_delivery, expected_metrics, expected_boundary = EXPECTED_CARDS[identifier]
         if (
-            card["delivery"] != expected_delivery
+            card["delivery"] not in ({"source-example", "official-plugin"} if expected_delivery == "source-example" else {expected_delivery})
             or card["requiredMetrics"] != expected_metrics
             or card["hardwareBoundary"] != expected_boundary
         ):
@@ -326,7 +326,8 @@ def validate_repository_compatibility_matrix(
         **{identifier: "embedded" for identifier in embedded},
         **{identifier: "official-plugin" for identifier in separate},
     }
-    actual_cards = {card["identifier"]: card["delivery"] for card in value["analyticsCards"]}
+    actual_cards = {card["identifier"]: card["delivery"] for card in value["analyticsCards"]
+                    if card["delivery"] != "source-example"}
     if actual_cards != expected_cards:
         raise ReleaseError("compatibility matrix card delivery differs from the release selection")
 

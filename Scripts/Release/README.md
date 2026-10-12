@@ -29,9 +29,9 @@ synthetic signed-package regressions, and the GitHub Release build without
 production signing inputs or draft creation.
 
 Production runs require an exact clean `v<VERSION>` tag, tracked public trust
-metadata and signed packages, and reviewed public checksum and SDK-example
-publisher fingerprints. A tag push only prepares an unsigned candidate. Manual
-production dispatch can create a draft after the offline checksum signature is
+metadata, and the reviewed public checksum fingerprint. Battman 1.1.0 selects
+no compiled plug-in or SDK-example packages. A tag push only prepares an unsigned
+candidate. Manual production dispatch can create a draft after the offline checksum signature is
 returned and the `battman-production-release` environment is approved. A green
 validation-only run does not establish production-material readiness. Neither
 workflow publishes the draft or uploads to Havoc.
@@ -43,10 +43,10 @@ workflow publishes the draft or uploads to Havoc.
 - strict mode requires a clean exact `v<VERSION>` checkout, the commit timestamp
   as `SOURCE_DATE_EPOCH`, Release-marked apps whose executable embeds the exact
   full commit/tree and a clean-source flag in `__TEXT,__btidentity`,
-  `PluginSDK/LICENSE`, a portable-verified official trust snapshot embedded
-  byte-identically in both apps, at least one signed package within that
-  snapshot's delegation scope, and a separately signed SDK example. All public
-  trust/package bytes must be tracked in that exact tag. Strict mode also
+  `PluginSDK/LICENSE`, and a portable-verified official trust snapshot embedded
+  byte-identically in both apps. Public trust bytes must be tracked in that
+  exact tag. Compiled Charge Gauge and SDK-example packages are outside the
+  1.1.0 release selection and must not enter its assets or TIPA. Strict mode also
   requires the reviewed P-256 checksum public key and its independently
   approved fingerprint. It never accepts the production checksum private key;
 - `--engineering-candidate` relaxes only tag/dirty-tree, Release-mark,
@@ -56,20 +56,17 @@ workflow publishes the draft or uploads to Havoc.
 Both modes fail closed unless the release artifact matrix and the conservative
 compatibility matrix agree with the selected cards, public metrics, minimum
 deployment targets, channel policy, and exact owner-approved official plug-in
-input set. Engineering mode never permits a missing or extra
-official package merely because production trust metadata is unavailable.
-`Packaging/Release/release-matrix.json` also freezes each selected signed
-plug-in's identifier, display version, build version, and release sequence.
-`plugin_release_pins.py` binds those pins to the canonical manifest template,
-bundle `Info.plist`, and version files before assembly; assembly then compares
-the signed package identity, inspection propagates it, and final manifest and
-directory verification retain the same contract.
+input set. That set is empty for 1.1.0: the ten built-in Analytics cards are
+host code, while Charge Gauge and the SDK Analytics card are developer source
+examples only. Neither assembly mode may silently add compiled examples.
+Generic plug-in package tools and source-version checks remain useful for
+separate developer tests; those outputs are not release artifacts.
 
 The normal order is:
 
 1. build/finalize a GitHub Release app using `Battman (rel-nonfree)`;
-2. build signed official `.battman` packages and a separately signed third-party
-   SDK example with existing publisher keys;
+2. export the SDK and any selected reference sources without compiled examples,
+   test packages, keys, caches, or build output;
 3. assemble rooted/rootless host Debian files and the replacement TIPA;
 4. inspect all code, metadata, layouts, signatures, and SDK contents;
 5. generate release notes, CycloneDX SBOM, SLSA-style in-toto provenance, and
@@ -84,12 +81,13 @@ The normal order is:
 8. hand the immutable directory to a human reviewer, who evaluates the
    owner-private readiness ledger separately from the public build tree.
 
-`archive-plugin-package.py` wraps each selected signed directory package in a
-deterministic `<identifier>_<version>.battman.zip` download while preserving
-the canonical `<identifier>.battman` directory inside. `build-plugin-deb.py`
+For separate plug-in development/testing, `archive-plugin-package.py` can wrap
+a signed directory package in a deterministic
+`<identifier>_<version>.battman.zip` download while preserving the canonical `<identifier>.battman` directory inside. `build-plugin-deb.py`
 independently produces rooted and rootless delivery packages from the same
-signed bytes. `validate-havoc-candidate.py` checks an owner-selected rooted and
-rootless Debian pair for manual Havoc submission. Its `--artifact-kind host`
+signed bytes. These generic tools do not select Charge Gauge or the SDK sample
+for the formal 1.1.0 release. `validate-havoc-candidate.py` checks an owner-selected
+rooted and rootless Debian pair for manual Havoc submission. Its `--artifact-kind host`
 mode requires a separately built `Battman-havoc` Release app in each package
 and applies embedded `havoc` channel, host layout, exact commit/tree, version,
 and `Section: Applications` checks. Its `--artifact-kind plugin` mode applies the
@@ -116,6 +114,8 @@ and size on two distinct pinned SSH backup hosts per role, and one restored
 role-bound signed recovery challenge per key. `--require-reviewed` also
 requires a frozen source commit and post-code-freeze reviewer record. It rejects
 private/extra files and never treats key generation alone as release evidence.
+A ceremony role or existing publisher key is not a request to ship a compiled
+example; 1.1.0 requires no SDK-example package or example-publisher release input.
 
 The deterministic Debian codec supports only Battman's deliberately small
 subset: Debian format 2.0, exact `debian-binary`, `control.tar.xz`, and
@@ -129,20 +129,19 @@ distinction between verified evidence and community reports. Strict and
 engineering release assembly both include that exact matrix in inspection,
 SBOM, provenance, and checksums.
 
-The signed SDK example is mandatory in both release-assembly modes but never
-enters official trust, rooted/rootless add-ons, or the replacement TIPA. It is
-published only as a third-party `.battman.zip` requiring explicit approval.
-Strict mode therefore requires `--sdk-example-key-id` to match an independently
-reviewed example publisher fingerprint; engineering tests use a separate
-ephemeral key and may exercise the same pinning check.
+Charge Gauge and the SDK Analytics example are distributed as source only.
+Their developer build/signing instructions remain available, but 1.1.0 release
+assembly takes no `--plugin`, `--sdk-example`, or `--sdk-example-key-id` input.
+The final asset list contains no example `.battman.zip` or plug-in Debian files,
+and the release TIPA contains no compiled example code.
 
 `generate-release-manifest.py` fails if the concrete asset set differs from
 `Packaging/Release/release-matrix.json`, if inspection contains an unselected
 asset, or if the TIPA's sealed official set differs from owner selection.
-In the GitHub matrix, only separately shipped official plug-in `.deb` records
-may receive the `havoc-manual-candidate` label. GitHub host Debian records do
-not receive it: Havoc host packages require a separate `Battman-havoc` build and
-channel validation. The label does not authorize publication. TIPAs, raw
+The 1.1.0 GitHub matrix contains no plug-in Debian records. GitHub host Debian
+records do not receive the `havoc-manual-candidate` label: Havoc host packages
+require a separate `Battman-havoc` build and channel validation. The label does
+not authorize publication. TIPAs, raw
 `.battman` packages, `.battman.zip` transports, SDK/source archives, and other
 assets are never Havoc candidates.
 `verify-release-directory.py` rejects missing, extra, linked, malformed, or
@@ -152,8 +151,9 @@ manifest and exported public key; the independently published public-key
 fingerprint remains the identity anchor.
 
 `release_inputs.py` enforces the strict source/secrets split: reviewed public
-trust and signed package inputs must be tracked in the exact checkout. Strict
-assembly accepts only the checksum public key; production private-key use is
+trust inputs must be tracked in the exact checkout. Any plug-in inputs selected
+by a future release must meet the same boundary; source examples do not count
+as selected production packages. Strict assembly accepts only the checksum public key; production private-key use is
 confined to the separate owner-operated `sign-checksums.py` ceremony. Engineering
 fixtures use only ephemeral local keys and do not claim production identity.
 `sign-checksums.py --password-file` supports the ceremony's encrypted P-256

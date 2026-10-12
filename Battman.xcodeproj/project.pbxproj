@@ -2289,6 +2289,7 @@
 		68D800C02EC9CD700012B84A /* NightShiftVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NightShiftVectorIcon.h; sourceTree = "<group>"; };
 		68D800C12EC9CD700012B84A /* TrueToneVectorIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrueToneVectorIcon.h; sourceTree = "<group>"; };
 		68DCA5602D3D0AC5004D0104 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
+		A814781853F845FAAC930A15 /* BattmanDataPaths.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BattmanDataPaths.h; sourceTree = "<group>"; };
 		68DCA5AA2D3F935E004D0104 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		68DCA5AB2D3F9A10004D0104 /* gtkextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtkextern.h; sourceTree = "<group>"; };
 		68DCA5AD2D3F9BFD004D0104 /* glibextern.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glibextern.h; sourceTree = "<group>"; };
@@ -14368,6 +14369,7 @@
 				68DCA5602D3D0AC5004D0104 /* main.h */,
 				68FBDD172DE30A8E0057870A /* common.c */,
 				68DCA5AA2D3F935E004D0104 /* common.h */,
+				A814781853F845FAAC930A15 /* BattmanDataPaths.h */,
 			);
 			path = Battman;
 			sourceTree = "<group>";

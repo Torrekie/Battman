@@ -303,7 +303,7 @@ static BOOL BTPluginManagementFail(NSError **error, NSString *description) {
 	BTPluginActivationMode mode = BTPluginActivationModeDirect;
 	BTPluginSource source = package.source;
 	BTPluginManagementActionOutcome outcome = BTPluginManagementActionOutcomeScheduledForNextLaunch;
-	if (package.source == BTPluginSourceApplicationData &&
+	if (package.source != BTPluginSourceAppBundle &&
 		self.environment.importedNativeCodeRequiresReplacementApp) {
 		mode = BTPluginActivationModeRequiresReinstall;
 		source = BTPluginSourceImport;
@@ -575,15 +575,19 @@ static BOOL BTPluginManagementFail(NSError **error, NSString *description) {
 	BTPluginVerifiedPackage *verified = [self refreshDiscoveredPackage:package error:error];
 	if (!verified)
 		return NO;
+	BOOL requiresReplacement = package.source != BTPluginSourceAppBundle &&
+		self.environment.importedNativeCodeRequiresReplacementApp;
 	BOOL officialWithoutRequiredRecord =
 		verified.trustEvaluation.disposition == BTPluginTrustDispositionOfficial &&
-		package.source != BTPluginSourceApplicationData;
+		package.source != BTPluginSourceApplicationData && !requiresReplacement;
 	if (enabled && officialWithoutRequiredRecord)
 		return [self.activationStore removePluginIdentifier:package.claimedPluginIdentifier error:error];
 	BTPluginActivationRecord *record = [[BTPluginActivationRecord alloc]
 		initWithPluginIdentifier:verified.packageInspection.manifest.pluginIdentifier
-		packageSHA256:verified.packageInspection.packageSHA256 source:package.source
-		activationMode:BTPluginActivationModeDirect enabled:enabled updatedAt:[NSDate date] error:error];
+		packageSHA256:verified.packageInspection.packageSHA256
+		source:requiresReplacement ? BTPluginSourceImport : package.source
+		activationMode:requiresReplacement ? BTPluginActivationModeRequiresReinstall : BTPluginActivationModeDirect
+		enabled:enabled updatedAt:[NSDate date] error:error];
 	return record && [self.activationStore scheduleActivationRecord:record error:error];
 }
 

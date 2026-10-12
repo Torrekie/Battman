@@ -14,7 +14,7 @@ title: 程式碼貢獻
 | `Battman/Features/Analytics/` | 宿主資料服務、卡片版面與內建卡片 |
 | `Battman/PluginHost/` | 原生外掛程式探索、驗證、信任與生命週期 |
 | `PluginSDK/` | 公開 SDK v1 標頭檔、結構描述、範本、工具與範例 |
-| `OfficialPlugins/` | 官方外掛程式原始碼與發行輸入 |
+| `OfficialPlugins/` | Charge Gauge 開發者原始碼範例與公開信任輸入 |
 | `Scripts/Build/`、`Scripts/Release/`、`Packaging/` | 建置收尾、套件產生與發行約定 |
 | `Tests/` | 針對宿主、SDK、分析與發行的專項檢查 |
 | `docs/battman-user-manuals/` | 本三語手冊 |

@@ -739,13 +739,6 @@ extern UITableViewCell *find_cell(UIView *view);
 			[pathsForAlert addObject:containerPath];
 		}
 	}
-	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-	NSString *analyticsPath = [support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES].path;
-	if (analyticsPath.length && [NSFileManager.defaultManager fileExistsAtPath:analyticsPath]) {
-		BOOL listed = NO;
-		for (NSString *listedPath in pathsForAlert) if (isSubpath(analyticsPath, listedPath)) { listed = YES; break; }
-		if (!listed) [pathsForAlert addObject:analyticsPath];
-	}
 	
 	NSString *alertMessage = nil;
 	if (pathsForAlert.count > 1) {

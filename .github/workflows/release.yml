@@ -108,61 +108,22 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
           CHECKSUM_KEY_ID: ${{ vars.BATTMAN_CHECKSUM_SIGNING_KEY_ID }}
-          SDK_EXAMPLE_KEY_ID: ${{ vars.BATTMAN_SDK_EXAMPLE_PUBLISHER_KEY_ID }}
         run: |
           set -euo pipefail
           test -n "$CHECKSUM_KEY_ID"
-          test -n "$SDK_EXAMPLE_KEY_ID"
           epoch=$(cat "$RUNNER_TEMP/source-date-epoch")
-          plugin_arguments=()
-          sdk_example_arguments=()
-          test -d OfficialPlugins/Packages
-          expected_plugins=$(python3 - <<'PY'
+          # The 1.1.0 release contains host binaries and developer source only.
+          python3 - <<'PYMATRIX'
           import json
-          value = json.load(open('Packaging/Release/release-matrix.json', encoding='utf-8'))
-          for identifier in value['officialPluginSelection']['separatelyShipped']:
-              print(identifier)
-          PY
-          )
-          test -n "$expected_plugins"
-          while IFS= read -r plugin; do
-            plugin_arguments+=(--plugin "$plugin")
-          done < <(find OfficialPlugins/Packages -mindepth 1 -maxdepth 1 -type d -name '*.battman' -print | LC_ALL=C sort)
-          test "${#plugin_arguments[@]}" -gt 0
-          actual_plugins=$(for plugin in "${plugin_arguments[@]}"; do
-            case "$plugin" in --plugin) continue ;; esac
-            python3 - "$plugin" <<'PY'
-          import json, sys
-          print(json.load(open(sys.argv[1] + '/Manifest.json', encoding='utf-8'))['pluginIdentifier'])
-          PY
-          done | LC_ALL=C sort)
-          test "$actual_plugins" = "$(printf '%s\n' "$expected_plugins" | LC_ALL=C sort)"
-          expected_sdk_example=$(python3 - <<'PY'
-          import json
-          value = json.load(open('Packaging/Release/release-matrix.json', encoding='utf-8'))
-          print(value['sdkExample']['pluginIdentifier'])
-          PY
-          )
-          test -n "$expected_sdk_example"
-          test -d PluginSDK/Examples/Packages
-          while IFS= read -r plugin; do
-            sdk_example_arguments+=(--sdk-example "$plugin")
-          done < <(find PluginSDK/Examples/Packages -mindepth 1 -maxdepth 1 -type d -name '*.battman' -print | LC_ALL=C sort)
-          test "${#sdk_example_arguments[@]}" -eq 2
-          actual_sdk_example=$(python3 - "${sdk_example_arguments[1]}" <<'PY'
-          import json, sys
-          print(json.load(open(sys.argv[1] + '/Manifest.json', encoding='utf-8'))['pluginIdentifier'])
-          PY
-          )
-          test "$actual_sdk_example" = "$expected_sdk_example"
+          matrix = json.load(open('Packaging/Release/release-matrix.json', encoding='utf-8'))
+          assert matrix['officialPluginSelection']['separatelyShipped'] == []
+          assert matrix['sdkExample'] is None
+          PYMATRIX
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
           python3 Scripts/Release/assemble-release.py \
             --repo . \
             --deb-app "$RUNNER_TEMP/Battman-deb.app" \
             --tipa-app "$RUNNER_TEMP/Battman-tipa.app" \
-            "${plugin_arguments[@]}" \
-            "${sdk_example_arguments[@]}" \
-            --sdk-example-key-id "$SDK_EXAMPLE_KEY_ID" \
             --version '${{ steps.identity.outputs.version }}' \
             --checksum-public-key "$RUNNER_TEMP/checksum-public.pem" \
             --checksum-key-id "$CHECKSUM_KEY_ID" \

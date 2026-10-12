@@ -1,5 +1,8 @@
 #import <Foundation/Foundation.h>
 
+// Isolated services use explicitly injected fixture paths, never application data.
+const char *battman_config_dir(void) { return NULL; }
+
 #import "../../Battman/Features/Analytics/Data/BAAnalyticsHistoryReader.h"
 #import "../../Battman/Features/Analytics/Data/BAAnalyticsHistoryService.h"
 

@@ -46,6 +46,7 @@ def main() -> int:
     assert statuses["a11-ios12-through-ios17"] == "community-reported"
     assert statuses["rooted-ios14-package-integrity"] == "verified-limited"
     assert len(value["analyticsCards"]) == 11
+    assert sum(card["delivery"] == "source-example" for card in value["analyticsCards"]) == 1
     assert sum(card["delivery"] == "embedded" for card in value["analyticsCards"]) == 10
     fixture = (ROOT / "Tests/Release/Fixtures/MinimalAppMain.c").read_text(encoding="utf-8")
     fixture_cards = set(re.findall(r'"(com\.torrekie\.battman\.analytics\.[^\"]+)"', fixture))

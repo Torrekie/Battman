@@ -33,9 +33,11 @@ rollback, or platform-load failures cannot be overridden.
 Third-party loading also has a global switch and is off initially. Installation
 and enable/disable changes take effect after restarting Battman. A jailbreak
 installation can load a verified package from Battman's private app-data or
-system plug-in directory. A TrollStore-only installation uses a replacement
-Battman TIPA with the plug-in embedded and the whole app signed again; importing
-a native bundle into the data directory alone is not claimed to work.
+system plug-in directory. A TrollStore/TIPA installation loads only plug-ins
+sealed into its app bundle: use a replacement TIPA with the plug-in embedded
+and the whole app signed again. Third-party plug-ins still require approval.
+Imported data-directory bundles and system Debian plug-ins cannot load through
+a TIPA-installed host.
 
 ## Recovery and removal
 
@@ -46,6 +48,11 @@ for the next launch. Then disable or remove the exact package in the Plug-ins
 screen. Battman can remove its own private imported copies, but app-bundled and
 APT/dpkg-owned files must be updated or removed through their installation
 channel.
+
+Private imported plug-ins and their quarantine copies use the same Battman data
+directory shown in Preferences. [Wipe All Battman Data](../preferences/wiping-data.md)
+removes those copies. App-bundled and package-manager files remain managed by
+their installation channel.
 
 All package and trust verification works offline. Network access is not needed
 to compare hashes, validate signatures, consult local approval/rollback state,
@@ -66,7 +73,7 @@ reports and private diagnostics follow the repository's `SECURITY.md` policy.
 
 ## Install your first card
 
-1. Obtain the plug-in from its publisher or the selected Battman release. A
+1. Obtain the plug-in from its publisher or build your own for testing. A
    `.battman.zip` is a download wrapper: extract it and keep the enclosed
    `.battman` directory package intact. Do not edit its manifest or payload.
 2. Share/open the `.battman` package with Battman. For a Debian add-on, install
@@ -81,12 +88,10 @@ reports and private diagnostics follow the repository's `SECURITY.md` policy.
    On TrollStore, complete the replacement-app process first when Battman says
    **Requires Battman Reinstall**.
 
-The 1.1.0 release matrix selects **Charge Gauge** as a separate official
-plug-in. Jailbreak add-ons use the rooted or rootless Debian layout; the GitHub
-replacement TIPA includes the selected official plug-in. Actual availability
-still depends on the release being published with valid signatures and trust
-metadata. The SDK Analytics example remains third-party and requires approval;
-it is not included in the replacement TIPA.
+**Charge Gauge** and the SDK Analytics card are developer examples distributed
+as source only. Developers can build and test them separately. A locally built
+example must satisfy the same platform, publisher-signature, trust, approval,
+and installation requirements as other native plug-ins.
 
 ## Signing and developer entry point
 

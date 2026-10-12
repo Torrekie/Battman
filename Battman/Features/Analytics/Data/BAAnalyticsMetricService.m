@@ -6,6 +6,7 @@
 
 #import "BAAnalyticsMetricService.h"
 #import "BAAnalyticsMetricSnapshotInternal.h"
+#import "../../../BattmanDataPaths.h"
 
 static NSHashTable<BAAnalyticsMetricService *> *BAMetricServices;
 static BOOL BAMetricDataWipeRequested;
@@ -37,8 +38,7 @@ static NSUInteger const BAAnalyticsDefaultHistoryPointLimit = 60;
 @implementation BAAnalyticsMetricService
 
 - (void)enableStartupCache {
-	NSURL *support = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-	[self enableStartupCacheAtURL:[[support URLByAppendingPathComponent:@"AnalyticsHistory" isDirectory:YES] URLByAppendingPathComponent:@"instant.plist"]];
+	[self enableStartupCacheAtURL:[BattmanAnalyticsCacheDirectoryURL() URLByAppendingPathComponent:@"instant.plist"]];
 }
 
 - (void)enableStartupCacheAtURL:(NSURL *)cacheURL {
