@@ -169,25 +169,20 @@ static NSArray *BAReportTypedArray(id objects, Class objectClass) {
 	return [result copy];
 }
 
+// The window initializer supplies clipped intervals sorted by start and end.
+// Filtering preserves that order, so each coverage union needs only one pass.
 // Endpoints are relative to the window start, so subtraction remains bounded.
 static NSTimeInterval BAReportUnionDuration(NSArray<BAAnalyticsHistoryInterval *> *intervals,
 										 NSSet<NSString *> *metrics, NSDate *origin) {
 	if (!metrics.count)
 		return 0;
-	NSMutableArray<NSArray<NSNumber *> *> *ranges = [NSMutableArray array];
-	for (BAAnalyticsHistoryInterval *interval in intervals) {
-		if ([metrics isSubsetOfSet:interval.coveredMetricIdentifiers] && interval.duration > 0)
-			[ranges addObject:@[@([interval.startDate timeIntervalSinceDate:origin]),
-				@([interval.endDate timeIntervalSinceDate:origin])]];
-	}
-	[ranges sortUsingComparator:^NSComparisonResult(NSArray<NSNumber *> *first, NSArray<NSNumber *> *last) {
-		NSComparisonResult order = [first[0] compare:last[0]];
-		return order == NSOrderedSame ? [first[1] compare:last[1]] : order;
-	}];
 	NSTimeInterval total = 0, rangeStart = 0, rangeEnd = 0;
 	BOOL hasRange = NO;
-	for (NSArray<NSNumber *> *range in ranges) {
-		NSTimeInterval start = range[0].doubleValue, end = range[1].doubleValue;
+	for (BAAnalyticsHistoryInterval *interval in intervals) {
+		if (![metrics isSubsetOfSet:interval.coveredMetricIdentifiers] || interval.duration <= 0)
+			continue;
+		NSTimeInterval start = [interval.startDate timeIntervalSinceDate:origin];
+		NSTimeInterval end = [interval.endDate timeIntervalSinceDate:origin];
 		if (hasRange && start <= rangeEnd) {
 			rangeEnd = MAX(rangeEnd, end);
 		} else {
@@ -777,10 +772,15 @@ static BOOL BACacheEligibleReport(BAAnalyticsReport *report) {
     return [array copy];
 }
 - (id)decodeNode:(NSUInteger)index depth:(NSUInteger)depth {
-    [self visitDepth:depth];
+    // decodeValue already charges each encoded reference. Memo hits validate
+    // their depth and cycle boundary without charging the same edge twice.
+    if (depth > 32) { self.failureReason = 1; BACacheRequire(NO); }
     BACacheRequire(index < self.nodes.count && ![self.decodingIndices containsIndex:index]);
     id result = self.decodedObjects[index];
     if (result != NSNull.null) return result;
+    // Reachable nodes are charged by their decodeValue edge, as in encoding.
+    // An unreferenced tail node has no such edge and gets its own work charge.
+    if (!depth) [self visitDepth:depth];
     [self.decodingIndices addIndex:index];
     NSDictionary *node = self.nodes[index]; NSString *kind = node[@"kind"];
     if ([kind isEqual:@"metadata"]) {
@@ -999,7 +999,10 @@ BAAnalyticsReport *BAAnalyticsDecodeCachedReportCancellable(NSData *data, NSDate
         NSDictionary *families = [graph decodeValue:root[@"families"] depth:0];
         BACacheRequire(BACacheTypedMap(metadata, BAAnalyticsFieldMetadata.class) && BACacheTypedMap(families, BAAnalyticsFamilyReport.class));
         // Unreferenced nodes must also be valid; malformed tail data is not ignored.
-        for (NSUInteger i = 0; i < nodes.count; i++) (void)[graph decodeNode:i depth:0];
+        for (NSUInteger i = 0; i < nodes.count; i++) {
+            if ((i & 63) == 0 && cancelled()) { reason = 3; BACacheRequire(NO); }
+            (void)[graph decodeNode:i depth:0];
+        }
         BAAnalyticsReport *report = [[BAAnalyticsReport alloc] initWithSequenceNumber:[root[@"sequence"] unsignedLongLongValue]
             generatedAt:root[@"generatedAt"] sourceProfileIdentifier:root[@"profile"] fieldMetadata:metadata familyReports:families error:nil];
         stage = 12;

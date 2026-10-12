@@ -161,6 +161,21 @@ static void TestImmutableEvidence(void) {
 	Assert(clipped.intervals.firstObject != interval && clipped.intervals.firstObject.startObservation == observation,
 		"boundary clips create a distinct interval while retaining original sample endpoints");
 	AssertNear(clipped.intervals.firstObject.duration, 45, "interval reuse retains exact clipping semantics");
+	BAAnalyticsHistoryInterval *(^pair)(NSTimeInterval, NSTimeInterval) = ^(NSTimeInterval a, NSTimeInterval b) {
+		return [[BAAnalyticsHistoryInterval alloc] initWithStartDate:[timestamp dateByAddingTimeInterval:a]
+			endDate:[timestamp dateByAddingTimeInterval:b] startObservation:observation endObservation:last
+			coveredMetricIdentifiers:interval.coveredMetricIdentifiers state:BAAnalyticsObservedStateUnknown];
+	};
+	BAAnalyticsHistoryInterval *nested = pair(10, 20);
+	BAAnalyticsHistoryWindow *unionWindow = [[BAAnalyticsHistoryWindow alloc]
+		initWithStartDate:[timestamp dateByAddingTimeInterval:15] endDate:[timestamp dateByAddingTimeInterval:50]
+		observations:@[observation, last] intervals:@[pair(40, 55), nested, pair(15, 30), nested] gaps:@[]
+		coverageMetricIdentifiers:interval.coveredMetricIdentifiers coveredDuration:999 missingDuration:999
+		coverageSecondsByMetric:@{BAAnalyticsHistorySOCPercent: @999}];
+	AssertNear(unionWindow.coveredDuration, 25, "coverage merges shuffled, clipped and duplicate intervals without counting overlaps twice");
+	AssertNear(unionWindow.missingDuration, 10, "coverage retains the real gap between disjoint interval groups");
+	AssertNear([unionWindow.coverageSecondsByMetric[BAAnalyticsHistorySOCPercent] doubleValue], 25,
+		"per-metric coverage remains authoritative rather than trusting cached summary values");
 }
 
 static void TestFieldsAndIndependentCoverage(void) {
@@ -621,6 +636,48 @@ static void TestCachedReportGraph(void) {
     fixture[@"objects"] = excessive;
     Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil, "record count cap is enforced before object construction");
 
+    fixture = MutableCacheFixture(data);
+    [fixture[@"objects"] addObject:@{@"kind": @"metadata"}];
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil,
+        "unreferenced malformed tail nodes are still validated after memoized references");
+    fixture = MutableCacheFixture(data);
+    for (NSUInteger i = 0; i < [fixture[@"objects"] count]; i++) {
+        NSMutableDictionary *node = fixture[@"objects"][i];
+        if (![node[@"kind"] isEqual:@"family"]) continue;
+        node[@"window"] = @{@"type": @"reference", @"value": @(i)};
+        break;
+    }
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, NULL) == nil,
+        "memoized graph decoding still rejects an active self-reference cycle");
+    fixture = MutableCacheFixture(data);
+    NSMutableArray *values = [NSMutableArray arrayWithCapacity:120000];
+    for (NSUInteger i = 0; i < 120000; i++) [values addObject:@"budget"];
+    NSDictionary *repeatedArray = @{@"type": @"array", @"value": values};
+    NSMutableArray *aliases = [NSMutableArray arrayWithCapacity:17];
+    for (NSUInteger i = 0; i < 17; i++) [aliases addObject:repeatedArray];
+    for (NSMutableDictionary *node in fixture[@"objects"]) if ([node[@"kind"] isEqual:@"family"]) {
+        node[@"payload"] = @{@"type": @"dictionary", @"value": @{@"budget": @{@"type": @"array", @"value": aliases}}};
+        break;
+    }
+    @autoreleasepool {
+        Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, &error) == nil &&
+            [error.userInfo[@"reason"] isEqual:@2] && [error.userInfo[@"visits"] isEqual:@2000001],
+            "aliased containers cannot bypass the unchanged two-million-value work budget");
+    }
+    fixture = MutableCacheFixture(data);
+    NSUInteger metadataIndex = NSNotFound;
+    for (NSUInteger i = 0; i < [fixture[@"objects"] count]; i++)
+        if ([fixture[@"objects"][i][@"kind"] isEqual:@"metadata"]) { metadataIndex = i; break; }
+    Assert(metadataIndex != NSNotFound, "depth fixture refers to metadata already decoded through the root map");
+    NSDictionary *deepReference = @{@"type": @"reference", @"value": @(metadataIndex)};
+    for (NSUInteger i = 0; i < 28; i++) deepReference = @{@"type": @"array", @"value": @[deepReference]};
+    for (NSMutableDictionary *node in fixture[@"objects"]) if ([node[@"kind"] isEqual:@"family"]) {
+        node[@"payload"] = @{@"type": @"dictionary", @"value": @{@"depth": deepReference}};
+        break;
+    }
+    Assert(BAAnalyticsDecodeCachedReport(CacheFixtureData(fixture), report.generatedAt, &error) == nil &&
+        [error.userInfo[@"reason"] isEqual:@1], "cached-node references still enforce the depth limit on every edge");
+
     BAAnalyticsFamilyReport *family = report.familyReports[BAAnalyticsFamilyDwell];
     BAAnalyticsFamilyReport *loading = [[BAAnalyticsFamilyReport alloc] initWithFamily:family.family availability:BAAnalyticsReportAvailabilityLoading
         window:family.window payload:family.payload limitations:family.limitations];
@@ -643,8 +700,8 @@ static void AssertCompressedFixtureRejected(NSData *data, NSDate *date, NSUInteg
 }
 
 static void TestProductionShapedCachedReport(void) {
-    NSUInteger count = 24000;
-    NSTimeInterval step = 20;
+    NSUInteger count = 33000;
+    NSTimeInterval step = 12;
     NSString *rows = [NSString stringWithFormat:@"WITH RECURSIVE records(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM records WHERE i<%lu) "
         "INSERT INTO PLBatteryAgent_EventBackward_Battery (ID,timestamp,Level,InstantAmperage,ExternalConnected,IsCharging,FullyCharged,AppleRawMaxCapacity,Voltage) "
         "SELECT i+1,%.3f+i*%.3f,20+(i%%60),400,1,1,0,5900-(i%%43),12000+(i%%100) FROM records", (unsigned long)(count - 1), FixtureEpoch, step];
