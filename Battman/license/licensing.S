@@ -66,14 +66,11 @@ L.battman.bootstrap.checkdone.2:
 	mov x1,x20
 	bl .createNC
 	add x20,x20,#8
-#ifdef DEBUG
-#warning remember to finalize this block when releasing AnalyticsViewController
 	adrp x0,_OBJC_CLASS_$_AnalyticsViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_AnalyticsViewController@PAGEOFF
 	mov x1,x20
 	bl .createNC
 	add x20,x20,#8
-#endif
 	adrp x0,_OBJC_CLASS_$_SettingsViewController@PAGE
 	add x0,x0,_OBJC_CLASS_$_SettingsViewController@PAGEOFF
 	mov x1,x20
@@ -1047,10 +1044,7 @@ show_license.3:
 	adrp x0,_OBJC_CLASS_$_NSArray@GOTPAGE
 	ldr x0,[x0,_OBJC_CLASS_$_NSArray@GOTPAGEOFF]
 	mov x3,#2
-#ifdef DEBUG
-#warning remember to finalize this block when releasing AnalyticsViewController
 	add x3,x3,#1
-#endif
 	bl _objc_msgSend
 	mov x2,x0
 	adrp x1,.sel.setRootVCs@PAGE

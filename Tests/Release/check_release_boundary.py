@@ -17,6 +17,59 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
+def check_analytics_tab_bootstrap(debug: bool) -> tuple[list[str], int]:
+    configuration = "Debug" if debug else "Release"
+    command = ["clang", "-E", "-P", "-x", "assembler-with-cpp", "-UDEBUG"]
+    if debug:
+        command.append("-DDEBUG=1")
+    command.append(str(ROOT / "Battman/license/licensing.S"))
+    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    if result.returncode != 0:
+        fail(f"{configuration} bootstrap preprocessing failed: {result.stderr.strip()}")
+
+    # Inspect the actual preprocessor output: raw source references alone do
+    # not prove that the Analytics navigation controller reaches Release.
+    bootstrap = re.search(
+        r"(?ms)^_battman_bootstrap:\s*\n(.*?)^L\.battman\.bootstrap\.e:",
+        result.stdout,
+    )
+    if bootstrap is None:
+        fail(f"{configuration} bootstrap entry could not be located")
+    controllers = re.findall(
+        r"adrp\s+x0,\s*_OBJC_CLASS_\$_(\w+)@PAGE\s+"
+        r"add\s+x0,\s*x0,\s*_OBJC_CLASS_\$_\1@PAGEOFF\s+"
+        r"mov\s+x1,\s*x20\s+bl\s+\.createNC\s+add\s+x20,\s*x20,\s*#8",
+        bootstrap.group(1),
+    )
+    if controllers != ["BatteryInfoViewController", "AnalyticsViewController", "SettingsViewController"]:
+        fail(f"{configuration} bootstrap must construct Battery, Analytics and Settings tabs in order")
+
+    licensed_array = re.search(
+        r"(?ms)^show_license\.3:\s*\n.*?"
+        r"adrp\s+x1,\s*\.sel\.arrwobjs@PAGE\s*\n(.*?)^\s*bl\s+_objc_msgSend\s*$",
+        result.stdout,
+    )
+    if licensed_array is None:
+        fail(f"{configuration} licensed controller array could not be located")
+    controller_count = None
+    for line in licensed_array.group(1).splitlines():
+        immediate = re.fullmatch(r"\s*mov\s+x3,\s*#(\d+)\s*", line)
+        increment = re.fullmatch(r"\s*add\s+x3,\s*x3,\s*#(\d+)\s*", line)
+        if immediate:
+            controller_count = int(immediate.group(1))
+        elif increment and controller_count is not None:
+            controller_count += int(increment.group(1))
+        elif re.match(r"\s*\w+\s+x3,", line):
+            fail(f"{configuration} licensed controller count is not a known immediate")
+    if controller_count != len(controllers):
+        fail(f"{configuration} licensed controller count must match all three constructed tabs")
+    return controllers, controller_count
+
+
+if check_analytics_tab_bootstrap(debug=False) != check_analytics_tab_bootstrap(debug=True):
+    fail("Release and Debug must expose the same three production tabs")
+
+
 project = (ROOT / "Battman.xcodeproj/project.pbxproj").read_text(encoding="utf-8")
 finalizer = 'shellScript = "\\"${PROJECT_DIR}/Scripts/Build/finalize-xcode-app.sh\\"";'
 if project.count(finalizer) != 3:
