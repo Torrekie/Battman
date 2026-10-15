@@ -63,7 +63,9 @@ VirtualBrightnessLimits brightness_limits(void);
 // User-Level brightness info
 DisplayBrightness display_brightness(void);
 
-// User-Level set brightness, value is nits or percentage
+// User-Level set brightness, value is nits or percentage.
+// A true result only means the property was submitted; it does not confirm that
+// the system accepted the value or that it was within hardware limits.
 bool set_display_brightness(bool by_percentage, double value, bool commit);
 
 io_service_t backlight_service(void);
